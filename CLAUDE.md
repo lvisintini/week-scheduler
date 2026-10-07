@@ -66,3 +66,13 @@ Undo/redo, keyboard shortcuts, week-view PDF/landscape option, side-by-side layo
 
 ### Two-week rota (design decision)
 Deliberately NOT a built-in feature (judged too complex). Workaround: create two ordinary schedules ("Week A", "Week B"), tick both for weekly events, use "Copy this event" to build Week B from Week A, and use solo to flip. A real two-week feature was designed on paper (A/B ticks per day, week selector, "this week is" setting, version-4 save format) if ever needed.
+
+## Language and icons (added later)
+16. **Spanish/English.** Selector at the bottom of the sidebar; initial language from `navigator.languages[0]` (`es*` → Spanish, otherwise English). Not saved in the JSON; resets per page load.
+17. **Icons.** People have a `color` and a user-profile icon in that colour; schedules have a calendar icon in the schedule colour. Click the sidebar icon to change the colour. Icons appear left of every person/schedule name (sidebar, event boxes, agenda, print header, dialog checkboxes, responsible-person preview). Native `<select>` options cannot show icons, so the per-day person selects are text only. Favicon is an inline SVG calendar.
+
+### i18n mechanics (how to add a new UI string)
+- **Dynamic strings** (built in JS): add a key to both `D.en` and `D.es`, then use `L('key',{var:value})`.
+- **Static HTML text and `title` tooltips**: leave English in the HTML and add `['English prefix','Spanish text']` to the `ES` list (keys shorter than 12 chars must match exactly, longer ones match by prefix). `applyStatic()` swaps them and remembers the English original.
+- Day names come from `DAYN`; `DAYS` is mutated in place by `setLang()`.
+- People now have `color` in the save file; older files get colours assigned on load.

@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Weekly Schedules</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='24' rx='4' fill='white' stroke='%233b6df0' stroke-width='2.5'/%3E%3Crect x='3' y='5' width='26' height='9' rx='4' fill='%233b6df0'/%3E%3Cpath d='M10 2v6M22 2v6' stroke='%233b6df0' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8 19h4M14 19h4M20 19h4M8 24h4M14 24h4' stroke='%233b6df0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 :root{--we:#eef0fb;--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#6b7385;--line:#dfe3ea;--card:#fff;--acc:#3b6df0}
 @media(prefers-color-scheme:dark){:root{--we:#1a1d2c;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}}
@@ -23,6 +24,13 @@ aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(
 .grid{display:grid;grid-template-columns:52px repeat(7,minmax(110px,1fr));min-width:850px}
 .dh{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:8px;text-align:center;font-weight:600}
 .sch .solo{font-size:11px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}.tip{cursor:help;color:var(--acc);text-transform:none}
+aside{display:flex;flex-direction:column}aside>*{flex-shrink:0}
+.lang{margin-top:auto;padding-top:16px}.lang label{margin:0 0 3px}
+.lang select{width:100%;font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.ic{display:inline-flex;vertical-align:-3px;margin:0 4px 0 0}.ic svg{width:15px;height:15px}
+.pick{cursor:pointer;position:relative}.pick svg{width:19px;height:19px}.pick input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.sch .ic{flex-shrink:0}
+.ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-4px}
 .dh.we{background:var(--weh)}.day.we{background-color:var(--we)}
 .dh.c{border-left:0}
 .times{position:relative}
@@ -76,13 +84,13 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <main>
 <aside><h2>Schedules (toggle to show) <span class="tip" title="Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy this event to start Week B from Week A. Tick one to view it, or both to overlay them; solo flips between them in one click.">ⓘ</span></h2><div id="schs"></div><button id="addsch" title="e.g. Week A and Week B, to emulate a two-week rota." style="width:100%;margin-top:6px">+ Schedule</button>
 <h2 style="margin-top:20px">People (toggle to show) <span class="tip" title="Untick a person to hide events they are responsible for or involved in. An event stays visible if any of its people is still ticked, and events with no people are never hidden by this list.">ⓘ</span></h2><div id="peeps"></div><button id="addp" title="People can be responsible for, or involved in, events." style="width:100%;margin-top:6px">+ Person</button>
-<p style="color:var(--mut);font-size:12px;margin-top:16px">Drag on a day to create an event. Drag an event to move it (any day); drag its bottom edge to resize. Dragging moves just that day's occurrence. Click an event to edit it, set repeat days and per-day times (↻ marks repeating events). Overlaps show as diagonal stripes of the mixed colours.</p></aside>
+<p style="color:var(--mut);font-size:12px;margin-top:16px">Drag on a day to create an event. Drag an event to move it (any day); drag its bottom edge to resize. Dragging moves just that day's occurrence. Click an event to edit it, set repeat days and per-day times (↻ marks repeating events). Overlaps show as diagonal stripes of the mixed colours.</p><div class="lang"><label>Language</label><select id="lang"><option value="en">English</option><option value="es">Español</option></select></div></aside>
 <div class="wrap" id="wrap"><div class="grid" id="grid"></div></div>
 </main>
 <dialog id="dlg"><form method="dialog" id="f" onsubmit="return false">
 <label>Title *</label><input type="text" id="fT">
 <label>Description</label><textarea id="fD" rows="2"></textarea>
-<label>Person responsible</label><select id="fP"></select>
+<label>Person responsible</label><div class="row" style="align-items:center"><span id="fPic" class="ic"></span><select id="fP"></select></div>
 <label>Persons involved</label><div class="chk" id="fInv"></div>
 <div class="row"><div><label>Start</label><select id="fS"></select></div>
 <div><label>End</label><select id="fE"></select></div>
@@ -97,7 +105,35 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <div class="btns"><button id="agClose">Close</button><button id="agPrint" class="p">Print agenda</button></div></dialog>
 <div id="pr"></div>
 <script>
-const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DAYN={"en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "es": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]};
+let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en';
+const DAYS=[...DAYN[lang]];
+const D={"en": {"appTitle": "Weekly Schedules", "showEarly": "Show 0:00–5:00", "hideEarly": "Hide 0:00–5:00", "nowOn": "Now line: on", "nowOff": "Now line: off", "solo": "solo", "soloTip": "Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.", "delSchTip": "Delete schedule", "delPerTip": "Delete person", "colorTip": "Click the icon to change the colour", "agendaTip": "Click for the day agenda", "none": "— none —", "noPeople": "Add people in the sidebar first.", "errTitle": "Title is required.", "errDay": "Pick at least one day.", "errEnd": "{d}: end must be after start.", "errSch": "Pick at least one schedule.", "confSch": "Delete schedule \"{n}\"?", "confLost": " {k} event(s) only in this schedule will also be deleted.", "confPer": "Delete \"{n}\"? They will be removed from all events.", "pSch": "Schedule name?", "pPer": "Person name?", "badFile": "That file is not a valid schedule save file.", "agTitle": "{d} — agenda", "schShown": "Schedules shown:", "pplShown": "People shown:", "none2": "none", "noPpl": "(no people defined)", "nothing": "Nothing scheduled.", "resp": "Responsible:", "withl": "With:", "withb": "with", "schl": "Schedules:", "printTitle": "Weekly schedule", "sched1": "Schedule 1"}, "es": {"appTitle": "Horarios semanales", "showEarly": "Mostrar 0:00–5:00", "hideEarly": "Ocultar 0:00–5:00", "nowOn": "Línea de ahora: sí", "nowOff": "Línea de ahora: no", "solo": "solo", "soloTip": "Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.", "delSchTip": "Eliminar horario", "delPerTip": "Eliminar persona", "colorTip": "Haz clic en el icono para cambiar el color", "agendaTip": "Clic para ver la agenda del día", "none": "— ninguna —", "noPeople": "Primero añade personas en la barra lateral.", "errTitle": "El título es obligatorio.", "errDay": "Elige al menos un día.", "errEnd": "{d}: el fin debe ser posterior al inicio.", "errSch": "Elige al menos un horario.", "confSch": "¿Eliminar el horario \"{n}\"?", "confLost": " También se eliminarán {k} evento(s) que solo están en este horario.", "confPer": "¿Eliminar a \"{n}\"? Se quitará de todos los eventos.", "pSch": "¿Nombre del horario?", "pPer": "¿Nombre de la persona?", "badFile": "Ese archivo no es un archivo de guardado válido.", "agTitle": "{d} — agenda", "schShown": "Horarios mostrados:", "pplShown": "Personas mostradas:", "none2": "ninguno", "noPpl": "(sin personas definidas)", "nothing": "Nada programado.", "resp": "Responsable:", "withl": "Con:", "withb": "con", "schl": "Horarios:", "printTitle": "Horario semanal", "sched1": "Horario 1"}};
+const ES=[["Weekly Schedules", "Horarios semanales"], ["+ Event", "+ Evento"], ["Print schedule", "Imprimir horario"], ["Save JSON", "Guardar JSON"], ["Load JSON", "Cargar JSON"], ["Reveal or hide the 00:00", "Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos."], ["Red line on the current weekday", "Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles."], ["Prints the grid as shown", "Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo."], ["Download everything", "Descarga todo (horarios, personas, eventos) como archivo JSON. No se guarda nada al cerrar la página, así que guarda con frecuencia."], ["Replace what you see now", "Sustituye lo que ves ahora por un archivo JSON guardado. Guarda antes si quieres conservar la vista actual."], ["Or simply drag on an empty part", "También puedes arrastrar sobre un hueco vacío de un día para crear un evento a esa hora."], ["e.g. Week A and Week B, to emulate", "p. ej. Semana A y Semana B, para emular una rotación de dos semanas."], ["People can be responsible for", "Las personas pueden ser responsables de eventos o estar implicadas en ellos."], ["Schedules (toggle to show)", "Horarios (activar para mostrar)"], ["Tip - emulating a two-week rota", "Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar este evento para crear la Semana B a partir de la A. Marca uno para verlo, o ambos para superponerlos; solo alterna entre ellos con un clic."], ["People (toggle to show)", "Personas (activar para mostrar)"], ["Untick a person to hide", "Desmarca a una persona para ocultar los eventos de los que es responsable o en los que está implicada. Un evento sigue visible si alguna de sus personas sigue marcada, y los eventos sin personas nunca se ocultan con esta lista."], ["+ Schedule", "+ Horario"], ["+ Person", "+ Persona"], ["Drag on a day to create an event.", "Arrastra sobre un día para crear un evento. Arrastra un evento para moverlo (a cualquier día); arrastra su borde inferior para cambiar la duración. Arrastrar mueve solo la repetición de ese día. Haz clic en un evento para editarlo, elegir los días de repetición y las horas de cada día (↻ marca los eventos repetidos). Las superposiciones se muestran como rayas diagonales con los colores mezclados."], ["Language", "Idioma"], ["Title *", "Título *"], ["Description", "Descripción"], ["Person responsible", "Persona responsable"], ["Persons involved", "Personas implicadas"], ["Start", "Inicio"], ["End", "Fin"], ["Colour", "Color"], ["Repeat on days — each day", "Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies"], ["Tick the days this event", "Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable."], ["Schedules * (at least one)", "Horarios * (al menos uno)"], ["Tick several to make the event", "Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos. En una rotación de dos semanas, marca Semana A y Semana B para los eventos semanales."], ["Copy this event (as an independent", "Copiar este evento (como evento independiente) a un horario"], ["Makes an independent copy", "Crea una copia independiente, útil para montar la Semana B a partir de la A. Para compartir UN evento entre horarios, marca varios horarios más abajo."], ["Copy", "Copiar"], ["Delete", "Eliminar"], ["Cancel", "Cancelar"], ["Save", "Guardar"], ["Deletes the event including", "Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda."], ["Close", "Cerrar"], ["Print agenda", "Imprimir agenda"]];
+const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
+function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
+function applyStatic(){
+  document.querySelectorAll('header,aside,dialog').forEach(root=>{
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),ns=[];let n;while(n=w.nextNode())ns.push(n);
+    ns.forEach(n=>{if(n.__en===undefined){if(!n.nodeValue.trim())return;n.__en=n.nodeValue}n.nodeValue=tr(n.__en)});
+    root.querySelectorAll('[title]').forEach(e=>{if(e.__t===undefined)e.__t=e.title;e.title=tr(e.__t)});
+  });
+}
+const ICON_USER='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8z"/></svg>';
+const ICON_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
+const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
+const sTag=s=>`<span class="ic" style="color:${esc(s.color)}">${ICON_CAL}</span>${esc(s.name)}`;
+function iconPicker(parent,svg,color,onchange){
+  const l=el('label','ic pick',parent);l.style.color=color;l.title=L('colorTip');l.innerHTML=svg;
+  const i=el('input','',l);i.type='color';i.value=color;i.onchange=()=>onchange(i.value);
+}
+function setLang(l){
+  lang=l;DAYS.splice(0,7,...DAYN[l]);document.documentElement.lang=l;document.title=L('appTitle');
+  rows.forEach((o,i)=>o.lt.nodeValue=DAYS[i].slice(0,3));
+  render();applyStatic();$('nowb').textContent=L(nowOn?'nowOn':'nowOff');
+}
 const HH=48, SNAP=15, PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
 let S={schedules:[],events:[],people:[],showEarly:false};
 const uid=()=>Math.random().toString(36).slice(2,10);
@@ -117,19 +153,18 @@ function drawNow(){
   const n=el('div','now',col);n.style.top=(m-a)/60*HH+'px';n.title=fmt(m);
 }
 setInterval(drawNow,30000);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function metaLine(){
-  const sch=S.schedules.filter(s=>s.visible).map(s=>s.name),ppl=S.people.filter(q=>q.visible).map(q=>q.name);
-  return `<div class="pm"><b>Schedules shown:</b> ${esc(sch.join(', ')||'none')}<br><b>People shown:</b> ${esc(S.people.length?(ppl.join(', ')||'none'):'(no people defined)')}</div>`;
+  const sch=S.schedules.filter(s=>s.visible).map(sTag),ppl=S.people.filter(q=>q.visible).map(q=>pIcon(q)+esc(q.name));
+  return `<div class="pm"><b>${esc(L('schShown'))}</b> ${sch.join(' &nbsp; ')||esc(L('none2'))}<br><b>${esc(L('pplShown'))}</b> ${S.people.length?(ppl.join(' &nbsp; ')||esc(L('none2'))):esc(L('noPpl'))}</div>`;
 }
 function agendaHTML(di){
   const items=S.events.filter(visible).flatMap(e=>e.slots.filter(s=>s.day===di&&slotVisible(e,s)).map(s=>({e,s}))).sort((x,y)=>x.s.start-y.s.start||x.s.end-y.s.end);
-  let h=`<h1>${DAYS[di]} — agenda</h1>`+metaLine();
-  if(!items.length)h+='<p>Nothing scheduled.</p>';
+  let h=`<h1>${esc(L('agTitle',{d:DAYS[di]}))}</h1>`+metaLine();
+  if(!items.length)h+=`<p>${esc(L('nothing'))}</p>`;
   items.forEach(({e,s})=>{
-    const bits=[];if(s.person)bits.push('<b>Responsible:</b> '+esc(pname(s.person)));
-    const inv=e.involved.map(pname).filter(Boolean);if(inv.length)bits.push('<b>With:</b> '+esc(inv.join(', ')));
-    bits.push('<b>Schedules:</b> '+esc(e.schedules.map(id=>(S.schedules.find(x=>x.id===id)||{}).name).filter(Boolean).join(', ')));
+    const bits=[];if(s.person)bits.push(`<b>${esc(L('resp'))}</b> `+pTag(s.person));
+    const inv=e.involved.map(pTag).filter(Boolean);if(inv.length)bits.push(`<b>${esc(L('withl'))}</b> `+inv.join(', '));
+    bits.push(`<b>${esc(L('schl'))}</b> `+e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', '));
     h+=`<div class="ai" style="border-left-color:${esc(e.color)}"><div class="at">${fmt(s.start)}–${fmt(s.end)}</div><div class="ab"><div class="atl">${esc(e.title)}</div><div class="am">${bits.join(' &nbsp;·&nbsp; ')}</div>${e.desc?`<div class="ad">${esc(e.desc)}</div>`:''}</div></div>`;
   });
   return h;
@@ -142,7 +177,7 @@ function doPrint(node,landscape){
   window.print();
 }
 window.onafterprint=()=>$('pr').replaceChildren();
-function init(){S={schedules:[{id:uid(),name:'Schedule 1',color:PAL[0],visible:true}],events:[],people:[],showEarly:false};render()}
+function init(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],visible:true}],events:[],people:[],showEarly:false};render()}
 
 function render(){
   // sidebar
@@ -150,26 +185,26 @@ function render(){
   S.schedules.forEach(s=>{
     const r=el('div','sch',sc);
     const cb=el('input','',r);cb.type='checkbox';cb.checked=s.visible;cb.onchange=()=>{s.visible=cb.checked;render()};
-    const col=el('input','',r);col.type='color';col.value=s.color;col.onchange=()=>{s.color=col.value;render()};
+    iconPicker(r,ICON_CAL,s.color,v=>{s.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=s.name;n.onchange=()=>{s.name=n.value||s.name;render()};
-    const so=el('button','x solo',r);so.textContent='solo';
-    so.title="Show only this schedule. Click again to show all. Tip: for a two-week rota, make 'Week A' and 'Week B' schedules and flip between them with solo.";
+    const so=el('button','x solo',r);so.textContent=L('solo');so.title=L('soloTip');
     so.onclick=()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()};
-    const x=el('button','x',r);x.textContent='✕';x.title='Delete schedule';x.onclick=()=>delSchedule(s);
+    const x=el('button','x',r);x.textContent='✕';x.title=L('delSchTip');x.onclick=()=>delSchedule(s);
   });
   const pc=$('peeps');pc.innerHTML='';
   S.people.forEach(q=>{
     const r=el('div','sch',pc);
     const cb=el('input','',r);cb.type='checkbox';cb.checked=q.visible;cb.onchange=()=>{q.visible=cb.checked;render()};
+    iconPicker(r,ICON_USER,q.color,v=>{q.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=q.name;n.onchange=()=>{q.name=n.value||q.name;render()};
-    const x=el('button','x',r);x.textContent='✕';x.title='Delete person';x.onclick=()=>delPerson(q);
+    const x=el('button','x',r);x.textContent='✕';x.title=L('delPerTip');x.onclick=()=>delPerson(q);
   });
-  $('early').textContent=S.showEarly?'Hide 0:00–5:00':'Show 0:00–5:00';
+  $('early').textContent=L(S.showEarly?'hideEarly':'showEarly');
   // grid
   const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');
   const a=vs(),hrs=24-a;
   el('div','dh c',g).textContent='';
-  DAYS.forEach((d,i)=>{const h=el('div','dh'+(i>4?' we':''),g);h.textContent=d;h.title='Click for the day agenda';h.onclick=()=>openAgenda(i)});
+  DAYS.forEach((d,i)=>{const h=el('div','dh'+(i>4?' we':''),g);h.textContent=d;h.title=L('agendaTip');h.onclick=()=>openAgenda(i)});
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=fmt(h*60);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   DAYS.forEach((_,di)=>{
@@ -182,9 +217,12 @@ function render(){
       d.style.top=top+'px';d.style.height=Math.max(14,(s.end-Math.max(s.start,a*60))/60*HH-1)+'px';
       d.style.background=e.color;
       el('span','t',d).textContent=e.title+(e.slots.length>1?' ↻':'');
-      const m=[fmt(s.start)+'–'+fmt(s.end),pname(s.person),e.involved.length?'with '+e.involved.map(pname).filter(Boolean).join(', '):'',e.desc].filter(Boolean).join(' · ');
-      el('span','m',d).textContent=m;
-      d.title=e.title+'\n'+m;
+      const parts=[esc(fmt(s.start)+'–'+fmt(s.end))];
+      if(s.person)parts.push(pTag(s.person));
+      const inv=e.involved.map(pTag).filter(Boolean);if(inv.length)parts.push(esc(L('withb'))+' '+inv.join(', '));
+      if(e.desc)parts.push(esc(e.desc));
+      const mm=el('span','m',d);mm.innerHTML=parts.join(' · ');
+      d.title=e.title+'\n'+mm.textContent;
       const rz=el('div','rz',d);
       d.onpointerdown=ev=>{ev.stopPropagation();startDrag(ev,it,rz===ev.target?'resize':'move')};
     });
@@ -205,14 +243,14 @@ function render(){
 }
 
 function delPerson(q){
-  if(!confirm(`Delete "${q.name}"? They will be removed from all events.`))return;
+  if(!confirm(L('confPer',{n:q.name})))return;
   S.people=S.people.filter(x=>x!==q);
   S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);e.slots.forEach(s=>{if(s.person===q.id)s.person=''})});
   render();
 }
 function delSchedule(s){
   const lost=S.events.filter(e=>e.schedules.length===1&&e.schedules[0]===s.id).length;
-  if(!confirm(`Delete schedule "${s.name}"?`+(lost?` ${lost} event(s) only in this schedule will also be deleted.`:'')))return;
+  if(!confirm(L('confSch',{n:s.name})+(lost?L('confLost',{k:lost}):'')))return;
   S.schedules=S.schedules.filter(x=>x!==s);
   S.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));
   S.events=S.events.filter(e=>e.schedules.length);
@@ -258,13 +296,13 @@ function startCreate(ev,di,col){
 let cur=null;
 function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
 const tms=[];for(let m=0;m<=1440;m+=SNAP)tms.push([m,fmt(m)]);
-const pOpts=()=>[['','— none —'],...S.people.map(q=>[q.id,q.name])];
+const pOpts=()=>[['',L('none')],...S.people.map(q=>[q.id,q.name])];
 fillSel($('fS'),tms.slice(0,-1));fillSel($('fE'),tms.slice(1));
 const rows=DAYS.map((n,i)=>{
-  const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';l.append(n.slice(0,3));
+  const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
   const s=el('select','',r),en=el('select','',r),ps=el('select','',r);
   fillSel(s,tms.slice(0,-1));fillSel(en,tms.slice(1));
-  const o={r,cb,s,en,ps,custom:false,pc:false};
+  const o={r,cb,s,en,ps,lt,custom:false,pc:false};
   o.upd=()=>{r.classList.toggle('off',!cb.checked);s.disabled=en.disabled=ps.disabled=!cb.checked};
   cb.onchange=()=>{if(cb.checked){if(!o.custom)sync(o);if(!o.pc)ps.value=$('fP').value}o.upd()};
   s.onchange=en.onchange=()=>{o.custom=true};
@@ -273,21 +311,22 @@ const rows=DAYS.map((n,i)=>{
 function sync(o){o.s.value=$('fS').value;o.en.value=$('fE').value}
 $('fS').onchange=()=>{if(+$('fE').value<=+$('fS').value)$('fE').value=Math.min(1440,+$('fS').value+60);rows.forEach(o=>{if(!o.custom)sync(o)})};
 $('fE').onchange=()=>{rows.forEach(o=>{if(!o.custom)sync(o)})};
-$('fP').onchange=()=>{rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').value})};
+function updPic(){const q=S.people.find(x=>x.id===$('fP').value);$('fPic').innerHTML=q?ICON_USER:'';$('fPic').style.color=q?q.color:''}
+$('fP').onchange=()=>{updPic();rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').value})};
 function openDlg(e,def){
   cur=e;const d=e||{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)};
   const slots=e?e.slots:[{day:0,start:540,end:600,person:'',...def}];
   $('fT').value=d.title;$('fD').value=d.desc||'';$('fC').value=d.color;
   const g=slots[0];$('fS').value=g.start;$('fE').value=g.end;
-  fillSel($('fP'),pOpts());$('fP').value=g.person||'';
+  fillSel($('fP'),pOpts());$('fP').value=g.person||'';updPic();
   rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.ps,pOpts());o.cb.checked=!!sl;
     o.s.value=sl?sl.start:g.start;o.en.value=sl?sl.end:g.end;o.ps.value=sl?sl.person||'':g.person||'';
     o.custom=!!sl&&(sl.start!==g.start||sl.end!==g.end);o.pc=!!sl&&(sl.person||'')!==(g.person||'');o.upd()});
   const iv=$('fInv');iv.innerHTML='';
-  if(!S.people.length)iv.textContent='Add people in the sidebar first.';
-  S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.append(q.name)});
+  if(!S.people.length)iv.textContent=L('noPeople');
+  S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
-  S.schedules.forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=d.schedules.includes(s.id);l.append(s.name)});
+  S.schedules.forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=d.schedules.includes(s.id);l.insertAdjacentHTML('beforeend',sTag(s))});
   $('fDel').style.display=e?'':'none';$('cpRow').style.display=e?'':'none';
   fillSel($('cpSel'),S.schedules.map(s=>[s.id,s.name]));
   if(e){const o=S.schedules.find(s=>!e.schedules.includes(s.id));if(o)$('cpSel').value=o.id}
@@ -298,11 +337,11 @@ $('fOk').onclick=()=>{
   const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);
   const slots=[];
   rows.forEach((o,i)=>{if(o.cb.checked)slots.push({day:i,start:+o.s.value,end:+o.en.value,person:o.ps.value})});
-  if(!title)return $('err').textContent='Title is required.';
-  if(!slots.length)return $('err').textContent='Pick at least one day.';
+  if(!title)return $('err').textContent=L('errTitle');
+  if(!slots.length)return $('err').textContent=L('errDay');
   const bad=slots.find(s=>s.end<=s.start);
-  if(bad)return $('err').textContent=DAYS[bad.day]+': end must be after start.';
-  if(!sch.length)return $('err').textContent='Pick at least one schedule.';
+  if(bad)return $('err').textContent=L('errEnd',{d:DAYS[bad.day]});
+  if(!sch.length)return $('err').textContent=L('errSch');
   const d={title,desc:$('fD').value.trim(),color:$('fC').value,schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
   if(cur)Object.assign(cur,d);else S.events.push({id:uid(),...d});
   $('dlg').close();render();
@@ -315,17 +354,17 @@ $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agendaHTML(agDay);doPrint(d,false)};
 $('prt').onclick=()=>{
   const c=$('grid').cloneNode(true);c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
-  const w=el('div');w.innerHTML='<h1>Weekly schedule</h1>'+metaLine();w.append(c);doPrint(w,false);
+  const w=el('div');w.innerHTML='<h1>'+esc(L('printTitle'))+'</h1>'+metaLine();w.append(c);doPrint(w,false);
 };
-$('nowb').onclick=()=>{nowOn=!nowOn;$('nowb').textContent='Now line: '+(nowOn?'on':'off');drawNow()};
+$('nowb').onclick=()=>{nowOn=!nowOn;$('nowb').textContent=L(nowOn?'nowOn':'nowOff');drawNow()};
 $('cpBtn').onclick=()=>{
   if(!cur)return;const c=JSON.parse(JSON.stringify(cur));c.id=uid();c.schedules=[$('cpSel').value];
   S.events.push(c);$('dlg').close();render();
 };
 $('add').onclick=()=>openDlg(null);
 $('early').onclick=()=>{S.showEarly=!S.showEarly;render();if(!S.showEarly)$('wrap').scrollTop=0};
-$('addp').onclick=()=>{const n=prompt('Person name?');if(!n)return;S.people.push({id:uid(),name:n.trim(),visible:true});render()};
-$('addsch').onclick=()=>{const n=prompt('Schedule name?');if(!n)return;S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],visible:true});render()};
+$('addp').onclick=()=>{const n=prompt(L('pPer'));if(!n)return;S.people.push({id:uid(),name:n.trim(),color:PAL[S.people.length%PAL.length],visible:true});render()};
+$('addsch').onclick=()=>{const n=prompt(L('pSch'));if(!n)return;S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],visible:true});render()};
 $('save').onclick=()=>{
   const b=new Blob([JSON.stringify({version:3,...S},null,2)],{type:'application/json'});
   const a=el('a');a.href=URL.createObjectURL(b);a.download='weekly-schedules.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -336,8 +375,8 @@ $('file').onchange=async e=>{
   try{
     const j=JSON.parse(await f.text());
     if(!Array.isArray(j.schedules)||!Array.isArray(j.events))throw 0;
-    const people=(Array.isArray(j.people)?j.people:[]).map(q=>({id:String(q.id),name:String(q.name),visible:q.visible!==false}));
-    const pid=n=>{n=String(n||'').trim();if(!n)return '';let q=people.find(x=>x.name===n);if(!q){q={id:uid(),name:n,visible:true};people.push(q)}return q.id};
+    const people=(Array.isArray(j.people)?j.people:[]).map((q,i)=>({id:String(q.id),name:String(q.name),color:q.color||PAL[i%PAL.length],visible:q.visible!==false}));
+    const pid=n=>{n=String(n||'').trim();if(!n)return '';let q=people.find(x=>x.name===n);if(!q){q={id:uid(),name:n,color:PAL[people.length%PAL.length],visible:true};people.push(q)}return q.id};
     const events=j.events.map(v=>{
       const legacy=typeof v.person==='string'?pid(v.person):'';
       const sl=Array.isArray(v.slots)?v.slots:[{day:v.day,start:v.start,end:v.end}];
@@ -347,7 +386,8 @@ $('file').onchange=async e=>{
     S={schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],visible:s.visible!==false})),
        events,people,showEarly:!!j.showEarly};
     render();
-  }catch(_){alert('That file is not a valid schedule save file.')}
+  }catch(_){alert(L('badFile'))}
 };
-init();
+$('lang').value=lang;$('lang').onchange=()=>setLang($('lang').value);
+init();setLang(lang);
 </script></body></html>

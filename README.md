@@ -12,6 +12,8 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser â€
 - Drag to create, move (across days) and resize events
 - Day agenda (click a day header) with print support; printable weekly schedule
 - Optional "now" line on today's column
+- Spanish / English interface (follows browser language, switchable in the sidebar)
+- Icons for people (in their colour) and schedules; calendar favicon
 - Save / load everything as a JSON file
 
 ## Use
