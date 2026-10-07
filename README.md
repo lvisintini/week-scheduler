@@ -1,0 +1,23 @@
+# Weekly Schedules
+
+A single-file, dependency-free weekly planner. Open `index.html` in a browser — no build step, no server.
+
+## Features
+- Mon–Sun columns, hourly rows 05:00–24:00 (00:00–05:00 can be toggled on)
+- Multiple **schedules** that toggle on/off to overlay different views of the same week
+- Events with title, description, responsible person, involved people, colour
+- Events repeat on chosen days, with per-day times and per-day responsible person
+- Overlapping events render as diagonal stripes of the overlapping colours
+- **People** list that works like schedules (toggle to show/hide their events)
+- Drag to create, move (across days) and resize events
+- Day agenda (click a day header) with print support; printable weekly schedule
+- Optional "now" line on today's column
+- Save / load everything as a JSON file
+
+## Use
+Open `index.html`, or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
+
+## Save file
+Plain JSON (`version: 3`): `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `showEarly`. See `CLAUDE.md` for the schema.
+
+Data lives only in memory — use **Save JSON** to keep your work.
