@@ -59,3 +59,10 @@ A single static `index.html` (HTML + CSS + vanilla JS, no libraries, no network)
 
 ## Ideas not yet built
 Undo/redo, keyboard shortcuts, week-view PDF/landscape option, side-by-side layout for overlaps as an alternative view, localStorage autosave, per-person colours, import/merge (not replace) of save files.
+
+## Later additions
+14. Per-schedule **solo** button: shows only that schedule; clicking again (when it is the only one visible) shows all.
+15. Helpful tooltips (`title` attributes / ⓘ icons) with workarounds.
+
+### Two-week rota (design decision)
+Deliberately NOT a built-in feature (judged too complex). Workaround: create two ordinary schedules ("Week A", "Week B"), tick both for weekly events, use "Copy this event" to build Week B from Week A, and use solo to flip. A real two-week feature was designed on paper (A/B ticks per day, week selector, "this week is" setting, version-4 save format) if ever needed.

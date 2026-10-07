@@ -22,6 +22,7 @@ aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(
 .wrap{flex:1;overflow:auto;position:relative}
 .grid{display:grid;grid-template-columns:52px repeat(7,minmax(110px,1fr));min-width:850px}
 .dh{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:8px;text-align:center;font-weight:600}
+.sch .solo{font-size:11px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}.tip{cursor:help;color:var(--acc);text-transform:none}
 .dh.we{background:var(--weh)}.day.we{background-color:var(--we)}
 .dh.c{border-left:0}
 .times{position:relative}
@@ -64,17 +65,17 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 </style><style id="pgStyle"></style></head><body>
 <header>
 <h1>Weekly Schedules</h1>
-<button id="early">Show 0:00–5:00</button>
-<button id="add" class="p">+ Event</button>
-<button id="nowb">Now line: on</button>
-<button id="prt">Print schedule</button>
-<button id="save">Save JSON</button>
-<button id="load">Load JSON</button>
+<button id="early" title="Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.">Show 0:00–5:00</button>
+<button id="add" class="p" title="Or simply drag on an empty part of a day to create an event for that time.">+ Event</button>
+<button id="nowb" title="Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.">Now line: on</button>
+<button id="prt" title="Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.">Print schedule</button>
+<button id="save" title="Download everything (schedules, people, events) as a JSON file. Nothing is kept when you close the page, so save regularly.">Save JSON</button>
+<button id="load" title="Replace what you see now with a saved JSON file. Save first if you want to keep the current view.">Load JSON</button>
 <input type="file" id="file" accept=".json,application/json" hidden>
 </header>
 <main>
-<aside><h2>Schedules (toggle to show)</h2><div id="schs"></div><button id="addsch" style="width:100%;margin-top:6px">+ Schedule</button>
-<h2 style="margin-top:20px">People (toggle to show)</h2><div id="peeps"></div><button id="addp" style="width:100%;margin-top:6px">+ Person</button>
+<aside><h2>Schedules (toggle to show) <span class="tip" title="Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy this event to start Week B from Week A. Tick one to view it, or both to overlay them; solo flips between them in one click.">ⓘ</span></h2><div id="schs"></div><button id="addsch" title="e.g. Week A and Week B, to emulate a two-week rota." style="width:100%;margin-top:6px">+ Schedule</button>
+<h2 style="margin-top:20px">People (toggle to show) <span class="tip" title="Untick a person to hide events they are responsible for or involved in. An event stays visible if any of its people is still ticked, and events with no people are never hidden by this list.">ⓘ</span></h2><div id="peeps"></div><button id="addp" title="People can be responsible for, or involved in, events." style="width:100%;margin-top:6px">+ Person</button>
 <p style="color:var(--mut);font-size:12px;margin-top:16px">Drag on a day to create an event. Drag an event to move it (any day); drag its bottom edge to resize. Dragging moves just that day's occurrence. Click an event to edit it, set repeat days and per-day times (↻ marks repeating events). Overlaps show as diagonal stripes of the mixed colours.</p></aside>
 <div class="wrap" id="wrap"><div class="grid" id="grid"></div></div>
 </main>
@@ -86,11 +87,11 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <div class="row"><div><label>Start</label><select id="fS"></select></div>
 <div><label>End</label><select id="fE"></select></div>
 <div style="flex:0 0 50px"><label>Colour</label><input type="color" id="fC" style="width:100%;height:32px;padding:0;border:0;background:none"></div></div>
-<label>Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div>
-<label>Schedules * (at least one)</label><div class="chk" id="fSch"></div>
-<div id="cpRow"><label>Copy this event (as an independent event) into a schedule</label><div class="row"><select id="cpSel" style="flex:1"></select><button type="button" id="cpBtn">Copy</button></div></div>
+<label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div>
+<label title="Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules * (at least one)</label><div class="chk" id="fSch"></div>
+<div id="cpRow"><label title="Makes an independent copy, handy for building Week B from Week A. To share ONE event across schedules instead, tick several schedules below.">Copy this event (as an independent event) into a schedule</label><div class="row"><select id="cpSel" style="flex:1"></select><button type="button" id="cpBtn">Copy</button></div></div>
 <div class="err" id="err"></div>
-<div class="btns"><button class="d" id="fDel" type="button">Delete</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
+<div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Repeat on days and save.">Delete</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
 </form></dialog>
 <dialog id="agDlg"><div class="agenda" id="agBody"></div>
 <div class="btns"><button id="agClose">Close</button><button id="agPrint" class="p">Print agenda</button></div></dialog>
@@ -151,6 +152,9 @@ function render(){
     const cb=el('input','',r);cb.type='checkbox';cb.checked=s.visible;cb.onchange=()=>{s.visible=cb.checked;render()};
     const col=el('input','',r);col.type='color';col.value=s.color;col.onchange=()=>{s.color=col.value;render()};
     const n=el('input','',r);n.type='text';n.value=s.name;n.onchange=()=>{s.name=n.value||s.name;render()};
+    const so=el('button','x solo',r);so.textContent='solo';
+    so.title="Show only this schedule. Click again to show all. Tip: for a two-week rota, make 'Week A' and 'Week B' schedules and flip between them with solo.";
+    so.onclick=()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()};
     const x=el('button','x',r);x.textContent='✕';x.title='Delete schedule';x.onclick=()=>delSchedule(s);
   });
   const pc=$('peeps');pc.innerHTML='';
