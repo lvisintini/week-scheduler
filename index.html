@@ -13,7 +13,7 @@ header h1{font-size:16px;margin:0 auto 0 0}
 button{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
 button:hover{border-color:var(--acc)}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}button.d{color:#d33}
 main{flex:1;display:flex;min-height:0}
-aside{width:230px;border-right:1px solid var(--line);padding:12px;overflow:auto;background:var(--card);flex-shrink:0}
+aside{width:290px;border-right:1px solid var(--line);padding:12px;overflow:auto;background:var(--card);flex-shrink:0}
 aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 8px}
 .sch{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .sch input[type=text]{flex:1;min-width:0;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 4px;border-radius:6px}
@@ -31,6 +31,11 @@ aside{display:flex;flex-direction:column}aside>*{flex-shrink:0}
 .pick{cursor:pointer;position:relative}.pick svg{width:19px;height:19px}.pick input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
 .sch .ic{flex-shrink:0}
 .ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-4px}
+.sch{flex-wrap:wrap}.sch input[type=text]{flex:1 1 90px}
+.eye{border:0;background:none;padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg);flex-shrink:0}
+.eye svg{width:19px;height:19px}.eye.off{color:var(--mut)}
+.sch .opr{flex:0 0 calc(100% - 28px);min-width:0;margin:0 0 4px 28px;display:flex;align-items:center;gap:4px;color:var(--mut)}
+.sch .opr .ic{margin:0}.sch .op{flex:1;min-width:0;width:auto;margin:0;accent-color:var(--acc);height:14px}
 .dh.we{background:var(--weh)}.day.we{background-color:var(--we)}
 .dh.c{border-left:0}
 .times{position:relative}
@@ -108,7 +113,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 const DAYN={"en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "es": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]};
 let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en';
 const DAYS=[...DAYN[lang]];
-const D={"en": {"appTitle": "Weekly Schedules", "showEarly": "Show 0:00–5:00", "hideEarly": "Hide 0:00–5:00", "nowOn": "Now line: on", "nowOff": "Now line: off", "solo": "solo", "soloTip": "Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.", "delSchTip": "Delete schedule", "delPerTip": "Delete person", "colorTip": "Click the icon to change the colour", "agendaTip": "Click for the day agenda", "none": "— none —", "noPeople": "Add people in the sidebar first.", "errTitle": "Title is required.", "errDay": "Pick at least one day.", "errEnd": "{d}: end must be after start.", "errSch": "Pick at least one schedule.", "confSch": "Delete schedule \"{n}\"?", "confLost": " {k} event(s) only in this schedule will also be deleted.", "confPer": "Delete \"{n}\"? They will be removed from all events.", "pSch": "Schedule name?", "pPer": "Person name?", "badFile": "That file is not a valid schedule save file.", "agTitle": "{d} — agenda", "schShown": "Schedules shown:", "pplShown": "People shown:", "none2": "none", "noPpl": "(no people defined)", "nothing": "Nothing scheduled.", "resp": "Responsible:", "withl": "With:", "withb": "with", "schl": "Schedules:", "printTitle": "Weekly schedule", "sched1": "Schedule 1"}, "es": {"appTitle": "Horarios semanales", "showEarly": "Mostrar 0:00–5:00", "hideEarly": "Ocultar 0:00–5:00", "nowOn": "Línea de ahora: sí", "nowOff": "Línea de ahora: no", "solo": "solo", "soloTip": "Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.", "delSchTip": "Eliminar horario", "delPerTip": "Eliminar persona", "colorTip": "Haz clic en el icono para cambiar el color", "agendaTip": "Clic para ver la agenda del día", "none": "— ninguna —", "noPeople": "Primero añade personas en la barra lateral.", "errTitle": "El título es obligatorio.", "errDay": "Elige al menos un día.", "errEnd": "{d}: el fin debe ser posterior al inicio.", "errSch": "Elige al menos un horario.", "confSch": "¿Eliminar el horario \"{n}\"?", "confLost": " También se eliminarán {k} evento(s) que solo están en este horario.", "confPer": "¿Eliminar a \"{n}\"? Se quitará de todos los eventos.", "pSch": "¿Nombre del horario?", "pPer": "¿Nombre de la persona?", "badFile": "Ese archivo no es un archivo de guardado válido.", "agTitle": "{d} — agenda", "schShown": "Horarios mostrados:", "pplShown": "Personas mostradas:", "none2": "ninguno", "noPpl": "(sin personas definidas)", "nothing": "Nada programado.", "resp": "Responsable:", "withl": "Con:", "withb": "con", "schl": "Horarios:", "printTitle": "Horario semanal", "sched1": "Horario 1"}};
+const D={"en": {"appTitle": "Weekly Schedules", "showEarly": "Show 0:00–5:00", "hideEarly": "Hide 0:00–5:00", "nowOn": "Now line: on", "nowOff": "Now line: off", "solo": "solo", "soloTip": "Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.", "delSchTip": "Delete schedule", "eyeTip": "Show or hide", "opTip": "Opacity of this schedule's events. Lower it to fade the schedule so others stand out when overlaid (checkered box = transparency).", "delPerTip": "Delete person", "colorTip": "Click the icon to change the colour", "agendaTip": "Click for the day agenda", "none": "— none —", "noPeople": "Add people in the sidebar first.", "errTitle": "Title is required.", "errDay": "Pick at least one day.", "errEnd": "{d}: end must be after start.", "errSch": "Pick at least one schedule.", "confSch": "Delete schedule \"{n}\"?", "confLost": " {k} event(s) only in this schedule will also be deleted.", "confPer": "Delete \"{n}\"? They will be removed from all events.", "pSch": "Schedule name?", "pPer": "Person name?", "badFile": "That file is not a valid schedule save file.", "agTitle": "{d} — agenda", "schShown": "Schedules shown:", "pplShown": "People shown:", "none2": "none", "noPpl": "(no people defined)", "nothing": "Nothing scheduled.", "resp": "Responsible:", "withl": "With:", "withb": "with", "schl": "Schedules:", "printTitle": "Weekly schedule", "sched1": "Schedule 1"}, "es": {"appTitle": "Horarios semanales", "showEarly": "Mostrar 0:00–5:00", "hideEarly": "Ocultar 0:00–5:00", "nowOn": "Línea de ahora: sí", "nowOff": "Línea de ahora: no", "solo": "solo", "soloTip": "Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.", "delSchTip": "Eliminar horario", "eyeTip": "Mostrar u ocultar", "opTip": "Opacidad de los eventos de este horario. Bájala para atenuar el horario y que otros destaquen al superponerlos (cuadrícula = transparencia).", "delPerTip": "Eliminar persona", "colorTip": "Haz clic en el icono para cambiar el color", "agendaTip": "Clic para ver la agenda del día", "none": "— ninguna —", "noPeople": "Primero añade personas en la barra lateral.", "errTitle": "El título es obligatorio.", "errDay": "Elige al menos un día.", "errEnd": "{d}: el fin debe ser posterior al inicio.", "errSch": "Elige al menos un horario.", "confSch": "¿Eliminar el horario \"{n}\"?", "confLost": " También se eliminarán {k} evento(s) que solo están en este horario.", "confPer": "¿Eliminar a \"{n}\"? Se quitará de todos los eventos.", "pSch": "¿Nombre del horario?", "pPer": "¿Nombre de la persona?", "badFile": "Ese archivo no es un archivo de guardado válido.", "agTitle": "{d} — agenda", "schShown": "Horarios mostrados:", "pplShown": "Personas mostradas:", "none2": "ninguno", "noPpl": "(sin personas definidas)", "nothing": "Nada programado.", "resp": "Responsable:", "withl": "Con:", "withb": "con", "schl": "Horarios:", "printTitle": "Horario semanal", "sched1": "Horario 1"}};
 const ES=[["Weekly Schedules", "Horarios semanales"], ["+ Event", "+ Evento"], ["Print schedule", "Imprimir horario"], ["Save JSON", "Guardar JSON"], ["Load JSON", "Cargar JSON"], ["Reveal or hide the 00:00", "Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos."], ["Red line on the current weekday", "Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles."], ["Prints the grid as shown", "Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo."], ["Download everything", "Descarga todo (horarios, personas, eventos) como archivo JSON. No se guarda nada al cerrar la página, así que guarda con frecuencia."], ["Replace what you see now", "Sustituye lo que ves ahora por un archivo JSON guardado. Guarda antes si quieres conservar la vista actual."], ["Or simply drag on an empty part", "También puedes arrastrar sobre un hueco vacío de un día para crear un evento a esa hora."], ["e.g. Week A and Week B, to emulate", "p. ej. Semana A y Semana B, para emular una rotación de dos semanas."], ["People can be responsible for", "Las personas pueden ser responsables de eventos o estar implicadas en ellos."], ["Schedules (toggle to show)", "Horarios (activar para mostrar)"], ["Tip - emulating a two-week rota", "Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar este evento para crear la Semana B a partir de la A. Marca uno para verlo, o ambos para superponerlos; solo alterna entre ellos con un clic."], ["People (toggle to show)", "Personas (activar para mostrar)"], ["Untick a person to hide", "Desmarca a una persona para ocultar los eventos de los que es responsable o en los que está implicada. Un evento sigue visible si alguna de sus personas sigue marcada, y los eventos sin personas nunca se ocultan con esta lista."], ["+ Schedule", "+ Horario"], ["+ Person", "+ Persona"], ["Drag on a day to create an event.", "Arrastra sobre un día para crear un evento. Arrastra un evento para moverlo (a cualquier día); arrastra su borde inferior para cambiar la duración. Arrastrar mueve solo la repetición de ese día. Haz clic en un evento para editarlo, elegir los días de repetición y las horas de cada día (↻ marca los eventos repetidos). Las superposiciones se muestran como rayas diagonales con los colores mezclados."], ["Language", "Idioma"], ["Title *", "Título *"], ["Description", "Descripción"], ["Person responsible", "Persona responsable"], ["Persons involved", "Personas implicadas"], ["Start", "Inicio"], ["End", "Fin"], ["Colour", "Color"], ["Repeat on days — each day", "Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies"], ["Tick the days this event", "Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable."], ["Schedules * (at least one)", "Horarios * (al menos uno)"], ["Tick several to make the event", "Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos. En una rotación de dos semanas, marca Semana A y Semana B para los eventos semanales."], ["Copy this event (as an independent", "Copiar este evento (como evento independiente) a un horario"], ["Makes an independent copy", "Crea una copia independiente, útil para montar la Semana B a partir de la A. Para compartir UN evento entre horarios, marca varios horarios más abajo."], ["Copy", "Copiar"], ["Delete", "Eliminar"], ["Cancel", "Cancelar"], ["Save", "Guardar"], ["Deletes the event including", "Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda."], ["Close", "Cerrar"], ["Print agenda", "Imprimir agenda"]];
 const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
 function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
@@ -124,6 +129,12 @@ const ICON_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
 const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
+const ICON_OPAC='<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M3 3h6v6H3zM15 3h6v6h-6zM9 9h6v6H9zM3 15h6v6H3zM15 15h6v6h-6z"/></svg>';
+const ICON_EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+const ICON_EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" stroke-dasharray="3 3.2"/></svg>';
+function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
+let skipSide=false;
+const evOp=e=>Math.max(...e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
 const sTag=s=>`<span class="ic" style="color:${esc(s.color)}">${ICON_CAL}</span>${esc(s.name)}`;
 function iconPicker(parent,svg,color,onchange){
   const l=el('label','ic pick',parent);l.style.color=color;l.title=L('colorTip');l.innerHTML=svg;
@@ -191,25 +202,28 @@ window.onafterprint=()=>$('pr').replaceChildren();
 function init(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],visible:true}],events:[],people:[],showEarly:false};render()}
 
 function render(){
-  // sidebar
+  if(!skipSide){ // sidebar
   const sc=$('schs');sc.innerHTML='';
   S.schedules.forEach(s=>{
     const r=el('div','sch',sc);
-    const cb=el('input','',r);cb.type='checkbox';cb.checked=s.visible;cb.onchange=()=>{s.visible=cb.checked;render()};
+    eyeBtn(r,s.visible,()=>{s.visible=!s.visible;render()});
     iconPicker(r,ICON_CAL,s.color,v=>{s.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=s.name;n.onchange=()=>{s.name=n.value||s.name;render()};
     const so=el('button','x solo',r);so.textContent=L('solo');so.title=L('soloTip');
     so.onclick=()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()};
     const x=el('button','x',r);x.textContent='✕';x.title=L('delSchTip');x.onclick=()=>delSchedule(s);
+    const ow=el('div','opr',r),oi=el('span','ic',ow);oi.innerHTML=ICON_OPAC;oi.title=L('opTip');const sl=el('input','op',ow);sl.type='range';sl.min=.1;sl.max=1;sl.step=.05;sl.value=s.opacity??1;sl.title=L('opTip');
+    sl.oninput=()=>{s.opacity=+sl.value;skipSide=true;render();skipSide=false};
   });
   const pc=$('peeps');pc.innerHTML='';
   S.people.forEach(q=>{
     const r=el('div','sch',pc);
-    const cb=el('input','',r);cb.type='checkbox';cb.checked=q.visible;cb.onchange=()=>{q.visible=cb.checked;render()};
+    eyeBtn(r,q.visible,()=>{q.visible=!q.visible;render()});
     iconPicker(r,ICON_USER,q.color,v=>{q.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=q.name;n.onchange=()=>{q.name=n.value||q.name;render()};
     const x=el('button','x',r);x.textContent='✕';x.title=L('delPerTip');x.onclick=()=>delPerson(q);
   });
+  }
   $('early').textContent=L(S.showEarly?'hideEarly':'showEarly');
   // grid
   const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');
@@ -221,12 +235,12 @@ function render(){
   DAYS.forEach((_,di)=>{
     const col=el('div','day'+(di>4?' we':''),g);col.style.height=hrs*HH+'px';col.dataset.d=di;
     col.onpointerdown=ev=>{if(ev.target===col)startCreate(ev,di,col)};
-    const evs=S.events.filter(visible).flatMap(e=>e.slots.filter(s=>s.day===di&&s.end>a*60&&slotVisible(e,s)).map(s=>({e,s,start:s.start,end:s.end,color:e.color})));
+    const evs=S.events.filter(visible).flatMap(e=>e.slots.filter(s=>s.day===di&&s.end>a*60&&slotVisible(e,s)).map(s=>({e,s,start:s.start,end:s.end,color:e.color,op:evOp(e)})));
     evs.forEach(it=>{
       const e=it.e,s=it.s,d=el('div','ev',col);
       const top=(Math.max(s.start,a*60)-a*60)/60*HH;
       d.style.top=top+'px';d.style.height=Math.max(14,(s.end-Math.max(s.start,a*60))/60*HH-1)+'px';
-      d.style.background=e.color;
+      d.style.background=e.color;d.style.opacity=it.op;
       el('span','t',d).textContent=e.title+(e.slots.length>1?' ↻':'');
       const parts=[esc(fmt(s.start)+'–'+fmt(s.end))];
       if(s.person)parts.push(pTag(s.person));
@@ -247,7 +261,7 @@ function render(){
       o.style.top=(p-a*60)/60*HH+'px';o.style.height=(q-p)/60*HH-1+'px';
       let st=[],w=7;cov.forEach((e,k)=>st.push(`${e.color} ${k*w}px ${(k+1)*w}px`));
       o.style.background=`repeating-linear-gradient(45deg,${st.join(',')})`;
-      o.style.opacity='.85';
+      o.style.opacity=.85*Math.max(...cov.map(c=>c.op));
     }
   });
   drawNow();
@@ -395,7 +409,7 @@ $('file').onchange=async e=>{
       return {id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],
         schedules:(v.schedules||[]).map(String),involved:(v.involved||[]).map(String),
         slots:sl.map(x=>({day:Math.max(0,Math.min(6,+x.day||0)),start:+x.start,end:+x.end,person:x.person!=null?String(x.person):legacy}))}});
-    S={schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],visible:s.visible!==false})),
+    S={schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],opacity:s.opacity==null?1:Math.min(1,Math.max(.1,+s.opacity||1)),visible:s.visible!==false})),
        events,people,showEarly:!!j.showEarly};
     render();
   }catch(_){alert(L('badFile'))}

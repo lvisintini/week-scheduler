@@ -78,3 +78,8 @@ Deliberately NOT a built-in feature (judged too complex). Workaround: create two
 - People now have `color` in the save file; older files get colours assigned on load.
 
 18. **Copy to a schedule the event is already in:** the copy gets a new colour with the same hue but different lightness (`shiftColor`), skipping colours already used by events in that schedule. Copies into a schedule the event isn't in keep the original colour.
+
+19. **Eye icon visibility.** Schedules and people use an eye button (open eye = shown, dashed eye = hidden) instead of a checkbox.
+20. **Schedule opacity.** Each schedule has an opacity slider (`schedules[].opacity`, 0.1–1, default 1, saved in the JSON). An event is drawn at the highest opacity among its visible schedules; overlap stripes scale with the most opaque covered event. The slider calls `render()` with `skipSide=true` so the sidebar (and the slider being dragged) is not rebuilt.
+21. Sidebar widened to 290px; each schedule row wraps so the slider sits on its own line under the name.
+22. Opacity row: a checkered-box icon (tooltip explains it) plus the slider inside a `.opr` flex wrapper sized `calc(100% - 28px)` so it never overflows the sidebar; the slider flexes to fill the row width.
