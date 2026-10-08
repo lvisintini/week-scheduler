@@ -76,3 +76,5 @@ Deliberately NOT a built-in feature (judged too complex). Workaround: create two
 - **Static HTML text and `title` tooltips**: leave English in the HTML and add `['English prefix','Spanish text']` to the `ES` list (keys shorter than 12 chars must match exactly, longer ones match by prefix). `applyStatic()` swaps them and remembers the English original.
 - Day names come from `DAYN`; `DAYS` is mutated in place by `setLang()`.
 - People now have `color` in the save file; older files get colours assigned on load.
+
+18. **Copy to a schedule the event is already in:** the copy gets a new colour with the same hue but different lightness (`shiftColor`), skipping colours already used by events in that schedule. Copies into a schedule the event isn't in keep the original colour.
