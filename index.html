@@ -7,91 +7,116 @@
 :root{--we:#eef0fb;--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#6b7385;--line:#dfe3ea;--card:#fff;--acc:#3b6df0}
 @media(prefers-color-scheme:dark){:root{--we:#1a1d2c;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}}
 *{box-sizing:border-box}
-body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;display:flex;flex-direction:column}
-header{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
-header h1{font-size:16px;margin:0 auto 0 0}
+body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden}
+main{display:flex;height:100vh}
 button{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
-button:hover{border-color:var(--acc)}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}button.d{color:#d33}
-main{flex:1;display:flex;min-height:0}
-aside{width:290px;border-right:1px solid var(--line);padding:12px;overflow:auto;background:var(--card);flex-shrink:0}
-aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 8px}
-.sch{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.sch input[type=text]{flex:1;min-width:0;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 4px;border-radius:6px}
+button:hover:not(:disabled){border-color:var(--acc)}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}button.d{color:#d33}
+button:disabled{opacity:.4;cursor:default}
+/* sidebar */
+aside{position:relative;width:var(--sbw,290px);flex-shrink:0;border-right:1px solid var(--line);background:var(--card)}
+aside.collapsed{width:46px}
+#sbin{height:100%;overflow:auto;padding:12px;display:flex;flex-direction:column}
+#sbin>*{flex-shrink:0}
+.rs{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:40}.rs:hover{background:var(--acc);opacity:.35}
+aside.collapsed .rs,aside.collapsed .sbbody,aside.collapsed .lang,aside.collapsed .ttl,aside.collapsed .fav{display:none}
+aside.collapsed #sbin{padding:12px 8px}aside.collapsed .sbtop{justify-content:center;flex-direction:column}
+.sbtop{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.fav{width:22px;height:22px}.ttl{font-weight:700;font-size:15px;flex:1;min-width:0}
+aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}.bgrid .full{grid-column:1/-1}
+.bgrid button{font-size:12px;padding:6px;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bgrid svg{width:15px;height:15px;flex-shrink:0}
+.tip{cursor:help;color:var(--acc);text-transform:none}
+.sch{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.sch input[type=text]{flex:1 1 80px;min-width:0;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 4px;border-radius:6px}
 .sch input[type=text]:focus{border-color:var(--line)}
-.sch input[type=color]{width:24px;height:24px;padding:0;border:0;background:none}
 .sch .x{padding:0 6px;border:0;color:var(--mut)}
-.wrap{flex:1;overflow:auto;position:relative}
-.grid{display:grid;grid-template-columns:52px repeat(7,minmax(110px,1fr));min-width:850px}
-.dh{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:8px;text-align:center;font-weight:600}
-.sch .solo{font-size:11px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}.tip{cursor:help;color:var(--acc);text-transform:none}
-aside{display:flex;flex-direction:column}aside>*{flex-shrink:0}
-.lang{margin-top:auto;padding-top:16px}.lang label{margin:0 0 3px}
-.lang select{width:100%;font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-.ic{display:inline-flex;vertical-align:-3px;margin:0 4px 0 0}.ic svg{width:15px;height:15px}
-.pick{cursor:pointer;position:relative}.pick svg{width:19px;height:19px}.pick input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.sch .solo{font-size:11px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}
 .sch .ic{flex-shrink:0}
-.ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-4px}
-.sch{flex-wrap:wrap}.sch input[type=text]{flex:1 1 90px}
-.eye{border:0;background:none;padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg);flex-shrink:0}
-.eye svg{width:19px;height:19px}.eye.off{color:var(--mut)}
+.tbar{display:flex;gap:6px;margin-bottom:4px}.tbar button{flex:1;padding:7px 0;display:flex;justify-content:center;align-items:center}.tbar svg{width:17px;height:17px}
+.pbtn{width:100%;margin-bottom:8px;padding:8px}
+.sec{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.sech{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.shbtn{flex:1;display:flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.shbtn svg{width:14px;height:14px}.shbtn em{font-style:normal;font-weight:400;background:var(--bg);border-radius:10px;padding:0 7px}
+.sch{min-height:32px;margin-bottom:2px;flex-wrap:nowrap}.sch.off input[type=text]{color:var(--mut)}
+.omenu .oi svg{width:15px;height:15px;flex-shrink:0}.omenu .oi.d{color:#d33}.omenu .opw{color:var(--mut);cursor:default}.omenu .opw input{flex:1;min-width:0;accent-color:var(--acc)}
+aside.collapsed .help{display:none}
 .sch .opr{flex:0 0 calc(100% - 28px);min-width:0;margin:0 0 4px 28px;display:flex;align-items:center;gap:4px;color:var(--mut)}
 .sch .opr .ic{margin:0}.sch .op{flex:1;min-width:0;width:auto;margin:0;accent-color:var(--acc);height:14px}
-.dh.we{background:var(--weh)}.day.we{background-color:var(--we)}
-.dh.c{border-left:0}
-.times{position:relative}
-.times span{position:absolute;right:6px;transform:translateY(-50%);font-size:11px;color:var(--mut)}
+.eye{border:0;background:none;padding:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg);flex-shrink:0}
+.eye svg{width:19px;height:19px}.eye.off{color:var(--mut)}.eye.lk{color:#e8912d}
+.ic{display:inline-flex;vertical-align:-3px;margin:0 4px 0 0}.ic svg{width:15px;height:15px}
+.pick{cursor:pointer}.pick svg{width:19px;height:19px}
+.hint{color:var(--mut);font-size:12px;margin:14px 0 0}
+.lang{margin-top:auto;padding-top:16px}.lang label{margin:0 0 3px}
+.lang select{width:100%;font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+/* grid */
+.wrap{flex:1;overflow:auto;position:relative;min-width:0}
+.grid{display:grid}
+.dh{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:8px;text-align:center;font-weight:600}
+.dh.we{background:var(--weh)}.day.we{background-color:var(--we)}.dh.c{border-left:0}
+.dh:not(.c){cursor:pointer}.dh:not(.c):hover{text-decoration:underline}.dh .ic{color:var(--mut)}
+.times{position:relative}.times span{position:absolute;right:6px;transform:translateY(-50%);font-size:11px;color:var(--mut);white-space:nowrap}
 .day{position:relative;border-left:1px solid var(--line);user-select:none;touch-action:none;
 background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--hh) - 1px),var(--line) calc(var(--hh) - 1px) var(--hh))}
 .ev{position:absolute;left:3px;right:3px;border-radius:8px;padding:4px 7px;color:#fff;overflow:hidden;cursor:grab;font-size:12px;box-shadow:0 1px 3px #0003;border:1px solid #0002}
+.ev.locked{pointer-events:none;cursor:default}
 .ev .t{position:relative;z-index:3;font-weight:600;text-shadow:0 1px 2px #0008;display:block}
 .ev .m{position:relative;z-index:3;opacity:.95;text-shadow:0 1px 2px #0008;display:block;line-height:1.25}
 .ev .rz{position:absolute;left:0;right:0;bottom:0;height:7px;cursor:ns-resize;z-index:4}
+.ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-4px}
+.ev .flags{position:absolute;top:3px;right:4px;z-index:5;display:flex;gap:3px;color:#fff;pointer-events:none}
+.ev .flags svg{width:13px;height:13px;filter:drop-shadow(0 1px 1px #000a)}
 .ov{position:absolute;left:3px;right:3px;z-index:2;pointer-events:none;border-radius:4px}
 .ghost{position:absolute;left:3px;right:3px;background:var(--acc);opacity:.3;border-radius:8px;pointer-events:none}
+.now{position:absolute;left:0;right:0;height:0;border-top:2px solid #e5342d;z-index:6;pointer-events:none}
+.now::before{content:'';position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:#e5342d}
+/* dialogs & popups */
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);padding:18px;width:min(540px,95vw)}
-dialog::backdrop{background:#0006}
+dialog::backdrop{background:#0006}#xDlg{width:min(460px,95vw)}#xDlg h3{margin:0 0 10px}.note{color:var(--mut);font-size:12px}
 label{display:block;margin:8px 0 3px;font-size:12px;color:var(--mut)}
 dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .row{display:flex;gap:8px}.row>div{flex:1}
-.chk{display:flex;flex-wrap:wrap;gap:4px 12px}.chk label{display:flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}
-.btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}.btns .d{margin-right:auto}
-.dr{display:flex;gap:6px;align-items:center;margin:3px 0}.dr label{margin:0;width:50px;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}.dr select{flex:1;width:auto;min-width:0;font-size:12px;padding:5px 3px}.dr select:last-child{flex:1.7}.dr.off select{opacity:.4}
-.dh:not(.c){cursor:pointer}.dh:not(.c):hover{text-decoration:underline}
-.now{position:absolute;left:0;right:0;height:0;border-top:2px solid #e5342d;z-index:6;pointer-events:none}
-.now::before{content:'';position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:#e5342d}
+.chk{display:flex;flex-wrap:wrap;gap:4px 12px}.chk label,.radios label{display:flex;gap:5px;align-items:center;margin:2px 0;color:var(--fg);font-size:13px}
+.btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}.btns .d{margin-right:auto}
+.swatch{width:100%;height:32px;border-radius:8px;padding:0}
+.dr{display:flex;gap:6px;align-items:center;margin:3px 0}.dr label{margin:0;width:50px;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
+.dr select{flex:1;width:auto;min-width:0;font-size:12px;padding:5px 3px}.dr select:last-child{flex:1.7}.dr.off select{opacity:.4}
+.err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
+.cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
+.sws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:8px}.sw{height:20px;border-radius:5px;border:1px solid #0003;padding:0}
+.cpop input[type=range]{width:100%;margin:2px 0}.cpr{display:flex;gap:6px;align-items:center;margin:6px 0}
+.cpr .pv{width:34px;height:28px;border-radius:6px;border:1px solid var(--line);flex-shrink:0}
+.cpr input[type=text]{flex:1;min-width:0;font:inherit;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.cpop .btns{margin-top:6px}
+.omenu{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 8px 28px #0005;min-width:210px;max-width:300px}
+.omenu .oh{font-size:11px;color:var(--mut);padding:2px 6px 4px}
+.omenu .oi{display:flex;gap:8px;align-items:center;width:100%;border:0;text-align:left;padding:5px 6px}
+.oi i{width:12px;height:12px;border-radius:3px;flex-shrink:0}.oi small{color:var(--mut);margin-left:auto;white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10000}#toast.on{opacity:1}#toast.act{pointer-events:auto}#toast button{margin-left:10px;padding:2px 10px;font-size:12px;background:#fff;color:#222;border-radius:12px;border:0}
+.sopt{display:flex;gap:10px;align-items:flex-start;margin:10px 0;color:var(--fg);font-size:14px}.sopt input{margin-top:3px}.sopt small{display:block;color:var(--mut);font-size:12px;font-weight:400}
+.ssec h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+/* agenda & print */
 .agenda h1,#pr h1{font-size:18px;margin:0 0 6px}
 .pm{font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.5}
 .ai{display:flex;gap:12px;border-left:5px solid;padding:6px 10px;margin:8px 0;background:var(--bg);border-radius:6px;break-inside:avoid}
-.at{width:100px;flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums}
+.at{width:140px;flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums}
 .atl{font-weight:600;font-size:15px}.am{font-size:12px;color:var(--mut);margin-top:2px}.ad{margin-top:4px;white-space:pre-wrap}
 #agBody{max-height:60vh;overflow:auto;margin-bottom:6px}
 #pr{display:none}
 @media print{
  body>*:not(#pr){display:none!important}
- body{display:block;height:auto;background:#fff}
+ body{display:block;height:auto;overflow:visible;background:#fff}
  #pr{display:block;color:#111;background:#fff;--fg:#111;--mut:#555;--line:#cfd4dd;--card:#fff;--bg:#f4f5f7;--we:#eef0fb;--weh:#e0e5f7}
  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
- #pr .grid{width:880px;min-width:0;zoom:.78}
- #pr .dh{position:static;cursor:default}
+ #pr .grid{width:880px;min-width:0!important;zoom:.78}
+ #pr .dh{position:static;cursor:default}#pr .dh .ic{display:none}
 }
-.err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 </style><style id="pgStyle"></style></head><body>
-<header>
-<h1>Weekly Schedules</h1>
-<button id="early" title="Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.">Show 0:00–5:00</button>
-<button id="add" class="p" title="Or simply drag on an empty part of a day to create an event for that time.">+ Event</button>
-<button id="nowb" title="Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.">Now line: on</button>
-<button id="prt" title="Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.">Print schedule</button>
-<button id="save" title="Download everything (schedules, people, events) as a JSON file. Nothing is kept when you close the page, so save regularly.">Save JSON</button>
-<button id="load" title="Replace what you see now with a saved JSON file. Save first if you want to keep the current view.">Load JSON</button>
+<main><aside id="sb"><div class="rs" id="rs"></div><div id="sbin"></div></aside>
+<div class="wrap" id="wrap"><div class="grid" id="grid"></div></div></main>
 <input type="file" id="file" accept=".json,application/json" hidden>
-</header>
-<main>
-<aside><h2>Schedules (toggle to show) <span class="tip" title="Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy this event to start Week B from Week A. Tick one to view it, or both to overlay them; solo flips between them in one click.">ⓘ</span></h2><div id="schs"></div><button id="addsch" title="e.g. Week A and Week B, to emulate a two-week rota." style="width:100%;margin-top:6px">+ Schedule</button>
-<h2 style="margin-top:20px">People (toggle to show) <span class="tip" title="Untick a person to hide events they are responsible for or involved in. An event stays visible if any of its people is still ticked, and events with no people are never hidden by this list.">ⓘ</span></h2><div id="peeps"></div><button id="addp" title="People can be responsible for, or involved in, events." style="width:100%;margin-top:6px">+ Person</button>
-<p style="color:var(--mut);font-size:12px;margin-top:16px">Drag on a day to create an event. Drag an event to move it (any day); drag its bottom edge to resize. Dragging moves just that day's occurrence. Click an event to edit it, set repeat days and per-day times (↻ marks repeating events). Overlaps show as diagonal stripes of the mixed colours.</p><div class="lang"><label>Language</label><select id="lang"><option value="en">English</option><option value="es">Español</option></select></div></aside>
-<div class="wrap" id="wrap"><div class="grid" id="grid"></div></div>
-</main>
 <dialog id="dlg"><form method="dialog" id="f" onsubmit="return false">
 <label>Title *</label><input type="text" id="fT">
 <label>Description</label><textarea id="fD" rows="2"></textarea>
@@ -99,75 +124,259 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <label>Persons involved</label><div class="chk" id="fInv"></div>
 <div class="row"><div><label>Start</label><select id="fS"></select></div>
 <div><label>End</label><select id="fE"></select></div>
-<div style="flex:0 0 50px"><label>Colour</label><input type="color" id="fC" style="width:100%;height:32px;padding:0;border:0;background:none"></div></div>
+<div style="flex:0 0 56px"><label>Colour</label><button type="button" class="swatch" id="fC"></button></div></div>
 <label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div>
 <label title="Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules * (at least one)</label><div class="chk" id="fSch"></div>
-<div id="cpRow"><label title="Makes an independent copy, handy for building Week B from Week A. To share ONE event across schedules instead, tick several schedules below.">Copy this event (as an independent event) into a schedule</label><div class="row"><select id="cpSel" style="flex:1"></select><button type="button" id="cpBtn">Copy</button></div></div>
 <div class="err" id="err"></div>
-<div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Repeat on days and save.">Delete</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
+<div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Repeat on days and save.">Delete</button><button type="button" id="fCopy" title="Copy this event to another schedule, choosing the colour of the copy.">Copy…</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
 </form></dialog>
 <dialog id="agDlg"><div class="agenda" id="agBody"></div>
 <div class="btns"><button id="agClose">Close</button><button id="agPrint" class="p">Print agenda</button></div></dialog>
-<div id="pr"></div>
+<dialog id="xDlg"></dialog>
+<div id="pr"></div><div id="toast"></div>
 <script>
-const DAYN={"en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "es": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]};
+const DAYN={en:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],es:['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']};
 let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en';
 const DAYS=[...DAYN[lang]];
-const D={"en": {"appTitle": "Weekly Schedules", "showEarly": "Show 0:00–5:00", "hideEarly": "Hide 0:00–5:00", "nowOn": "Now line: on", "nowOff": "Now line: off", "solo": "solo", "soloTip": "Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.", "delSchTip": "Delete schedule", "eyeTip": "Show or hide", "opTip": "Opacity of this schedule's events. Lower it to fade the schedule so others stand out when overlaid (checkered box = transparency).", "delPerTip": "Delete person", "colorTip": "Click the icon to change the colour", "agendaTip": "Click for the day agenda", "none": "— none —", "noPeople": "Add people in the sidebar first.", "errTitle": "Title is required.", "errDay": "Pick at least one day.", "errEnd": "{d}: end must be after start.", "errSch": "Pick at least one schedule.", "confSch": "Delete schedule \"{n}\"?", "confLost": " {k} event(s) only in this schedule will also be deleted.", "confPer": "Delete \"{n}\"? They will be removed from all events.", "pSch": "Schedule name?", "pPer": "Person name?", "badFile": "That file is not a valid schedule save file.", "agTitle": "{d} — agenda", "schShown": "Schedules shown:", "pplShown": "People shown:", "none2": "none", "noPpl": "(no people defined)", "nothing": "Nothing scheduled.", "resp": "Responsible:", "withl": "With:", "withb": "with", "schl": "Schedules:", "printTitle": "Weekly schedule", "sched1": "Schedule 1"}, "es": {"appTitle": "Horarios semanales", "showEarly": "Mostrar 0:00–5:00", "hideEarly": "Ocultar 0:00–5:00", "nowOn": "Línea de ahora: sí", "nowOff": "Línea de ahora: no", "solo": "solo", "soloTip": "Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.", "delSchTip": "Eliminar horario", "eyeTip": "Mostrar u ocultar", "opTip": "Opacidad de los eventos de este horario. Bájala para atenuar el horario y que otros destaquen al superponerlos (cuadrícula = transparencia).", "delPerTip": "Eliminar persona", "colorTip": "Haz clic en el icono para cambiar el color", "agendaTip": "Clic para ver la agenda del día", "none": "— ninguna —", "noPeople": "Primero añade personas en la barra lateral.", "errTitle": "El título es obligatorio.", "errDay": "Elige al menos un día.", "errEnd": "{d}: el fin debe ser posterior al inicio.", "errSch": "Elige al menos un horario.", "confSch": "¿Eliminar el horario \"{n}\"?", "confLost": " También se eliminarán {k} evento(s) que solo están en este horario.", "confPer": "¿Eliminar a \"{n}\"? Se quitará de todos los eventos.", "pSch": "¿Nombre del horario?", "pPer": "¿Nombre de la persona?", "badFile": "Ese archivo no es un archivo de guardado válido.", "agTitle": "{d} — agenda", "schShown": "Horarios mostrados:", "pplShown": "Personas mostradas:", "none2": "ninguno", "noPpl": "(sin personas definidas)", "nothing": "Nada programado.", "resp": "Responsable:", "withl": "Con:", "withb": "con", "schl": "Horarios:", "printTitle": "Horario semanal", "sched1": "Horario 1"}};
-const ES=[["Weekly Schedules", "Horarios semanales"], ["+ Event", "+ Evento"], ["Print schedule", "Imprimir horario"], ["Save JSON", "Guardar JSON"], ["Load JSON", "Cargar JSON"], ["Reveal or hide the 00:00", "Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos."], ["Red line on the current weekday", "Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles."], ["Prints the grid as shown", "Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo."], ["Download everything", "Descarga todo (horarios, personas, eventos) como archivo JSON. No se guarda nada al cerrar la página, así que guarda con frecuencia."], ["Replace what you see now", "Sustituye lo que ves ahora por un archivo JSON guardado. Guarda antes si quieres conservar la vista actual."], ["Or simply drag on an empty part", "También puedes arrastrar sobre un hueco vacío de un día para crear un evento a esa hora."], ["e.g. Week A and Week B, to emulate", "p. ej. Semana A y Semana B, para emular una rotación de dos semanas."], ["People can be responsible for", "Las personas pueden ser responsables de eventos o estar implicadas en ellos."], ["Schedules (toggle to show)", "Horarios (activar para mostrar)"], ["Tip - emulating a two-week rota", "Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar este evento para crear la Semana B a partir de la A. Marca uno para verlo, o ambos para superponerlos; solo alterna entre ellos con un clic."], ["People (toggle to show)", "Personas (activar para mostrar)"], ["Untick a person to hide", "Desmarca a una persona para ocultar los eventos de los que es responsable o en los que está implicada. Un evento sigue visible si alguna de sus personas sigue marcada, y los eventos sin personas nunca se ocultan con esta lista."], ["+ Schedule", "+ Horario"], ["+ Person", "+ Persona"], ["Drag on a day to create an event.", "Arrastra sobre un día para crear un evento. Arrastra un evento para moverlo (a cualquier día); arrastra su borde inferior para cambiar la duración. Arrastrar mueve solo la repetición de ese día. Haz clic en un evento para editarlo, elegir los días de repetición y las horas de cada día (↻ marca los eventos repetidos). Las superposiciones se muestran como rayas diagonales con los colores mezclados."], ["Language", "Idioma"], ["Title *", "Título *"], ["Description", "Descripción"], ["Person responsible", "Persona responsable"], ["Persons involved", "Personas implicadas"], ["Start", "Inicio"], ["End", "Fin"], ["Colour", "Color"], ["Repeat on days — each day", "Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies"], ["Tick the days this event", "Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable."], ["Schedules * (at least one)", "Horarios * (al menos uno)"], ["Tick several to make the event", "Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos. En una rotación de dos semanas, marca Semana A y Semana B para los eventos semanales."], ["Copy this event (as an independent", "Copiar este evento (como evento independiente) a un horario"], ["Makes an independent copy", "Crea una copia independiente, útil para montar la Semana B a partir de la A. Para compartir UN evento entre horarios, marca varios horarios más abajo."], ["Copy", "Copiar"], ["Delete", "Eliminar"], ["Cancel", "Cancelar"], ["Save", "Guardar"], ["Deletes the event including", "Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda."], ["Close", "Cerrar"], ["Print agenda", "Imprimir agenda"]];
+const D={en:{
+appTitle:'Weekly Schedules',collapseTip:'Collapse sidebar',expandTip:'Expand sidebar',
+undo:'Undo',redo:'Redo',undoTip:'Undo the last change (Ctrl+Z)',redoTip:'Redo (Ctrl+Y)',
+addEv:'+ Event',addEvTip:'Or simply drag on an empty part of a day to create an event for that time.',
+save:'Save…',saveTip:'Save to browser memory or download a JSON file. Nothing is kept unless you save.',
+load:'Load…',loadTip:'Replace the current view with data from browser memory or a JSON file (you can undo this).',
+restart:'Restart',restartTip:'Discard all unsaved changes and reload what is in browser memory.',
+clear:'Clear memory',clearTip:'Delete the data saved in this browser (the current view is not changed).',
+viewH:'View',earlyTip:'Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.',
+nowTip:'Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.',
+clockTip:'Switch between the 24-hour clock and AM/PM.',
+weTip:'Hide or show the Saturday and Sunday columns.',
+print:'Print schedule',printTip:'Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.',
+schH:'Schedules',schHTip:'Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy to start Week B from Week A. Use the eye to show one or both; solo flips between them in one click.',
+pplH:'People',pplTip:'Use the eye to hide events people are responsible for or involved in. An event stays visible if any of its people is still shown, and events with no people are never hidden by this list.',
+addSch:'+ Schedule',addSchTip:'e.g. Week A and Week B, to emulate a two-week rota.',addPer:'+ Person',addPerTip:'People can be responsible for, or involved in, events.',
+lockTip:"Lock this schedule: its events can't be selected, moved or edited. Click again to unlock.",
+solo:'solo',soloTip:'Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.',
+delSchTip:'Delete schedule',delPerTip:'Delete person',eyeTip:'Show or hide',opTip:"Opacity of this schedule's events. Lower it to fade the schedule so others stand out when overlaid (checkered box = transparency).",
+colorTip:'Click the icon to change the colour',agendaTip:'Click for the day agenda',
+
+lang:'Language',none:'— none —',noPeople:'Add people in the sidebar first.',
+errTitle:'Title is required.',errDay:'Pick at least one day.',errEnd:'{d}: end must be after start.',errSch:'Pick at least one schedule.',
+confSch:'Delete schedule "{n}"?',confLost:' {k} event(s) only in this schedule will also be deleted.',confPer:'Delete "{n}"? They will be removed from all events.',
+pSch:'Schedule name?',pPer:'Person name?',badFile:'That file is not a valid schedule save file.',
+confRestart:'Discard all unsaved changes and reload from browser memory?',confClear:'Clear the data saved in this browser? The current view is not changed.',
+savedMem:'Saved to browser memory',savedFile:'Saved to JSON file',loadedMem:'Loaded from browser memory',loadedFile:'Loaded from file',clearedMem:'Browser memory cleared',noMem:'Nothing is saved in browser memory yet.',memFail:'Browser memory is not available.',copied:'Event copied',restarted:'Restarted',
+saveTitle:'Save',loadTitle:'Load',toMem:'Browser memory',toFile:'JSON file',cancel:'Cancel',saveBody:'Where do you want to save?',loadBody:'Where do you want to load from?',
+
+cpTitle:'Copy event',cpDest:'Destination schedule',cpColor:'Colour of the copy',cpSame:'Same colour',cpHue:'Same hue, brighter or darker',cpRandom:'Random colour',cpPick:'Choose a colour:',cpDo:'Copy',
+settings:'Settings',setEarly:'Show early hours (00:00–05:00)',setNow:'Show the "now" line',setClock:'Use AM/PM clock',setWE:'Hide Saturday and Sunday',closeB:'Close',rpApplied:'Applied to all {n} repetitions',rpOnly:'Only this day',repTip:'Repeats on {n} days. Dragging changes all repetitions; hold Shift to change only this day.',moreTip:'More actions',mColor:'Colour…',mLock:'Lock',mUnlock:'Unlock',mSolo:'Show only this one',mDelete:'Delete',dataH:'Data',helpTip:'Help',helpTitle:'How to use',
+help1:'Drag on an empty part of a day to create an event.',help2:'Drag an event to move it, or its bottom edge to resize it. Click it to edit.',help3:'Repeating events change together. Hold Shift while dragging to change only one day.',help4:'If several events overlap where you click, pick one from the list.',help5:'Click a day name to see (and print) its agenda.',help6:'Overlaps show as diagonal stripes of the mixed colours.',help7:'Ctrl+Z and Ctrl+Y undo and redo.',help8:'Two-week rota: make schedules called Week A and Week B, put weekly events in both, and flip between them with the eye or "Show only this one".',
+pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
+agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
+resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Schedule 1'},
+es:{
+appTitle:'Horarios semanales',collapseTip:'Contraer barra lateral',expandTip:'Expandir barra lateral',
+undo:'Deshacer',redo:'Rehacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
+addEv:'+ Evento',addEvTip:'También puedes arrastrar sobre un hueco vacío de un día para crear un evento a esa hora.',
+save:'Guardar…',saveTip:'Guarda en la memoria del navegador o descarga un archivo JSON. No se conserva nada si no guardas.',
+load:'Cargar…',loadTip:'Sustituye la vista actual por datos de la memoria del navegador o de un archivo JSON (se puede deshacer).',
+restart:'Reiniciar',restartTip:'Descarta todos los cambios sin guardar y recarga lo que hay en la memoria del navegador.',
+clear:'Borrar memoria',clearTip:'Elimina los datos guardados en este navegador (la vista actual no cambia).',
+viewH:'Vista',earlyTip:'Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos.',
+nowTip:'Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles.',
+clockTip:'Cambia entre el reloj de 24 horas y AM/PM.',
+weTip:'Oculta o muestra las columnas de sábado y domingo.',
+print:'Imprimir horario',printTip:'Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo.',
+schH:'Horarios',schHTip:'Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar para crear la Semana B a partir de la A. Usa el ojo para mostrar uno o ambos; solo alterna entre ellos con un clic.',
+pplH:'Personas',pplTip:'Usa el ojo para ocultar los eventos de los que una persona es responsable o en los que está implicada. Un evento sigue visible si alguna de sus personas sigue visible, y los eventos sin personas nunca se ocultan con esta lista.',
+addSch:'+ Horario',addSchTip:'p. ej. Semana A y Semana B, para emular una rotación de dos semanas.',addPer:'+ Persona',addPerTip:'Las personas pueden ser responsables de eventos o estar implicadas en ellos.',
+lockTip:'Bloquear este horario: sus eventos no se pueden seleccionar, mover ni editar. Haz clic otra vez para desbloquear.',
+solo:'solo',soloTip:'Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.',
+delSchTip:'Eliminar horario',delPerTip:'Eliminar persona',eyeTip:'Mostrar u ocultar',opTip:'Opacidad de los eventos de este horario. Bájala para atenuar el horario y que otros destaquen al superponerlos (cuadrícula = transparencia).',
+colorTip:'Haz clic en el icono para cambiar el color',agendaTip:'Clic para ver la agenda del día',
+
+lang:'Idioma',none:'— ninguna —',noPeople:'Primero añade personas en la barra lateral.',
+errTitle:'El título es obligatorio.',errDay:'Elige al menos un día.',errEnd:'{d}: el fin debe ser posterior al inicio.',errSch:'Elige al menos un horario.',
+confSch:'¿Eliminar el horario "{n}"?',confLost:' También se eliminarán {k} evento(s) que solo están en este horario.',confPer:'¿Eliminar a "{n}"? Se quitará de todos los eventos.',
+pSch:'¿Nombre del horario?',pPer:'¿Nombre de la persona?',badFile:'Ese archivo no es un archivo de guardado válido.',
+confRestart:'¿Descartar todos los cambios sin guardar y recargar desde la memoria del navegador?',confClear:'¿Borrar los datos guardados en este navegador? La vista actual no cambia.',
+savedMem:'Guardado en la memoria del navegador',savedFile:'Guardado en archivo JSON',loadedMem:'Cargado desde la memoria del navegador',loadedFile:'Cargado desde archivo',clearedMem:'Memoria del navegador borrada',noMem:'Aún no hay nada guardado en la memoria del navegador.',memFail:'La memoria del navegador no está disponible.',copied:'Evento copiado',restarted:'Reiniciado',
+saveTitle:'Guardar',loadTitle:'Cargar',toMem:'Memoria del navegador',toFile:'Archivo JSON',cancel:'Cancelar',saveBody:'¿Dónde quieres guardar?',loadBody:'¿Desde dónde quieres cargar?',
+
+cpTitle:'Copiar evento',cpDest:'Horario de destino',cpColor:'Color de la copia',cpSame:'Mismo color',cpHue:'Mismo tono, más claro u oscuro',cpRandom:'Color aleatorio',cpPick:'Elegir un color:',cpDo:'Copiar',
+settings:'Ajustes',setEarly:'Mostrar horas tempranas (00:00–05:00)',setNow:'Mostrar la línea de "ahora"',setClock:'Usar reloj AM/PM',setWE:'Ocultar sábado y domingo',closeB:'Cerrar',rpApplied:'Aplicado a las {n} repeticiones',rpOnly:'Solo este día',repTip:'Se repite en {n} días. Al arrastrar cambian todas las repeticiones; mantén Mayús para cambiar solo este día.',moreTip:'Más acciones',mColor:'Color…',mLock:'Bloquear',mUnlock:'Desbloquear',mSolo:'Mostrar solo este',mDelete:'Eliminar',dataH:'Datos',helpTip:'Ayuda',helpTitle:'Cómo se usa',
+help1:'Arrastra sobre un hueco vacío de un día para crear un evento.',help2:'Arrastra un evento para moverlo, o su borde inferior para cambiar la duración. Haz clic para editarlo.',help3:'Los eventos repetidos cambian juntos. Mantén Mayús al arrastrar para cambiar solo un día.',help4:'Si varios eventos se superponen donde haces clic, elige uno de la lista.',help5:'Haz clic en el nombre de un día para ver (e imprimir) su agenda.',help6:'Las superposiciones se muestran como rayas diagonales con los colores mezclados.',help7:'Ctrl+Z y Ctrl+Y deshacen y rehacen.',help8:'Rotación de dos semanas: crea horarios llamados Semana A y Semana B, pon los eventos semanales en ambos y alterna con el ojo o con "Mostrar solo este".',
+pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
+agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
+resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Horario 1'}};
+const ES=[
+['Title *','Título *'],['Description','Descripción'],['Person responsible','Persona responsable'],['Persons involved','Personas implicadas'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
+['Repeat on days — each day','Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies'],
+['Tick the days this event','Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable.'],
+['Schedules * (at least one)','Horarios * (al menos uno)'],
+['Tick several to make the event','Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos. En una rotación de dos semanas, marca Semana A y Semana B para los eventos semanales.'],
+['Copy…','Copiar…'],['Copy this event to another','Copia este evento a otro horario eligiendo el color de la copia.'],
+['Delete','Eliminar'],['Cancel','Cancelar'],['Save','Guardar'],
+['Deletes the event including','Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda.'],
+['Close','Cerrar'],['Print agenda','Imprimir agenda']];
 const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
 function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
 function applyStatic(){
-  document.querySelectorAll('header,aside,dialog').forEach(root=>{
+  document.querySelectorAll('dialog').forEach(root=>{
     const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),ns=[];let n;while(n=w.nextNode())ns.push(n);
     ns.forEach(n=>{if(n.__en===undefined){if(!n.nodeValue.trim())return;n.__en=n.nodeValue}n.nodeValue=tr(n.__en)});
     root.querySelectorAll('[title]').forEach(e=>{if(e.__t===undefined)e.__t=e.title;e.title=tr(e.__t)});
   });
 }
-const ICON_USER='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8z"/></svg>';
-const ICON_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
-const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
-const ICON_OPAC='<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M3 3h6v6H3zM15 3h6v6h-6zM9 9h6v6H9zM3 15h6v6H3zM15 15h6v6h-6z"/></svg>';
-const ICON_EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
-const ICON_EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" stroke-dasharray="3 3.2"/></svg>';
-function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
-let skipSide=false;
-const evOp=e=>Math.max(...e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
-const sTag=s=>`<span class="ic" style="color:${esc(s.color)}">${ICON_CAL}</span>${esc(s.name)}`;
-function iconPicker(parent,svg,color,onchange){
-  const l=el('label','ic pick',parent);l.style.color=color;l.title=L('colorTip');l.innerHTML=svg;
-  const i=el('input','',l);i.type='color';i.value=color;i.onchange=()=>onchange(i.value);
-}
-function shiftColor(hex,used){
-  const n=parseInt(hex.slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0,l=(mx+mn)/2,s=d?d/(1-Math.abs(2*l-1)):0;
-  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}
-  const toHex=L2=>{const c=(1-Math.abs(2*L2-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=L2-c/2;
-    const [R,G,B]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
-    return '#'+[R,G,B].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('')};
-  const first=l>=.5?[-.18,.18,-.3,.3]:[.18,-.18,.3,-.3];
-  const cands=first.map(dl=>toHex(Math.min(.78,Math.max(.22,l+dl))));
-  return cands.find(c=>c!==hex.toLowerCase()&&!used.includes(c))||cands.find(c=>c!==hex.toLowerCase())||hex;
-}
-function setLang(l){
-  lang=l;DAYS.splice(0,7,...DAYN[l]);document.documentElement.lang=l;document.title=L('appTitle');
-  rows.forEach((o,i)=>o.lt.nodeValue=DAYS[i].slice(0,3));
-  render();applyStatic();$('nowb').textContent=L(nowOn?'nowOn':'nowOff');
-}
-const HH=48, SNAP=15, PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
-let S={schedules:[],events:[],people:[],showEarly:false};
+/* ---------- basics & icons ---------- */
+const HH=48,SNAP=15,PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
+const SWATCHES=[...PAL,'#6b7385','#1d2330','#f5c518','#7bc043','#ff7f50','#a0522d','#00897b','#5c6bc0','#ec407a'];
 const uid=()=>Math.random().toString(36).slice(2,10);
 const $=id=>document.getElementById(id);
 const el=(t,c,p)=>{const e=document.createElement(t);if(c)e.className=c;if(p)p.append(e);return e};
-const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const I=p=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
+const ICON_USER='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8z"/></svg>';
+const ICON_CAL=I('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
+const ICON_OPAC=I('<rect x="3" y="3" width="18" height="18" rx="2"/><path fill="currentColor" stroke="none" d="M3 3h6v6H3zM15 3h6v6h-6zM9 9h6v6H9zM3 15h6v6H3zM15 15h6v6h-6z"/>');
+const EYEP='<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"';
+const ICON_EYE=I(EYEP+'/><circle cx="12" cy="12" r="3" fill="currentColor"/>');
+const ICON_EYE_OFF=I(EYEP+' stroke-dasharray="3 3.2"/>');
+const ICON_UNDO=I('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>');
+const ICON_REDO=I('<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>');
+const ICON_CL=I('<path d="M15 5l-7 7 7 7"/>'),ICON_CR=I('<path d="M9 5l7 7-7 7"/>');
+const ICON_AGENDA=I('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>');
+const ICON_REPEAT=I('<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>');
+const ICON_LOCK=I('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>');
+const ICON_UNLOCK=I('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>');
+const ICON_GEAR=I('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>');
+const ICON_PLUS=I('<path d="M12 5v14M5 12h14"/>'),ICON_CD=I('<path d="M5 9l7 7 7-7"/>'),ICON_MORE=I('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>');
+const ICON_SAVE=I('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>');
+const ICON_FOLDER=I('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>');
+const ICON_PRINT=I('<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>');
+const ICON_HELP=I('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>');
+const FAV=document.querySelector('link[rel=icon]').href;
+const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
+const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
+const sTag=s=>`<span class="ic" style="color:${esc(s.color)}">${ICON_CAL}</span>${esc(s.name)}`;
+/* ---------- colour utilities ---------- */
+function normHex(h){h=String(h).trim().replace(/^#/,'');if(/^[0-9a-f]{3}$/i.test(h))h=h.replace(/./g,'$&$&');return /^[0-9a-f]{6}$/i.test(h)?'#'+h.toLowerCase():null}
+function hexToHsl(hex){
+  const n=parseInt(normHex(hex).slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;const l=(mx+mn)/2,s=d?d/(1-Math.abs(2*l-1)):0;
+  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}
+  return [h,s,l];
+}
+function hslToHex(h,s,l){
+  const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;
+  const [R,G,B]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  return '#'+[R,G,B].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+}
+function shiftColor(hex,used){
+  const [h,s,l]=hexToHsl(hex),me=normHex(hex);
+  const first=l>=.5?[-.18,.18,-.3,.3]:[.18,-.18,.3,-.3];
+  const cands=first.map(dl=>hslToHex(h,s,Math.min(.78,Math.max(.22,l+dl))));
+  return cands.find(c=>c!==me&&!used.includes(c))||cands.find(c=>c!==me)||hex;
+}
+function randomColor(used){let c;for(let i=0;i<30;i++){c=hslToHex(Math.random()*360,.55+Math.random()*.25,.42+Math.random()*.12);if(!used.includes(c))break}return c}
+/* colour popover with Apply / Cancel */
+function pickColor(anchor,init,cb){
+  document.querySelectorAll('.cpop').forEach(x=>x.remove());
+  const pop=el('div','cpop',anchor.closest('dialog')||document.body);
+  let [h,s,l]=hexToHsl(normHex(init)||'#3b6df0');
+  const sw=el('div','sws',pop);
+  SWATCHES.forEach(c=>{const b=el('button','sw',sw);b.type='button';b.style.background=c;b.onclick=()=>{[h,s,l]=hexToHsl(c);sync()}});
+  const mk=(min,max,step,fn)=>{const r=el('input','',pop);r.type='range';r.min=min;r.max=max;r.step=step;r.oninput=()=>{fn(+r.value);sync(r)};return r};
+  const hs=mk(0,359,1,v=>h=v),ss=mk(0,100,1,v=>s=v/100),ls=mk(8,92,1,v=>l=v/100);
+  const row=el('div','cpr',pop),pv=el('div','pv',row),hx=el('input','',row);hx.type='text';hx.maxLength=7;
+  const cur=()=>hslToHex(h,s,l);
+  function sync(src){const c=cur();pv.style.background=c;if(src!==hx)hx.value=c;if(src!==hs)hs.value=h;if(src!==ss)ss.value=s*100;if(src!==ls)ls.value=l*100}
+  const close=()=>{pop.remove();document.removeEventListener('pointerdown',outside,true)};
+  const apply=()=>{const c=cur();close();cb(c)};
+  const outside=e=>{if(!pop.contains(e.target))close()};
+  hx.oninput=()=>{const n=normHex(hx.value);if(n){[h,s,l]=hexToHsl(n);sync(hx)}};
+  hx.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply()}};
+  pop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}};
+  const bt=el('div','btns',pop);
+  const c1=el('button','',bt);c1.type='button';c1.textContent=L('pcCancel');c1.onclick=close;
+  const c2=el('button','p',bt);c2.type='button';c2.textContent=L('pcApply');c2.onclick=apply;
+  sync();
+  const r=anchor.getBoundingClientRect();
+  pop.style.left=Math.max(6,Math.min(r.left,innerWidth-250))+'px';
+  pop.style.top=Math.max(6,Math.min(r.bottom+6,innerHeight-pop.offsetHeight-6))+'px';
+  setTimeout(()=>document.addEventListener('pointerdown',outside,true));
+  hx.focus();
+}
+function iconPicker(parent,svg,color,onchange){
+  const l=el('span','ic pick',parent);l.style.color=color;l.title=L('colorTip');l.innerHTML=svg;
+  l.onclick=()=>pickColor(l,color,onchange);
+  return l;
+}
+/* ---------- state, history, persistence ---------- */
+const KEY='weekly-schedules-data',PKEY='weekly-schedules-prefs';
+let S={schedules:[],events:[],people:[],showEarly:false,clock12:false,hideWeekend:false};
+const VIEW=['showEarly','clock12','hideWeekend'];
+let lastBrowser=null,lastFile=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
+const dataKey=()=>JSON.stringify({schedules:S.schedules,people:S.people,events:S.events});
+const isDirty=()=>{const k=dataKey();return k!==lastBrowser&&k!==lastFile};
+function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!undoSt.length;if(r)r.disabled=!redoSt.length}
+function pushUndo(str){undoSt.push(str);if(undoSt.length>100)undoSt.shift();redoSt=[];updUR()}
+const hist=()=>pushUndo(JSON.stringify(S));
+function restoreState(str){const v={};VIEW.forEach(k=>v[k]=S[k]);S=JSON.parse(str);Object.assign(S,v)}
+function undo(){if(!undoSt.length)return;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
+function redo(){if(!redoSt.length)return;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
+function parseData(j){
+  if(!j||!Array.isArray(j.schedules)||!Array.isArray(j.events))throw new Error('bad');
+  const people=(Array.isArray(j.people)?j.people:[]).map((q,i)=>({id:String(q.id),name:String(q.name),color:q.color||PAL[i%PAL.length],visible:q.visible!==false}));
+  const pid=n=>{n=String(n||'').trim();if(!n)return '';let q=people.find(x=>x.name===n);if(!q){q={id:uid(),name:n,color:PAL[people.length%PAL.length],visible:true};people.push(q)}return q.id};
+  const events=j.events.map(v=>{
+    const legacy=typeof v.person==='string'?pid(v.person):'';
+    const sl=Array.isArray(v.slots)?v.slots:[{day:v.day,start:v.start,end:v.end}];
+    return {id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],
+      schedules:(v.schedules||[]).map(String),involved:(v.involved||[]).map(String),
+      slots:sl.map(x=>({day:Math.max(0,Math.min(6,+x.day||0)),start:+x.start,end:+x.end,person:x.person!=null?String(x.person):legacy}))}});
+  return {schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],opacity:s.opacity==null?1:Math.min(1,Math.max(.1,+s.opacity||1)),locked:!!s.locked,visible:s.visible!==false})),
+    events,people,showEarly:!!j.showEarly,clock12:!!j.clock12,hideWeekend:!!j.hideWeekend};
+}
+const payload=()=>({version:4,...S});
+function initDefault(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],showEarly:false,clock12:false,hideWeekend:false};lastFile=dataKey()}
+const memGet=()=>{try{return localStorage.getItem(KEY)}catch(e){return null}};
+function saveMem(){try{localStorage.setItem(KEY,JSON.stringify(payload()));lastBrowser=dataKey();toast(L('savedMem'));renderSide()}catch(e){toast(L('memFail'))}}
+function saveFile(){
+  const b=new Blob([JSON.stringify(payload(),null,2)],{type:'application/json'});
+  const a=el('a');a.href=URL.createObjectURL(b);a.download='weekly-schedules.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  lastFile=dataKey();toast(L('savedFile'));renderSide();
+}
+function loadMem(){
+  const s=memGet();if(!s){toast(L('noMem'));return}
+  try{const n=parseData(JSON.parse(s));hist();S=n;lastBrowser=dataKey();render();toast(L('loadedMem'))}catch(e){alert(L('badFile'))}
+}
+function restart(){
+  if(isDirty()&&!confirm(L('confRestart')))return;
+  undoSt=[];redoSt=[];const s=memGet();
+  try{if(!s)throw 0;S=parseData(JSON.parse(s));lastBrowser=dataKey()}catch(e){initDefault()}
+  render();toast(L('restarted'));
+}
+function clearMem(){if(!confirm(L('confClear')))return;try{localStorage.removeItem(KEY)}catch(e){}lastBrowser=null;toast(L('clearedMem'));renderSide()}
+window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
+let prefs={w:290,collapsed:false};
+try{Object.assign(prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(prefs))}catch(e){}};
+function applyPrefs(){$('sb').style.setProperty('--sbw',prefs.w+'px');$('sb').classList.toggle('collapsed',!!prefs.collapsed)}
+function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
+  (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
+  t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),acts?7000:2200)}
+/* ---------- helpers ---------- */
+const pad=n=>String(n).padStart(2,'0');
+const fmt=m=>{m=Math.round(m);if(!S.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60)%24;return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
+const hourLabel=h=>S.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
 const vs=()=>S.showEarly?0:5;
 const pvis=id=>{const p=S.people.find(x=>x.id===id);return !!p&&p.visible};
 const pname=id=>(S.people.find(p=>p.id===id)||{}).name||'';
 const slotVisible=(e,s)=>{const ids=[...new Set([s.person,...e.involved].filter(Boolean))];return !ids.length||ids.some(pvis)};
 const visible=e=>e.schedules.some(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.visible});
-let nowOn=true;
+const isLocked=e=>e.schedules.some(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.locked});
+const evOp=e=>Math.max(...e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
+const itemsAt=(di,m)=>S.events.filter(e=>visible(e)&&!isLocked(e)).flatMap(e=>e.slots.filter(s=>s.day===di&&slotVisible(e,s)&&s.start<=m&&m<s.end).map(s=>({e,s})));
 function drawNow(){
   document.querySelectorAll('.now').forEach(n=>n.remove());if(!nowOn)return;
   const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
@@ -175,6 +384,42 @@ function drawNow(){
   const n=el('div','now',col);n.style.top=(m-a)/60*HH+'px';n.title=fmt(m);
 }
 setInterval(drawNow,30000);
+/* generic dialog */
+function xdlg(o){
+  const d=$('xDlg');d.innerHTML='';let done=false;
+  el('h3','',d).textContent=o.title;
+  if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
+  const bt=el('div','btns',d);
+  o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
+    x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;done=true;d.close()}});
+  d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};
+  if(!d.open)d.showModal();
+}
+function openSettings(){
+  const body=el('div','settings');
+  const sec=k=>{const s=el('div','ssec',body);el('h4','',s).textContent=L(k);return s};
+  const opt=(p,label,desc,get,set)=>{const l=el('label','sopt',p),i=el('input','',l);i.type='checkbox';i.checked=get();
+    const s=el('span','',l);s.innerHTML=`<b>${esc(L(label))}</b><small>${esc(L(desc))}</small>`;i.onchange=()=>{set(i.checked);render()}};
+  const v=sec('viewH');
+  opt(v,'setEarly','earlyTip',()=>S.showEarly,x=>{S.showEarly=x;if(!x)$('wrap').scrollTop=0});
+  opt(v,'setNow','nowTip',()=>nowOn,x=>{nowOn=x});
+  opt(v,'setClock','clockTip',()=>S.clock12,x=>{S.clock12=x});
+  opt(v,'setWE','weTip',()=>S.hideWeekend,x=>{S.hideWeekend=x});
+  const dt=sec('dataH');
+  [['restart','restartTip',restart,''],['clear','clearTip',clearMem,'d']].forEach(([lb,tp,fn,cls])=>{
+    const r=el('div','sopt',dt),b=el('button',cls,r);b.textContent=L(lb);b.style.cssText='flex:0 0 140px';b.onclick=()=>{$('xDlg').close();fn()};
+    el('small','',r).textContent=L(tp)});
+  const lg=sec('lang'),ls=el('select','',lg);
+  [['en','English'],['es','Español']].forEach(([c,n])=>{const o=el('option','',ls);o.value=c;o.textContent=n});
+  ls.value=lang;ls.onchange=()=>{setLang(ls.value);openSettings()};
+  xdlg({title:L('settings'),body,buttons:[{label:L('closeB'),cls:'p'}]});
+}
+function openHelp(){
+  const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
+  for(let i=1;i<=8;i++)el('li','',ul).textContent=L('help'+i);
+  xdlg({title:L('helpTitle'),body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
+}
+/* agenda / print */
 function metaLine(){
   const sch=S.schedules.filter(s=>s.visible).map(sTag),ppl=S.people.filter(q=>q.visible).map(q=>pIcon(q)+esc(q.name));
   return `<div class="pm"><b>${esc(L('schShown'))}</b> ${sch.join(' &nbsp; ')||esc(L('none2'))}<br><b>${esc(L('pplShown'))}</b> ${S.people.length?(ppl.join(' &nbsp; ')||esc(L('none2'))):esc(L('noPpl'))}</div>`;
@@ -199,59 +444,134 @@ function doPrint(node,landscape){
   window.print();
 }
 window.onafterprint=()=>$('pr').replaceChildren();
-function init(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],visible:true}],events:[],people:[],showEarly:false};render()}
-
+/* ---------- sidebar ---------- */
+function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
+function sbtn(parent,label,tip,fn,cls,icon){const b=el('button',cls||'',parent);if(icon)b.innerHTML=icon;b.append(label);b.title=tip;b.onclick=fn;return b}
+function h2(parent,text,tip){const h=el('h2','',parent);h.append(text+' ');if(tip){const t=el('span','tip',h);t.textContent='ⓘ';t.title=tip}return h}
+let slSnapped=false;
+function rowMenu(anchor,build){
+  document.querySelectorAll('.omenu').forEach(x=>x.remove());
+  const m=el('div','omenu',document.body);
+  const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true);renderSide()};
+  const out=e=>{if(!m.contains(e.target))close()},key=e=>{if(e.key==='Escape')close()};
+  const mi=(html,label,fn,cls)=>{const b=el('button','oi '+(cls||''),m);b.innerHTML=html+`<span>${esc(label)}</span>`;b.onclick=()=>{close();fn()}};
+  build(m,mi,close);
+  const r=anchor.getBoundingClientRect();
+  m.style.left=Math.max(6,Math.min(r.right-m.offsetWidth,innerWidth-m.offsetWidth-6))+'px';
+  m.style.top=Math.max(6,Math.min(r.bottom+4,innerHeight-m.offsetHeight-6))+'px';
+  setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)});
+}
+const chip=c=>`<i style="background:${esc(c)}"></i>`;
+function schMenu(anchor,s){rowMenu(anchor,(m,mi)=>{
+  mi(chip(s.color),L('mColor'),()=>pickColor(anchor,s.color,v=>{hist();s.color=v;render()}));
+  const ow=el('div','oi opw',m);ow.title=L('opTip');ow.innerHTML=ICON_OPAC;
+  const sl=el('input','',ow);sl.type='range';sl.min=.1;sl.max=1;sl.step=.05;sl.value=s.opacity??1;
+  sl.oninput=()=>{if(!slSnapped){hist();slSnapped=true}s.opacity=+sl.value;skipSide=true;render();skipSide=false};
+  sl.onchange=()=>{slSnapped=false};
+  mi(s.locked?ICON_UNLOCK:ICON_LOCK,L(s.locked?'mUnlock':'mLock'),()=>{hist();s.locked=!s.locked;render()});
+  mi(ICON_EYE,L('mSolo'),()=>{hist();const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()});
+  mi('<span class="ic" style="margin:0">'+ICON_CAL+'</span>',L('mDelete'),()=>delSchedule(s),'d');
+})}
+function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
+  mi(chip(q.color),L('mColor'),()=>pickColor(anchor,q.color,v=>{hist();q.color=v;render()}));
+  mi('<span class="ic" style="margin:0">'+ICON_USER+'</span>',L('mDelete'),()=>delPerson(q),'d');
+})}
+function secHead(parent,key,count,tipKey,ck,addFn,addTip){
+  const h=el('div','sech',parent);
+  const b=el('button','shbtn',h);b.innerHTML=(prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span><em>${count}</em>`;
+  b.onclick=()=>{prefs[ck]=!prefs[ck];savePrefs();renderSide()};
+  const tp=el('span','tip',h);tp.textContent='ⓘ';tp.title=L(tipKey);
+  const a=el('button','eye',h);a.innerHTML=ICON_PLUS;a.title=L(addTip);a.onclick=addFn;
+}
+function renderSide(){
+  const sb=$('sbin'),st=sb.scrollTop;sb.innerHTML='';
+  const top=el('div','sbtop',sb);
+  const fav=el('img','fav',top);fav.src=FAV;fav.alt='';
+  const ttl=el('span','ttl',top);ttl.textContent=L('appTitle')+(isDirty()?' •':'');if(isDirty())ttl.title=L('unsaved');
+  const hb=el('button','eye help',top);hb.innerHTML=ICON_HELP;hb.title=L('helpTip');hb.onclick=openHelp;
+  const gb=el('button','eye gear',top);gb.innerHTML=ICON_GEAR;gb.title=L('settings');gb.onclick=openSettings;
+  const cl=el('button','eye',top);cl.innerHTML=prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(prefs.collapsed?'expandTip':'collapseTip');
+  cl.onclick=()=>{prefs.collapsed=!prefs.collapsed;savePrefs();applyPrefs();renderSide()};
+  const body=el('div','sbbody',sb);
+  sbtn(body,L('addEv'),L('addEvTip'),()=>openDlg(null),'p pbtn');
+  const tb=el('div','tbar',body);
+  const tbtn=(icon,tip,fn,id)=>{const b=el('button','',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
+  tbtn(ICON_UNDO,L('undoTip'),undo,'undoB');tbtn(ICON_REDO,L('redoTip'),redo,'redoB');updUR();
+  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:saveMem},{label:L('toFile'),fn:saveFile},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_PRINT,L('printTip'),printSchedule);
+  // schedules
+  const s1=el('div','sec',body);
+  secHead(s1,'schH',S.schedules.length,'schHTip','secSch',()=>{const n=prompt(L('pSch'));if(!n)return;hist();S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],opacity:1,locked:false,visible:true});render()},'addSchTip');
+  if(!prefs.secSch)S.schedules.forEach(s=>{
+    const r=el('div','sch'+(s.visible?'':' off'),s1);
+    eyeBtn(r,s.visible,()=>{hist();s.visible=!s.visible;render()});
+    iconPicker(r,ICON_CAL,s.color,v=>{hist();s.color=v;render()}).style.opacity=Math.max(.35,s.opacity??1);
+    const n=el('input','',r);n.type='text';n.value=s.name;n.onchange=()=>{const v=n.value||s.name;if(v!==s.name){hist();s.name=v}render()};
+    if(s.locked){const lk=el('span','ic',r);lk.innerHTML=ICON_LOCK;lk.style.color='#e8912d';lk.title=L('lockTip')}
+    const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>schMenu(mb,s);
+  });
+  // people
+  const s2=el('div','sec',body);
+  secHead(s2,'pplH',S.people.length,'pplTip','secPpl',()=>{const n=prompt(L('pPer'));if(!n)return;hist();S.people.push({id:uid(),name:n.trim(),color:PAL[S.people.length%PAL.length],visible:true});render()},'addPerTip');
+  if(!prefs.secPpl)S.people.forEach(q=>{
+    const r=el('div','sch'+(q.visible?'':' off'),s2);
+    eyeBtn(r,q.visible,()=>{hist();q.visible=!q.visible;render()});
+    iconPicker(r,ICON_USER,q.color,v=>{hist();q.color=v;render()});
+    const n=el('input','',r);n.type='text';n.value=q.name;n.onchange=()=>{const v=n.value||q.name;if(v!==q.name){hist();q.name=v}render()};
+    const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>perMenu(mb,q);
+  });
+  sb.scrollTop=st;
+}
+function printSchedule(){
+  const c=$('grid').cloneNode(true);c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
+  const w=el('div');w.innerHTML='<h1>'+esc(L('printTitle'))+'</h1>'+metaLine();w.append(c);doPrint(w,false);
+}
+function delPerson(q){
+  if(!confirm(L('confPer',{n:q.name})))return;hist();
+  S.people=S.people.filter(x=>x!==q);
+  S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);e.slots.forEach(s=>{if(s.person===q.id)s.person=''})});
+  render();
+}
+function delSchedule(s){
+  const lost=S.events.filter(e=>e.schedules.length===1&&e.schedules[0]===s.id).length;
+  if(!confirm(L('confSch',{n:s.name})+(lost?L('confLost',{k:lost}):'')))return;hist();
+  S.schedules=S.schedules.filter(x=>x!==s);
+  S.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));
+  S.events=S.events.filter(e=>e.schedules.length);
+  render();
+}
+/* ---------- grid ---------- */
 function render(){
-  if(!skipSide){ // sidebar
-  const sc=$('schs');sc.innerHTML='';
-  S.schedules.forEach(s=>{
-    const r=el('div','sch',sc);
-    eyeBtn(r,s.visible,()=>{s.visible=!s.visible;render()});
-    iconPicker(r,ICON_CAL,s.color,v=>{s.color=v;render()});
-    const n=el('input','',r);n.type='text';n.value=s.name;n.onchange=()=>{s.name=n.value||s.name;render()};
-    const so=el('button','x solo',r);so.textContent=L('solo');so.title=L('soloTip');
-    so.onclick=()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()};
-    const x=el('button','x',r);x.textContent='✕';x.title=L('delSchTip');x.onclick=()=>delSchedule(s);
-    const ow=el('div','opr',r),oi=el('span','ic',ow);oi.innerHTML=ICON_OPAC;oi.title=L('opTip');const sl=el('input','op',ow);sl.type='range';sl.min=.1;sl.max=1;sl.step=.05;sl.value=s.opacity??1;sl.title=L('opTip');
-    sl.oninput=()=>{s.opacity=+sl.value;skipSide=true;render();skipSide=false};
-  });
-  const pc=$('peeps');pc.innerHTML='';
-  S.people.forEach(q=>{
-    const r=el('div','sch',pc);
-    eyeBtn(r,q.visible,()=>{q.visible=!q.visible;render()});
-    iconPicker(r,ICON_USER,q.color,v=>{q.color=v;render()});
-    const n=el('input','',r);n.type='text';n.value=q.name;n.onchange=()=>{q.name=n.value||q.name;render()};
-    const x=el('button','x',r);x.textContent='✕';x.title=L('delPerTip');x.onclick=()=>delPerson(q);
-  });
-  }
-  $('early').textContent=L(S.showEarly?'hideEarly':'showEarly');
-  // grid
+  if(!skipSide)renderSide();
   const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');
-  const a=vs(),hrs=24-a;
-  el('div','dh c',g).textContent='';
-  DAYS.forEach((d,i)=>{const h=el('div','dh'+(i>4?' we':''),g);h.textContent=d;h.title=L('agendaTip');h.onclick=()=>openAgenda(i)});
+  const a=vs(),hrs=24-a,days=S.hideWeekend?[0,1,2,3,4]:[0,1,2,3,4,5,6];
+  g.style.gridTemplateColumns=`52px repeat(${days.length},minmax(110px,1fr))`;g.style.minWidth=(52+days.length*110)+'px';
+  el('div','dh c',g);
+  days.forEach(di=>{const h=el('div','dh'+(di>4?' we':''),g);h.innerHTML=`<span class="ic">${ICON_AGENDA}</span>`+esc(DAYS[di]);h.title=L('agendaTip');h.onclick=()=>openAgenda(di)});
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
-  for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=fmt(h*60);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
-  DAYS.forEach((_,di)=>{
+  for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
+  days.forEach(di=>{
     const col=el('div','day'+(di>4?' we':''),g);col.style.height=hrs*HH+'px';col.dataset.d=di;
     col.onpointerdown=ev=>{if(ev.target===col)startCreate(ev,di,col)};
-    const evs=S.events.filter(visible).flatMap(e=>e.slots.filter(s=>s.day===di&&s.end>a*60&&slotVisible(e,s)).map(s=>({e,s,start:s.start,end:s.end,color:e.color,op:evOp(e)})));
+    const evs=S.events.filter(visible).flatMap(e=>e.slots.filter(s=>s.day===di&&s.end>a*60&&!s._gone&&slotVisible(e,s)).map(s=>({e,s,start:s.start,end:s.end,color:e.color,op:evOp(e)})));
     evs.forEach(it=>{
-      const e=it.e,s=it.s,d=el('div','ev',col);
+      const e=it.e,s=it.s,d=el('div','ev',col),lk=isLocked(e);
       const top=(Math.max(s.start,a*60)-a*60)/60*HH;
       d.style.top=top+'px';d.style.height=Math.max(14,(s.end-Math.max(s.start,a*60))/60*HH-1)+'px';
-      d.style.background=e.color;d.style.opacity=it.op;
-      el('span','t',d).textContent=e.title+(e.slots.length>1?' ↻':'');
+      d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');
+      const nf=(e.slots.length>1?1:0)+(lk?1:0);
+      if(nf){const fl=el('span','flags',d);fl.innerHTML=(e.slots.length>1?ICON_REPEAT:'')+(lk?ICON_LOCK:'')}
+      const t=el('span','t',d);t.textContent=e.title;if(nf)t.style.paddingRight=nf*16+'px';
       const parts=[esc(fmt(s.start)+'–'+fmt(s.end))];
       if(s.person)parts.push(pTag(s.person));
       const inv=e.involved.map(pTag).filter(Boolean);if(inv.length)parts.push(esc(L('withb'))+' '+inv.join(', '));
       if(e.desc)parts.push(esc(e.desc));
       const mm=el('span','m',d);mm.innerHTML=parts.join(' · ');
-      d.title=e.title+'\n'+mm.textContent;
+      d.title=e.title+'\n'+mm.textContent+(e.slots.length>1?'\n'+L('repTip',{n:e.slots.length}):'');
       const rz=el('div','rz',d);
-      d.onpointerdown=ev=>{ev.stopPropagation();startDrag(ev,it,rz===ev.target?'resize':'move')};
+      if(!lk)d.onpointerdown=ev=>{ev.stopPropagation();startDrag(ev,it,rz===ev.target?'resize':'move')};
     });
-    // overlap overlays
     const pts=[...new Set(evs.flatMap(e=>[Math.max(e.start,a*60),e.end]))].sort((x,y)=>x-y);
     for(let i=0;i<pts.length-1;i++){
       const p=pts[i],q=pts[i+1];
@@ -266,42 +586,59 @@ function render(){
   });
   drawNow();
 }
-
-function delPerson(q){
-  if(!confirm(L('confPer',{n:q.name})))return;
-  S.people=S.people.filter(x=>x!==q);
-  S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);e.slots.forEach(s=>{if(s.person===q.id)s.person=''})});
-  render();
-}
-function delSchedule(s){
-  const lost=S.events.filter(e=>e.schedules.length===1&&e.schedules[0]===s.id).length;
-  if(!confirm(L('confSch',{n:s.name})+(lost?L('confLost',{k:lost}):'')))return;
-  S.schedules=S.schedules.filter(x=>x!==s);
-  S.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));
-  S.events=S.events.filter(e=>e.schedules.length);
-  render();
-}
-
-// pointer helpers
-function colAt(x){const cs=[...document.querySelectorAll('.day')];
-  for(const c of cs){const r=c.getBoundingClientRect();if(x<r.right)return c}return cs[6]}
+/* ---------- pointer interactions ---------- */
+function colAt(x){const cs=[...document.querySelectorAll('.day')];for(const c of cs){if(x<c.getBoundingClientRect().right)return c}return cs[cs.length-1]}
 const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/HH*60;
-const snap=m=>Math.round(m/SNAP)*SNAP;
-
+const snapM=m=>Math.round(m/SNAP)*SNAP;
 function startDrag(ev,it,mode){
-  const e=it.s,owner=it.e;
-  ev.preventDefault();
-  const col=colAt(ev.clientX),off=minAt(col,ev.clientY)-e.start,dur=e.end-e.start;
-  let moved=false;const x0=ev.clientX,y0=ev.clientY;
+  const e=it.s,owner=it.e;ev.preventDefault();
+  const col=colAt(ev.clientX),cDay=+col.dataset.d,cMin=minAt(col,ev.clientY),off=cMin-e.start,dur=e.end-e.start;
+  const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1;
+  let moved=false,single=false,final=null;const x0=ev.clientX,y0=ev.clientY;
   const mv=p=>{
-    if(!moved&&Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;moved=true;
-    const c=colAt(p.clientX),m=minAt(c,p.clientY);
-    if(mode==='move'){const nd=+c.dataset.d;if(!owner.slots.some(x=>x!==e&&x.day===nd))e.day=nd;const s=Math.max(0,Math.min(1440-dur,snap(m-off)));e.start=s;e.end=s+dur}
-    else e.end=Math.max(e.start+SNAP,Math.min(1440,snap(m)));
-    render();
+    if(!moved&&Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;moved=true;single=p.shiftKey;
+    const c=colAt(p.clientX),m=minAt(c,p.clientY),t={day:o0.day,start:o0.start,end:o0.end};
+    if(mode==='move'){t.day=+c.dataset.d;t.start=Math.max(0,Math.min(1440-dur,snapM(m-off)));t.end=t.start+dur}
+    else t.end=Math.max(o0.start+SNAP,Math.min(1440,snapM(m)));
+    owner.slots.forEach((s,i)=>{Object.assign(s,orig[i]);delete s._gone});
+    if(!multi||single){
+      if(mode==='move'&&owner.slots.some(x=>x!==e&&x.day===t.day))t.day=o0.day;
+      Object.assign(e,t);
+    }else{
+      const dD=t.day-o0.day,dS=t.start-o0.start,dE=t.end-o0.end;
+      owner.slots.forEach(s=>{
+        if(mode==='move'){const du=s.end-s.start;s.day=(((s.day+dD)%7)+7)%7;s.start=Math.max(0,Math.min(1440-du,s.start+dS));s.end=s.start+du}
+        else{const ne=Math.min(1440,s.end+dE);if(ne<=s.start)s._gone=true;else s.end=ne}
+      });
+    }
+    final=t;render();
   };
-  const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);if(!moved)openDlg(owner)};
+  const up=p=>{
+    document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
+    if(!moved){const items=itemsAt(cDay,cMin);if(items.length>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);return}
+    owner.slots=owner.slots.filter(s=>!s._gone);owner.slots.forEach(s=>delete s._gone);
+    const changed=JSON.stringify(S)!==before;if(changed)pushUndo(before);render();
+    if(changed&&multi&&!single){
+      const mark=undoSt.length,fin={...final};
+      toast(L('rpApplied',{n:orig.length}),[
+        {label:L('rpOnly'),fn:()=>{
+          if(undoSt.length!==mark||!S.events.includes(owner))return;
+          owner.slots=orig.map(x=>({...x}));const s=owner.slots[idx];
+          if(mode==='move'){if(!owner.slots.some(x=>x!==s&&x.day===fin.day))s.day=fin.day;s.start=fin.start;s.end=fin.end}else s.end=fin.end;
+          render()}},
+        {label:L('undo'),fn:()=>{if(undoSt.length===mark)undo()}}]);
+    }
+  };
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+}
+function overlapMenu(x,y,items){
+  document.querySelectorAll('.omenu').forEach(m=>m.remove());
+  const m=el('div','omenu',document.body);el('div','oh',m).textContent=L('ovTitle');
+  const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true)};
+  const out=e=>{if(!m.contains(e.target))close()},key=e=>{if(e.key==='Escape')close()};
+  items.forEach(({e,s})=>{const b=el('button','oi',m);b.innerHTML=`<i style="background:${esc(e.color)}"></i><b>${esc(e.title)}</b><small>${esc(fmt(s.start)+'–'+fmt(s.end))}</small>`;b.onclick=()=>{close();openDlg(e)}});
+  m.style.left=Math.max(6,Math.min(x,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(y,innerHeight-m.offsetHeight-6))+'px';
+  setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)});
 }
 function startCreate(ev,di,col){
   ev.preventDefault();
@@ -310,23 +647,21 @@ function startCreate(ev,di,col){
   const gh=el('div','ghost',col);
   const draw=()=>{const lo=Math.min(a,b),hi=Math.max(a,b);gh.style.top=(lo-vs()*60)/60*HH+'px';gh.style.height=(hi-lo)/60*HH+'px'};
   draw();
-  const mv=p=>{moved=true;b=snap(minAt(col,p.clientY));if(b===a)b=a+SNAP;b=Math.max(0,Math.min(1440,b));draw()};
+  const mv=p=>{moved=true;b=snapM(minAt(col,p.clientY));if(b===a)b=a+SNAP;b=Math.max(0,Math.min(1440,b));draw()};
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);gh.remove();
     let lo=Math.min(a,b),hi=Math.max(a,b);if(!moved||hi-lo<SNAP)hi=Math.min(1440,lo+60);
     openDlg(null,{day:di,start:lo,end:hi})};
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
-
-// dialog
+/* ---------- event dialog ---------- */
 let cur=null;
 function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
-const tms=[];for(let m=0;m<=1440;m+=SNAP)tms.push([m,fmt(m)]);
 const pOpts=()=>[['',L('none')],...S.people.map(q=>[q.id,q.name])];
-fillSel($('fS'),tms.slice(0,-1));fillSel($('fE'),tms.slice(1));
+const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c};
+$('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
 const rows=DAYS.map((n,i)=>{
   const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
   const s=el('select','',r),en=el('select','',r),ps=el('select','',r);
-  fillSel(s,tms.slice(0,-1));fillSel(en,tms.slice(1));
   const o={r,cb,s,en,ps,lt,custom:false,pc:false};
   o.upd=()=>{r.classList.toggle('off',!cb.checked);s.disabled=en.disabled=ps.disabled=!cb.checked};
   cb.onchange=()=>{if(cb.checked){if(!o.custom)sync(o);if(!o.pc)ps.value=$('fP').value}o.upd()};
@@ -341,10 +676,12 @@ $('fP').onchange=()=>{updPic();rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').valu
 function openDlg(e,def){
   cur=e;const d=e||{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)};
   const slots=e?e.slots:[{day:0,start:540,end:600,person:'',...def}];
-  $('fT').value=d.title;$('fD').value=d.desc||'';$('fC').value=d.color;
+  const tl=[];for(let m=0;m<=1440;m+=SNAP)tl.push([m,fmt(m)]);
+  fillSel($('fS'),tl.slice(0,-1));fillSel($('fE'),tl.slice(1));
+  $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
   const g=slots[0];$('fS').value=g.start;$('fE').value=g.end;
   fillSel($('fP'),pOpts());$('fP').value=g.person||'';updPic();
-  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.ps,pOpts());o.cb.checked=!!sl;
+  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.s,tl.slice(0,-1));fillSel(o.en,tl.slice(1));fillSel(o.ps,pOpts());o.cb.checked=!!sl;
     o.s.value=sl?sl.start:g.start;o.en.value=sl?sl.end:g.end;o.ps.value=sl?sl.person||'':g.person||'';
     o.custom=!!sl&&(sl.start!==g.start||sl.end!==g.end);o.pc=!!sl&&(sl.person||'')!==(g.person||'');o.upd()});
   const iv=$('fInv');iv.innerHTML='';
@@ -352,10 +689,7 @@ function openDlg(e,def){
   S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
   S.schedules.forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=d.schedules.includes(s.id);l.insertAdjacentHTML('beforeend',sTag(s))});
-  $('fDel').style.display=e?'':'none';$('cpRow').style.display=e?'':'none';
-  fillSel($('cpSel'),S.schedules.map(s=>[s.id,s.name]));
-  if(e){const o=S.schedules.find(s=>!e.schedules.includes(s.id));if(o)$('cpSel').value=o.id}
-  $('err').textContent='';
+  $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   $('dlg').showModal();$('fT').focus();
 }
 $('fOk').onclick=()=>{
@@ -367,53 +701,61 @@ $('fOk').onclick=()=>{
   const bad=slots.find(s=>s.end<=s.start);
   if(bad)return $('err').textContent=L('errEnd',{d:DAYS[bad.day]});
   if(!sch.length)return $('err').textContent=L('errSch');
-  const d={title,desc:$('fD').value.trim(),color:$('fC').value,schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
+  const d={title,desc:$('fD').value.trim(),color:$('fC').dataset.v,schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
+  hist();
   if(cur)Object.assign(cur,d);else S.events.push({id:uid(),...d});
   $('dlg').close();render();
 };
 $('fCancel').onclick=()=>$('dlg').close();
-$('fDel').onclick=()=>{S.events=S.events.filter(x=>x!==cur);$('dlg').close();render()};
-
-// toolbar
+$('fDel').onclick=()=>{hist();S.events=S.events.filter(x=>x!==cur);$('dlg').close();render()};
+$('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
+/* ---------- copy dialog ---------- */
+function openCopy(src){
+  const body=el('div');
+  el('label','',body).textContent=L('cpDest');
+  const sel=el('select','',body);fillSel(sel,S.schedules.map(s=>[s.id,s.name]));
+  const o=S.schedules.find(s=>!src.schedules.includes(s.id));if(o)sel.value=o.id;
+  el('label','',body).textContent=L('cpColor');
+  const rd=el('div','radios',body);let pv=src.color;
+  const modes=[['same','cpSame'],['tweak','cpHue'],['random','cpRandom'],['pick','cpPick']],rad={};
+  modes.forEach(([m,k])=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='cpm';i.value=m;rad[m]=i;l.append(L(k));
+    if(m==='pick'){const sw=el('button','swatch',l);sw.type='button';sw.style.cssText='width:44px;height:22px;margin-left:6px;background:'+pv;
+      sw.onclick=e=>{e.preventDefault();pickColor(sw,pv,c=>{pv=c;sw.style.background=c;rad.pick.checked=true})}}});
+  const auto=()=>{rad[src.schedules.includes(sel.value)?'tweak':'same'].checked=true};
+  sel.onchange=auto;auto();
+  xdlg({title:L('cpTitle')+': '+src.title,body,buttons:[
+    {label:L('cpDo'),cls:'p',fn:()=>{
+      const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
+      const used=S.events.filter(e=>e.schedules.includes(tid)).map(e=>normHex(e.color));
+      const col=mode==='tweak'?shiftColor(src.color,used):mode==='random'?randomColor(used):mode==='pick'?pv:src.color;
+      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();c.schedules=[tid];c.color=col;S.events.push(c);render();toast(L('copied'))}},
+    {label:L('cancel'),dismiss:true}]});
+}
+/* ---------- wiring & startup ---------- */
 $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agendaHTML(agDay);doPrint(d,false)};
-$('prt').onclick=()=>{
-  const c=$('grid').cloneNode(true);c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
-  const w=el('div');w.innerHTML='<h1>'+esc(L('printTitle'))+'</h1>'+metaLine();w.append(c);doPrint(w,false);
-};
-$('nowb').onclick=()=>{nowOn=!nowOn;$('nowb').textContent=L(nowOn?'nowOn':'nowOff');drawNow()};
-$('cpBtn').onclick=()=>{
-  if(!cur)return;const c=JSON.parse(JSON.stringify(cur));c.id=uid();const tid=$('cpSel').value;c.schedules=[tid];
-  if(cur.schedules.includes(tid))c.color=shiftColor(cur.color,S.events.filter(e=>e.schedules.includes(tid)).map(e=>e.color));
-  S.events.push(c);$('dlg').close();render();
-};
-$('add').onclick=()=>openDlg(null);
-$('early').onclick=()=>{S.showEarly=!S.showEarly;render();if(!S.showEarly)$('wrap').scrollTop=0};
-$('addp').onclick=()=>{const n=prompt(L('pPer'));if(!n)return;S.people.push({id:uid(),name:n.trim(),color:PAL[S.people.length%PAL.length],visible:true});render()};
-$('addsch').onclick=()=>{const n=prompt(L('pSch'));if(!n)return;S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],visible:true});render()};
-$('save').onclick=()=>{
-  const b=new Blob([JSON.stringify({version:3,...S},null,2)],{type:'application/json'});
-  const a=el('a');a.href=URL.createObjectURL(b);a.download='weekly-schedules.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-};
-$('load').onclick=()=>$('file').click();
 $('file').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{
-    const j=JSON.parse(await f.text());
-    if(!Array.isArray(j.schedules)||!Array.isArray(j.events))throw 0;
-    const people=(Array.isArray(j.people)?j.people:[]).map((q,i)=>({id:String(q.id),name:String(q.name),color:q.color||PAL[i%PAL.length],visible:q.visible!==false}));
-    const pid=n=>{n=String(n||'').trim();if(!n)return '';let q=people.find(x=>x.name===n);if(!q){q={id:uid(),name:n,color:PAL[people.length%PAL.length],visible:true};people.push(q)}return q.id};
-    const events=j.events.map(v=>{
-      const legacy=typeof v.person==='string'?pid(v.person):'';
-      const sl=Array.isArray(v.slots)?v.slots:[{day:v.day,start:v.start,end:v.end}];
-      return {id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],
-        schedules:(v.schedules||[]).map(String),involved:(v.involved||[]).map(String),
-        slots:sl.map(x=>({day:Math.max(0,Math.min(6,+x.day||0)),start:+x.start,end:+x.end,person:x.person!=null?String(x.person):legacy}))}});
-    S={schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],opacity:s.opacity==null?1:Math.min(1,Math.max(.1,+s.opacity||1)),visible:s.visible!==false})),
-       events,people,showEarly:!!j.showEarly};
-    render();
-  }catch(_){alert(L('badFile'))}
+  try{const n=parseData(JSON.parse(await f.text()));hist();S=n;lastFile=dataKey();render();toast(L('loadedFile'))}catch(_){alert(L('badFile'))}
 };
-$('lang').value=lang;$('lang').onchange=()=>setLang($('lang').value);
-init();setLang(lang);
+$('rs').onpointerdown=ev=>{
+  ev.preventDefault();const x0=ev.clientX,w0=$('sb').offsetWidth;
+  const mv=p=>{prefs.w=Math.max(230,Math.min(560,w0+p.clientX-x0));applyPrefs()};
+  const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);savePrefs()};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+};
+document.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,textarea,select'))return;if(document.querySelector('dialog[open]'))return;
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
+  else if((e.ctrlKey||e.metaKey)&&k==='y'){e.preventDefault();redo()}
+});
+function setLang(l){
+  lang=l;DAYS.splice(0,7,...DAYN[l]);document.documentElement.lang=l;document.title=L('appTitle');
+  rows.forEach((o,i)=>o.lt.nodeValue=DAYS[i].slice(0,3));
+  render();applyStatic();
+}
+applyPrefs();
+{const m=memGet();try{if(!m)throw 0;S=parseData(JSON.parse(m));lastBrowser=dataKey()}catch(e){initDefault()}}
+setLang(lang);
 </script></body></html>

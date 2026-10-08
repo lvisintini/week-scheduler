@@ -83,3 +83,39 @@ Deliberately NOT a built-in feature (judged too complex). Workaround: create two
 20. **Schedule opacity.** Each schedule has an opacity slider (`schedules[].opacity`, 0.1–1, default 1, saved in the JSON). An event is drawn at the highest opacity among its visible schedules; overlap stripes scale with the most opaque covered event. The slider calls `render()` with `skipSide=true` so the sidebar (and the slider being dragged) is not rebuilt.
 21. Sidebar widened to 290px; each schedule row wraps so the slider sits on its own line under the name.
 22. Opacity row: a checkered-box icon (tooltip explains it) plus the slider inside a `.opr` flex wrapper sized `calc(100% - 28px)` so it never overflows the sidebar; the slider flexes to fill the row width.
+
+---
+## Major revision (save format v4) — supersedes older notes where they conflict
+23. **Undo/redo** (sidebar buttons, Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z). Snapshot-based: call `hist()` *before* every data mutation (or `pushUndo(beforeJSON)` for drags). View settings (`showEarly`, `clock12`, `hideWeekend`) are not undone. Opacity slider coalesces one drag into one undo step.
+24. **Copy** lives in its own dialog (`openCopy`), opened by the "Copy…" button in the event dialog. Pick destination schedule and colour mode: same / same hue brighter-or-darker (`shiftColor`) / random / chosen. Default mode: tweak if the destination already contains the event, else same.
+25. **Locked schedules** (`schedules[].locked`): events attached to any locked schedule are `pointer-events:none` (can't be selected, dragged, edited); a lock icon shows top-right on the event.
+26. **12h/24h clock** toggle (`S.clock12`, `fmt()`/`hourLabel()`).
+27. **Colour picker popover** (`pickColor`) with swatches, HSL sliders, hex field and Apply/Cancel (Enter applies, Esc cancels). Used everywhere instead of `<input type=color>`.
+28. **Overlap chooser:** clicking where several (unlocked, visible) events overlap opens a small menu to choose one (`itemsAt`, `overlapMenu`).
+29. **Dragging/resizing a repeating event** asks: only this day / all repetitions / cancel (`askRepeat`). "All" applies the same offset to every slot: moves shift every slot by the same days (mod 7) and minutes; resizes change every slot's end by the same amount and **remove** slots that would end at/before their start.
+30. **Day headers** show an agenda icon. Repeat icon (and lock icon) sit top-right of the event box.
+31. **Sidebar:** collapsible (chevrons), resizable (drag right edge), holds *all* controls plus the title with the favicon; there is no header any more. Sidebar width/collapsed state are stored in `localStorage` key `weekly-schedules-prefs` (not in the save file). The sidebar is rebuilt by `renderSide()` on every `render()` (skipped while dragging the opacity slider via `skipSide`).
+32. **Persistence:** Save…/Load… open a small dialog (browser memory = `localStorage['weekly-schedules-data']`, or JSON file). The app auto-loads browser memory at startup. "Clear memory" (confirm) deletes it. "Restart" discards unsaved changes and reloads browser memory. `beforeunload` warns when `isDirty()` (current data differs from both last browser save and last file save); the title shows a • when dirty.
+33. **Hide/show weekend** toggle (`S.hideWeekend`).
+
+### Save file v4 additions
+`schedules[].locked`, `S.clock12`, `S.hideWeekend` (plus earlier `schedules[].opacity`, `people[].color`). Older versions load fine (defaults applied in `parseData`).
+
+### Code map changes
+- `parseData(json)` is pure validation/migration; callers assign `S`.
+- `xdlg({title,body,buttons,onDismiss})` is the generic modal used by save/load, copy and repeat-confirm dialogs (all text via `L()`).
+- i18n: dynamic strings in `D.en/D.es` via `L()`; only the static dialog HTML uses the `ES` prefix list (`applyStatic()` now touches `<dialog>` only).
+- Minute snapping function is `snapM` (the name `snap` was retired).
+
+---
+## Revision: repeat-drag behaviour and settings dialog (supersedes items 29 and parts of 26/33)
+34. **Dragging/resizing a repeating event changes ALL repetitions by default**, with a live preview while dragging (`startDrag`). Hold **Shift** (can be pressed mid-drag) to change only the grabbed day. No confirmation dialog any more. After an "all" drop, a toast offers **Only this day** (reverts the others, keeps the dragged change) and **Undo**; both are ignored if the history changed since (`undoSt.length` mark). Rules unchanged: same offset for every slot; a slot that would end at/before its start is removed (slots are flagged `_gone` during the preview and stripped on drop); day moves rotate mod 7.
+35. **Settings dialog** (gear icon at the top of the sidebar → `openSettings()`, built on `xdlg`). Sections are built with `sec(titleKey)` + `opt(...)` rows; currently one section, **View**: show early hours, show "now" line, AM/PM clock, hide Saturday/Sunday. Add future sections by calling `sec()` again. These toggles were removed from the sidebar. Language selector is still at the bottom of the sidebar.
+36. Event tooltip lists the repeat info (`repTip`). Sidebar buttons now: undo, redo, + Event, Save…, Load…, Restart, Clear memory, Print schedule.
+
+---
+## Revision: sidebar redesign (supersedes items 31, 35 (language location) and 36)
+37. **Sidebar layout:** top row = favicon, title (• when unsaved), help `?`, settings gear, collapse chevron. Then the primary **+ Event** button and one icon toolbar (undo, redo, save, load, print; tooltips only). Then two collapsible sections, **Schedules (n)** and **People (n)**, each with a header chevron, count, ⓘ tip and a "+" add button (collapsed state saved in prefs keys `secSch`/`secPpl`).
+38. **Rows are slim:** eye (visibility), coloured icon (click = colour picker; schedule icon dims with its opacity), editable name, lock badge (schedules, when locked) and a **⋯ menu** (`rowMenu`, `schMenu`, `perMenu`). Schedule menu: Colour…, opacity slider, Lock/Unlock, Show only this one (solo), Delete. People menu: Colour…, Delete. Hidden rows are dimmed.
+39. **Settings dialog sections:** View (early hours, now line, AM/PM, hide weekend), **Data** (Restart, Clear memory) and **Language** (en/es). Restart/Clear/Language moved out of the sidebar. Changing language re-opens the dialog in the new language.
+40. The grey hint paragraph is replaced by the **Help dialog** (`openHelp`, strings `help1`–`help8`).

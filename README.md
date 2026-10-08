@@ -13,11 +13,14 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 - Day agenda (click a day header) with print support; printable weekly schedule
 - Optional "now" line on today's column
 - Spanish / English interface (follows browser language, switchable in the sidebar)
+- Undo/redo, locked schedules, 12h/24h clock, weekend toggle, collapsible and resizable sidebar
+- Save/load to browser memory or JSON file, auto-load, unsaved-changes warning
+- Eye-icon visibility toggles and a per-schedule opacity slider
 - Icons for people (in their colour) and schedules; calendar favicon
 - Save / load everything as a JSON file
 
 ## Use
-Open `index.html`, or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
+Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
 Plain JSON (`version: 3`): `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `showEarly`. See `CLAUDE.md` for the schema.
