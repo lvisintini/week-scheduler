@@ -119,3 +119,14 @@ Deliberately NOT a built-in feature (judged too complex). Workaround: create two
 38. **Rows are slim:** eye (visibility), coloured icon (click = colour picker; schedule icon dims with its opacity), editable name, lock badge (schedules, when locked) and a **⋯ menu** (`rowMenu`, `schMenu`, `perMenu`). Schedule menu: Colour…, opacity slider, Lock/Unlock, Show only this one (solo), Delete. People menu: Colour…, Delete. Hidden rows are dimmed.
 39. **Settings dialog sections:** View (early hours, now line, AM/PM, hide weekend), **Data** (Restart, Clear memory) and **Language** (en/es). Restart/Clear/Language moved out of the sidebar. Changing language re-opens the dialog in the new language.
 40. The grey hint paragraph is replaced by the **Help dialog** (`openHelp`, strings `help1`–`help8`).
+
+---
+## Revision: conflict clean-up (save format v5) — supersedes the older notes where they conflict
+41. **View settings are per browser, not in the save file.** `showEarly`, `clock12`, `hideWeekend` now live in `prefs` (localStorage `weekly-schedules-prefs`, saved via `savePrefs()`), next to sidebar width/collapsed. `S` and the save file only hold `schedules`, `people`, `events` (version 5; older files load fine and extra keys are ignored).
+42. **Visibility (`visible`) and opacity are view state:** toggling them creates no undo step and doesn't mark the data as unsaved (`dataKey()` ignores them), but they are still written to the save file. `restoreState()` (undo/redo) keeps the *current* visibility/opacity of schedules and people. Lock stays real data (undoable, counts as a change).
+43. **Lock rule:** an event is locked only if *all* of its schedules are locked (`isLocked`). Locked events stay click-through (`pointer-events:none`). **Right-click anywhere on a day column** lists the events under the pointer (locked or not) and opens the Copy dialog for the chosen one (`col.oncontextmenu` → `overlapMenu(…, openCopy, …)`). No touch equivalent yet (idea: long-press).
+44. **"N hidden" badge** (`#hid`, bottom-right of the grid, `hiddenInfo()`): counts occurrences hidden by the hidden weekend, hidden early hours, or the people filter (priority in that order); tooltip gives the breakdown; click opens Settings.
+45. Copy dialog shows a note that a copy is independent (vs. ticking several schedules to share one event). Help dialog has a 9th tip about right-click copy.
+
+### Open design question (not implemented): events that cross midnight / several blocks per day
+Currently one slot per event per day and `end <= 1440`. Discussed options: allow `end` beyond 1440 (minutes from the slot's start-day midnight, ≤ 7 days) rendered as joined pieces per day; Sunday wraps to Monday; allow several blocks per day and overlapping repetitions with a warning rather than a ban.
