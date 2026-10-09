@@ -180,8 +180,8 @@ help1:'Drag on an empty part of a day to create an event.',help2:'Drag an event 
 viewNote:'These settings are kept in this browser, not in the save file.',ctxCopy:'Copy event…',cpNote:'A copy is independent of the original. To share one event across schedules instead, tick several schedules in the event dialog.',
 hidN:'{n} hidden',hidWk:'{n} on the hidden weekend',hidEr:'{n} in the hidden early hours',hidPp:'{n} hidden by the people filter',hidClick:'Click to open the settings.',
 help9:'Right-click an event (even a locked one) to copy it.',nextDay:'(Next day)',ovTip:'Repetitions of this event overlap each other.',ovRowTip:'Overlaps another repetition of this event',ovDlg:'Some repetitions overlap: {d}',rpWarn:'Some repetitions now overlap',contFrom:'from {d} {t}',contUntil:'until {t}',
-help10:'Events can run past midnight into the next day (Sunday continues on Monday). The end-time list marks those with "(Next day)".',day2:'(Day after next)',quickNo:"Quick mode can't show several blocks on the same day. Remove the extra blocks on that day to go back.",selHint:'"{t}" selected: now drag it. Click empty space or press Esc to deselect.',pickMove:'Several events here — pick the one to move',pickResize:'Several events here — pick the one to resize',
-help11:'When events overlap, dragging asks which one you mean. The chosen event stays selected (outlined) until you click empty space or press Esc.',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
+help10:'Events can run past midnight into the next day (Sunday continues on Monday). The end-time list marks those with "(Next day)".',day2:'(Day after next)',quickNo:"Quick mode can't show several blocks on the same day. Remove the extra blocks on that day to go back.",selHint:'"{t}" selected: now drag it. Click empty space or press Esc to deselect.',pickMove:'Several events or repetitions here — pick the one to move',pickResize:'Several events or repetitions here — pick the one to resize',
+help11:'When events or repetitions overlap, dragging asks which one you mean; clicking opens the event (and asks only if several different events overlap). The chosen one stays selected (outlined) until you click empty space or press Esc.',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
 resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Schedule 1'},
 es:{
@@ -219,8 +219,8 @@ help1:'Arrastra sobre un hueco vacío de un día para crear un evento.',help2:'A
 viewNote:'Estos ajustes se guardan en este navegador, no en el archivo de guardado.',ctxCopy:'Copiar evento…',cpNote:'Una copia es independiente del original. Para compartir un mismo evento entre horarios, marca varios horarios en el evento.',
 hidN:'{n} ocultos',hidWk:'{n} en el fin de semana oculto',hidEr:'{n} en las horas tempranas ocultas',hidPp:'{n} ocultos por el filtro de personas',hidClick:'Haz clic para abrir los ajustes.',
 help9:'Haz clic derecho en un evento (incluso bloqueado) para copiarlo.',nextDay:'(día siguiente)',ovTip:'Hay repeticiones de este evento que se superponen.',ovRowTip:'Se superpone con otra repetición de este evento',ovDlg:'Hay repeticiones que se superponen: {d}',rpWarn:'Algunas repeticiones ahora se superponen',contFrom:'desde {d} {t}',contUntil:'hasta {t}',
-help10:'Los eventos pueden pasar de la medianoche al día siguiente (el domingo continúa el lunes). La lista de horas de fin los marca con "(día siguiente)".',day2:'(pasado mañana)',quickNo:'El modo rápido no puede mostrar varios bloques el mismo día. Quita los bloques sobrantes de ese día para volver.',selHint:'"{t}" seleccionado: ahora arrástralo. Haz clic en un espacio vacío o pulsa Esc para deseleccionar.',pickMove:'Varios eventos aquí — elige el que quieres mover',pickResize:'Varios eventos aquí — elige el que quieres redimensionar',
-help11:'Cuando los eventos se superponen, al arrastrar se pregunta a cuál te refieres. El evento elegido queda seleccionado (con borde) hasta que hagas clic en un espacio vacío o pulses Esc.',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
+help10:'Los eventos pueden pasar de la medianoche al día siguiente (el domingo continúa el lunes). La lista de horas de fin los marca con "(día siguiente)".',day2:'(pasado mañana)',quickNo:'El modo rápido no puede mostrar varios bloques el mismo día. Quita los bloques sobrantes de ese día para volver.',selHint:'"{t}" seleccionado: ahora arrástralo. Haz clic en un espacio vacío o pulsa Esc para deseleccionar.',pickMove:'Varios eventos o repeticiones aquí — elige el que quieres mover',pickResize:'Varios eventos o repeticiones aquí — elige el que quieres redimensionar',
+help11:'Cuando eventos o repeticiones se superponen, al arrastrar se pregunta a cuál te refieres; al hacer clic se abre el evento (y solo se pregunta si se superponen varios eventos distintos). El elegido queda seleccionado (con borde) hasta que hagas clic en un espacio vacío o pulses Esc.',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Horario 1'}};
 const ES=[
@@ -331,7 +331,7 @@ function iconPicker(parent,svg,color,onchange){
 /* ---------- state, history, persistence ---------- */
 const KEY='weekly-schedules-data',PKEY='weekly-schedules-prefs';
 let S={schedules:[],events:[],people:[]};
-let selId=null;
+let selK=null;
 const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
 let lastBrowser=null,lastFile=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
 const dataKey=()=>JSON.stringify({schedules:S.schedules.map(({visible,opacity,...r})=>r),people:S.people.map(({visible,...r})=>r),events:S.events});
@@ -344,8 +344,8 @@ function restoreState(str){
   S.schedules.forEach(s=>{const o=old.schedules.find(x=>x.id===s.id);if(o){s.visible=o.visible;s.opacity=o.opacity}});
   S.people.forEach(q=>{const o=old.people.find(x=>x.id===q.id);if(o)q.visible=o.visible});
 }
-function undo(){if(!undoSt.length)return;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
-function redo(){if(!redoSt.length)return;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
+function undo(){if(!undoSt.length)return;selK=null;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
+function redo(){if(!redoSt.length)return;selK=null;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
 function parseData(j){
   if(!j||!Array.isArray(j.schedules)||!Array.isArray(j.events))throw new Error('bad');
   const people=(Array.isArray(j.people)?j.people:[]).map((q,i)=>({id:String(q.id),name:String(q.name),color:q.color||PAL[i%PAL.length],visible:q.visible!==false}));
@@ -391,7 +391,7 @@ function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('ac
 const qa=s=>[...document.querySelectorAll(s)];
 const pad=n=>String(n).padStart(2,'0');
 const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
-const fmtEnd=m=>fmt(m)+(m>=2880?' (+2)':m>1440?' (+1)':'');
+const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
 const endLabel=m=>m<1440?fmt(m):fmt(m)+' '+L(m>=2880?'day2':'nextDay');
 const hourLabel=h=>prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
 const vs=()=>prefs.showEarly?0:5;
@@ -410,7 +410,7 @@ function overlapSet(slots){
     if(ivs(slots[i]).some(([a,b])=>ivs(slots[j]).some(([c,d])=>a<d&&c<b))){out.add(slots[i]);out.add(slots[j])}
   return out;
 }
-const piecesAt=(di,m,all)=>S.events.filter(e=>visible(e)&&(all||!isLocked(e))).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,piece:q.p}))));
+const piecesAt=(di,m,all)=>S.events.filter(e=>visible(e)&&(all||!isLocked(e))).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,i,piece:q.p}))));
 const itemsAt=(di,m)=>piecesAt(di,m,false);
 function hiddenInfo(){
   let wk=0,er=0,pp=0;
@@ -600,14 +600,14 @@ function render(){
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
   days.forEach(di=>{
     const col=el('div','day'+(di>4?' we':''),g);col.style.height=hrs*HH+'px';col.dataset.d=di;
-    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){if(selId){selId=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}startCreate(ev,di,col)}};
+    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){if(selK){selK=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}startCreate(ev,di,col)}};
     col.oncontextmenu=ev=>{ev.preventDefault();const its=piecesAt(di,minAt(col,ev.clientY),true);
       if(its.length)overlapMenu(ev.clientX,ev.clientY,its,openCopy,L('ctxCopy'))};
     const evs=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&slotVisible(e,s)).map(q=>({e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,color:e.color,op:evOp(e)}))));
     evs.forEach(it=>{
       const e=it.e,s=it.s,d=el('div','ev',col),lk=isLocked(e),warn=ovOf(e).has(s);
       d.style.top=(Math.max(it.start,a*60)-a*60)/60*HH+'px';d.style.height=Math.max(14,(it.end-Math.max(it.start,a*60))/60*HH-1)+'px';
-      d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');if(e.id===selId)d.classList.add('sel');
+      d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
       if(it.cont)d.style.borderRadius=it.piece?'0 0 8px 8px':'8px 8px 0 0';
       const fl=[];if(e.slots.length>1)fl.push(ICON_REPEAT);if(warn)fl.push('<b style="color:#ffd23f;display:flex">'+ICON_WARN+'</b>');if(lk)fl.push(ICON_LOCK);
       if(fl.length){const f=el('span','flags',d);f.innerHTML=fl.map(x=>x.startsWith('<b')?x:'<span>'+x+'</span>').join('')}
@@ -642,17 +642,17 @@ function render(){
 function colAt(x){const cs=[...document.querySelectorAll('.day')];for(const c of cs){if(x<c.getBoundingClientRect().right)return c}return cs[cs.length-1]}
 const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/HH*60;
 const snapM=m=>Math.round(m/SNAP)*SNAP;
-const handlesAt=(di,m)=>S.events.filter(e=>visible(e)&&!isLocked(e)).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&(q.p===1||s.end<=1440)&&q.b-9<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,piece:q.p}))));
+const handlesAt=(di,m)=>S.events.filter(e=>visible(e)&&!isLocked(e)).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&(q.p===1||s.end<=1440)&&q.b-9<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,i,piece:q.p}))));
 function grab(ev,it,mode){
   const col=colAt(ev.clientX),cDay=+col.dataset.d,m=minAt(col,ev.clientY);
   const cands=mode==='resize'?handlesAt(cDay,m):piecesAt(cDay,m,false);
-  const sel=selId&&cands.find(c=>c.e.id===selId);
+  const sel=selK&&cands.find(c=>c.e.id===selK.id&&c.i===selK.i);
   if(sel){startDrag(ev,sel,mode);return}
-  if(new Set(cands.map(c=>c.e)).size>1){
+  if(cands.length>1){
     ev.preventDefault();const x0=ev.clientX,y0=ev.clientY;
     const off=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)};
     const mv=p=>{if(Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;off();
-      overlapMenu(p.clientX,p.clientY,cands,e=>{selId=e.id;render();toast(L('selHint',{t:e.title}))},L(mode==='resize'?'pickResize':'pickMove'))};
+      overlapMenu(p.clientX,p.clientY,cands,(e,it)=>{selK={id:e.id,i:it.i};render();toast(L('selHint',{t:e.title+' · '+DAYS[it.s.day].slice(0,3)+' '+fmt(it.s.start)+'–'+fmtEnd(it.s.end)}))},L(mode==='resize'?'pickResize':'pickMove'),false)};
     const up=p=>{off();const items=itemsAt(cDay,m);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e)};
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
   }
@@ -700,13 +700,13 @@ function startDrag(ev,it,mode){
   };
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
-function overlapMenu(x,y,items,onPick=openDlg,title=L('ovTitle')){
-  {const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
+function overlapMenu(x,y,items,onPick=openDlg,title=L('ovTitle'),group=true){
+  if(group){const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
   document.querySelectorAll('.omenu').forEach(m=>m.remove());
   const m=el('div','omenu',document.body);el('div','oh',m).textContent=title;
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true)};
   const out=e=>{if(!m.contains(e.target))close()},key=e=>{if(e.key==='Escape')close()};
-  items.forEach(({e,s})=>{const b=el('button','oi',m);b.innerHTML=`<i style="background:${esc(e.color)}"></i><b>${esc(e.title)}</b><small>${esc(fmt(s.start)+'–'+fmtEnd(s.end))}</small>`;b.onclick=()=>{close();onPick(e)}});
+  items.forEach(it=>{const {e,s}=it;const b=el('button','oi',m);b.innerHTML=`<i style="background:${esc(e.color)}"></i><b>${esc(e.title)}</b><small>${esc((group?'':DAYS[s.day].slice(0,3)+' ')+fmt(s.start)+'–'+fmtEnd(s.end))}</small>`;b.onclick=()=>{close();onPick(e,it)}});
   m.style.left=Math.max(6,Math.min(x,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(y,innerHeight-m.offsetHeight-6))+'px';
   setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)});
 }
@@ -868,7 +868,7 @@ $('rs').onpointerdown=ev=>{
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 };
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&selId&&!document.querySelector('dialog[open]')){selId=null;render();return}
+  if(e.key==='Escape'&&selK&&!document.querySelector('dialog[open]')){selK=null;render();return}
   if(e.target.closest&&e.target.closest('input,textarea,select'))return;if(document.querySelector('dialog[open]'))return;
   const k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
