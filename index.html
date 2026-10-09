@@ -82,7 +82,11 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}.btns .d{margin-right:auto}
 .swatch{width:100%;height:32px;border-radius:8px;padding:0}
 .dr{display:flex;gap:6px;align-items:center;margin:3px 0}.dr label{margin:0;width:50px;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
-.dr select{flex:1;width:auto;min-width:0;font-size:12px;padding:5px 3px}.dr select:nth-of-type(3){flex:1.7}.dr .wn{flex:0 0 18px;color:#e8912d;visibility:hidden;display:flex}.dr .wn svg{width:16px;height:16px}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
+.dr select{flex:1;width:auto;min-width:0;font-size:12px;padding:5px 3px}.dr select:nth-of-type(3){flex:1.7}.wn{flex:0 0 18px;color:#e8912d;visibility:hidden;display:flex}.wn svg{width:16px;height:16px}
+.tabs{display:flex;gap:4px;margin:14px 0 2px;border-bottom:1px solid var(--line)}.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:6px 12px;color:var(--mut)}.tabs button.on{color:var(--fg);border-bottom-color:var(--acc);font-weight:600}
+.br{display:flex;gap:6px;align-items:center;margin:4px 0}.br select{flex:1;min-width:0;width:auto;font-size:12px;padding:5px 3px}.br select.bd{flex:0 0 62px}.br select.bp{flex:1.5}.br .bx{padding:0 6px;border:0;background:none;color:#d33;flex:0 0 auto}.br .bx:disabled{opacity:.25}
+#fAddBlock{margin-top:4px;font-size:12px}
+.ev.sel{z-index:1;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
 .err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 .cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
 .sws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:8px}.sw{height:20px;border-radius:5px;border:1px solid #0003;padding:0}
@@ -120,14 +124,15 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <button id="hid" style="display:none"></button>
 <input type="file" id="file" accept=".json,application/json" hidden>
 <dialog id="dlg"><form method="dialog" id="f" onsubmit="return false">
-<label>Title *</label><input type="text" id="fT">
+<div class="row"><div style="flex:3"><label>Title *</label><input type="text" id="fT"></div><div style="flex:0 0 56px"><label>Colour</label><button type="button" class="swatch" id="fC"></button></div></div>
 <label>Description</label><textarea id="fD" rows="2"></textarea>
 <label>Person responsible</label><div class="row" style="align-items:center"><span id="fPic" class="ic"></span><select id="fP"></select></div>
 <label>Persons involved</label><div class="chk" id="fInv"></div>
-<div class="row"><div><label>Start</label><select id="fS"></select></div>
-<div><label>End</label><select id="fE"></select></div>
-<div style="flex:0 0 56px"><label>Colour</label><button type="button" class="swatch" id="fC"></button></div></div>
-<label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div><div class="warnline" id="fWarn"></div>
+<div class="tabs"><button type="button" id="tabQ" class="on" title="Quick mode: tick the days and set the times. One block per day.">Quick</button><button type="button" id="tabA" title="Advanced mode: a list of blocks. Allows several blocks on the same day, but you can't go back to Quick mode once a day has more than one.">Advanced</button></div>
+<div id="paneQ"><div class="row"><div><label>Start</label><select id="fS"></select></div><div><label>End</label><select id="fE"></select></div></div>
+<label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div></div>
+<div id="paneA" style="display:none"><label>Blocks — each block has a day, start, end and responsible person; a day can have several</label><div id="fBlocks"></div><button type="button" id="fAddBlock">+ Add block</button></div>
+<div class="warnline" id="fWarn"></div>
 <label title="Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules * (at least one)</label><div class="chk" id="fSch"></div>
 <div class="err" id="err"></div>
 <div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Repeat on days and save.">Delete</button><button type="button" id="fCopy" title="Copy this event to another schedule, choosing the colour of the copy.">Copy…</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
@@ -175,7 +180,8 @@ help1:'Drag on an empty part of a day to create an event.',help2:'Drag an event 
 viewNote:'These settings are kept in this browser, not in the save file.',ctxCopy:'Copy event…',cpNote:'A copy is independent of the original. To share one event across schedules instead, tick several schedules in the event dialog.',
 hidN:'{n} hidden',hidWk:'{n} on the hidden weekend',hidEr:'{n} in the hidden early hours',hidPp:'{n} hidden by the people filter',hidClick:'Click to open the settings.',
 help9:'Right-click an event (even a locked one) to copy it.',nextDay:'(Next day)',ovTip:'Repetitions of this event overlap each other.',ovRowTip:'Overlaps another repetition of this event',ovDlg:'Some repetitions overlap: {d}',rpWarn:'Some repetitions now overlap',contFrom:'from {d} {t}',contUntil:'until {t}',
-help10:'Events can run past midnight into the next day (Sunday continues on Monday). The end-time list marks those with "(Next day)".',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
+help10:'Events can run past midnight into the next day (Sunday continues on Monday). The end-time list marks those with "(Next day)".',day2:'(Day after next)',quickNo:"Quick mode can't show several blocks on the same day. Remove the extra blocks on that day to go back.",selHint:'"{t}" selected: now drag it. Click empty space or press Esc to deselect.',pickMove:'Several events here — pick the one to move',pickResize:'Several events here — pick the one to resize',
+help11:'When events overlap, dragging asks which one you mean. The chosen event stays selected (outlined) until you click empty space or press Esc.',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
 resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Schedule 1'},
 es:{
@@ -213,7 +219,8 @@ help1:'Arrastra sobre un hueco vacío de un día para crear un evento.',help2:'A
 viewNote:'Estos ajustes se guardan en este navegador, no en el archivo de guardado.',ctxCopy:'Copiar evento…',cpNote:'Una copia es independiente del original. Para compartir un mismo evento entre horarios, marca varios horarios en el evento.',
 hidN:'{n} ocultos',hidWk:'{n} en el fin de semana oculto',hidEr:'{n} en las horas tempranas ocultas',hidPp:'{n} ocultos por el filtro de personas',hidClick:'Haz clic para abrir los ajustes.',
 help9:'Haz clic derecho en un evento (incluso bloqueado) para copiarlo.',nextDay:'(día siguiente)',ovTip:'Hay repeticiones de este evento que se superponen.',ovRowTip:'Se superpone con otra repetición de este evento',ovDlg:'Hay repeticiones que se superponen: {d}',rpWarn:'Algunas repeticiones ahora se superponen',contFrom:'desde {d} {t}',contUntil:'hasta {t}',
-help10:'Los eventos pueden pasar de la medianoche al día siguiente (el domingo continúa el lunes). La lista de horas de fin los marca con "(día siguiente)".',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
+help10:'Los eventos pueden pasar de la medianoche al día siguiente (el domingo continúa el lunes). La lista de horas de fin los marca con "(día siguiente)".',day2:'(pasado mañana)',quickNo:'El modo rápido no puede mostrar varios bloques el mismo día. Quita los bloques sobrantes de ese día para volver.',selHint:'"{t}" seleccionado: ahora arrástralo. Haz clic en un espacio vacío o pulsa Esc para deseleccionar.',pickMove:'Varios eventos aquí — elige el que quieres mover',pickResize:'Varios eventos aquí — elige el que quieres redimensionar',
+help11:'Cuando los eventos se superponen, al arrastrar se pregunta a cuál te refieres. El evento elegido queda seleccionado (con borde) hasta que hagas clic en un espacio vacío o pulses Esc.',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Horario 1'}};
 const ES=[
@@ -225,6 +232,7 @@ const ES=[
 ['Copy…','Copiar…'],['Copy this event to another','Copia este evento a otro horario eligiendo el color de la copia.'],
 ['Delete','Eliminar'],['Cancel','Cancelar'],['Save','Guardar'],
 ['Deletes the event including','Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda.'],
+['Quick','Rápido'],['Advanced','Avanzado'],['+ Add block','+ Añadir bloque'],['Blocks — each block','Bloques — cada bloque tiene día, inicio, fin y persona responsable; un día puede tener varios'],['Quick mode: tick','Modo rápido: marca los días y pon las horas. Un bloque por día.'],['Advanced mode: a list','Modo avanzado: una lista de bloques. Permite varios bloques el mismo día, pero no se puede volver al modo rápido cuando un día tiene más de uno.'],
 ['Close','Cerrar'],['Print agenda','Imprimir agenda']];
 const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
 function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
@@ -236,7 +244,7 @@ function applyStatic(){
   });
 }
 /* ---------- basics & icons ---------- */
-const HH=48,SNAP=15,MAXEND=2865,PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
+const HH=48,SNAP=15,MAXEND=2880,PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
 const SWATCHES=[...PAL,'#6b7385','#1d2330','#f5c518','#7bc043','#ff7f50','#a0522d','#00897b','#5c6bc0','#ec407a'];
 const uid=()=>Math.random().toString(36).slice(2,10);
 const $=id=>document.getElementById(id);
@@ -323,6 +331,8 @@ function iconPicker(parent,svg,color,onchange){
 /* ---------- state, history, persistence ---------- */
 const KEY='weekly-schedules-data',PKEY='weekly-schedules-prefs';
 let S={schedules:[],events:[],people:[]};
+let selId=null;
+const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
 let lastBrowser=null,lastFile=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
 const dataKey=()=>JSON.stringify({schedules:S.schedules.map(({visible,opacity,...r})=>r),people:S.people.map(({visible,...r})=>r),events:S.events});
 const isDirty=()=>{const k=dataKey();return k!==lastBrowser&&k!==lastFile};
@@ -378,10 +388,11 @@ function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('ac
   (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
   t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),acts?7000:2200)}
 /* ---------- helpers ---------- */
+const qa=s=>[...document.querySelectorAll(s)];
 const pad=n=>String(n).padStart(2,'0');
 const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
-const fmtEnd=m=>fmt(m)+(m>1440?' (+1)':'');
-const endLabel=m=>m<1440?fmt(m):fmt(m)+' '+L('nextDay');
+const fmtEnd=m=>fmt(m)+(m>=2880?' (+2)':m>1440?' (+1)':'');
+const endLabel=m=>m<1440?fmt(m):fmt(m)+' '+L(m>=2880?'day2':'nextDay');
 const hourLabel=h=>prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
 const vs=()=>prefs.showEarly?0:5;
 const pvis=id=>{const p=S.people.find(x=>x.id===id);return !!p&&p.visible};
@@ -449,7 +460,7 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=10;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=11;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }
 /* agenda / print */
@@ -589,14 +600,14 @@ function render(){
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
   days.forEach(di=>{
     const col=el('div','day'+(di>4?' we':''),g);col.style.height=hrs*HH+'px';col.dataset.d=di;
-    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col)startCreate(ev,di,col)};
+    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){if(selId){selId=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}startCreate(ev,di,col)}};
     col.oncontextmenu=ev=>{ev.preventDefault();const its=piecesAt(di,minAt(col,ev.clientY),true);
       if(its.length)overlapMenu(ev.clientX,ev.clientY,its,openCopy,L('ctxCopy'))};
     const evs=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&slotVisible(e,s)).map(q=>({e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,color:e.color,op:evOp(e)}))));
     evs.forEach(it=>{
       const e=it.e,s=it.s,d=el('div','ev',col),lk=isLocked(e),warn=ovOf(e).has(s);
       d.style.top=(Math.max(it.start,a*60)-a*60)/60*HH+'px';d.style.height=Math.max(14,(it.end-Math.max(it.start,a*60))/60*HH-1)+'px';
-      d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');
+      d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');if(e.id===selId)d.classList.add('sel');
       if(it.cont)d.style.borderRadius=it.piece?'0 0 8px 8px':'8px 8px 0 0';
       const fl=[];if(e.slots.length>1)fl.push(ICON_REPEAT);if(warn)fl.push('<b style="color:#ffd23f;display:flex">'+ICON_WARN+'</b>');if(lk)fl.push(ICON_LOCK);
       if(fl.length){const f=el('span','flags',d);f.innerHTML=fl.map(x=>x.startsWith('<b')?x:'<span>'+x+'</span>').join('')}
@@ -608,7 +619,7 @@ function render(){
       const mm=el('span','m',d);mm.innerHTML=parts.join(' · ');
       d.title=e.title+'\n'+mm.textContent+(e.slots.length>1?'\n'+L('repTip',{n:e.slots.length}):'')+(warn?'\n⚠ '+L('ovTip'):'');
       const rz=(!it.cont||it.piece)?el('div','rz',d):null;
-      if(!lk)d.onpointerdown=ev=>{ev.stopPropagation();startDrag(ev,it,rz&&rz===ev.target?'resize':'move')};
+      if(!lk)d.onpointerdown=ev=>{ev.stopPropagation();grab(ev,it,rz&&rz===ev.target?'resize':'move')};
     });
     const pts=[...new Set(evs.flatMap(e=>[Math.max(e.start,a*60),e.end]))].sort((x,y)=>x-y);
     for(let i=0;i<pts.length-1;i++){
@@ -631,10 +642,26 @@ function render(){
 function colAt(x){const cs=[...document.querySelectorAll('.day')];for(const c of cs){if(x<c.getBoundingClientRect().right)return c}return cs[cs.length-1]}
 const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/HH*60;
 const snapM=m=>Math.round(m/SNAP)*SNAP;
+const handlesAt=(di,m)=>S.events.filter(e=>visible(e)&&!isLocked(e)).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&(q.p===1||s.end<=1440)&&q.b-9<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,piece:q.p}))));
+function grab(ev,it,mode){
+  const col=colAt(ev.clientX),cDay=+col.dataset.d,m=minAt(col,ev.clientY);
+  const cands=mode==='resize'?handlesAt(cDay,m):piecesAt(cDay,m,false);
+  const sel=selId&&cands.find(c=>c.e.id===selId);
+  if(sel){startDrag(ev,sel,mode);return}
+  if(new Set(cands.map(c=>c.e)).size>1){
+    ev.preventDefault();const x0=ev.clientX,y0=ev.clientY;
+    const off=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)};
+    const mv=p=>{if(Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;off();
+      overlapMenu(p.clientX,p.clientY,cands,e=>{selId=e.id;render();toast(L('selHint',{t:e.title}))},L(mode==='resize'?'pickResize':'pickMove'))};
+    const up=p=>{off();const items=itemsAt(cDay,m);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e)};
+    document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
+  }
+  startDrag(ev,it,mode);
+}
 function startDrag(ev,it,mode){
   const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();
   const col=colAt(ev.clientX),cDay=+col.dataset.d,cMin=minAt(col,ev.clientY),off=cMin+1440*pc-e.start,dur=e.end-e.start;
-  const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1;
+  const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
   const ovB=overlapSet(orig).size;
   let moved=false,single=false,final=null;const x0=ev.clientX,y0=ev.clientY;
   const mv=p=>{
@@ -644,7 +671,7 @@ function startDrag(ev,it,mode){
     else{let rel=(cd-o0.day+7)%7;rel=rel>1?(rel===6?0:1):rel;t.end=Math.max(o0.start+SNAP,Math.min(MAXEND,snapM(m+1440*rel)))}
     owner.slots.forEach((s,i)=>Object.assign(s,orig[i]));
     if(!multi||single){
-      if(mode==='move'&&owner.slots.some(x=>x!==e&&x.day===t.day))t.day=o0.day;
+      if(mode==='move'&&!adv&&owner.slots.some(x=>x!==e&&x.day===t.day))t.day=o0.day;
       Object.assign(e,t);
     }else{
       const dD=t.day-o0.day,dS=t.start-o0.start,dE=t.end-o0.end;
@@ -657,7 +684,7 @@ function startDrag(ev,it,mode){
   };
   const up=p=>{
     document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
-    if(!moved){const items=itemsAt(cDay,cMin);if(items.length>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);return}
+    if(!moved){const items=itemsAt(cDay,cMin);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);return}
     const changed=JSON.stringify(S)!==before;if(changed)pushUndo(before);render();
     if(!changed)return;
     const warn=overlapSet(owner.slots).size>ovB,mark=undoSt.length,fin={...final};
@@ -667,13 +694,14 @@ function startDrag(ev,it,mode){
         {label:L('rpOnly'),fn:()=>{
           if(undoSt.length!==mark||!S.events.includes(owner))return;
           owner.slots=orig.map(x=>({...x}));const s=owner.slots[idx];
-          if(mode==='move'){if(!owner.slots.some(x=>x!==s&&x.day===fin.day))s.day=fin.day;s.start=fin.start;s.end=fin.end}else s.end=fin.end;
+          if(mode==='move'){if(adv||!owner.slots.some(x=>x!==s&&x.day===fin.day))s.day=fin.day;s.start=fin.start;s.end=fin.end}else s.end=fin.end;
           render()}},undoBtn]);
     }else if(warn)toast('⚠ '+L('rpWarn'),[undoBtn]);
   };
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
 function overlapMenu(x,y,items,onPick=openDlg,title=L('ovTitle')){
+  {const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
   document.querySelectorAll('.omenu').forEach(m=>m.remove());
   const m=el('div','omenu',document.body);el('div','oh',m).textContent=title;
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true)};
@@ -701,6 +729,7 @@ function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('o
 const pOpts=()=>[['',L('none')],...S.people.map(q=>[q.id,q.name])];
 const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c};
 $('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
+let fmode='quick',blocks=[],curStl=[],curEtl=[];
 const rows=DAYS.map((n,i)=>{
   const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
   const s=el('select','',r),en=el('select','',r),ps=el('select','',r),wn=el('span','wn',r);wn.innerHTML=ICON_WARN;wn.title=L('ovRowTip');
@@ -713,11 +742,53 @@ const rows=DAYS.map((n,i)=>{
   return o});
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
 function sync(o){o.s.value=$('fS').value;o.en.value=$('fE').value;updEnd(o.s,o.en)}
-function updWarn(){
-  const sl=[];rows.forEach((o,i)=>{o.wn.style.visibility='hidden';if(o.cb.checked)sl.push({day:i,start:+o.s.value,end:+o.en.value,o})});
-  const set=overlapSet(sl);sl.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
-  const n=sl.filter(s=>set.has(s)).map(s=>DAYS[s.day]);$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';
+function formSlots(){
+  if(fmode==='quick'){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)a.push({day:i,start:+o.s.value,end:+o.en.value,person:o.ps.value})});return a}
+  return blocks.map(o=>({day:+o.dsel.value,start:+o.s.value,end:+o.en.value,person:o.ps.value}));
 }
+function updWarn(){
+  const items=fmode==='quick'?rows.map((o,i)=>o.cb.checked?{o,day:i,start:+o.s.value,end:+o.en.value}:null).filter(Boolean):blocks.map(o=>({o,day:+o.dsel.value,start:+o.s.value,end:+o.en.value}));
+  rows.forEach(o=>o.wn.style.visibility='hidden');blocks.forEach(o=>o.wn.style.visibility='hidden');
+  const set=overlapSet(items);items.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
+  const n=[...new Set(items.filter(s=>set.has(s)).map(s=>DAYS[s.day]))];$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';
+}
+function updTabs(){
+  const dup=fmode==='adv'&&isAdv(formSlots());
+  $('tabQ').disabled=dup;$('tabQ').classList.toggle('on',fmode==='quick');$('tabA').classList.toggle('on',fmode==='adv');
+  const q=$('tabQ');if(q.__t===undefined)q.__t=q.title;q.title=dup?L('quickNo'):tr(q.__t);
+  $('paneQ').style.display=fmode==='quick'?'':'none';$('paneA').style.display=fmode==='adv'?'':'none';
+}
+function refreshDlg(){updWarn();updTabs();blocks.forEach(o=>o.x.disabled=blocks.length<2)}
+function addBlock(b){
+  const r=el('div','br',$('fBlocks')),dsel=el('select','bd',r);fillSel(dsel,DAYS.map((n,i)=>[i,n.slice(0,3)]));
+  const s=el('select','',r),en=el('select','',r),ps=el('select','bp',r),wn=el('span','wn',r),x=el('button','bx',r);
+  fillSel(s,curStl);fillSel(en,curEtl);fillSel(ps,pOpts());wn.innerHTML=ICON_WARN;wn.title=L('ovRowTip');x.type='button';x.textContent='✕';
+  dsel.value=b.day;s.value=b.start;en.value=b.end;ps.value=b.person||'';updEnd(s,en);
+  const o={r,dsel,s,en,ps,wn,x};blocks.push(o);
+  dsel.onchange=refreshDlg;en.onchange=refreshDlg;
+  s.onchange=()=>{if(+en.value<=+s.value)en.value=Math.min(MAXEND,+s.value+60);updEnd(s,en);refreshDlg()};
+  x.onclick=()=>{if(blocks.length<2)return;r.remove();blocks=blocks.filter(z=>z!==o);refreshDlg()};
+}
+function setMode(m){
+  if(m===fmode)return;
+  const sl=formSlots();
+  if(m==='adv'){
+    $('fBlocks').innerHTML='';blocks=[];
+    (sl.length?sl.slice().sort((a,b)=>a.day-b.day||a.start-b.start):[{day:0,start:+$('fS').value,end:+$('fE').value,person:$('fP').value}]).forEach(addBlock);
+  }else{
+    if(isAdv(sl))return;
+    const g=sl[0]||{start:540,end:600,person:''};
+    $('fS').value=g.start;$('fE').value=g.end;updEnd($('fS'),$('fE'));$('fP').value=g.person||'';updPic();
+    rows.forEach((o,i)=>{const b=sl.find(x=>x.day===i);o.cb.checked=!!b;o.s.value=b?b.start:g.start;o.en.value=b?b.end:g.end;o.ps.value=b?b.person||'':g.person||'';
+      o.custom=!!b&&(b.start!==g.start||b.end!==g.end);o.pc=!!b&&(b.person||'')!==(g.person||'');updEnd(o.s,o.en);o.upd()});
+  }
+  fmode=m;refreshDlg();
+}
+$('tabQ').onclick=()=>setMode('quick');$('tabA').onclick=()=>setMode('adv');
+$('fAddBlock').onclick=()=>{
+  const l=blocks[blocks.length-1],ld=l?{day:+l.dsel.value,start:+l.s.value,end:+l.en.value}:{day:0,start:540,end:600};
+  const st=ld.end<=1380?ld.end:ld.start;addBlock({day:ld.day,start:st,end:Math.min(MAXEND,st+60),person:$('fP').value});refreshDlg();
+};
 $('fS').onchange=()=>{if(+$('fE').value<=+$('fS').value)$('fE').value=Math.min(MAXEND,+$('fS').value+60);updEnd($('fS'),$('fE'));rows.forEach(o=>{if(!o.custom)sync(o)});updWarn()};
 $('fE').onchange=()=>{rows.forEach(o=>{if(!o.custom)sync(o)});updWarn()};
 function updPic(){const q=S.people.find(x=>x.id===$('fP').value);$('fPic').innerHTML=q?ICON_USER:'';$('fPic').style.color=q?q.color:''}
@@ -725,27 +796,28 @@ $('fP').onchange=()=>{updPic();rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').valu
 function openDlg(e,def){
   cur=e;const d=e||{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)};
   const slots=e?e.slots:[{day:0,start:540,end:600,person:'',...def}];
-  const stl=[],etl=[];for(let m=0;m<=1425;m+=SNAP)stl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)etl.push([m,endLabel(m)]);
-  fillSel($('fS'),stl);fillSel($('fE'),etl);
+  curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
+  fillSel($('fS'),curStl);fillSel($('fE'),curEtl);
   $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
   const g=slots[0];$('fS').value=g.start;$('fE').value=g.end;updEnd($('fS'),$('fE'));
   fillSel($('fP'),pOpts());$('fP').value=g.person||'';updPic();
-  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.s,stl);fillSel(o.en,etl);fillSel(o.ps,pOpts());o.cb.checked=!!sl;
+  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,pOpts());o.cb.checked=!!sl;
     o.s.value=sl?sl.start:g.start;o.en.value=sl?sl.end:g.end;o.ps.value=sl?sl.person||'':g.person||'';
     o.custom=!!sl&&(sl.start!==g.start||sl.end!==g.end);o.pc=!!sl&&(sl.person||'')!==(g.person||'');updEnd(o.s,o.en);o.upd()});
-  updWarn();
+  $('fBlocks').innerHTML='';blocks=[];
+  if(isAdv(slots)){fmode='adv';slots.slice().sort((a,b)=>a.day-b.day||a.start-b.start).forEach(addBlock)}else fmode='quick';
   const iv=$('fInv');iv.innerHTML='';
   if(!S.people.length)iv.textContent=L('noPeople');
   S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
   S.schedules.forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=d.schedules.includes(s.id);l.insertAdjacentHTML('beforeend',sTag(s))});
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
+  refreshDlg();
   $('dlg').showModal();$('fT').focus();
 }
 $('fOk').onclick=()=>{
   const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);
-  const slots=[];
-  rows.forEach((o,i)=>{if(o.cb.checked)slots.push({day:i,start:+o.s.value,end:+o.en.value,person:o.ps.value})});
+  const slots=formSlots().sort((a,b)=>a.day-b.day||a.start-b.start);
   if(!title)return $('err').textContent=L('errTitle');
   if(!slots.length)return $('err').textContent=L('errDay');
   const bad=slots.find(s=>s.end<=s.start);
@@ -796,6 +868,7 @@ $('rs').onpointerdown=ev=>{
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 };
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&selId&&!document.querySelector('dialog[open]')){selId=null;render();return}
   if(e.target.closest&&e.target.closest('input,textarea,select'))return;if(document.querySelector('dialog[open]'))return;
   const k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
