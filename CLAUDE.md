@@ -1,170 +1,78 @@
 # Project context (for Claude / future contributors)
 
-Paste or point Claude at this file when continuing work on the project.
+Point Claude at this file when continuing work. It describes the **current** behaviour and design; history is summarised at the end.
 
-## What this is
-A single static `index.html` (HTML + CSS + vanilla JS, no libraries, no network). It must keep working when opened from disk. Built iteratively with Claude from the requirements below.
+## 1. What this is
+A single static `index.html` (HTML + CSS + vanilla JS, no libraries, no network) that must keep working when opened from disk or GitHub Pages. A weekly planner: Mon→Sun columns, hourly rows, **schedules** that can be overlaid, **events** with repetitions, **people**, and background **period sets** (named parts of the day). English/Spanish UI. Built iteratively with Claude.
 
-## Requirements (cumulative)
-1. Single-page app loadable from a static HTML file.
-2. Weekly calendar: columns Monday→Sunday, rows hourly 05:00→24:00; 00:00–05:00 hidden but toggleable. Days are NOT tied to dates.
-3. Events are rounded boxes (Google-Calendar-like) with background colours; can be removed, moved up/down a day and between days; may overlap.
-4. Overlap ranges show a diagonal-stripe pattern mixing the overlapping events' colours.
-5. Event fields: title (required), description, person responsible, ≥1 schedule (required). Toggling a schedule shows/hides its events; several schedules overlay the same calendar.
-6. Save all data to a JSON file and load it back (it is effectively a save file).
-7. Events can repeat on chosen days; each day defaults to the general times but can differ; all repeats share colour/title/etc. Delete removes the whole event (no separate "delete all repeats"); a single repeat is removed by unticking its day in the dialog.
-8. Weekend columns (Sat/Sun) have a different hue.
-9. People list managed like schedules; "responsible" is a dropdown; repeats can have a different responsible person per day; "persons involved" is a multi-select; people can be toggled to show/hide their events.
-10. Click a day header → agenda for that day with a print button (printer-friendly).
-11. Print the schedule (printer-friendly, header lists the shown schedules and people).
-12. Toggleable "now" line on the current weekday's column.
-13. Copy a whole event into another schedule (independent copy).
-
-## Data model (save file, version 3)
-```json
-{
-  "version": 3,
-  "showEarly": false,
-  "schedules": [{ "id": "", "name": "", "color": "#3b6df0", "visible": true }],
-  "people":    [{ "id": "", "name": "", "visible": true }],
-  "events": [{
-    "id": "", "title": "", "desc": "", "color": "#e5484d",
-    "schedules": ["scheduleId"],
-    "involved": ["personId"],
-    "slots": [{ "day": 0, "start": 540, "end": 600, "person": "personId or ''" }]
-  }]
-}
+## 2. Data model (save file version 6, `payload()`)
 ```
-- `day`: 0 = Monday … 6 = Sunday. `start`/`end`: minutes from midnight (0–1440), 15-min snap.
-- One slot per day per event. Slots are the "repeats"; `person` is the responsible person for that slot.
-- Loader migrates older files (single `day/start/end`, free-text `person` name → people entry).
+schedules  [{id,name,color,opacity,locked,visible}]
+people     [{id,name,color,visible}]
+events     [{id,title,desc,color,schedules:[id],involved:[personId],
+             slots:[{day,start,end,person}]}]          // "repetitions"
+periodSets [{id,name,visible}]
+periods    [{id,title,desc,color,sets:[id],slots:[{day,start,end}]}]
+periodOpacity 0.05–1 (default 0.3)
+```
+- `day` 0 = Monday … 6 = Sunday. Times are minutes, 15-minute grid.
+- **Events:** `start` 0–1425, `end` up to `MAXEND = 2880` (midnight at the end of the *next* day). Overflow continues on the next day; Sunday wraps to Monday. **Periods:** `end ≤ 1440` (stay inside one day).
+- A slot is a repetition. Quick mode = at most one slot per day; Advanced mode allows several per day (see §6).
+- `parseData()` is the only place that validates/migrates input (old files: single `day/start/end`, free-text person names → people, missing fields get defaults). Loaders assign `S` themselves.
+- **View settings are NOT in the file.** They live in `prefs` (localStorage `weekly-schedules-prefs`): `showEarly`, `clock12`, `hideWeekend`, sidebar `w`/`collapsed`, section collapse flags (`secSch`, `secPpl`, `secPS`). Browser memory for data is `weekly-schedules-data`.
+- **Data vs view state inside the file:** `schedules[].visible/opacity`, `people[].visible`, `periodSets[].visible`, `periodOpacity` are *view state*: saved, but not undoable, not counted as unsaved changes (`dataKey()` ignores them) and preserved by `restoreState()`. Everything else (including `locked`) is data.
 
-## Visibility rules
-- Event shown if ≥1 of its schedules is visible.
-- Occurrence (slot) shown if it has no people at all, OR any of {slot.person} ∪ {event.involved} is a visible person.
+## 3. Visibility rules
+- Event shown if ≥1 of its schedules is visible. Opacity of an event = highest opacity among its visible schedules.
+- A slot is shown if it has no people at all, or any of {slot.person} ∪ {event.involved} is a visible person.
+- An event is **locked** only if *all* its schedules are locked: it is click-through (`pointer-events:none`), can't be selected/moved/edited, but can be copied via right-click.
+- **Only one period set can be visible at a time** (exclusive eye; all can be hidden). Periods of the visible set are drawn.
+- Hidden weekend / hidden early hours / people filter: events hidden this way are counted in the "N hidden" badge (bottom-right of the grid; click opens Settings). Periods are never counted.
 
-## Code map (all in `index.html`)
-- `S` – global state `{schedules, events, people, showEarly}`. `render()` rebuilds sidebar + grid from `S` (simple, fast enough).
-- Events are positioned absolutely: `top = (minutes − visibleStart)/60 × HH` (`HH = 48`px/hour).
-- Overlap stripes: per day, breakpoints are collected, and each segment covered by ≥2 occurrences gets a `.ov` div with a `repeating-linear-gradient(45deg, …)`; title text sits above (`z-index:3`), overlay at `2`, now-line at `6`.
-- Drag logic uses document-level pointer listeners (not pointer capture) because `render()` recreates elements. `startDrag` (move/resize one slot), `startCreate` (drag on empty column).
-- Dialog (`#dlg`): general start/end/person + per-day rows. Rows follow general values until edited (`custom` / `pc` flags).
-- Printing: a hidden `#pr` div is filled (agenda HTML, or a clone of `#grid`), then `window.print()`; `@media print` hides everything except `#pr`. `#pgStyle` sets `@page`.
-- Palette/theme via CSS variables; dark mode via `prefers-color-scheme`.
+## 4. Rendering (`render()`)
+- Grid: time column + one `.dw` wrapper per displayed day = `.lane` (18px, `--lane` on the grid, 0 when no period set visible; sits *outside/left of* the day column so lips are flush with its border) + `.day`. Header cells (`.dh`) pad by the lane and have an agenda icon; clicking opens the day agenda.
+- Layer order inside `.day`: period backgrounds (`.pbx`) → hour lines (`.gl`) → events → overlap stripes (`.ov`) → now line.
+- **Periods:** background band at `periodOpacity`; a **lip** (vertical-text tab, full opacity) in the lane. Lip grouping: if the previous *displayed* column has the same period with identical start/end, no lip is drawn there and the lane shows a translucent band (`.lbg`) so the colour stays continuous; different timing → each gets its own lip. Lip tooltip: name, day range (e.g. `Mon–Fri`), times, description.
+- **Events:** split into per-day pieces (`piecesOf`); overflow pieces have flat joined edges and labels `from Fri 22:00 · until 02:00`; first piece `22:00–02:00 (Next day)`. Overlaps draw diagonal stripes of the overlapping colours (same-colour overlaps get a lightened stripe). Top-right flags: repeat icon, ⚠ (repetitions of the same event overlap, `overlapSet` on week-wrapped intervals), lock.
+- **Time display:** `fmt()` wraps at 24h, so midnight is `00:00` (`12:00 AM` in AM/PM mode), never `24:00`. Compact ends: `00:00` for plain midnight, `(Next day)` suffix for anything later. The end-time *select* labels differ: `…23:45`, `00:00 (Next day)`, … `23:45 (Next day)`, `00:00 (Day after next)` (`endLabel`) — known inconsistency, alignment proposed but not done.
 
-## Constraints / gotchas
-- Keep it one file, no external requests. Don't rely on `localStorage` if the file may be embedded in Claude artifacts (state is memory-only; persistence = Save JSON).
-- Always `esc()` user text that goes into `innerHTML`.
-- "Now line" setting is not saved.
+## 5. Interaction model
+- **Edit mode** (sidebar segmented control *Events | Periods*, `editMode`): in Periods mode events are inert/dimmed and periods are interactive; in Events mode periods are background only (lips still show tooltips). This enforces "editing one can't affect the other". `act()` returns the editable list; `eVis/eLock/sVis` make hit-testing, `grab`, `startDrag` and the choosers work for both kinds (`startDrag` sets `MAXEND` to 1440 for periods).
+- **Create:** drag on empty column space (or the + button). **Click** an event → dialog. **Right-click** a day column → list of events/periods under the pointer → Copy dialog.
+- **Click vs drag disambiguation (`grab`)**: *click* where only repetitions of one event overlap → dialog directly; several different events → chooser grouped by event. *Drag* (move or resize) where more than one piece (event or repetition) could be meant → chooser listing every repetition separately; the pick becomes the selection (`selK={id,i}`, outlined, raised) and takes the next drag directly. Esc / empty click / undo clears it. Resize ambiguity uses the bottom ~9 minutes of each piece.
+- **Drag/resize of a repeating event changes ALL repetitions by default** (live preview); **Shift** (also mid-drag) changes only the grabbed one. After an "all" drop a toast offers *Only this day* and *Undo* (ignored if history changed). Rules: moves shift every repetition by the same minutes and days (mod 7); resizes change every end by the same amount, **minimum 15 minutes (nothing is ever removed)**; dragging a resize handle into the next day's column extends past midnight. Quick events block moving a single repetition onto a day that already has one; Advanced events allow it. New overlaps trigger a ⚠ toast.
+- **Undo/redo:** snapshot based. Call `hist()` *before* every data mutation (or `pushUndo(beforeJSON)` for drags). View-state changes don't create history.
 
-## Ideas not yet built
-Undo/redo, keyboard shortcuts, week-view PDF/landscape option, side-by-side layout for overlaps as an alternative view, localStorage autosave, per-person colours, import/merge (not replace) of save files.
+## 6. Dialogs
+- **Event/period dialog (`openDlg`, kind inferred from the object / `editMode`)**: title + colour swatch, description, responsible person, involved people (events only), **Quick / Advanced tabs**, schedules (or period sets), Delete, Copy…, Cancel, Save.
+  - *Quick:* general Start/End + Mon–Sun rows (tick, start, end, person); rows follow the general values until edited (`custom`/`pc` flags).
+  - *Advanced:* list of blocks (day, start, end, person, ✕, + Add block). Several blocks per day allowed. Advanced→Quick only while no day has two blocks (`isAdv`); an event with a duplicate day always opens in Advanced.
+  - ⚠ on overlapping rows + summary line; end options ≤ start are disabled; periods hide person fields and stop at 00:00.
+- **Copy dialog (`openCopy`)**: destination schedule (or period set); colour: same / same hue brighter-or-darker (`shiftColor`) / random / chosen. Copies are independent events (sharing = ticking several schedules).
+- **Colour picker (`pickColor`)**: popover with swatches, HSL sliders, hex, Apply/Cancel (Enter applies, Esc cancels). Used everywhere instead of `<input type=color>`.
+- **Settings** (gear): View (early hours, now line, AM/PM, hide weekend), Data (Restart, Clear memory), Language. **Help** (`?`). `xdlg({title,body,buttons,onDismiss})` is the generic modal.
 
-## Later additions
-14. Per-schedule **solo** button: shows only that schedule; clicking again (when it is the only one visible) shows all.
-15. Helpful tooltips (`title` attributes / ⓘ icons) with workarounds.
+## 7. Sidebar
+Top row: favicon, title (• when unsaved), help, gear, collapse chevron (collapsible, width draggable). Then Events|Periods switch, primary "+" button, icon toolbar (undo, redo, save, load, print). Collapsible sections **Schedules**, **People**, **Period sets** (count, ⓘ tip, + button). Rows: eye, coloured icon (click = colour picker), name, … Schedule menu: colour, opacity slider, lock, "show only this one", delete. People menu: colour, delete. Period-set row: exclusive eye, name, agenda icon, delete; one opacity slider for all period sets sits under the list.
 
-### Two-week rota (design decision)
-Deliberately NOT a built-in feature (judged too complex). Workaround: create two ordinary schedules ("Week A", "Week B"), tick both for weekly events, use "Copy this event" to build Week B from Week A, and use solo to flip. A real two-week feature was designed on paper (A/B ticks per day, week selector, "this week is" setting, version-4 save format) if ever needed.
+## 8. Persistence
+- Save…/Load… open a choice: browser memory (`localStorage`) or JSON file. Auto-load from browser memory at startup. **Clear memory** (confirm) deletes it **and restarts the app** (default state, history cleared). **Restart** discards unsaved changes and reloads browser memory. Default first-run state: one schedule named **Routine**, nothing else.
+- Dirty = current data key differs from both the last browser save and the last file save; `beforeunload` warns; title shows •.
+- Loading from file currently *replaces* the data (undoable). See §11 for the planned richer import.
 
-## Language and icons (added later)
-16. **Spanish/English.** Selector at the bottom of the sidebar; initial language from `navigator.languages[0]` (`es*` → Spanish, otherwise English). Not saved in the JSON; resets per page load.
-17. **Icons.** People have a `color` and a user-profile icon in that colour; schedules have a calendar icon in the schedule colour. Click the sidebar icon to change the colour. Icons appear left of every person/schedule name (sidebar, event boxes, agenda, print header, dialog checkboxes, responsible-person preview). Native `<select>` options cannot show icons, so the per-day person selects are text only. Favicon is an inline SVG calendar.
+## 9. Printing
+Print schedule (current grid + header listing visible schedules/people, light colours), day agenda (list) and **Print day view** (one-column clone of the grid for that day, lips regenerated), period-set agenda. Mechanism: hidden `#pr` filled then `window.print()`; `@media print` hides everything else; `#pgStyle` sets `@page`. Period-set agenda groups repetitions into runs of consecutive days with identical times, Monday→Sunday, **no Sunday→Monday wrap**.
 
-### i18n mechanics (how to add a new UI string)
-- **Dynamic strings** (built in JS): add a key to both `D.en` and `D.es`, then use `L('key',{var:value})`.
-- **Static HTML text and `title` tooltips**: leave English in the HTML and add `['English prefix','Spanish text']` to the `ES` list (keys shorter than 12 chars must match exactly, longer ones match by prefix). `applyStatic()` swaps them and remembers the English original.
-- Day names come from `DAYN`; `DAYS` is mutated in place by `setLang()`.
-- People now have `color` in the save file; older files get colours assigned on load.
+## 10. i18n (English/Spanish) and conventions
+- Language from `navigator.languages[0]` (`es*` → Spanish); switchable in Settings; not persisted.
+- Dynamic strings: add a key to **both** `D.en` and `D.es`, use `L('key',{var})`. Static dialog HTML: keep English in the HTML and add `['English prefix','Spanish']` to `ES` (keys <12 chars match exactly, longer ones by prefix); `applyStatic()` handles `<dialog>` only.
+- Always `esc()` user text going into `innerHTML`. Keep one file, no external requests. Tooltips (`title`) explain workarounds (e.g. emulating a two-week rota with two schedules "Week A"/"Week B" + solo).
 
-18. **Copy to a schedule the event is already in:** the copy gets a new colour with the same hue but different lightness (`shiftColor`), skipping colours already used by events in that schedule. Copies into a schedule the event isn't in keep the original colour.
+## 11. Decisions, rationale and open items
+- **Two-week rota is deliberately not a built-in feature** (judged too complex): use two schedules + eye/"show only this one"; a full design (A/B ticks, week selector, version bump) exists on paper only.
+- Overflow limited to the next day; Sunday wraps to Monday; overlapping repetitions allowed with warnings; resizing never deletes a repetition.
+- Locked events are click-through so events underneath stay reachable; copying them is via right-click.
+- **Open / proposed (not implemented):** align the end-time select with the compact notation; richer JSON import (Replace / Insert / Merge / New session — plan agreed to be written up); default period set content; possible rename of "periods / period sets"; long-press as touch equivalent of right-click; period lists in day agendas; template content for a daily routine.
 
-19. **Eye icon visibility.** Schedules and people use an eye button (open eye = shown, dashed eye = hidden) instead of a checkbox.
-20. **Schedule opacity.** Each schedule has an opacity slider (`schedules[].opacity`, 0.1–1, default 1, saved in the JSON). An event is drawn at the highest opacity among its visible schedules; overlap stripes scale with the most opaque covered event. The slider calls `render()` with `skipSide=true` so the sidebar (and the slider being dragged) is not rebuilt.
-21. Sidebar widened to 290px; each schedule row wraps so the slider sits on its own line under the name.
-22. Opacity row: a checkered-box icon (tooltip explains it) plus the slider inside a `.opr` flex wrapper sized `calc(100% - 28px)` so it never overflows the sidebar; the slider flexes to fill the row width.
-
----
-## Major revision (save format v4) — supersedes older notes where they conflict
-23. **Undo/redo** (sidebar buttons, Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z). Snapshot-based: call `hist()` *before* every data mutation (or `pushUndo(beforeJSON)` for drags). View settings (`showEarly`, `clock12`, `hideWeekend`) are not undone. Opacity slider coalesces one drag into one undo step.
-24. **Copy** lives in its own dialog (`openCopy`), opened by the "Copy…" button in the event dialog. Pick destination schedule and colour mode: same / same hue brighter-or-darker (`shiftColor`) / random / chosen. Default mode: tweak if the destination already contains the event, else same.
-25. **Locked schedules** (`schedules[].locked`): events attached to any locked schedule are `pointer-events:none` (can't be selected, dragged, edited); a lock icon shows top-right on the event.
-26. **12h/24h clock** toggle (`S.clock12`, `fmt()`/`hourLabel()`).
-27. **Colour picker popover** (`pickColor`) with swatches, HSL sliders, hex field and Apply/Cancel (Enter applies, Esc cancels). Used everywhere instead of `<input type=color>`.
-28. **Overlap chooser:** clicking where several (unlocked, visible) events overlap opens a small menu to choose one (`itemsAt`, `overlapMenu`).
-29. **Dragging/resizing a repeating event** asks: only this day / all repetitions / cancel (`askRepeat`). "All" applies the same offset to every slot: moves shift every slot by the same days (mod 7) and minutes; resizes change every slot's end by the same amount and **remove** slots that would end at/before their start.
-30. **Day headers** show an agenda icon. Repeat icon (and lock icon) sit top-right of the event box.
-31. **Sidebar:** collapsible (chevrons), resizable (drag right edge), holds *all* controls plus the title with the favicon; there is no header any more. Sidebar width/collapsed state are stored in `localStorage` key `weekly-schedules-prefs` (not in the save file). The sidebar is rebuilt by `renderSide()` on every `render()` (skipped while dragging the opacity slider via `skipSide`).
-32. **Persistence:** Save…/Load… open a small dialog (browser memory = `localStorage['weekly-schedules-data']`, or JSON file). The app auto-loads browser memory at startup. "Clear memory" (confirm) deletes it. "Restart" discards unsaved changes and reloads browser memory. `beforeunload` warns when `isDirty()` (current data differs from both last browser save and last file save); the title shows a • when dirty.
-33. **Hide/show weekend** toggle (`S.hideWeekend`).
-
-### Save file v4 additions
-`schedules[].locked`, `S.clock12`, `S.hideWeekend` (plus earlier `schedules[].opacity`, `people[].color`). Older versions load fine (defaults applied in `parseData`).
-
-### Code map changes
-- `parseData(json)` is pure validation/migration; callers assign `S`.
-- `xdlg({title,body,buttons,onDismiss})` is the generic modal used by save/load, copy and repeat-confirm dialogs (all text via `L()`).
-- i18n: dynamic strings in `D.en/D.es` via `L()`; only the static dialog HTML uses the `ES` prefix list (`applyStatic()` now touches `<dialog>` only).
-- Minute snapping function is `snapM` (the name `snap` was retired).
-
----
-## Revision: repeat-drag behaviour and settings dialog (supersedes items 29 and parts of 26/33)
-34. **Dragging/resizing a repeating event changes ALL repetitions by default**, with a live preview while dragging (`startDrag`). Hold **Shift** (can be pressed mid-drag) to change only the grabbed day. No confirmation dialog any more. After an "all" drop, a toast offers **Only this day** (reverts the others, keeps the dragged change) and **Undo**; both are ignored if the history changed since (`undoSt.length` mark). Rules unchanged: same offset for every slot; a slot that would end at/before its start is removed (slots are flagged `_gone` during the preview and stripped on drop); day moves rotate mod 7.
-35. **Settings dialog** (gear icon at the top of the sidebar → `openSettings()`, built on `xdlg`). Sections are built with `sec(titleKey)` + `opt(...)` rows; currently one section, **View**: show early hours, show "now" line, AM/PM clock, hide Saturday/Sunday. Add future sections by calling `sec()` again. These toggles were removed from the sidebar. Language selector is still at the bottom of the sidebar.
-36. Event tooltip lists the repeat info (`repTip`). Sidebar buttons now: undo, redo, + Event, Save…, Load…, Restart, Clear memory, Print schedule.
-
----
-## Revision: sidebar redesign (supersedes items 31, 35 (language location) and 36)
-37. **Sidebar layout:** top row = favicon, title (• when unsaved), help `?`, settings gear, collapse chevron. Then the primary **+ Event** button and one icon toolbar (undo, redo, save, load, print; tooltips only). Then two collapsible sections, **Schedules (n)** and **People (n)**, each with a header chevron, count, ⓘ tip and a "+" add button (collapsed state saved in prefs keys `secSch`/`secPpl`).
-38. **Rows are slim:** eye (visibility), coloured icon (click = colour picker; schedule icon dims with its opacity), editable name, lock badge (schedules, when locked) and a **⋯ menu** (`rowMenu`, `schMenu`, `perMenu`). Schedule menu: Colour…, opacity slider, Lock/Unlock, Show only this one (solo), Delete. People menu: Colour…, Delete. Hidden rows are dimmed.
-39. **Settings dialog sections:** View (early hours, now line, AM/PM, hide weekend), **Data** (Restart, Clear memory) and **Language** (en/es). Restart/Clear/Language moved out of the sidebar. Changing language re-opens the dialog in the new language.
-40. The grey hint paragraph is replaced by the **Help dialog** (`openHelp`, strings `help1`–`help8`).
-
----
-## Revision: conflict clean-up (save format v5) — supersedes the older notes where they conflict
-41. **View settings are per browser, not in the save file.** `showEarly`, `clock12`, `hideWeekend` now live in `prefs` (localStorage `weekly-schedules-prefs`, saved via `savePrefs()`), next to sidebar width/collapsed. `S` and the save file only hold `schedules`, `people`, `events` (version 5; older files load fine and extra keys are ignored).
-42. **Visibility (`visible`) and opacity are view state:** toggling them creates no undo step and doesn't mark the data as unsaved (`dataKey()` ignores them), but they are still written to the save file. `restoreState()` (undo/redo) keeps the *current* visibility/opacity of schedules and people. Lock stays real data (undoable, counts as a change).
-43. **Lock rule:** an event is locked only if *all* of its schedules are locked (`isLocked`). Locked events stay click-through (`pointer-events:none`). **Right-click anywhere on a day column** lists the events under the pointer (locked or not) and opens the Copy dialog for the chosen one (`col.oncontextmenu` → `overlapMenu(…, openCopy, …)`). No touch equivalent yet (idea: long-press).
-44. **"N hidden" badge** (`#hid`, bottom-right of the grid, `hiddenInfo()`): counts occurrences hidden by the hidden weekend, hidden early hours, or the people filter (priority in that order); tooltip gives the breakdown; click opens Settings.
-45. Copy dialog shows a note that a copy is independent (vs. ticking several schedules to share one event). Help dialog has a 9th tip about right-click copy.
-
-### Open design question (not implemented): events that cross midnight / several blocks per day
-Currently one slot per event per day and `end <= 1440`. Discussed options: allow `end` beyond 1440 (minutes from the slot's start-day midnight, ≤ 7 days) rendered as joined pieces per day; Sunday wraps to Monday; allow several blocks per day and overlapping repetitions with a warning rather than a ban.
-
----
-## Revision: events that run past midnight (supersedes the "open design question" above, item 34's removal rule, and "end ≤ 1440")
-46. **Slot model:** `slot.end` may now be up to `MAXEND = 2865` (23:45 on the *next* day), measured in minutes from midnight of the slot's start day; `start` is 0–1425. Overflow stops at the next day. Sunday overflow continues on **Monday** (week wraps). Old data (end ≤ 1440) is valid unchanged; `parseData` clamps values.
-47. **Rendering:** `piecesOf(slot)` splits a slot into 1–2 day pieces; each piece is drawn in its own column with flat joined edges (top flat on the continuation piece). Labels: first piece `22:00–02:00 (+1)`, second piece `from Fri 22:00 · until 02:00`. Only the last piece has the resize handle. Agenda lists both pieces; `piecesAt(day, minute, includeLocked)` powers the click chooser and right-click copy menu.
-48. **Time display:** `fmt()` wraps at 24h, so midnight always shows `00:00` (`12:00 AM` in AM/PM mode); never `24:00`. End-time selects list `00:15 … 23:45`, then `00:00 (Next day)`, `00:15 (Next day)` … `23:45 (Next day)` (`endLabel`); entries ≤ the chosen start are disabled.
-49. **Overlapping repetitions are allowed but warned about** (`overlapSet`, which compares week-wrapped intervals): ⚠ icon on the affected rows in the event dialog plus a summary line (`#fWarn`); ⚠ in the flags at the top-right of the affected event pieces on the grid (and a line in the tooltip/agenda); when a drag/resize *creates* new overlaps, a toast warns (with Undo). Overlapped same-colour pieces get a lightened stripe colour so the overlap is visible. Still one slot per day per event: dragging a single repetition onto a day that already has one is blocked.
-50. **Resizing never removes a repetition any more:** the minimum is 15 minutes (replaces the "remove if it would end before it starts" rule for both single and all-repetition resizes). Dragging a resize handle into the next day's column extends the event past midnight.
-
----
-## Revision: Quick/Advanced repetitions and overlap disambiguation (supersedes "one slot per day" and `MAXEND = 2865`)
-51. **`MAXEND = 2880`:** an event can end as late as midnight at the end of the next day. End-select labels: `…23:45`, `00:00 (Next day)` … `23:45 (Next day)`, `00:00 (Day after next)`. Compact display (`fmtEnd`): `(+1)` / `(+2)` suffixes.
-52. **Event dialog has two modes (tabs):** **Quick** (default; Mon–Sun rows, one block per day) and **Advanced** (list of blocks: day, start, end, person, ✕, "+ Add block"; several blocks per day and overlaps allowed, with ⚠ warnings). Switching Quick→Advanced converts the rows to blocks. Advanced→Quick is only allowed while no day has more than one block (`isAdv(slots)`); otherwise the Quick tab is disabled with an explanatory tooltip. An event whose saved slots have a duplicate day always opens in Advanced. Data model unchanged: `slots[]` simply may contain several entries per day. Colour moved next to the title.
-53. **Calendar drags on "advanced" events** may move a single repetition onto a day that already has one (quick events still block that).
-54. **Overlap disambiguation:** `grab()` runs on pointer-down on an event piece. If several *different events* could be meant (pieces covering the pointer for moves, resize handles within ~9 min for resizes) and none is selected, the gesture becomes: click → chooser to open the dialog; drag → chooser "pick the one to move/resize". Picking sets `selId` (selected event, outlined, raised above its neighbours); while selected, a drag that starts where it is among the candidates acts on it directly. Clear selection by clicking empty space or Esc.
-55. **Choosers group by event:** `overlapMenu` lists each event once; if all pieces under a click belong to the same event the dialog opens directly (no menu).
-
----
-## Revision: click vs drag disambiguation (refines items 54–55)
-56. **Clicking** to open the dialog: if everything under the pointer belongs to one event (even several overlapping repetitions) the dialog opens directly; if several different events overlap, the list shows each event once (repetitions grouped).
-57. **Dragging** (move or resize) where more than one *piece* (event or repetition) could be meant always shows the chooser, listing every repetition separately with its day and times (`overlapMenu(..., group=false)`). Selection is per repetition: `selK = {id, i}` (event id + slot index), cleared by Esc, empty-space click, undo/redo. Candidates carry the slot index `i` (`piecesAt`, `handlesAt`).
-58. Compact time displays (`fmtEnd`): an end at plain midnight (1440) shows `00:00`; any end after that shows `(Next day)`, including the end of the next day (2880 → `00:00 (Next day)`). Note the end-time *select* still labels 1440 as `00:00 (Next day)` and 2880 as `00:00 (Day after next)` (`endLabel`), so the two notations differ until the select is aligned.
-
----
-## Feature: Period sets and periods (save format v6)
-59. **New entities** (separate from schedules/events): `S.periodSets[] = {id,name,visible}`, `S.periods[] = {id,title,desc,color,sets:[setId],slots:[{day,start,end}]}` (no people; slots stay within one day, `end ≤ 1440`), and `S.periodOpacity` (0.05–1, default 0.3). Periods belong to one or more sets (like events ↔ schedules) and can be copied between sets (`openCopy` handles both kinds via `src.sets`).
-60. **Visibility:** only **one period set can be shown at a time** (the eye is exclusive; all can be hidden). `visible` and `periodOpacity` are *view state* like schedule visibility/opacity: saved in the file, not undoable, ignored by `dataKey()`, and preserved by `restoreState()`. **One opacity control** (slider under the Period sets list) affects all period backgrounds; lips/tabs are always fully opaque.
-61. **Rendering (`render()`):** each day column gets a lane (`--lane`, 18px, only while a set is visible) at its left for **lips** (vertical-text tabs, `.lip`); events/overlays/ghost are offset by `var(--lane)`. Periods draw as `.pbx` backgrounds *behind* events; the hour lines moved from `.day` to a `.gl` overlay drawn above the periods but below events. Lip grouping: for a period, if the previous *displayed* column has the same period with identical start/end, no lip is drawn (so Mon–Fri lunch has one lip on Monday with tooltip `Mon–Fri 12:00–13:00` + description); differing times → a lip each. Periods are never counted in the "N hidden" badge and are not hidden by early-hours/weekend toggles in any special way (they simply clip like anything else).
-62. **Edit mode** (sidebar segmented control **Events | Periods**, `editMode`): in *Periods* mode events are inert and dimmed, periods are interactive (dashed outline, label, resize handle, lip is a drag handle, drag on empty space creates a period, right-click copies); in *Events* mode periods are pure background (lips still show tooltips). This is how "editing periods can't affect events and vice versa" is enforced. `act()` returns the editable list; `eVis/eLock/sVis` make `piecesAt/handlesAt/startDrag/grab/overlapMenu` work for both kinds; `startDrag` sets `MAXEND` to 1440 for periods.
-63. **Dialog reuse:** `openDlg` infers `dkind` ('event'|'period'); for periods the person fields are hidden (`.ev-only`), the schedule list becomes the period-set list (`.per-only` label), end times stop at 00:00, and Quick/Advanced modes work identically. Deleting a period set deletes periods that only belonged to it (confirm).
-64. Not done / ideas: period lists in the agenda, a ready-made "Daily routine" template (e.g. sleep/wake/meals/work), lip text auto-shrinking for very short periods.
-
----
-## Revision: lips outside the column, period-set agenda, day-view print (supersedes parts of 61)
-65. **Geometry:** each day is now a wrapper `.dw` = `.lane` (18px, `--lane` set on the grid, 0 when no set is visible) + `.day`. The lane sits *outside and to the left* of the day column, so the lip's right edge is flush with the column's left border line. Events/overlays/ghost are back to `left:3px` inside `.day`. Header cells (`.dh`) pad by the lane width and draw their left separator via a 1px background gradient at `var(--lane)` so it aligns with the day column border.
-66. **Lane background:** where a period's lip is *not* drawn (a continuation column in a grouped run) the lane shows the period colour as a translucent band (`.lbg`, same opacity as `S.periodOpacity`), so the band stays continuous across Mon–Fri etc.; where the lip is drawn the lip (full opacity) sits in the lane.
-67. **Period set agenda:** each period-set row has an agenda icon → `openSetAgenda(ps)` / `setAgendaHTML(ps)`. Periods sorted by their earliest start (then title); under each, repetitions are grouped into runs of *consecutive days with identical time lists*, always scanning Monday→Sunday with **no wrap** (e.g. `Monday to Thursday 12:00–13:00`, `Friday 13:00–14:00`, `Saturday to Sunday 12:00–13:00`). Agenda dialog is shared via `showAgenda(fn, day)`; `agFn` is what the Print button prints.
-68. **Day agenda print options:** besides "Print agenda" (the list) there is now **"Print day view"** (`printDay(di)`): a one-column clone of the calendar grid (that day only, with all event boxes and periods as shown, lips regenerated from the lane bands) under the day title and the schedules/people header.
+## 12. Testing notes (no test suite in the repo)
+Logic was checked with `jsdom` scripts: stub `HTMLDialogElement.showModal/close`, `confirm`, `prompt`; `getBoundingClientRect` is all zeros so `colAt()` always resolves to the *last* displayed column and `minAt(y)` = `vs()*60 + y/48*60` — place test events on the last column (Sunday) or stub rects. Check `new Function(scriptText)` for syntax after every patch.

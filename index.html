@@ -169,7 +169,7 @@ addEv:'+ Event',addEvTip:'Or simply drag on an empty part of a day to create an 
 save:'Save…',saveTip:'Save to browser memory or download a JSON file. Nothing is kept unless you save.',
 load:'Load…',loadTip:'Replace the current view with data from browser memory or a JSON file (you can undo this).',
 restart:'Restart',restartTip:'Discard all unsaved changes and reload what is in browser memory.',
-clear:'Clear memory',clearTip:'Delete the data saved in this browser (the current view is not changed).',
+clear:'Clear memory',clearTip:'Delete the data saved in this browser and restart the app from scratch.',
 viewH:'View',earlyTip:'Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.',
 nowTip:'Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.',
 clockTip:'Switch between the 24-hour clock and AM/PM.',
@@ -187,8 +187,8 @@ lang:'Language',none:'— none —',noPeople:'Add people in the sidebar first.',
 errTitle:'Title is required.',errDay:'Pick at least one day.',errEnd:'{d}: end must be after start.',errSch:'Pick at least one schedule.',
 confSch:'Delete schedule "{n}"?',confLost:' {k} event(s) only in this schedule will also be deleted.',confPer:'Delete "{n}"? They will be removed from all events.',
 pSch:'Schedule name?',pPer:'Person name?',badFile:'That file is not a valid schedule save file.',
-confRestart:'Discard all unsaved changes and reload from browser memory?',confClear:'Clear the data saved in this browser? The current view is not changed.',
-savedMem:'Saved to browser memory',savedFile:'Saved to JSON file',loadedMem:'Loaded from browser memory',loadedFile:'Loaded from file',clearedMem:'Browser memory cleared',noMem:'Nothing is saved in browser memory yet.',memFail:'Browser memory is not available.',copied:'Event copied',restarted:'Restarted',
+confRestart:'Discard all unsaved changes and reload from browser memory?',confClear:'Clear the data saved in this browser and restart the app? Unsaved changes in the current view will be lost.',
+savedMem:'Saved to browser memory',savedFile:'Saved to JSON file',loadedMem:'Loaded from browser memory',loadedFile:'Loaded from file',clearedMem:'Browser memory cleared and app restarted',noMem:'Nothing is saved in browser memory yet.',memFail:'Browser memory is not available.',copied:'Event copied',restarted:'Restarted',
 saveTitle:'Save',loadTitle:'Load',toMem:'Browser memory',toFile:'JSON file',cancel:'Cancel',saveBody:'Where do you want to save?',loadBody:'Where do you want to load from?',
 
 cpTitle:'Copy event',cpDest:'Destination schedule',cpColor:'Colour of the copy',cpSame:'Same colour',cpHue:'Same hue, brighter or darker',cpRandom:'Random colour',cpPick:'Choose a colour:',cpDo:'Copy',
@@ -204,7 +204,7 @@ confPS:'Delete period set "{n}"?',confPSLost:' {k} period(s) only in this set wi
 noSets:'Create a period set first (sidebar → Period sets → +).',errSet:'Pick at least one period set.',cpDestP:'Destination period set',help12:'Period sets colour parts of the day in the background. Switch to "Periods" in the sidebar to edit them; events cannot be touched meanwhile.',
 dayTo:'{a} to {b}',psAgTip:'Agenda of this period set',agPrintDay:'Print day view',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
-resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Schedule 1'},
+resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine'},
 es:{
 appTitle:'Horarios semanales',collapseTip:'Contraer barra lateral',expandTip:'Expandir barra lateral',
 undo:'Deshacer',redo:'Rehacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
@@ -212,7 +212,7 @@ addEv:'+ Evento',addEvTip:'También puedes arrastrar sobre un hueco vacío de un
 save:'Guardar…',saveTip:'Guarda en la memoria del navegador o descarga un archivo JSON. No se conserva nada si no guardas.',
 load:'Cargar…',loadTip:'Sustituye la vista actual por datos de la memoria del navegador o de un archivo JSON (se puede deshacer).',
 restart:'Reiniciar',restartTip:'Descarta todos los cambios sin guardar y recarga lo que hay en la memoria del navegador.',
-clear:'Borrar memoria',clearTip:'Elimina los datos guardados en este navegador (la vista actual no cambia).',
+clear:'Borrar memoria',clearTip:'Elimina los datos guardados en este navegador y reinicia la aplicación desde cero.',
 viewH:'Vista',earlyTip:'Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos.',
 nowTip:'Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles.',
 clockTip:'Cambia entre el reloj de 24 horas y AM/PM.',
@@ -230,8 +230,8 @@ lang:'Idioma',none:'— ninguna —',noPeople:'Primero añade personas en la bar
 errTitle:'El título es obligatorio.',errDay:'Elige al menos un día.',errEnd:'{d}: el fin debe ser posterior al inicio.',errSch:'Elige al menos un horario.',
 confSch:'¿Eliminar el horario "{n}"?',confLost:' También se eliminarán {k} evento(s) que solo están en este horario.',confPer:'¿Eliminar a "{n}"? Se quitará de todos los eventos.',
 pSch:'¿Nombre del horario?',pPer:'¿Nombre de la persona?',badFile:'Ese archivo no es un archivo de guardado válido.',
-confRestart:'¿Descartar todos los cambios sin guardar y recargar desde la memoria del navegador?',confClear:'¿Borrar los datos guardados en este navegador? La vista actual no cambia.',
-savedMem:'Guardado en la memoria del navegador',savedFile:'Guardado en archivo JSON',loadedMem:'Cargado desde la memoria del navegador',loadedFile:'Cargado desde archivo',clearedMem:'Memoria del navegador borrada',noMem:'Aún no hay nada guardado en la memoria del navegador.',memFail:'La memoria del navegador no está disponible.',copied:'Evento copiado',restarted:'Reiniciado',
+confRestart:'¿Descartar todos los cambios sin guardar y recargar desde la memoria del navegador?',confClear:'¿Borrar los datos guardados en este navegador y reiniciar la aplicación? Se perderán los cambios sin guardar de la vista actual.',
+savedMem:'Guardado en la memoria del navegador',savedFile:'Guardado en archivo JSON',loadedMem:'Cargado desde la memoria del navegador',loadedFile:'Cargado desde archivo',clearedMem:'Memoria del navegador borrada y aplicación reiniciada',noMem:'Aún no hay nada guardado en la memoria del navegador.',memFail:'La memoria del navegador no está disponible.',copied:'Evento copiado',restarted:'Reiniciado',
 saveTitle:'Guardar',loadTitle:'Cargar',toMem:'Memoria del navegador',toFile:'Archivo JSON',cancel:'Cancelar',saveBody:'¿Dónde quieres guardar?',loadBody:'¿Desde dónde quieres cargar?',
 
 cpTitle:'Copiar evento',cpDest:'Horario de destino',cpColor:'Color de la copia',cpSame:'Mismo color',cpHue:'Mismo tono, más claro u oscuro',cpRandom:'Color aleatorio',cpPick:'Elegir un color:',cpDo:'Copiar',
@@ -247,7 +247,7 @@ confPS:'¿Eliminar el conjunto de periodos "{n}"?',confPSLost:' También se elim
 noSets:'Primero crea un conjunto de periodos (barra lateral → Conjuntos de periodos → +).',errSet:'Elige al menos un conjunto de periodos.',cpDestP:'Conjunto de periodos de destino',help12:'Los conjuntos de periodos colorean partes del día al fondo. Cambia a "Periodos" en la barra lateral para editarlos; mientras tanto no se pueden tocar los eventos.',
 dayTo:'{a} a {b}',psAgTip:'Agenda de este conjunto de periodos',agPrintDay:'Imprimir vista del día',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
-resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Horario 1'}};
+resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
 ['Title *','Título *'],['Description','Descripción'],['Person responsible','Persona responsable'],['Persons involved','Personas implicadas'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
 ['Repeat on days — each day','Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies'],
@@ -411,7 +411,11 @@ function restart(){
   try{if(!s)throw 0;S=parseData(JSON.parse(s));lastBrowser=dataKey()}catch(e){initDefault()}
   render();toast(L('restarted'));
 }
-function clearMem(){if(!confirm(L('confClear')))return;try{localStorage.removeItem(KEY)}catch(e){}lastBrowser=null;toast(L('clearedMem'));renderSide()}
+function clearMem(){
+  if(!confirm(L('confClear')))return;
+  try{localStorage.removeItem(KEY)}catch(e){}
+  lastBrowser=null;undoSt=[];redoSt=[];selK=null;editMode='events';initDefault();render();toast(L('clearedMem'));
+}
 window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
 let prefs={w:290,collapsed:false,showEarly:false,clock12:false,hideWeekend:false};
 try{Object.assign(prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
