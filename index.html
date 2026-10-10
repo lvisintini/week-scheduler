@@ -88,19 +88,19 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .tabs{display:flex;gap:4px;margin:14px 0 2px;border-bottom:1px solid var(--line)}.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:6px 12px;color:var(--mut)}.tabs button.on{color:var(--fg);border-bottom-color:var(--acc);font-weight:600}
 .br{display:flex;gap:6px;align-items:center;margin:4px 0}.br select{flex:1;min-width:0;width:auto;font-size:12px;padding:5px 3px}.br select.bd{flex:0 0 62px}.br select.bp{flex:1.5}.br .bx{padding:0 6px;border:0;background:none;color:#d33;flex:0 0 auto}.br .bx:disabled{opacity:.25}
 #fAddBlock{margin-top:4px;font-size:12px}
-.pbx{position:absolute;left:0;right:0;pointer-events:none;overflow:hidden}
-.pmode .pbx{pointer-events:auto;cursor:grab}
-.pbg{position:absolute;inset:0}
-.pbx .pl{position:relative;display:block;font-size:11px;font-weight:600;padding:2px 6px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbx .rz{position:absolute;left:0;right:0;bottom:0;height:7px;cursor:ns-resize}
-.pbx.sel{box-shadow:inset 0 0 0 3px var(--acc)}
+.phx{position:absolute;left:0;right:0;pointer-events:none;overflow:hidden}
+.phmode .phx{pointer-events:auto;cursor:grab}
+.phbg{position:absolute;inset:0}
+.phx .pl{position:relative;display:block;font-size:11px;font-weight:600;padding:2px 6px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phx .rz{position:absolute;left:0;right:0;bottom:0;height:7px;cursor:ns-resize}
+.phx.sel{box-shadow:inset 0 0 0 3px var(--acc)}
 .lip{position:absolute;left:0;right:0;border-radius:7px 0 0 7px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;z-index:3;cursor:default}
 .lip span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;padding:2px 0}
-.pmode .lip{cursor:grab}
-.pmode .ev{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}.pmode .ov{opacity:.3!important}
-.wrap.pm{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent)}
+.phmode .lip{cursor:grab}
+.phmode .ev{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}.phmode .ov{opacity:.3!important}
+.wrap.phm{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}.seg button{flex:1;border:0;border-radius:0;padding:6px;background:var(--card)}.seg button.on{background:var(--acc);color:#fff}
-#dlg.per .ev-only{display:none!important}#dlg:not(.per) .per-only{display:none}
+#dlg.ph .ev-only{display:none!important}#dlg:not(.ph) .ph-only{display:none}
 .ev.sel{z-index:1;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
 .err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 .cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
@@ -150,7 +150,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div></div>
 <div id="paneA" style="display:none"><label>Blocks — each block has a day, start, end and responsible person; a day can have several</label><div id="fBlocks"></div><button type="button" id="fAddBlock">+ Add block</button></div>
 <div class="warnline" id="fWarn"></div>
-<label class="per-only" title="Tick several to make the period appear in each set. Use Copy… to copy it into another set as an independent period.">Period sets * (at least one)</label><label class="ev-only" title="Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules * (at least one)</label><div class="chk" id="fSch"></div>
+<label class="ph-only" title="Tick several to make the phase appear in each rhythm. Use Copy… to copy it into another rhythm as an independent phase.">Rhythms * (at least one)</label><label class="ev-only" title="Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules * (at least one)</label><div class="chk" id="fSch"></div>
 <div class="err" id="err"></div>
 <div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Repeat on days and save.">Delete</button><button type="button" id="fCopy" title="Copy this event to another schedule, choosing the colour of the copy.">Copy…</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
 </form></dialog>
@@ -165,7 +165,7 @@ const DAYS=[...DAYN[lang]];
 const D={en:{
 appTitle:'Weekly Schedules',collapseTip:'Collapse sidebar',expandTip:'Expand sidebar',
 undo:'Undo',redo:'Redo',undoTip:'Undo the last change (Ctrl+Z)',redoTip:'Redo (Ctrl+Y)',
-addEv:'+ Event',addEvTip:'Or simply drag on an empty part of a day to create an event for that time.',
+
 save:'Save…',saveTip:'Save to browser memory or download a JSON file. Nothing is kept unless you save.',
 load:'Load…',loadTip:'Replace the current view with data from browser memory or a JSON file (you can undo this).',
 restart:'Restart',restartTip:'Discard all unsaved changes and reload what is in browser memory.',
@@ -198,17 +198,22 @@ viewNote:'These settings are kept in this browser, not in the save file.',ctxCop
 hidN:'{n} hidden',hidWk:'{n} on the hidden weekend',hidEr:'{n} in the hidden early hours',hidPp:'{n} hidden by the people filter',hidClick:'Click to open the settings.',
 help9:'Right-click an event (even a locked one) to copy it.',nextDay:'(Next day)',ovTip:'Repetitions of this event overlap each other.',ovRowTip:'Overlaps another repetition of this event',ovDlg:'Some repetitions overlap: {d}',rpWarn:'Some repetitions now overlap',contFrom:'from {d} {t}',contUntil:'until {t}',
 help10:'Events can run past midnight into the next day (Sunday continues on Monday). The end-time list marks those with "(Next day)".',day2:'(Day after next)',quickNo:"Quick mode can't show several blocks on the same day. Remove the extra blocks on that day to go back.",selHint:'"{t}" selected: now drag it. Click empty space or press Esc to deselect.',pickMove:'Several events or repetitions here — pick the one to move',pickResize:'Several events or repetitions here — pick the one to resize',
-help11:'When events or repetitions overlap, dragging asks which one you mean; clicking opens the event (and asks only if several different events overlap). The chosen one stays selected (outlined) until you click empty space or press Esc.',modeEv:'Events',modePer:'Periods',modeTip:'Choose what you are editing. While editing periods, events cannot be touched; while editing events, periods stay in the background.',addPeriod:'+ Period',
-psH:'Period sets',psTip:'Period sets colour parts of the day (sleep, meals, work…) in the background of the calendar, with a tab on the left showing the name. Only one set can be shown at a time. Switch to "Periods" to edit them.',addPSTip:'Create a period set, e.g. "Daily routine".',pSet:'Period set name?',setDefault:'Daily routine',
-confPS:'Delete period set "{n}"?',confPSLost:' {k} period(s) only in this set will also be deleted.',psEye:'Show this set (only one set can be shown at a time)',psOp:'Opacity of the period backgrounds (all period sets together). The tabs on the left stay fully opaque.',
-noSets:'Create a period set first (sidebar → Period sets → +).',errSet:'Pick at least one period set.',cpDestP:'Destination period set',help12:'Period sets colour parts of the day in the background. Switch to "Periods" in the sidebar to edit them; events cannot be touched meanwhile.',
-dayTo:'{a} to {b}',psAgTip:'Agenda of this period set',agPrintDay:'Print day view',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
+help11:'When events or repetitions overlap, dragging asks which one you mean; clicking opens the event (and asks only if several different events overlap). The chosen one stays selected (outlined) until you click empty space or press Esc.',modeEv:'Events',
+
+
+
+dayTo:'{a} to {b}',agPrintDay:'Print day view',addEvT:'New event. You can also drag on an empty part of a day.',modePh:'Phases',modeTip:'Choose what you are editing. While editing phases, events cannot be touched; while editing events, phases stay in the background.',addPhT:'New phase. You can also drag on an empty part of a day while editing phases.',
+rhH:'Rhythms',rhTip:'A rhythm is the regular cadence of a home or workplace over a week: phases such as sleep, meals and work colour the background of the calendar, with a tab on the left showing the name. Only one rhythm can be shown at a time (e.g. Normal, Holiday). Switch to "Phases" to edit them.',addRhTip:'Create a rhythm, e.g. "Holiday rhythm".',pRh:'Rhythm name?',rhDefault:'New rhythm',
+confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will also be deleted.',rhEye:'Show this rhythm (only one rhythm can be shown at a time)',phOp:'Opacity of the phase backgrounds (all rhythms together). The tabs on the left stay fully opaque.',
+noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
+dRh:'Normal rhythm',dSleep:'Sleep time',dWake:'Wake time',dBreak:'Breakfast time',dWork:'Work/School time',dFree:'Free time',dLunch:'Lunch time',dDinner:'Dinner time',dBed:'Bed time',dCyc4:'4 cycles',dCyc5:'5 cycles',
+pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
 resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine'},
 es:{
 appTitle:'Horarios semanales',collapseTip:'Contraer barra lateral',expandTip:'Expandir barra lateral',
 undo:'Deshacer',redo:'Rehacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
-addEv:'+ Evento',addEvTip:'También puedes arrastrar sobre un hueco vacío de un día para crear un evento a esa hora.',
+
 save:'Guardar…',saveTip:'Guarda en la memoria del navegador o descarga un archivo JSON. No se conserva nada si no guardas.',
 load:'Cargar…',loadTip:'Sustituye la vista actual por datos de la memoria del navegador o de un archivo JSON (se puede deshacer).',
 restart:'Reiniciar',restartTip:'Descarta todos los cambios sin guardar y recarga lo que hay en la memoria del navegador.',
@@ -241,11 +246,16 @@ viewNote:'Estos ajustes se guardan en este navegador, no en el archivo de guarda
 hidN:'{n} ocultos',hidWk:'{n} en el fin de semana oculto',hidEr:'{n} en las horas tempranas ocultas',hidPp:'{n} ocultos por el filtro de personas',hidClick:'Haz clic para abrir los ajustes.',
 help9:'Haz clic derecho en un evento (incluso bloqueado) para copiarlo.',nextDay:'(día siguiente)',ovTip:'Hay repeticiones de este evento que se superponen.',ovRowTip:'Se superpone con otra repetición de este evento',ovDlg:'Hay repeticiones que se superponen: {d}',rpWarn:'Algunas repeticiones ahora se superponen',contFrom:'desde {d} {t}',contUntil:'hasta {t}',
 help10:'Los eventos pueden pasar de la medianoche al día siguiente (el domingo continúa el lunes). La lista de horas de fin los marca con "(día siguiente)".',day2:'(pasado mañana)',quickNo:'El modo rápido no puede mostrar varios bloques el mismo día. Quita los bloques sobrantes de ese día para volver.',selHint:'"{t}" seleccionado: ahora arrástralo. Haz clic en un espacio vacío o pulsa Esc para deseleccionar.',pickMove:'Varios eventos o repeticiones aquí — elige el que quieres mover',pickResize:'Varios eventos o repeticiones aquí — elige el que quieres redimensionar',
-help11:'Cuando eventos o repeticiones se superponen, al arrastrar se pregunta a cuál te refieres; al hacer clic se abre el evento (y solo se pregunta si se superponen varios eventos distintos). El elegido queda seleccionado (con borde) hasta que hagas clic en un espacio vacío o pulses Esc.',modeEv:'Eventos',modePer:'Periodos',modeTip:'Elige qué estás editando. Mientras editas periodos no se pueden tocar los eventos; mientras editas eventos, los periodos quedan en segundo plano.',addPeriod:'+ Periodo',
-psH:'Conjuntos de periodos',psTip:'Los conjuntos de periodos colorean partes del día (sueño, comidas, trabajo…) al fondo del calendario, con una pestaña a la izquierda con el nombre. Solo se puede mostrar un conjunto a la vez. Cambia a "Periodos" para editarlos.',addPSTip:'Crea un conjunto de periodos, p. ej. "Rutina diaria".',pSet:'¿Nombre del conjunto de periodos?',setDefault:'Rutina diaria',
-confPS:'¿Eliminar el conjunto de periodos "{n}"?',confPSLost:' También se eliminarán {k} periodo(s) que solo están en este conjunto.',psEye:'Mostrar este conjunto (solo se puede mostrar uno a la vez)',psOp:'Opacidad del fondo de los periodos (todos los conjuntos a la vez). Las pestañas de la izquierda siguen totalmente opacas.',
-noSets:'Primero crea un conjunto de periodos (barra lateral → Conjuntos de periodos → +).',errSet:'Elige al menos un conjunto de periodos.',cpDestP:'Conjunto de periodos de destino',help12:'Los conjuntos de periodos colorean partes del día al fondo. Cambia a "Periodos" en la barra lateral para editarlos; mientras tanto no se pueden tocar los eventos.',
-dayTo:'{a} a {b}',psAgTip:'Agenda de este conjunto de periodos',agPrintDay:'Imprimir vista del día',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
+help11:'Cuando eventos o repeticiones se superponen, al arrastrar se pregunta a cuál te refieres; al hacer clic se abre el evento (y solo se pregunta si se superponen varios eventos distintos). El elegido queda seleccionado (con borde) hasta que hagas clic en un espacio vacío o pulses Esc.',modeEv:'Eventos',
+
+
+
+dayTo:'{a} a {b}',agPrintDay:'Imprimir vista del día',addEvT:'Nuevo evento. También puedes arrastrar sobre un hueco vacío de un día.',modePh:'Franjas',modeTip:'Elige qué estás editando. Mientras editas franjas no se pueden tocar los eventos; mientras editas eventos, las franjas quedan en segundo plano.',addPhT:'Nueva franja. También puedes arrastrar sobre un hueco vacío de un día mientras editas franjas.',
+rhH:'Ritmos',rhTip:'Un ritmo es la cadencia regular de un hogar o lugar de trabajo a lo largo de una semana: franjas como sueño, comidas y trabajo colorean el fondo del calendario, con una pestaña a la izquierda con el nombre. Solo se puede mostrar un ritmo a la vez (p. ej. Normal, Vacaciones). Cambia a "Franjas" para editarlas.',addRhTip:'Crea un ritmo, p. ej. "Ritmo de vacaciones".',pRh:'¿Nombre del ritmo?',rhDefault:'Nuevo ritmo',
+confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} franja(s) que solo están en este ritmo.',rhEye:'Mostrar este ritmo (solo se puede mostrar uno a la vez)',phOp:'Opacidad del fondo de las franjas (todos los ritmos a la vez). Las pestañas de la izquierda siguen totalmente opacas.',
+noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
+dRh:'Ritmo normal',dSleep:'Hora de dormir',dWake:'Hora de despertarse',dBreak:'Hora del desayuno',dWork:'Trabajo/Escuela',dFree:'Tiempo libre',dLunch:'Hora de la comida',dDinner:'Hora de la cena',dBed:'Hora de acostarse',dCyc4:'4 ciclos',dCyc5:'5 ciclos',
+pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
@@ -258,7 +268,7 @@ const ES=[
 ['Delete','Eliminar'],['Cancel','Cancelar'],['Save','Guardar'],
 ['Deletes the event including','Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Repetir en los días y guarda.'],
 ['Quick','Rápido'],['Advanced','Avanzado'],['+ Add block','+ Añadir bloque'],['Blocks — each block','Bloques — cada bloque tiene día, inicio, fin y persona responsable; un día puede tener varios'],['Quick mode: tick','Modo rápido: marca los días y pon las horas. Un bloque por día.'],['Advanced mode: a list','Modo avanzado: una lista de bloques. Permite varios bloques el mismo día, pero no se puede volver al modo rápido cuando un día tiene más de uno.'],
-['Period sets * (at least one)','Conjuntos de periodos * (al menos uno)'],['Tick several to make the period','Marca varios para que el periodo aparezca en cada conjunto. Usa Copiar… para copiarlo a otro conjunto como periodo independiente.'],
+['Rhythms * (at least one)','Ritmos * (al menos uno)'],['Tick several to make the phase','Marca varios para que la franja aparezca en cada ritmo. Usa Copiar… para copiarla a otro ritmo como franja independiente.'],
 ['Close','Cerrar'],['Print agenda','Imprimir agenda']];
 const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
 function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
@@ -297,7 +307,7 @@ const ICON_FOLDER=I('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0
 const ICON_PRINT=I('<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>');
 const ICON_HELP=I('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>');
 const ICON_WARN=I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>');
-const ICON_BANDS=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
+const ICON_RHYTHM=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
 const FAV=document.querySelector('link[rel=icon]').href;
 const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
 const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
@@ -357,11 +367,11 @@ function iconPicker(parent,svg,color,onchange){
 }
 /* ---------- state, history, persistence ---------- */
 const KEY='weekly-schedules-data',PKEY='weekly-schedules-prefs';
-let S={schedules:[],events:[],people:[],periodSets:[],periods:[],periodOpacity:.3};
+let S={schedules:[],events:[],people:[],rhythms:[],phases:[],phaseOpacity:.3};
 let selK=null,editMode='events';
 const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
 let lastBrowser=null,lastFile=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
-const dataKey=()=>JSON.stringify({schedules:S.schedules.map(({visible,opacity,...r})=>r),people:S.people.map(({visible,...r})=>r),events:S.events,periodSets:S.periodSets.map(({visible,...r})=>r),periods:S.periods});
+const dataKey=()=>JSON.stringify({schedules:S.schedules.map(({visible,opacity,...r})=>r),people:S.people.map(({visible,...r})=>r),events:S.events,rhythms:S.rhythms.map(({visible,...r})=>r),phases:S.phases});
 const isDirty=()=>{const k=dataKey();return k!==lastBrowser&&k!==lastFile};
 function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!undoSt.length;if(r)r.disabled=!redoSt.length}
 function pushUndo(str){undoSt.push(str);if(undoSt.length>100)undoSt.shift();redoSt=[];updUR()}
@@ -370,7 +380,7 @@ function restoreState(str){
   const old=S;S=JSON.parse(str);
   S.schedules.forEach(s=>{const o=old.schedules.find(x=>x.id===s.id);if(o){s.visible=o.visible;s.opacity=o.opacity}});
   S.people.forEach(q=>{const o=old.people.find(x=>x.id===q.id);if(o)q.visible=o.visible});
-  S.periodOpacity=old.periodOpacity;S.periodSets.forEach(s=>{const o=old.periodSets.find(x=>x.id===s.id);s.visible=o?o.visible:false});
+  S.phaseOpacity=old.phaseOpacity;S.rhythms.forEach(s=>{const o=old.rhythms.find(x=>x.id===s.id);s.visible=o?o.visible:false});
 }
 function undo(){if(!undoSt.length)return;selK=null;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
 function redo(){if(!redoSt.length)return;selK=null;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
@@ -384,16 +394,25 @@ function parseData(j){
     return {id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],
       schedules:(v.schedules||[]).map(String),involved:(v.involved||[]).map(String),
       slots:sl.map(x=>({day:Math.max(0,Math.min(6,+x.day||0)),start:Math.max(0,Math.min(1425,+x.start||0)),end:Math.min(MAXEND,Math.max((+x.start||0)+SNAP,+x.end||0)),person:x.person!=null?String(x.person):legacy}))}});
-  const periodSets=(Array.isArray(j.periodSets)?j.periodSets:[]).map(s=>({id:String(s.id),name:String(s.name),visible:!!s.visible}));
-  {let seen=false;periodSets.forEach(s=>{if(s.visible&&seen)s.visible=false;if(s.visible)seen=true})}
-  const periods=(Array.isArray(j.periods)?j.periods:[]).map(v=>({id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],sets:(v.sets||[]).map(String),
+  const rhythms=(Array.isArray(j.rhythms)?j.rhythms:Array.isArray(j.periodSets)?j.periodSets:[]).map(s=>({id:String(s.id),name:String(s.name),visible:!!s.visible}));
+  {let seen=false;rhythms.forEach(s=>{if(s.visible&&seen)s.visible=false;if(s.visible)seen=true})}
+  const phases=(Array.isArray(j.phases)?j.phases:Array.isArray(j.periods)?j.periods:[]).map(v=>({id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],rhythms:(v.rhythms||v.sets||[]).map(String),
     slots:(Array.isArray(v.slots)?v.slots:[]).map(x=>{const st=Math.max(0,Math.min(1425,+x.start||0));return {day:Math.max(0,Math.min(6,+x.day||0)),start:st,end:Math.min(1440,Math.max(st+SNAP,+x.end||0))}})}));
-  const periodOpacity=j.periodOpacity==null?.3:Math.min(1,Math.max(.05,+j.periodOpacity||.3));
+  const _po=j.phaseOpacity!=null?j.phaseOpacity:j.periodOpacity;
+  const phaseOpacity=_po==null?.3:Math.min(1,Math.max(.05,+_po||.3));
   return {schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],opacity:s.opacity==null?1:Math.min(1,Math.max(.1,+s.opacity||1)),locked:!!s.locked,visible:s.visible!==false})),
-    events,people,periodSets,periods,periodOpacity};
+    events,people,rhythms,phases,phaseOpacity};
 }
-const payload=()=>({version:6,schedules:S.schedules,people:S.people,events:S.events,periodSets:S.periodSets,periods:S.periods,periodOpacity:S.periodOpacity});
-function initDefault(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],periodSets:[],periods:[],periodOpacity:.3};lastFile=dataKey()}
+const payload=()=>({version:7,schedules:S.schedules,people:S.people,events:S.events,rhythms:S.rhythms,phases:S.phases,phaseOpacity:S.phaseOpacity});
+function defaultRhythm(){
+  const rid=uid(),all=[0,1,2,3,4,5,6],wk=[0,1,2,3,4],we=[5,6];
+  const ph=(k,col,days,blocks,desc)=>({id:uid(),title:L(k),desc:desc||'',color:col,rhythms:[rid],slots:days.flatMap(d=>blocks.map(([a,b])=>({day:d,start:a,end:b})))});
+  return {rhythms:[{id:rid,name:L('dRh'),visible:true}],phases:[
+    ph('dSleep','#3f51b5',all,[[0,360]],L('dCyc4')),ph('dWake','#f5c518',all,[[360,435]]),ph('dBreak','#e8912d',all,[[435,495]]),
+    ph('dWork','#2fa66a',wk,[[495,720],[780,1005]]),ph('dFree','#12a5b5',we,[[495,720],[780,1005]]),ph('dLunch','#3b6df0',all,[[720,780]]),
+    ph('dDinner','#e5484d',all,[[1005,1170]]),ph('dBed','#8e4ec6',all,[[1170,1350]]),ph('dSleep','#3f51b5',all,[[1350,1440]],L('dCyc5'))]};
+}
+function initDefault(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],...defaultRhythm(),phaseOpacity:.3};lastFile=dataKey()}
 const memGet=()=>{try{return localStorage.getItem(KEY)}catch(e){return null}};
 function saveMem(){try{localStorage.setItem(KEY,JSON.stringify(payload()));lastBrowser=dataKey();toast(L('savedMem'));renderSide()}catch(e){toast(L('memFail'))}}
 function saveFile(){
@@ -435,12 +454,12 @@ const vs=()=>prefs.showEarly?0:5;
 const pvis=id=>{const p=S.people.find(x=>x.id===id);return !!p&&p.visible};
 const pname=id=>(S.people.find(p=>p.id===id)||{}).name||'';
 const slotVisible=(e,s)=>{const ids=[...new Set([s.person,...e.involved].filter(Boolean))];return !ids.length||ids.some(pvis)};
-const vset=()=>S.periodSets.find(s=>s.visible);
-const pVis=p=>{const v=vset();return !!v&&p.sets.includes(v.id)};
-const eVis=e=>e.sets?pVis(e):visible(e);
-const eLock=e=>e.sets?false:isLocked(e);
-const sVis=(e,s)=>e.sets?true:slotVisible(e,s);
-const act=()=>editMode==='periods'?S.periods:S.events;
+const vrhythm=()=>S.rhythms.find(s=>s.visible);
+const phVis=p=>{const v=vrhythm();return !!v&&p.rhythms.includes(v.id)};
+const eVis=e=>e.rhythms?phVis(e):visible(e);
+const eLock=e=>e.rhythms?false:isLocked(e);
+const sVis=(e,s)=>e.rhythms?true:slotVisible(e,s);
+const act=()=>editMode==='phases'?S.phases:S.events;
 const ink=c=>hexToHsl(c)[2]>.62?'#1d2330':'#fff';
 const visible=e=>e.schedules.some(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.visible});
 const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.locked});
@@ -532,10 +551,10 @@ let agDay=0;
 let agFn=null;
 function showAgenda(fn,day){agFn=fn;agDay=day;$('agBody').innerHTML=fn();$('agPrint2').style.display=day==null?'none':'';$('agPrint2').textContent=L('agPrintDay');$('agDlg').showModal()}
 function openAgenda(di){showAgenda(()=>agendaHTML(di),di)}
-function openSetAgenda(ps){showAgenda(()=>setAgendaHTML(ps),null)}
-function setAgendaHTML(ps){
-  const lst=S.periods.filter(p=>p.sets.includes(ps.id)&&p.slots.length).map(p=>({p,min:Math.min(...p.slots.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
-  let h=`<h1>${esc(L('agTitle',{d:ps.name}))}</h1>`;
+function openRhythmAgenda(rh){showAgenda(()=>rhythmAgendaHTML(rh),null)}
+function rhythmAgendaHTML(rh){
+  const lst=S.phases.filter(p=>p.rhythms.includes(rh.id)&&p.slots.length).map(p=>({p,min:Math.min(...p.slots.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
+  let h=`<h1>${esc(L('agTitle',{d:rh.name}))}</h1>`;
   if(!lst.length)h+=`<p>${esc(L('nothing'))}</p>`;
   lst.forEach(({p})=>{
     const sig=d=>p.slots.filter(s=>s.day===d).sort((a,b)=>a.start-b.start).map(s=>fmt(s.start)+'–'+fmtEnd(s.end)).join('|');
@@ -609,11 +628,11 @@ function renderSide(){
   cl.onclick=()=>{prefs.collapsed=!prefs.collapsed;savePrefs();applyPrefs();renderSide()};
   const body=el('div','sbbody',sb);
   const sg=el('div','seg',body);
-  [['events','modeEv'],['periods','modePer']].forEach(([m,k])=>{const b=el('button',editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
-    b.onclick=()=>{if(editMode===m)return;editMode=m;selK=null;if(m==='periods'&&S.periodSets.length&&!vset())S.periodSets[0].visible=true;render()}});
-  sbtn(body,L(editMode==='periods'?'addPeriod':'addEv'),L('addEvTip'),()=>openDlg(null),'p pbtn');
+  [['events','modeEv'],['phases','modePh']].forEach(([m,k])=>{const b=el('button',editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
+    b.onclick=()=>{if(editMode===m)return;editMode=m;selK=null;if(m==='phases'&&S.rhythms.length&&!vrhythm())S.rhythms[0].visible=true;render()}});
   const tb=el('div','tbar',body);
-  const tbtn=(icon,tip,fn,id)=>{const b=el('button','',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
+  const tbtn=(icon,tip,fn,id,cls)=>{const b=el('button',cls||'',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
+  tbtn(ICON_PLUS,L(editMode==='phases'?'addPhT':'addEvT'),()=>openDlg(null),null,'p');
   tbtn(ICON_UNDO,L('undoTip'),undo,'undoB');tbtn(ICON_REDO,L('redoTip'),redo,'redoB');updUR();
   tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:saveMem},{label:L('toFile'),fn:saveFile},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
@@ -640,28 +659,28 @@ function renderSide(){
     const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>perMenu(mb,q);
   });
   const s3=el('div','sec',body);
-  secHead(s3,'psH',S.periodSets.length,'psTip','secPS',()=>{const n=prompt(L('pSet'),L('setDefault'));if(!n)return;hist();S.periodSets.forEach(x=>x.visible=false);S.periodSets.push({id:uid(),name:n.trim(),visible:true});render()},'addPSTip');
-  if(!prefs.secPS){
-    S.periodSets.forEach(ps=>{
-      const r=el('div','sch'+(ps.visible?'':' off'),s3);
-      const eb=eyeBtn(r,ps.visible,()=>{if(ps.visible)ps.visible=false;else S.periodSets.forEach(x=>x.visible=x===ps);render()});eb.title=L('psEye');
-      const ic=el('span','ic',r);ic.innerHTML=ICON_BANDS;
-      const n=el('input','',r);n.type='text';n.value=ps.name;n.onchange=()=>{const v=n.value||ps.name;if(v!==ps.name){hist();ps.name=v}render()};
-      const ag=el('button','eye',r);ag.innerHTML=ICON_AGENDA;ag.title=L('psAgTip');ag.onclick=()=>openSetAgenda(ps);
-      const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>rowMenu(mb,(m,mi)=>mi('<span class="ic" style="margin:0">'+ICON_BANDS+'</span>',L('mDelete'),()=>delPeriodSet(ps),'d'));
+  secHead(s3,'rhH',S.rhythms.length,'rhTip','secRh',()=>{const n=prompt(L('pRh'),L('rhDefault'));if(!n)return;hist();S.rhythms.forEach(x=>x.visible=false);S.rhythms.push({id:uid(),name:n.trim(),visible:true});render()},'addRhTip');
+  if(!prefs.secRh){
+    S.rhythms.forEach(rh=>{
+      const r=el('div','sch'+(rh.visible?'':' off'),s3);
+      const eb=eyeBtn(r,rh.visible,()=>{if(rh.visible)rh.visible=false;else S.rhythms.forEach(x=>x.visible=x===rh);render()});eb.title=L('rhEye');
+      const ic=el('span','ic',r);ic.innerHTML=ICON_RHYTHM;
+      const n=el('input','',r);n.type='text';n.value=rh.name;n.onchange=()=>{const v=n.value||rh.name;if(v!==rh.name){hist();rh.name=v}render()};
+      const ag=el('button','eye',r);ag.innerHTML=ICON_AGENDA;ag.title=L('rhAgTip');ag.onclick=()=>openRhythmAgenda(rh);
+      const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>rowMenu(mb,(m,mi)=>mi('<span class="ic" style="margin:0">'+ICON_RHYTHM+'</span>',L('mDelete'),()=>delRhythm(rh),'d'));
     });
-    const orow=el('div','sch',s3),oi=el('span','ic',orow);oi.innerHTML=ICON_OPAC;oi.title=L('psOp');
-    const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=S.periodOpacity;sl.title=L('psOp');
-    sl.oninput=()=>{S.periodOpacity=+sl.value;skipSide=true;render();skipSide=false};
+    const orow=el('div','sch',s3),oi=el('span','ic',orow);oi.innerHTML=ICON_OPAC;oi.title=L('phOp');
+    const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=S.phaseOpacity;sl.title=L('phOp');
+    sl.oninput=()=>{S.phaseOpacity=+sl.value;skipSide=true;render();skipSide=false};
   }
   sb.scrollTop=st;
 }
-function delPeriodSet(ps){
-  const lost=S.periods.filter(p=>p.sets.length===1&&p.sets[0]===ps.id).length;
-  if(!confirm(L('confPS',{n:ps.name})+(lost?L('confPSLost',{k:lost}):'')))return;hist();
-  S.periodSets=S.periodSets.filter(x=>x!==ps);
-  S.periods.forEach(p=>p.sets=p.sets.filter(i=>i!==ps.id));
-  S.periods=S.periods.filter(p=>p.sets.length);
+function delRhythm(rh){
+  const lost=S.phases.filter(p=>p.rhythms.length===1&&p.rhythms[0]===rh.id).length;
+  if(!confirm(L('confRh',{n:rh.name})+(lost?L('confRhLost',{k:lost}):'')))return;hist();
+  S.rhythms=S.rhythms.filter(x=>x!==rh);
+  S.phases.forEach(p=>p.rhythms=p.rhythms.filter(i=>i!==rh.id));
+  S.phases=S.phases.filter(p=>p.rhythms.length);
   render();
 }
 function printSchedule(){
@@ -685,40 +704,40 @@ function delSchedule(s){
 /* ---------- grid ---------- */
 function render(){
   if(!skipSide)renderSide();
-  const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');g.classList.toggle('pmode',editMode==='periods');$('wrap').classList.toggle('pm',editMode==='periods');
+  const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');g.classList.toggle('phmode',editMode==='phases');$('wrap').classList.toggle('phm',editMode==='phases');
   const a=vs(),hrs=24-a,days=prefs.hideWeekend?[0,1,2,3,4]:[0,1,2,3,4,5,6];
-  const lane=vset()?18:0;g.style.setProperty('--lane',lane+'px');g.style.gridTemplateColumns=`52px repeat(${days.length},minmax(${110+lane}px,1fr))`;g.style.minWidth=(52+days.length*(110+lane))+'px';
+  const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');g.style.gridTemplateColumns=`52px repeat(${days.length},minmax(${110+lane}px,1fr))`;g.style.minWidth=(52+days.length*(110+lane))+'px';
   el('div','dh c',g);
   days.forEach(di=>{const h=el('div','dh'+(di>4?' we':''),g);h.dataset.d=di;h.innerHTML=`<span class="ic">${ICON_AGENDA}</span>`+esc(DAYS[di]);h.title=L('agendaTip');h.onclick=()=>openAgenda(di)});
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
-  const vsel=vset();
-  const pByCol=days.map(di=>vsel?S.periods.filter(pVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di)):[]);
+  const vsel=vrhythm();
+  const phByCol=days.map(di=>vsel?S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di)):[]);
   days.forEach((di,k)=>{
     const dw=el('div','dw',g);dw.dataset.d=di;
     const ln=el('div','lane'+(di>4?' we':''),dw);ln.style.height=hrs*HH+'px';
     const col=el('div','day'+(di>4?' we':''),dw);col.style.height=hrs*HH+'px';col.dataset.d=di;
-    pByCol[k].forEach(x=>{
+    phByCol[k].forEach(x=>{
       const {p,s,i}=x;if(s.end<=a*60)return;
       const st=Math.max(s.start,a*60),top=(st-a*60)/60*HH,h=(s.end-st)/60*HH,range=fmt(s.start)+'–'+fmtEnd(s.end);
-      const bx=el('div','pbx',col);bx.style.top=top+'px';bx.style.height=h+'px';
-      const bg=el('div','pbg',bx);bg.style.background=p.color;bg.style.opacity=S.periodOpacity;
-      if(editMode==='periods'){
+      const bx=el('div','phx',col);bx.style.top=top+'px';bx.style.height=h+'px';
+      const bg=el('div','phbg',bx);bg.style.background=p.color;bg.style.opacity=S.phaseOpacity;
+      if(editMode==='phases'){
         bx.style.outline='2px dashed '+p.color;bx.style.outlineOffset='-2px';
         if(selK&&selK.id===p.id&&selK.i===i)bx.classList.add('sel');
         el('span','pl',bx).textContent=p.title+' · '+range;
         const rz=el('div','rz',bx);bx.title=p.title+'\n'+range+(p.desc?'\n'+p.desc:'');
         bx.onpointerdown=ev=>{ev.stopPropagation();grab(ev,{e:p,s,i,piece:0},ev.target===rz?'resize':'move')};
       }
-      if(!(k>0&&pByCol[k-1].some(y=>y.key===x.key))){
-        let n=1;while(k+n<days.length&&pByCol[k+n].some(y=>y.key===x.key))n++;
+      if(!(k>0&&phByCol[k-1].some(y=>y.key===x.key))){
+        let n=1;while(k+n<days.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
         const lp=el('div','lip',ln);lp.style.cssText=`top:${top}px;height:${h}px;background:${esc(p.color)};color:${ink(p.color)}`;
         el('span','',lp).textContent=p.title;
         lp.title=p.title+'\n'+(n>1?DAYS[di].slice(0,3)+'–'+DAYS[days[k+n-1]].slice(0,3)+' ':'')+range+(p.desc?'\n'+p.desc:'');
-        lp.onpointerdown=ev=>{if(editMode==='periods'){ev.stopPropagation();grab(ev,{e:p,s,i,piece:0},'move')}};
+        lp.onpointerdown=ev=>{if(editMode==='phases'){ev.stopPropagation();grab(ev,{e:p,s,i,piece:0},'move')}};
       }else{
-        const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.periodOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;
+        const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.phaseOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;
       }
     });
     el('div','gl',col);
@@ -781,7 +800,7 @@ function grab(ev,it,mode){
   startDrag(ev,it,mode);
 }
 function startDrag(ev,it,mode){
-  const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();MAXEND=owner.sets?1440:2880;
+  const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
   const col=colAt(ev.clientX),cDay=+col.dataset.d,cMin=minAt(col,ev.clientY),off=cMin+1440*pc-e.start,dur=e.end-e.start;
   const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
   const ovB=overlapSet(orig).size;
@@ -916,10 +935,10 @@ $('fE').onchange=()=>{rows.forEach(o=>{if(!o.custom)sync(o)});updWarn()};
 function updPic(){const q=S.people.find(x=>x.id===$('fP').value);$('fPic').innerHTML=q?ICON_USER:'';$('fPic').style.color=q?q.color:''}
 $('fP').onchange=()=>{updPic();rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').value})};
 function openDlg(e,def){
-  const kind=e?(e.sets?'period':'event'):(editMode==='periods'?'period':'event');
-  if(kind==='period'&&!e&&!S.periodSets.length){toast(L('noSets'));return}
-  dkind=kind;MAXEND=kind==='period'?1440:2880;$('dlg').classList.toggle('per',kind==='period');
-  cur=e;const d=e||(kind==='period'?{title:'',desc:'',color:PAL[S.periods.length%PAL.length],involved:[],sets:[(vset()||S.periodSets[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
+  const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
+  if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
+  dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
+  cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
   const slots=e?e.slots:[{day:0,start:540,end:600,person:'',...def}];
   curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
   fillSel($('fS'),curStl);fillSel($('fE'),curEtl);
@@ -935,8 +954,8 @@ function openDlg(e,def){
   if(!S.people.length)iv.textContent=L('noPeople');
   S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
-  (kind==='period'?S.periodSets:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='period'?d.sets:d.schedules).includes(s.id);
-    l.insertAdjacentHTML('beforeend',kind==='period'?`<span class="ic">${ICON_BANDS}</span>${esc(s.name)}`:sTag(s))});
+  (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
+    l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
   $('dlg').showModal();$('fT').focus();
@@ -948,21 +967,21 @@ $('fOk').onclick=()=>{
   if(!slots.length)return $('err').textContent=L('errDay');
   const bad=slots.find(s=>s.end<=s.start);
   if(bad)return $('err').textContent=L('errEnd',{d:DAYS[bad.day]});
-  if(!sch.length)return $('err').textContent=L(dkind==='period'?'errSet':'errSch');
-  const d=dkind==='period'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,sets:sch,slots:slots.map(({day,start,end})=>({day,start,end}))}
+  if(!sch.length)return $('err').textContent=L(dkind==='phase'?'errRh':'errSch');
+  const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,rhythms:sch,slots:slots.map(({day,start,end})=>({day,start,end}))}
     :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
   hist();
-  if(cur)Object.assign(cur,d);else (dkind==='period'?S.periods:S.events).push({id:uid(),...d});
+  if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
   $('dlg').close();render();
 };
 $('fCancel').onclick=()=>$('dlg').close();
-$('fDel').onclick=()=>{hist();if(dkind==='period')S.periods=S.periods.filter(x=>x!==cur);else S.events=S.events.filter(x=>x!==cur);$('dlg').close();render()};
+$('fDel').onclick=()=>{hist();if(dkind==='phase')S.phases=S.phases.filter(x=>x!==cur);else S.events=S.events.filter(x=>x!==cur);$('dlg').close();render()};
 $('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
 /* ---------- copy dialog ---------- */
 function openCopy(src){
-  const per=!!src.sets,lst=per?S.periodSets:S.schedules,mem=per?src.sets:src.schedules;
+  const isPh=!!src.rhythms,lst=isPh?S.rhythms:S.schedules,mem=isPh?src.rhythms:src.schedules;
   const body=el('div');el('p','note',body).textContent=L('cpNote');
-  el('label','',body).textContent=L(per?'cpDestP':'cpDest');
+  el('label','',body).textContent=L(isPh?'cpDestR':'cpDest');
   const sel=el('select','',body);fillSel(sel,lst.map(s=>[s.id,s.name]));
   const o=lst.find(s=>!mem.includes(s.id));if(o)sel.value=o.id;
   el('label','',body).textContent=L('cpColor');
@@ -976,9 +995,9 @@ function openCopy(src){
   xdlg({title:L('cpTitle')+': '+src.title,body,buttons:[
     {label:L('cpDo'),cls:'p',fn:()=>{
       const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
-      const used=(per?S.periods:S.events).filter(e=>(per?e.sets:e.schedules).includes(tid)).map(e=>normHex(e.color));
+      const used=(isPh?S.phases:S.events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
       const col=mode==='tweak'?shiftColor(src.color,used):mode==='random'?randomColor(used):mode==='pick'?pv:src.color;
-      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(per)c.sets=[tid];else c.schedules=[tid];c.color=col;(per?S.periods:S.events).push(c);render();toast(L('copied'))}},
+      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?S.phases:S.events).push(c);render();toast(L('copied'))}},
     {label:L('cancel'),dismiss:true}]});
 }
 /* ---------- wiring & startup ---------- */

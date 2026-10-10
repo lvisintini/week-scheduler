@@ -15,7 +15,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 - Spanish / English interface (follows browser language, switchable in the sidebar)
 - Undo/redo, locked schedules, 12h/24h clock, weekend toggle, collapsible and resizable sidebar
 - Save/load to browser memory or JSON file, auto-load, unsaved-changes warning
-- Period sets: coloured background bands (sleep, meals, work…) with name tabs, switchable edit mode, own agenda
+- Rhythms and phases: coloured background bands (sleep, meals, work…) with name tabs, an Events/Phases edit switch and a per-rhythm agenda
 - Eye-icon visibility toggles and a per-schedule opacity slider
 - Icons for people (in their colour) and schedules; calendar favicon
 - Save / load everything as a JSON file
