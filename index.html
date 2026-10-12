@@ -4,8 +4,9 @@
 <title>Weekly Schedules</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='24' rx='4' fill='white' stroke='%233b6df0' stroke-width='2.5'/%3E%3Crect x='3' y='5' width='26' height='9' rx='4' fill='%233b6df0'/%3E%3Cpath d='M10 2v6M22 2v6' stroke='%233b6df0' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8 19h4M14 19h4M20 19h4M8 24h4M14 24h4' stroke='%233b6df0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-:root{--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#6b7385;--line:#dfe3ea;--card:#fff;--acc:#3b6df0}
-@media(prefers-color-scheme:dark){:root{--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}}
+:root{color-scheme:light;--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#6b7385;--line:#dfe3ea;--card:#fff;--acc:#3b6df0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}}
+:root[data-theme="dark"]{color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}
 *{box-sizing:border-box}
 body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden}
 main{display:flex;height:100vh}
@@ -209,7 +210,7 @@ rhH:'Rhythms',rhTip:'A rhythm is the regular cadence of a home or workplace over
 confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will also be deleted.',rhEye:'Show this rhythm (only one rhythm can be shown at a time)',phOp:'Opacity of the phase backgrounds (all rhythms together). The tabs on the left stay fully opaque.',
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
 dRh:'Normal rhythm',dSleep:'Sleep time',dWake:'Wake time',dBreak:'Breakfast time',dWork:'Work/School time',dFree:'Free time',dLunch:'Lunch time',dDinner:'Dinner time',dBed:'Bed time',dCyc4:'4 cycles',dCyc5:'5 cycles',
-pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
+setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
 resp:'Responsible:',withl:'With:',withb:'with',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine'},
 es:{
@@ -257,7 +258,7 @@ rhH:'Ritmos',rhTip:'Un ritmo es la cadencia regular de un hogar o lugar de traba
 confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} franja(s) que solo están en este ritmo.',rhEye:'Mostrar este ritmo (solo se puede mostrar uno a la vez)',phOp:'Opacidad del fondo de las franjas (todos los ritmos a la vez). Las pestañas de la izquierda siguen totalmente opacas.',
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
 dRh:'Ritmo normal',dSleep:'Hora de dormir',dWake:'Hora de despertarse',dBreak:'Hora del desayuno',dWork:'Trabajo/Escuela',dFree:'Tiempo libre',dLunch:'Hora de la comida',dDinner:'Hora de la cena',dBed:'Hora de acostarse',dCyc4:'4 ciclos',dCyc5:'5 ciclos',
-pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
+setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',withb:'con',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
@@ -438,9 +439,10 @@ function clearMem(){
   lastBrowser=null;undoSt=[];redoSt=[];selK=null;editMode='events';initDefault();render();toast(L('clearedMem'));
 }
 window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
-let prefs={w:290,collapsed:false,showEarly:false,clock12:false,hideWeekend:false};
+let prefs={w:290,collapsed:false,showEarly:false,clock12:false,hideWeekend:false,theme:'auto'};
 try{Object.assign(prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
 const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(prefs))}catch(e){}};
+function applyTheme(){const h=document.documentElement;if(prefs.theme==='light'||prefs.theme==='dark')h.dataset.theme=prefs.theme;else delete h.dataset.theme}
 function applyPrefs(){$('sb').style.setProperty('--sbw',prefs.w+'px');$('sb').classList.toggle('collapsed',!!prefs.collapsed)}
 function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
   (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
@@ -510,6 +512,10 @@ function openSettings(){
   const opt=(p,label,desc,get,set)=>{const l=el('label','sopt',p),i=el('input','',l);i.type='checkbox';i.checked=get();
     const s=el('span','',l);s.innerHTML=`<b>${esc(L(label))}</b><small>${esc(L(desc))}</small>`;i.onchange=()=>{set(i.checked);savePrefs();render()}};
   const v=sec('viewH');el('small','note',v).textContent=L('viewNote');
+  {const tw=el('div','sopt',v),tb=el('span','',tw);tb.innerHTML=`<b>${esc(L('setTheme'))}</b><small>${esc(L('themeTip'))}</small>`;
+   const sg=el('div','seg',tb);sg.style.cssText='margin:6px 0 0;max-width:280px';
+   [['auto','themeAuto'],['light','themeLight'],['dark','themeDark']].forEach(([m,k])=>{const b=el('button',(prefs.theme||'auto')===m?'on':'',sg);b.type='button';b.textContent=L(k);
+     b.onclick=()=>{prefs.theme=m;savePrefs();applyTheme();[...sg.children].forEach(x=>x.classList.toggle('on',x===b))}})}
   opt(v,'setEarly','earlyTip',()=>prefs.showEarly,x=>{prefs.showEarly=x;if(!x)$('wrap').scrollTop=0});
   opt(v,'setNow','nowTip',()=>nowOn,x=>{nowOn=x});
   opt(v,'setClock','clockTip',()=>prefs.clock12,x=>{prefs.clock12=x});
@@ -1030,7 +1036,7 @@ function setLang(l){
   rows.forEach((o,i)=>{o.lt.nodeValue=DAYS[i].slice(0,3);o.wn.title=L('ovRowTip')});
   render();applyStatic();
 }
-applyPrefs();
+applyPrefs();applyTheme();
 {const m=memGet();try{if(!m)throw 0;S=parseData(JSON.parse(m));lastBrowser=dataKey()}catch(e){initDefault()}}
 setLang(lang);
 </script></body></html>
