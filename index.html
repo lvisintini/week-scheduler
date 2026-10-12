@@ -498,8 +498,7 @@ function saveMem(scope){
   }catch(e){toast(L('memFail'))}
 }
 function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
-  if(target==='file'){openProtect('file');return}
-  if(target==='link'){openProtect('link');return}
+  if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)
   if(WS.length<2){saveMem('current');return}
   setTimeout(()=>xdlg({title:L('scopeTitle'),body:`<p>${esc(L('scopeBody'))}</p>`,buttons:[{label:L('scopeCur',{n:cw().name}),cls:'p',fn:()=>saveMem('current')},{label:L('scopeAll',{n:WS.length}),fn:()=>saveMem('all')},{label:L('cancel'),dismiss:true}]}),0);
 }
@@ -788,13 +787,14 @@ function drawNow(){
 }
 setInterval(drawNow,30000);
 /* generic dialog */
+let xTok=0;   // identifies the dialog currently shown, so a button handler that opens another dialog doesn't get it closed again
 function xdlg(o){
-  const d=$('xDlg');d.innerHTML='';let done=false;
+  const d=$('xDlg');d.innerHTML='';let done=false;const tok=++xTok;
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
   const bt=el('div','btns',d);
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
-    x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;done=true;d.close()}});
+    x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
   d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};
   if(!d.open)d.showModal();
 }
