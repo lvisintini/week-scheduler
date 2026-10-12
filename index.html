@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Weekly Schedules</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='24' rx='4' fill='white' stroke='%233b6df0' stroke-width='2.5'/%3E%3Crect x='3' y='5' width='26' height='9' rx='4' fill='%233b6df0'/%3E%3Cpath d='M10 2v6M22 2v6' stroke='%233b6df0' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8 19h4M14 19h4M20 19h4M8 24h4M14 24h4' stroke='%233b6df0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
@@ -128,7 +129,9 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .omenu .oi{display:flex;gap:8px;align-items:center;width:100%;border:0;text-align:left;padding:5px 6px}
 .oi i{width:12px;height:12px;border-radius:3px;flex-shrink:0}.oi small{color:var(--mut);margin-left:auto;white-space:nowrap}
 #hid{position:fixed;right:16px;bottom:16px;z-index:50;border-radius:20px;background:var(--card);box-shadow:0 2px 10px #0004;font-size:12px;padding:5px 12px}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10000}#toast.on{opacity:1}#toast.act{pointer-events:auto}#toast button{margin-left:10px;padding:2px 10px;font-size:12px;background:#fff;color:#222;border-radius:12px;border:0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10000}#toast.on{opacity:1}
+.wsbtn{display:flex;align-items:center;gap:6px;width:100%;margin-bottom:8px;padding:6px 8px;text-align:left}.wsbtn .wsn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.wsbtn .chev svg{width:14px;height:14px}
+.omenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}.mrow{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin:8px 0}#toast.act{pointer-events:auto}#toast button{margin-left:10px;padding:2px 10px;font-size:12px;background:#fff;color:#222;border-radius:12px;border:0}
 .sopt{display:flex;gap:10px;align-items:flex-start;margin:10px 0;color:var(--fg);font-size:14px}.sopt input{margin-top:3px}.sopt small{display:block;color:var(--mut);font-size:12px;font-weight:400}
 .ssec h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
 /* agenda & print */
@@ -178,31 +181,31 @@ let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.la
 const DAYS=[...DAYN[lang]];
 const D={en:{
 appTitle:'Weekly Schedules',collapseTip:'Collapse sidebar',expandTip:'Expand sidebar',
-undo:'Undo',redo:'Redo',undoTip:'Undo the last change (Ctrl+Z)',redoTip:'Redo (Ctrl+Y)',
+undo:'Undo',undoTip:'Undo the last change (Ctrl+Z)',redoTip:'Redo (Ctrl+Y)',
 
-save:'Save…',saveTip:'Save to browser memory or download a JSON file. Nothing is kept unless you save.',
-load:'Load…',loadTip:'Replace the current view with data from browser memory or a JSON file (you can undo this).',
+saveTip:'Save to browser memory (one workspace or all), or export the current workspace as a password-protected file or link.',
+loadTip:'Replace the current view with data from browser memory or a JSON file (you can undo this).',
 restart:'Restart',restartTip:'Discard all unsaved changes and reload what is in browser memory.',
 clear:'Clear memory',clearTip:'Delete the data saved in this browser and restart the app from scratch.',
 viewH:'View',earlyTip:'Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.',
 nowTip:'Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.',
 clockTip:'Switch between the 24-hour clock and AM/PM.',
 weTip:'Hide or show the Saturday and Sunday columns.',
-print:'Print schedule',printTip:'Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.',
+printTip:'Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.',
 schH:'Schedules',schHTip:'Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy to start Week B from Week A. Use the eye to show one or both; solo flips between them in one click.',
 pplH:'People',pplTip:'Use the eyes to choose whose calendar you see. An event with no responsible person is always shown. Otherwise it is shown when its responsible person is shown or any involved person is shown, so viewing one person hides only events led by someone else that they are not involved in.',
-addSch:'+ Schedule',addSchTip:'e.g. Week A and Week B, to emulate a two-week rota.',addPer:'+ Person',addPerTip:'People can be responsible for, or involved in, events.',
+addSchTip:'e.g. Week A and Week B, to emulate a two-week rota.',addPerTip:'People can be responsible for, or involved in, events.',
 lockTip:"Lock this schedule: its events can't be selected, moved or edited (you can still copy them with a right-click). An event shared by several schedules is locked only when all of them are locked.",
-solo:'solo',soloTip:'Show only this schedule. Click again to show all. Tip: for a two-week rota, make Week A and Week B schedules and flip between them with solo.',
-delSchTip:'Delete schedule',delPerTip:'Delete person',eyeTip:'Show or hide',opTip:"Opacity of this schedule's events. Lower it to fade the schedule so others stand out when overlaid (checkered box = transparency).",
+
+eyeTip:'Show or hide',opTip:"Opacity of this schedule's events. Lower it to fade the schedule so others stand out when overlaid (checkered box = transparency).",
 colorTip:'Click the icon to change the colour',agendaTip:'Click for the day agenda',
 
 lang:'Language',none:'— none —',noPeople:'Add people in the sidebar first.',
 errTitle:'Title is required.',errDay:'Pick at least one day.',errEnd:'{d}: end must be after start.',errSch:'Pick at least one schedule.',
 confSch:'Delete schedule "{n}"?',confLost:' {k} event(s) only in this schedule will also be deleted.',confPer:'Delete "{n}"? They will be removed from all events.',
 pSch:'Schedule name?',pPer:'Person name?',badFile:'That file is not a valid schedule save file.',
-confRestart:'Discard all unsaved changes and reload from browser memory?',confClear:'Clear the data saved in this browser and restart the app? Unsaved changes in the current view will be lost.',
-savedMem:'Saved to browser memory',savedFile:'Saved to JSON file',loadedMem:'Loaded from browser memory',loadedFile:'Loaded from file',clearedMem:'Browser memory cleared and app restarted',noMem:'Nothing is saved in browser memory yet.',memFail:'Browser memory is not available.',copied:'Event copied',restarted:'Restarted',
+confRestart:'Discard all unsaved changes and reload from browser memory?',confClear:'Clear the data saved in this browser (all workspaces) and restart the app? Everything currently shown, saved or not, will be lost.',
+savedMem:'Saved to browser memory',savedFile:'Saved to JSON file',loadedMem:'Loaded from browser memory',clearedMem:'Browser memory cleared and app restarted',noMem:'Nothing is saved in browser memory yet.',memFail:'Browser memory is not available.',copied:'Event copied',restarted:'Restarted',
 saveTitle:'Save',loadTitle:'Load',toMem:'Browser memory',toFile:'JSON file',cancel:'Cancel',saveBody:'Where do you want to save?',loadBody:'Where do you want to load from?',
 
 cpTitle:'Copy event',cpDest:'Destination schedule',cpColor:'Colour of the copy',cpSame:'Same colour',cpHue:'Same hue, brighter or darker',cpRandom:'Random colour',cpPick:'Choose a colour:',cpDo:'Copy',
@@ -222,36 +225,49 @@ confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
 dRh:'Normal rhythm',dSleep:'Sleep time',dWake:'Wake time',dBreak:'Breakfast time',dWork:'Work/School time',dFree:'Free time',dLunch:'Lunch time',dDinner:'Dinner time',dBed:'Bed time',dCyc4:'4 cycles',dCyc5:'5 cycles',
 setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on.',zoomReset:'Reset zoom',lockedNote:"Locked: can't be moved or edited.",
+toLink:'Shareable link',shareTitle:'Shareable link',shareBody:'Anyone who opens this link and knows the password gets a copy of this workspace. The data is encrypted on this device before it goes into the link, and is never sent to the web server that hosts the app.',shareLen:'{n} characters.',shareFile:'The app is open from a local file, so this link only works on this computer. Host the app (e.g. GitHub Pages) to share it with others.',shareLong:'This link is very long: some apps and servers may cut it. Consider exporting a JSON file instead.',shareCopy:'Copy link',shareCopied:'Copied ✓',shareFail:'Could not create the link.',
+linkBad:'The shared link is invalid or damaged.',linkLoaded:'Shared schedule loaded',
+wsDefault:'Workspace',wsImported:'Imported workspace',wsShared:'Shared workspace',wsMenuTip:'Switch workspace, or create, rename, duplicate or delete one',wsNew:'New workspace…',wsRename:'Rename current…',wsDup:'Duplicate current',wsDel:'Delete current…',pWs:'Workspace name?',wsCopySuffix:' (copy)',confWs:'Delete workspace "{n}" and all its data? Its saved copy in browser memory stays until you save all workspaces.',wsLast:"You can't delete the only workspace.",
+scopeTitle:'Save which workspaces?',scopeBody:'You have several workspaces.',scopeCur:'Only "{n}"',scopeAll:'All workspaces ({n})',
+impTitle:'Import',impBodyOne:'This contains the workspace "{n}" ({c}). What should happen with it?',impCounts:'{s} schedules, {e} events, {p} people, {r} rhythms, {h} phases',impNew:'Import as a new workspace',impInsert:'Insert into the current workspace: its schedules, people, rhythms and phases are added as new items (nothing is merged)',impDo:'Import',impDone:'Workspace imported',impReplaced:'Replaced workspace "{n}"',impInserted:'Inserted into the current workspace',
+trTitle:'Copy or move to another workspace',trTarget:'Target workspace',trCopy:'Copy',trMove:'Move (remove it from this workspace)',trGo:'Continue',trNeed:'Create a second workspace first (workspace menu → New workspace).',trDone:'Copied to "{n}"',trMoved:'Moved to "{n}"',mTransfer:'Copy or move to workspace…',
+mapTitle:'People',mapBody:'The events go to "{t}". For each person they refer to, choose what to do there:',mapNew:'Create "{n}" in the target workspace',mapUse:'Use existing: {n}',mapBlank:'Leave blank (no responsible person / not involved)',mapCont:'Continue',
+
+impOverPick:'Replace an existing workspace (you choose which, then confirm)',impPickTitle:'Which workspace should be replaced?',impPickBody:'Choose the workspace to replace with "{s}". Everything in it will be replaced.',impConfTitle:'Replace workspace?',impConf1:'Replace everything in the workspace "{t}" with "{s}"?',impConfUndo:'You can undo a replacement with Undo in that workspace.',impReplace:'Replace',flagActive:'active',flagId:'same id',flagName:'same name',
+tooBig:'That file or link has too many items to import safely (limits per workspace: 100 schedules, 500 people, 5,000 events, 100 rhythms, 2,000 phases, 200 repetitions each).',noCrypto:'Encryption is not available here. Use a modern browser, and open the app over https or from a local file.',protBodyLink:'Links are always password-protected: the data is encrypted on this device before it goes into the link. Anyone who has both the link and the password can read it.',protBodyFile:'Saved files are always password-protected (encrypted on this device).',
+anonTitle:'Leave out personal details',anonTip:'People become "Person 1", "Person 2"… and descriptions are removed. Titles and the names of schedules, rhythms and the workspace are kept, so check them.',protPw:'Password (at least 20 characters)',protNew:'New password',protShort:'The password must be at least 20 characters long.',
+protWarn:'Give the password to the other person by a different route than the link or file (for example by phone). Keep it safe: without it the data cannot be recovered.',protMakeLink:'Create link',protSaveFile:'Save file',protFileTitle:'Save encrypted file',anonPerson:'Person',sharePw:'Password:',shareCopyPw:'Copy password',
+pwTitle:'Password needed',pwAsk:'This is password-protected. Enter the password to open it.',pwShow:'Show password',pwOpen:'Open',pwWrong:'Wrong password, or the data has been altered.',pwWorking:'Checking…',
 pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
 resp:'Responsible:',withl:'With:',byl:'By:',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine'},
 es:{
 appTitle:'Horarios semanales',collapseTip:'Contraer barra lateral',expandTip:'Expandir barra lateral',
-undo:'Deshacer',redo:'Rehacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
+undo:'Deshacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
 
-save:'Guardar…',saveTip:'Guarda en la memoria del navegador o descarga un archivo JSON. No se conserva nada si no guardas.',
-load:'Cargar…',loadTip:'Sustituye la vista actual por datos de la memoria del navegador o de un archivo JSON (se puede deshacer).',
+saveTip:'Guarda en la memoria del navegador (un espacio o todos), o exporta el espacio actual como archivo o enlace protegido con contraseña.',
+loadTip:'Sustituye la vista actual por datos de la memoria del navegador o de un archivo JSON (se puede deshacer).',
 restart:'Reiniciar',restartTip:'Descarta todos los cambios sin guardar y recarga lo que hay en la memoria del navegador.',
 clear:'Borrar memoria',clearTip:'Elimina los datos guardados en este navegador y reinicia la aplicación desde cero.',
 viewH:'Vista',earlyTip:'Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos.',
 nowTip:'Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles.',
 clockTip:'Cambia entre el reloj de 24 horas y AM/PM.',
 weTip:'Oculta o muestra las columnas de sábado y domingo.',
-print:'Imprimir horario',printTip:'Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo.',
+printTip:'Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo.',
 schH:'Horarios',schHTip:'Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar para crear la Semana B a partir de la A. Usa el ojo para mostrar uno o ambos; solo alterna entre ellos con un clic.',
 pplH:'Personas',pplTip:'Usa los ojos para elegir el calendario de quién ves. Un evento sin persona responsable se muestra siempre. Si no, se muestra cuando su persona responsable o alguna persona implicada está visible; así, al ver a una sola persona solo se ocultan los eventos dirigidos por otra persona en los que no participa.',
-addSch:'+ Horario',addSchTip:'p. ej. Semana A y Semana B, para emular una rotación de dos semanas.',addPer:'+ Persona',addPerTip:'Las personas pueden ser responsables de eventos o estar implicadas en ellos.',
+addSchTip:'p. ej. Semana A y Semana B, para emular una rotación de dos semanas.',addPerTip:'Las personas pueden ser responsables de eventos o estar implicadas en ellos.',
 lockTip:'Bloquear este horario: sus eventos no se pueden seleccionar, mover ni editar (aún puedes copiarlos con clic derecho). Un evento compartido por varios horarios solo se bloquea cuando todos están bloqueados.',
-solo:'solo',soloTip:'Muestra solo este horario. Haz clic otra vez para mostrarlos todos. Consejo: para una rotación de dos semanas, crea los horarios Semana A y Semana B y alterna entre ellos con solo.',
-delSchTip:'Eliminar horario',delPerTip:'Eliminar persona',eyeTip:'Mostrar u ocultar',opTip:'Opacidad de los eventos de este horario. Bájala para atenuar el horario y que otros destaquen al superponerlos (cuadrícula = transparencia).',
+
+eyeTip:'Mostrar u ocultar',opTip:'Opacidad de los eventos de este horario. Bájala para atenuar el horario y que otros destaquen al superponerlos (cuadrícula = transparencia).',
 colorTip:'Haz clic en el icono para cambiar el color',agendaTip:'Clic para ver la agenda del día',
 
 lang:'Idioma',none:'— ninguna —',noPeople:'Primero añade personas en la barra lateral.',
 errTitle:'El título es obligatorio.',errDay:'Elige al menos un día.',errEnd:'{d}: el fin debe ser posterior al inicio.',errSch:'Elige al menos un horario.',
 confSch:'¿Eliminar el horario "{n}"?',confLost:' También se eliminarán {k} evento(s) que solo están en este horario.',confPer:'¿Eliminar a "{n}"? Se quitará de todos los eventos.',
 pSch:'¿Nombre del horario?',pPer:'¿Nombre de la persona?',badFile:'Ese archivo no es un archivo de guardado válido.',
-confRestart:'¿Descartar todos los cambios sin guardar y recargar desde la memoria del navegador?',confClear:'¿Borrar los datos guardados en este navegador y reiniciar la aplicación? Se perderán los cambios sin guardar de la vista actual.',
-savedMem:'Guardado en la memoria del navegador',savedFile:'Guardado en archivo JSON',loadedMem:'Cargado desde la memoria del navegador',loadedFile:'Cargado desde archivo',clearedMem:'Memoria del navegador borrada y aplicación reiniciada',noMem:'Aún no hay nada guardado en la memoria del navegador.',memFail:'La memoria del navegador no está disponible.',copied:'Evento copiado',restarted:'Reiniciado',
+confRestart:'¿Descartar todos los cambios sin guardar y recargar desde la memoria del navegador?',confClear:'¿Borrar los datos guardados en este navegador (todos los espacios de trabajo) y reiniciar la aplicación? Se perderá todo lo que se ve ahora, esté guardado o no.',
+savedMem:'Guardado en la memoria del navegador',savedFile:'Guardado en archivo JSON',loadedMem:'Cargado desde la memoria del navegador',clearedMem:'Memoria del navegador borrada y aplicación reiniciada',noMem:'Aún no hay nada guardado en la memoria del navegador.',memFail:'La memoria del navegador no está disponible.',copied:'Evento copiado',restarted:'Reiniciado',
 saveTitle:'Guardar',loadTitle:'Cargar',toMem:'Memoria del navegador',toFile:'Archivo JSON',cancel:'Cancelar',saveBody:'¿Dónde quieres guardar?',loadBody:'¿Desde dónde quieres cargar?',
 
 cpTitle:'Copiar evento',cpDest:'Horario de destino',cpColor:'Color de la copia',cpSame:'Mismo color',cpHue:'Mismo tono, más claro u oscuro',cpRandom:'Color aleatorio',cpPick:'Elegir un color:',cpDo:'Copiar',
@@ -271,6 +287,19 @@ confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} fra
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
 dRh:'Ritmo normal',dSleep:'Hora de dormir',dWake:'Hora de despertarse',dBreak:'Hora del desayuno',dWork:'Trabajo/Escuela',dFree:'Tiempo libre',dLunch:'Hora de la comida',dDinner:'Hora de la cena',dBed:'Hora de acostarse',dCyc4:'4 ciclos',dCyc5:'5 ciclos',
 setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado.',zoomReset:'Restablecer zoom',lockedNote:'Bloqueado: no se puede mover ni editar.',
+toLink:'Enlace para compartir',shareTitle:'Enlace para compartir',shareBody:'Quien abra este enlace y conozca la contraseña recibe una copia de este espacio de trabajo. Los datos se cifran en este dispositivo antes de ir al enlace y nunca se envían al servidor web que aloja la aplicación.',shareLen:'{n} caracteres.',shareFile:'La aplicación está abierta desde un archivo local, así que este enlace solo funciona en este ordenador. Aloja la aplicación (p. ej. en GitHub Pages) para compartirla con otras personas.',shareLong:'Este enlace es muy largo: algunas aplicaciones y servidores pueden cortarlo. Considera exportar un archivo JSON.',shareCopy:'Copiar enlace',shareCopied:'Copiado ✓',shareFail:'No se pudo crear el enlace.',
+linkBad:'El enlace compartido no es válido o está dañado.',linkLoaded:'Horario compartido cargado',
+wsDefault:'Espacio de trabajo',wsImported:'Espacio importado',wsShared:'Espacio compartido',wsMenuTip:'Cambiar de espacio de trabajo, o crear, renombrar, duplicar o eliminar uno',wsNew:'Nuevo espacio de trabajo…',wsRename:'Renombrar el actual…',wsDup:'Duplicar el actual',wsDel:'Eliminar el actual…',pWs:'¿Nombre del espacio de trabajo?',wsCopySuffix:' (copia)',confWs:'¿Eliminar el espacio de trabajo "{n}" y todos sus datos? Su copia guardada en la memoria del navegador permanece hasta que guardes todos los espacios.',wsLast:'No puedes eliminar el único espacio de trabajo.',
+scopeTitle:'¿Qué espacios de trabajo guardar?',scopeBody:'Tienes varios espacios de trabajo.',scopeCur:'Solo "{n}"',scopeAll:'Todos los espacios ({n})',
+impTitle:'Importar',impBodyOne:'Esto contiene el espacio de trabajo "{n}" ({c}). ¿Qué hacer con él?',impCounts:'{s} horarios, {e} eventos, {p} personas, {r} ritmos, {h} franjas',impNew:'Importar como espacio de trabajo nuevo',impInsert:'Insertar en el espacio actual: sus horarios, personas, ritmos y franjas se añaden como elementos nuevos (no se fusiona nada)',impDo:'Importar',impDone:'Espacio de trabajo importado',impReplaced:'Espacio "{n}" reemplazado',impInserted:'Insertado en el espacio actual',
+trTitle:'Copiar o mover a otro espacio de trabajo',trTarget:'Espacio de destino',trCopy:'Copiar',trMove:'Mover (quitarlo de este espacio)',trGo:'Continuar',trNeed:'Primero crea otro espacio de trabajo (menú de espacios → Nuevo espacio de trabajo).',trDone:'Copiado a "{n}"',trMoved:'Movido a "{n}"',mTransfer:'Copiar o mover a otro espacio…',
+mapTitle:'Personas',mapBody:'Los eventos van a "{t}". Para cada persona a la que se refieren, elige qué hacer allí:',mapNew:'Crear "{n}" en el espacio de destino',mapUse:'Usar la existente: {n}',mapBlank:'Dejar en blanco (sin responsable / sin participar)',mapCont:'Continuar',
+
+impOverPick:'Reemplazar un espacio existente (tú eliges cuál y luego confirmas)',impPickTitle:'¿Qué espacio de trabajo reemplazar?',impPickBody:'Elige el espacio que se reemplazará por "{s}". Se reemplazará todo su contenido.',impConfTitle:'¿Reemplazar el espacio?',impConf1:'¿Reemplazar todo el contenido del espacio "{t}" por "{s}"?',impConfUndo:'Puedes deshacer un reemplazo con Deshacer en ese espacio.',impReplace:'Reemplazar',flagActive:'activo',flagId:'mismo id',flagName:'mismo nombre',
+tooBig:'Ese archivo o enlace tiene demasiados elementos para importarlo con seguridad (límites por espacio: 100 horarios, 500 personas, 5.000 eventos, 100 ritmos, 2.000 franjas, 200 repeticiones cada uno).',noCrypto:'El cifrado no está disponible aquí. Usa un navegador moderno y abre la aplicación por https o desde un archivo local.',protBodyLink:'Los enlaces siempre están protegidos con contraseña: los datos se cifran en este dispositivo antes de ir al enlace. Quien tenga el enlace y la contraseña podrá leerlos.',protBodyFile:'Los archivos guardados siempre están protegidos con contraseña (cifrados en este dispositivo).',
+anonTitle:'Omitir datos personales',anonTip:'Las personas pasan a ser "Persona 1", "Persona 2"… y se quitan las descripciones. Se mantienen los títulos y los nombres de horarios, ritmos y del espacio de trabajo, así que revísalos.',protPw:'Contraseña (mínimo 20 caracteres)',protNew:'Nueva contraseña',protShort:'La contraseña debe tener al menos 20 caracteres.',
+protWarn:'Dale la contraseña a la otra persona por un medio distinto al del enlace o archivo (por ejemplo por teléfono). Guárdala bien: sin ella no se pueden recuperar los datos.',protMakeLink:'Crear enlace',protSaveFile:'Guardar archivo',protFileTitle:'Guardar archivo cifrado',anonPerson:'Persona',sharePw:'Contraseña:',shareCopyPw:'Copiar contraseña',
+pwTitle:'Se necesita contraseña',pwAsk:'Esto está protegido con contraseña. Escríbela para abrirlo.',pwShow:'Mostrar contraseña',pwOpen:'Abrir',pwWrong:'Contraseña incorrecta, o los datos han sido alterados.',pwWorking:'Comprobando…',
 pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
@@ -301,7 +330,7 @@ const SWATCHES=[...PAL,'#6b7385','#1d2330','#f5c518','#7bc043','#ff7f50','#a0522
 const uid=()=>Math.random().toString(36).slice(2,10);
 const $=id=>document.getElementById(id);
 const el=(t,c,p)=>{const e=document.createElement(t);if(c)e.className=c;if(p)p.append(e);return e};
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const I=p=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
 const ICON_USER='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8z"/></svg>';
 const ICON_CAL=I('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
@@ -324,6 +353,7 @@ const ICON_PRINT=I('<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2
 const ICON_HELP=I('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>');
 const ICON_WARN=I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>');
 const ICON_RHYTHM=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
+const ICON_WS=I('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'),ICON_CHECK=I('<path d="M5 12l5 5 9-10"/>');
 const FAV=document.querySelector('link[rel=icon]').href;
 const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
 const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
@@ -383,13 +413,23 @@ function iconPicker(parent,svg,color,onchange){
   return l;
 }
 /* ---------- state, history, persistence ---------- */
-const KEY='weekly-schedules-data',PKEY='weekly-schedules-prefs';
+const WKEY='weekly-schedules-workspaces',PKEY='weekly-schedules-prefs';
 let S={schedules:[],events:[],people:[],rhythms:[],phases:[],phaseOpacity:.3};
 let selK=null,editMode='events';
 const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
-let lastBrowser=null,lastFile=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
-const dataKey=()=>JSON.stringify({schedules:S.schedules.map(({visible,opacity,...r})=>r),people:S.people.map(({visible,...r})=>r),events:S.events,rhythms:S.rhythms.map(({visible,...r})=>r),phases:S.phases});
-const isDirty=()=>{const k=dataKey();return k!==lastBrowser&&k!==lastFile};
+let WS=[],curId=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
+const keyOf=d=>JSON.stringify({schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
+const dataKey=()=>keyOf(S);
+const cw=()=>WS.find(w=>w.id===curId);
+const wsData=w=>w.id===curId?S:w.data;
+const wsDirty=w=>{const k=keyOf(wsData(w));return k!==w.lb&&k!==w.lf};
+const isDirty=()=>{const w=cw();return !!w&&wsDirty(w)};
+const anyDirty=()=>WS.some(wsDirty);
+function syncWs(){const w=cw();if(w){w.data=S;w.undo=undoSt;w.redo=redoSt}}
+function newWs(name,data,saved){return {id:uid(),name,data,lb:null,lf:saved?keyOf(data):null,undo:[],redo:[]}}
+function switchWs(id){if(id===curId||!WS.some(w=>w.id===id))return;syncWs();curId=id;const w=cw();S=w.data;undoSt=w.undo||[];redoSt=w.redo||[];selK=null;render()}
+function pushUndoWs(w){if(w.id===curId){hist();return}w.undo=w.undo||[];w.undo.push(JSON.stringify(w.data));if(w.undo.length>100)w.undo.shift();w.redo=[]}
+const uniqueName=(base,names)=>{let n=base,i=2;while(names.includes(n))n=base+' ('+(i++)+')';return n};
 function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!undoSt.length;if(r)r.disabled=!redoSt.length}
 function pushUndo(str){undoSt.push(str);if(undoSt.length>100)undoSt.shift();redoSt=[];updUR()}
 const hist=()=>pushUndo(JSON.stringify(S));
@@ -401,26 +441,25 @@ function restoreState(str){
 }
 function undo(){if(!undoSt.length)return;selK=null;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
 function redo(){if(!redoSt.length)return;selK=null;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
-function parseData(j){
+const LIM={schedules:100,people:500,events:5000,rhythms:100,phases:2000,slots:200};   // applied to imported files and links
+function parseData(j,strict){
   if(!j||!Array.isArray(j.schedules)||!Array.isArray(j.events))throw new Error('bad');
-  const people=(Array.isArray(j.people)?j.people:[]).map((q,i)=>({id:String(q.id),name:String(q.name),color:q.color||PAL[i%PAL.length],visible:q.visible!==false}));
-  const pid=n=>{n=String(n||'').trim();if(!n)return '';let q=people.find(x=>x.name===n);if(!q){q={id:uid(),name:n,color:PAL[people.length%PAL.length],visible:true};people.push(q)}return q.id};
-  const events=j.events.map(v=>{
-    const legacy=typeof v.person==='string'?pid(v.person):'';
-    const sl=Array.isArray(v.slots)?v.slots:[{day:v.day,start:v.start,end:v.end}];
-    return {id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],
-      schedules:(v.schedules||[]).map(String),involved:(v.involved||[]).map(String),
-      slots:sl.map(x=>({day:Math.max(0,Math.min(6,+x.day||0)),start:Math.max(0,Math.min(1425,+x.start||0)),end:Math.min(MAXEND,Math.max((+x.start||0)+SNAP,+x.end||0)),person:x.person!=null?String(x.person):legacy}))}});
-  const rhythms=(Array.isArray(j.rhythms)?j.rhythms:Array.isArray(j.periodSets)?j.periodSets:[]).map(s=>({id:String(s.id),name:String(s.name),visible:!!s.visible}));
+  const arr=x=>Array.isArray(x)?x:[],clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const lim=(x,n)=>{const a=arr(x);if(strict&&a.length>n)throw new Error('limit');return a};
+  lim(j.schedules,LIM.schedules);lim(j.people,LIM.people);lim(j.events,LIM.events);lim(j.rhythms,LIM.rhythms);lim(j.phases,LIM.phases);
+  const slot=(x,max,person)=>{const st=clamp(+x.start||0,0,1425),o={day:clamp(+x.day||0,0,6),start:st,end:Math.min(max,Math.max(st+SNAP,+x.end||0))};if(person)o.person=x.person!=null?String(x.person):'';return o};
+  const item=v=>({id:String(v.id||uid()),title:String(v.title||'Untitled').slice(0,200),desc:String(v.desc||'').slice(0,5000),color:normHex(v.color)||PAL[0]});
+  const rhythms=arr(j.rhythms).map(s=>({id:String(s.id),name:String(s.name).slice(0,200),visible:!!s.visible}));
   {let seen=false;rhythms.forEach(s=>{if(s.visible&&seen)s.visible=false;if(s.visible)seen=true})}
-  const phases=(Array.isArray(j.phases)?j.phases:Array.isArray(j.periods)?j.periods:[]).map(v=>({id:String(v.id||uid()),title:String(v.title||'Untitled'),desc:v.desc||'',color:v.color||PAL[0],rhythms:(v.rhythms||v.sets||[]).map(String),
-    slots:(Array.isArray(v.slots)?v.slots:[]).map(x=>{const st=Math.max(0,Math.min(1425,+x.start||0));return {day:Math.max(0,Math.min(6,+x.day||0)),start:st,end:Math.min(1440,Math.max(st+SNAP,+x.end||0))}})}));
-  const _po=j.phaseOpacity!=null?j.phaseOpacity:j.periodOpacity;
-  const phaseOpacity=_po==null?.3:Math.min(1,Math.max(.05,+_po||.3));
-  return {schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name),color:s.color||PAL[0],opacity:s.opacity==null?1:Math.min(1,Math.max(.1,+s.opacity||1)),locked:!!s.locked,visible:s.visible!==false})),
-    events,people,rhythms,phases,phaseOpacity};
+  return {
+    schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name).slice(0,200),color:normHex(s.color)||PAL[0],opacity:s.opacity==null?1:clamp(+s.opacity||1,.1,1),locked:!!s.locked,visible:s.visible!==false})),
+    people:arr(j.people).map((q,i)=>({id:String(q.id),name:String(q.name).slice(0,200),color:normHex(q.color)||PAL[i%PAL.length],visible:q.visible!==false})),
+    events:arr(j.events).map(v=>({...item(v),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,MAXEND,true))})).filter(e=>e.slots.length),
+    rhythms,
+    phases:arr(j.phases).map(v=>({...item(v),rhythms:arr(v.rhythms).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,1440,false))})).filter(p=>p.slots.length),
+    phaseOpacity:j.phaseOpacity==null?.3:clamp(+j.phaseOpacity||.3,.05,1)
+  };
 }
-const payload=()=>({version:7,schedules:S.schedules,people:S.people,events:S.events,rhythms:S.rhythms,phases:S.phases,phaseOpacity:S.phaseOpacity});
 function defaultRhythm(){
   const rid=uid(),all=[0,1,2,3,4,5,6],wk=[0,1,2,3,4],we=[5,6];
   const ph=(k,col,days,blocks,desc)=>({id:uid(),title:L(k),desc:desc||'',color:col,rhythms:[rid],slots:days.flatMap(d=>blocks.map(([a,b])=>({day:d,start:a,end:b})))});
@@ -429,30 +468,265 @@ function defaultRhythm(){
     ph('dWork','#2fa66a',wk,[[495,720],[780,1005]]),ph('dFree','#12a5b5',we,[[495,720],[780,1005]]),ph('dLunch','#3b6df0',all,[[720,780]]),
     ph('dDinner','#e5484d',all,[[1005,1170]]),ph('dBed','#8e4ec6',all,[[1170,1350]]),ph('dSleep','#3f51b5',all,[[1350,1440]],L('dCyc5'))]};
 }
-function initDefault(){S={schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],...defaultRhythm(),phaseOpacity:.3};lastFile=dataKey()}
-const memGet=()=>{try{return localStorage.getItem(KEY)}catch(e){return null}};
-function saveMem(){try{localStorage.setItem(KEY,JSON.stringify(payload()));lastBrowser=dataKey();toast(L('savedMem'));renderSide()}catch(e){toast(L('memFail'))}}
-function saveFile(){
-  const b=new Blob([JSON.stringify(payload(),null,2)],{type:'application/json'});
-  const a=el('a');a.href=URL.createObjectURL(b);a.download='weekly-schedules.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  lastFile=dataKey();toast(L('savedFile'));renderSide();
+function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],...defaultRhythm(),phaseOpacity:.3}}
+function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);WS=[w];curId=w.id;S=w.data;undoSt=w.undo;redoSt=w.redo}
+/* ---------- workspaces: several named data sets in browser memory ---------- */
+const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};
+const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
+const pickData=d=>({schedules:d.schedules,people:d.people,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity});
+const wsEntry=w=>({id:w.id,name:w.name,...pickData(wsData(w))});
+function buildFile(){syncWs();const w=cw();return {version:1,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
+const parseWorkspace=(j,fallbackName)=>({id:j&&j.id?String(j.id):null,name:String((j&&j.name)||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)});
+function loadStore(){  // fills WS from browser memory; falls back to the default workspace
+  try{
+    const st=readStore();
+    if(!st||!Array.isArray(st.workspaces)||!st.workspaces.length)throw 0;
+    WS=st.workspaces.map(e=>{const d=parseData(e),w=newWs(String(e.name||L('wsDefault')).slice(0,200),d,false);if(e.id)w.id=String(e.id);w.lb=keyOf(d);return w});
+    curId=WS.some(w=>w.id===st.current)?st.current:WS[0].id;
+    const w=cw();S=w.data;undoSt=w.undo;redoSt=w.redo;
+  }catch(e){initDefault()}
 }
-function loadMem(){
-  const s=memGet();if(!s){toast(L('noMem'));return}
-  try{const n=parseData(JSON.parse(s));hist();S=n;lastBrowser=dataKey();render();toast(L('loadedMem'))}catch(e){alert(L('badFile'))}
+function saveMem(scope){
+  syncWs();
+  try{
+    let st=readStore();if(!st||!Array.isArray(st.workspaces))st={version:1,workspaces:[]};
+    if(scope==='all')st={version:1,current:curId,workspaces:WS.map(wsEntry)};
+    else{const e=wsEntry(cw()),i=st.workspaces.findIndex(x=>x.id===e.id);if(i>=0)st.workspaces[i]=e;else st.workspaces.push(e);st.current=curId}
+    localStorage.setItem(WKEY,JSON.stringify(st));
+    (scope==='all'?WS:[cw()]).forEach(w=>{w.lb=keyOf(wsData(w))});
+    toast(L('savedMem'));renderSide();
+  }catch(e){toast(L('memFail'))}
+}
+function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
+  if(target==='file'){openProtect('file');return}
+  if(target==='link'){openProtect('link');return}
+  if(WS.length<2){saveMem('current');return}
+  setTimeout(()=>xdlg({title:L('scopeTitle'),body:`<p>${esc(L('scopeBody'))}</p>`,buttons:[{label:L('scopeCur',{n:cw().name}),cls:'p',fn:()=>saveMem('current')},{label:L('scopeAll',{n:WS.length}),fn:()=>saveMem('all')},{label:L('cancel'),dismiss:true}]}),0);
+}
+function addWorkspace(){
+  const n=prompt(L('pWs'),uniqueName(L('wsDefault'),WS.map(w=>w.name)));if(!n)return;
+  syncWs();const w=newWs(uniqueName(n.trim().slice(0,200),WS.map(x=>x.name)),defaultData(),true);WS.push(w);switchWs(w.id);
+}
+function renameWorkspace(){const n=prompt(L('pWs'),cw().name);if(!n)return;cw().name=n.trim().slice(0,200);render()}
+function duplicateWorkspace(){syncWs();const w=newWs(uniqueName(cw().name+L('wsCopySuffix'),WS.map(x=>x.name)),JSON.parse(JSON.stringify(S)),false);WS.push(w);switchWs(w.id)}
+function deleteWorkspace(){
+  if(WS.length<2){toast(L('wsLast'));return}
+  if(!confirm(L('confWs',{n:cw().name})))return;
+  const i=WS.indexOf(cw());WS.splice(i,1);const nx=WS[Math.min(i,WS.length-1)];curId=nx.id;S=nx.data;undoSt=nx.undo||[];redoSt=nx.redo||[];selK=null;render();
+}
+function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
+  WS.forEach(w=>mi(w.id===curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>',w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id)));
+  el('hr','',m);
+  mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_WS,L('wsRename'),renameWorkspace);mi(ICON_WS,L('wsDup'),duplicateWorkspace);mi(ICON_WS,L('wsDel'),deleteWorkspace,'d');
+})}
+/* import: files and links share one dialog (new workspace / insert / replace matching); nothing is ever merged */
+const matchesOf=w=>{const out=[],byId=w.id&&WS.find(x=>x.id===w.id);if(byId)out.push(byId);WS.forEach(x=>{if(x.name.toLowerCase()===w.name.toLowerCase()&&!out.includes(x))out.push(x)});return out};
+const flagLbl=(w,t)=>{const f=[];if(t.id===curId)f.push(L('flagActive'));if(w.id&&t.id===w.id)f.push(L('flagId'));if(t.name.toLowerCase()===w.name.toLowerCase())f.push(L('flagName'));return t.name+(f.length?'  ('+f.join(', ')+')':'')};
+function adoptWs(w,source){   // first-time visitor with an untouched default workspace: the imported workspace takes its place
+  const r=newWs(w.name,w.data,source==='file');if(w.id)r.id=w.id;WS=[r];curId=r.id;S=r.data;undoSt=r.undo;redoSt=r.redo;selK=null;render();
+}
+function applyImport(w,target,source){   // target = existing workspace to replace, or null = import as a new workspace
+  syncWs();let rec;
+  if(target){pushUndoWs(target);if(target.id===curId)S=w.data;else target.data=w.data;if(source==='file')target.lf=keyOf(w.data);rec=target;toast(L('impReplaced',{n:target.name}))}
+  else{rec=newWs(uniqueName(w.name,WS.map(x=>x.name)),w.data,source==='file');if(w.id&&!WS.some(x=>x.id===w.id))rec.id=w.id;WS.push(rec);toast(L('impDone'))}
+  if(rec.id!==curId)switchWs(rec.id);else render();
+}
+function insertInto(src){
+  hist();const d=S,mp={s:{},p:{},r:{}};
+  src.people.forEach(q=>{const id=uid();mp.p[q.id]=id;d.people.push({...q,id,name:uniqueName(q.name,d.people.map(x=>x.name))})});
+  src.schedules.forEach(s=>{const id=uid();mp.s[s.id]=id;d.schedules.push({...s,id,name:uniqueName(s.name,d.schedules.map(x=>x.name)),visible:true})});
+  src.events.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=c.schedules.map(i=>mp.s[i]).filter(Boolean);c.involved=c.involved.map(i=>mp.p[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=mp.p[sl.person]||''});if(c.schedules.length)d.events.push(c)});
+  const had=d.rhythms.some(r=>r.visible);
+  src.rhythms.forEach((r,i)=>{const id=uid();mp.r[r.id]=id;d.rhythms.push({...r,id,name:uniqueName(r.name,d.rhythms.map(x=>x.name)),visible:!had&&i===0})});
+  src.phases.forEach(p=>{const c=JSON.parse(JSON.stringify(p));c.id=uid();c.rhythms=c.rhythms.map(i=>mp.r[i]).filter(Boolean);if(c.rhythms.length)d.phases.push(c)});
+}
+function pickReplace(w,source){   // choose which workspace to replace (flags: active / same id / same name), then confirm
+  const m=matchesOf(w),cands=[...m,...WS.filter(x=>!m.includes(x)).sort((a,b)=>(b.id===curId)-(a.id===curId))];
+  const body=el('div');el('p','',body).textContent=L('impPickBody',{s:w.name});
+  const rd=el('div','radios',body),radios=cands.map(t=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='tgt';i.value=t.id;l.append(' '+flagLbl(w,t));return i});
+  radios[0].checked=true;
+  xdlg({title:L('impPickTitle'),body,buttons:[{label:L('mapCont'),cls:'p',fn:()=>{const tg=WS.find(x=>x.id===radios.find(r=>r.checked).value);setTimeout(()=>confirmReplace(w,tg,source),0)}},{label:L('cancel'),dismiss:true}]});
+}
+function confirmReplace(w,tg,source){
+  const body=el('div');el('p','',body).textContent=L('impConf1',{t:tg.name,s:w.name});el('p','note',body).textContent=L('impConfUndo');
+  xdlg({title:L('impConfTitle'),body,buttons:[{label:L('impReplace'),cls:'p',fn:()=>applyImport(w,tg,source)},{label:L('cancel'),dismiss:true}]});
+}
+function openImport(w,source){   // files and links hold one workspace: import as new, insert into the current one, or replace an existing one
+  const body=el('div'),d=w.data;
+  el('p','',body).textContent=L('impBodyOne',{n:w.name,c:L('impCounts',{s:d.schedules.length,e:d.events.length,p:d.people.length,r:d.rhythms.length,h:d.phases.length})});
+  const rd=el('div','radios',body);
+  const opt=(v,label)=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='impm';i.value=v;l.append(' '+label);return i};
+  const rNew=opt('new',L('impNew')),rIns=opt('insert',L('impInsert')),rRep=opt('replace',L('impOverPick'));rNew.checked=true;
+  xdlg({title:L('impTitle'),body,buttons:[{label:L('impDo'),cls:'p',fn:()=>{
+    const mode=[rNew,rIns,rRep].find(r=>r.checked).value;
+    if(mode==='insert'){insertInto(d);render();toast(L('impInserted'))}
+    else if(mode==='new')applyImport(w,null,source);
+    else setTimeout(()=>pickReplace(w,source),0)}},{label:L('cancel'),dismiss:true}]});
+}
+/* copy / move schedules (with their events) and rhythms (with their phases) to another workspace */
+function removeSchedule(d,s){d.schedules=d.schedules.filter(x=>x!==s);d.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));d.events=d.events.filter(e=>e.schedules.length)}
+function removeRhythm(d,r){d.rhythms=d.rhythms.filter(x=>x!==r);d.phases.forEach(p=>p.rhythms=p.rhythms.filter(i=>i!==r.id));d.phases=d.phases.filter(p=>p.rhythms.length)}
+function openTransfer(kind,obj){
+  const others=WS.filter(w=>w.id!==curId);
+  if(!others.length){toast(L('trNeed'));return}
+  const body=el('div');el('label','',body).textContent=L('trTarget');
+  const sel=el('select','',body);fillSel(sel,others.map(w=>[w.id,w.name]));
+  const rd=el('div','radios',body);
+  const mk=(v,k,c)=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='trop';i.value=v;i.checked=c;l.append(' '+L(k));return i};
+  mk('copy','trCopy',true);const rm=mk('move','trMove',false);
+  xdlg({title:L('trTitle')+': '+(obj.name||obj.title),body,buttons:[{label:L('trGo'),cls:'p',fn:()=>{const tw=WS.find(w=>w.id===sel.value),mv=rm.checked;setTimeout(()=>doTransfer(kind,obj,tw,mv),0)}},{label:L('cancel'),dismiss:true}]});
+}
+function askPeople(src,tw,pids,cb){
+  const body=el('div');el('p','note',body).textContent=L('mapBody',{t:tw.name});
+  const rows=pids.map(pid=>{const q=src.people.find(x=>x.id===pid),r=el('div','mrow',body);el('span','',r).innerHTML=pIcon(q)+esc(q.name);
+    const s=el('select','',r);fillSel(s,[['__new__',L('mapNew',{n:q.name})],...tw.data.people.map(x=>[x.id,L('mapUse',{n:x.name})]),['',L('mapBlank')]]);
+    const same=tw.data.people.find(x=>x.name.toLowerCase()===q.name.toLowerCase());s.value=same?same.id:'__new__';return [pid,s]});
+  xdlg({title:L('mapTitle'),body,buttons:[{label:L('mapCont'),cls:'p',fn:()=>{const map={};rows.forEach(([pid,s])=>map[pid]=s.value);setTimeout(()=>cb(map),0)}},{label:L('cancel'),dismiss:true}]});
+}
+function doTransfer(kind,obj,tw,move){
+  syncWs();const src=S,td=tw.data;
+  if(kind==='schedule'){
+    const evs=src.events.filter(e=>e.schedules.includes(obj.id)),ids=new Set();
+    evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));e.slots.forEach(s=>{if(s.person)ids.add(s.person)})});
+    const pids=[...ids].filter(i=>src.people.some(q=>q.id===i));
+    const run=map=>{
+      pushUndoWs(tw);const pm={};
+      Object.entries(map).forEach(([pid,v])=>{if(v==='__new__'){const q=src.people.find(x=>x.id===pid),nq={id:uid(),name:q.name,color:q.color,visible:true};td.people.push(nq);pm[pid]=nq.id}else pm[pid]=v});
+      const ns={...obj,id:uid(),name:uniqueName(obj.name,td.schedules.map(x=>x.name)),visible:true};td.schedules.push(ns);
+      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=sl.person?(pm[sl.person]||''):''});td.events.push(c)});
+      if(move){pushUndoWs(cw());removeSchedule(S,obj)}
+      render();toast(L(move?'trMoved':'trDone',{n:tw.name}));
+    };
+    if(!pids.length)run({});else askPeople(src,tw,pids,run);
+  }else{
+    pushUndoWs(tw);const had=td.rhythms.some(r=>r.visible);
+    const nr={id:uid(),name:uniqueName(obj.name,td.rhythms.map(x=>x.name)),visible:!had};td.rhythms.push(nr);
+    src.phases.filter(p=>p.rhythms.includes(obj.id)).forEach(p=>{const c=JSON.parse(JSON.stringify(p));c.id=uid();c.rhythms=[nr.id];td.phases.push(c)});
+    if(move){pushUndoWs(cw());removeRhythm(S,obj)}
+    render();toast(L(move?'trMoved':'trDone',{n:tw.name}));
+  }
+}
+/* ---------- shareable link: data lives in the URL fragment (#data=...), compressed when the browser supports it ---------- */
+const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const unb64u=str=>{str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const s=atob(str),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+async function inflate(bytes){
+  const ds=new DecompressionStream('deflate-raw'),wr=ds.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});
+  const rd=ds.readable.getReader(),chunks=[];let n=0;
+  for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;if(n>2e6)throw new Error('too big');chunks.push(value)}
+  const out=new Uint8Array(n);let o=0;chunks.forEach(c=>{out.set(c,o);o+=c.length});return out;
+}
+/* ---------- encryption (Web Crypto): PBKDF2-SHA256 -> AES-256-GCM. Links and exported files are always password-protected ---------- */
+const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
+const PBKDF2_ITER=600000,ALPHA='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+function genPassword(){   // 25 random characters (~145 bits) in 5 groups, no look-alike characters, unbiased
+  const out=[],buf=new Uint8Array(64);
+  while(out.length<25){crypto.getRandomValues(buf);for(const v of buf)if(v<224&&out.length<25)out.push(ALPHA[v%56])}
+  return out.join('').match(/.{5}/g).join('-');
+}
+async function deriveKey(pw,salt,iter){
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw.normalize('NFKC')),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptBytes(plain,pw){   // blob = [1][iterations u32][salt 16][iv 12][ciphertext+tag]; the header is authenticated too
+  const head=new Uint8Array(33),salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  head[0]=1;new DataView(head.buffer).setUint32(1,PBKDF2_ITER);head.set(salt,5);head.set(iv,21);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:head},await deriveKey(pw,salt,PBKDF2_ITER),plain));
+  const out=new Uint8Array(33+ct.length);out.set(head);out.set(ct,33);return out;
+}
+async function decryptBytes(blob,pw){
+  if(blob.length<50||blob[0]!==1)throw new Error('format');
+  const iter=new DataView(blob.buffer,blob.byteOffset).getUint32(1);
+  if(iter<100000||iter>2000000)throw new Error('format');   // refuse absurd work factors from crafted data
+  const head=blob.slice(0,33),key=await deriveKey(pw,blob.slice(5,21),iter);
+  try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:blob.slice(21,33),additionalData:head},key,blob.slice(33)))}catch(e){throw new Error('password')}
+}
+async function deflate(bytes){const cs=new CompressionStream('deflate-raw'),wr=cs.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
+async function seal(obj,pw){   // JSON -> (deflate) -> encrypt
+  const json=new TextEncoder().encode(JSON.stringify(obj));let flag=0,data=json;
+  if(typeof CompressionStream!=='undefined'){flag=1;data=await deflate(json)}
+  const inner=new Uint8Array(1+data.length);inner[0]=flag;inner.set(data,1);return encryptBytes(inner,pw);
+}
+async function unseal(blob,pw){
+  const inner=await decryptBytes(blob,pw);let data=inner.slice(1);
+  if(inner[0]===1)data=await inflate(data);else if(inner[0]!==0)throw new Error('format');
+  if(data.length>2e6)throw new Error('big');
+  return JSON.parse(new TextDecoder().decode(data));
+}
+const anonymised=f=>{const c=JSON.parse(JSON.stringify(f));c.people.forEach((q,i)=>{q.name=L('anonPerson')+' '+(i+1)});c.events.forEach(e=>{e.desc=''});c.phases.forEach(x=>{x.desc=''});return c};
+function askPassword(blob,onOpen,onCancel){   // ask for the password of an encrypted file/link, retry on mistakes
+  const body=el('div');el('p','',body).textContent=L('pwAsk');
+  const pw=el('input','',body);pw.type='password';pw.autocomplete='off';pw.style.cssText='width:100%;margin-top:8px';
+  const sl=el('label','sopt',body),sc=el('input','',sl);sc.type='checkbox';sl.append(' '+L('pwShow'));sc.onchange=()=>{pw.type=sc.checked?'text':'password'};
+  const msg=el('div','err',body);
+  const go=async()=>{
+    msg.textContent=L('pwWorking');
+    try{const obj=await unseal(blob,pw.value.trim());$('xDlg').close();setTimeout(()=>onOpen(obj),0)}
+    catch(e){msg.textContent=L(e&&e.message==='password'?'pwWrong':e&&e.message==='big'?'tooBig':'badFile')}
+  };
+  pw.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+  xdlg({title:L('pwTitle'),body,buttons:[{label:L('pwOpen'),cls:'p',fn:()=>{go();return false}},{label:L('cancel'),dismiss:true}],onDismiss:onCancel});
+  setTimeout(()=>pw.focus(),0);
+}
+function openProtect(kind){   // options + password for a link or file
+  if(!hasCrypto()){alert(L('noCrypto'));return}
+  const body=el('div');el('p','note',body).textContent=L(kind==='link'?'protBodyLink':'protBodyFile');
+  const al=el('label','sopt',body),ac=el('input','',al),asp=el('span','',al);ac.type='checkbox';asp.innerHTML=`<b>${esc(L('anonTitle'))}</b><small>${esc(L('anonTip'))}</small>`;
+  el('label','',body).textContent=L('protPw');
+  const row=el('div','row',body),pw=el('input','',row),nb=el('button','',row);
+  pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.style.cssText='flex:1;font-family:monospace';
+  nb.type='button';nb.textContent=L('protNew');const msg=el('div','err',body);nb.onclick=()=>{pw.value=genPassword();msg.textContent=''};
+  el('p','note',body).textContent=L('protWarn');
+  xdlg({title:L(kind==='link'?'shareTitle':'protFileTitle'),body,buttons:[{label:L(kind==='link'?'protMakeLink':'protSaveFile'),cls:'p',fn:()=>{
+    const p=pw.value.trim();if(p.length<20){msg.textContent=L('protShort');return false}
+    const anon=ac.checked;setTimeout(()=>kind==='link'?openShare(p,anon):saveFile(p,anon),0)}},{label:L('cancel'),dismiss:true}]});
+}
+async function openShare(pw,anon){
+  let link;
+  try{const f=buildFile();link=location.href.split('#')[0]+'#data=e1.'+b64u(await seal(anon?anonymised(f):f,pw))}catch(e){toast(L('shareFail'));return}
+  const body=el('div');el('p','note',body).textContent=L('shareBody');
+  const ta=el('textarea','',body);ta.readOnly=true;ta.rows=5;ta.value=link;ta.style.cssText='width:100%;margin-top:8px;font-size:11px;word-break:break-all';ta.onfocus=()=>ta.select();
+  const pr=el('p','',body);pr.append(L('sharePw')+' ');const code=el('b','',pr);code.textContent=pw;code.style.cssText='font-family:monospace;user-select:all';
+  const info=[L('shareLen',{n:link.length}),L('protWarn')];if(location.protocol==='file:')info.push(L('shareFile'));if(link.length>8000)info.push(L('shareLong'));
+  el('p','note',body).textContent=info.join(' ');
+  const copy=(txt,i)=>{const b=$('xDlg').querySelectorAll('.btns button')[i],done=()=>{if(b)b.textContent=L('shareCopied')};
+    const fb=()=>{const t=el('textarea','',body);t.value=txt;t.select();try{document.execCommand('copy');done()}catch(e){}t.remove()};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fb);else fb()};
+  xdlg({title:L('shareTitle'),body,buttons:[{label:L('shareCopy'),cls:'p',fn:()=>{copy(link,0);return false}},{label:L('shareCopyPw'),fn:()=>{copy(pw,1);return false}},{label:L('closeB'),dismiss:true}]});
+  setTimeout(()=>ta.select(),0);
+}
+async function handleShareLink(){
+  if(!location.hash.startsWith('#data='))return;
+  const raw=location.hash.slice(6),clean=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
+  if(!raw.startsWith('e1.')||!hasCrypto()){clean();toast(L(hasCrypto()?'linkBad':'noCrypto'));return}
+  let blob;try{blob=unb64u(raw.slice(3))}catch(e){clean();toast(L('linkBad'));return}
+  askPassword(blob,obj=>{
+    clean();let w;try{w=parseWorkspace(obj,L('wsShared'))}catch(e){toast(L(e&&e.message==='limit'?'tooBig':'linkBad'));return}
+    if(!memGet()&&WS.length===1&&!isDirty()){adoptWs(w,'link');toast(L('linkLoaded'));return}
+    openImport(w,'link');
+  },clean);
+}
+async function saveFile(pw,anon){
+  let blob;try{const f=buildFile();blob=await seal(anon?anonymised(f):f,pw)}catch(e){toast(L('shareFail'));return}
+  const text=JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(blob)});
+  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+'-encrypted.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  if(!anon)cw().lf=keyOf(S);   // an anonymised copy is not a backup of this workspace
+  toast(L('savedFile'));renderSide();
+}
+function loadMem(){  // reverts the current workspace to its saved copy in browser memory
+  const st=readStore(),e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===curId);
+  if(!e){toast(L('noMem'));return}
+  try{const d=parseData(e);hist();S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
 }
 function restart(){
-  if(isDirty()&&!confirm(L('confRestart')))return;
-  undoSt=[];redoSt=[];const s=memGet();
-  try{if(!s)throw 0;S=parseData(JSON.parse(s));lastBrowser=dataKey()}catch(e){initDefault()}
-  render();toast(L('restarted'));
+  if(anyDirty()&&!confirm(L('confRestart')))return;
+  loadStore();selK=null;editMode='events';render();toast(L('restarted'));
 }
 function clearMem(){
   if(!confirm(L('confClear')))return;
-  try{localStorage.removeItem(KEY)}catch(e){}
-  lastBrowser=null;undoSt=[];redoSt=[];selK=null;editMode='events';initDefault();render();toast(L('clearedMem'));
+  try{localStorage.removeItem(WKEY)}catch(e){}
+  initDefault();selK=null;editMode='events';render();toast(L('clearedMem'));
 }
-window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
+window.addEventListener('beforeunload',e=>{if(anyDirty()){e.preventDefault();e.returnValue=''}});
 let prefs={w:290,collapsed:false,showEarly:false,clock12:false,hideWeekend:false,theme:'auto',rowH:48,colW:110,fit:false};
 try{Object.assign(prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
 prefs.rowH=Math.min(120,Math.max(24,+prefs.rowH||48));prefs.colW=Math.min(260,Math.max(70,+prefs.colW||110));prefs.fit=!!prefs.fit;
@@ -639,6 +913,7 @@ function schMenu(anchor,s){rowMenu(anchor,(m,mi)=>{
   sl.oninput=()=>{s.opacity=+sl.value;skipSide=true;render();skipSide=false};
   mi(s.locked?ICON_UNLOCK:ICON_LOCK,L(s.locked?'mUnlock':'mLock'),()=>{hist();s.locked=!s.locked;render()});
   mi(ICON_EYE,L('mSolo'),()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()});
+  mi(ICON_WS,L('mTransfer'),()=>openTransfer('schedule',s));
   mi('<span class="ic" style="margin:0">'+ICON_CAL+'</span>',L('mDelete'),()=>delSchedule(s),'d');
 })}
 function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
@@ -656,12 +931,14 @@ function renderSide(){
   const sb=$('sbin'),st=sb.scrollTop;sb.innerHTML='';
   const top=el('div','sbtop',sb);
   const fav=el('img','fav',top);fav.src=FAV;fav.alt='';
-  const ttl=el('span','ttl',top);ttl.textContent=L('appTitle')+(isDirty()?' •':'');if(isDirty())ttl.title=L('unsaved');
+  const ttl=el('span','ttl',top);ttl.textContent=L('appTitle')+(anyDirty()?' •':'');if(anyDirty())ttl.title=L('unsaved');
   const hb=el('button','eye help',top);hb.innerHTML=ICON_HELP;hb.title=L('helpTip');hb.onclick=openHelp;
   const gb=el('button','eye gear',top);gb.innerHTML=ICON_GEAR;gb.title=L('settings');gb.onclick=openSettings;
   const cl=el('button','eye',top);cl.innerHTML=prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(prefs.collapsed?'expandTip':'collapseTip');
   cl.onclick=()=>{prefs.collapsed=!prefs.collapsed;savePrefs();applyPrefs();renderSide()};
   const body=el('div','sbbody',sb);
+  const wb=el('button','wsbtn',body);wb.innerHTML=`<span class="ic">${ICON_WS}</span><span class="wsn"></span><span class="chev">${ICON_CD}</span>`;
+  wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip');wb.onclick=()=>wsMenu(wb);
   const sg=el('div','seg',body);
   [['events','modeEv'],['phases','modePh']].forEach(([m,k])=>{const b=el('button',editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
     b.onclick=()=>{if(editMode===m)return;editMode=m;selK=null;if(m==='phases'&&S.rhythms.length&&!vrhythm())S.rhythms[0].visible=true;render()}});
@@ -669,7 +946,7 @@ function renderSide(){
   const tbtn=(icon,tip,fn,id,cls)=>{const b=el('button',cls||'',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
   tbtn(ICON_PLUS,L(editMode==='phases'?'addPhT':'addEvT'),()=>openDlg(null),null,'p');
   tbtn(ICON_UNDO,L('undoTip'),undo,'undoB');tbtn(ICON_REDO,L('redoTip'),redo,'redoB');updUR();
-  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:saveMem},{label:L('toFile'),fn:saveFile},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_PRINT,L('printTip'),printSchedule);
   // schedules
@@ -702,7 +979,7 @@ function renderSide(){
       const ic=el('span','ic',r);ic.innerHTML=ICON_RHYTHM;
       const n=el('input','',r);n.type='text';n.value=rh.name;n.onchange=()=>{const v=n.value||rh.name;if(v!==rh.name){hist();rh.name=v}render()};
       const ag=el('button','eye',r);ag.innerHTML=ICON_AGENDA;ag.title=L('rhAgTip');ag.onclick=()=>openRhythmAgenda(rh);
-      const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>rowMenu(mb,(m,mi)=>mi('<span class="ic" style="margin:0">'+ICON_RHYTHM+'</span>',L('mDelete'),()=>delRhythm(rh),'d'));
+      const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>rowMenu(mb,(m,mi)=>{mi(ICON_WS,L('mTransfer'),()=>openTransfer('rhythm',rh));mi('<span class="ic" style="margin:0">'+ICON_RHYTHM+'</span>',L('mDelete'),()=>delRhythm(rh),'d')});
     });
     const orow=el('div','sch',s3),oi=el('span','ic',orow);oi.innerHTML=ICON_OPAC;oi.title=L('phOp');
     const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=S.phaseOpacity;sl.title=L('phOp');
@@ -1115,7 +1392,14 @@ $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agFn();doPrint(
 $('agPrint2').onclick=()=>printDay(agDay);
 $('file').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const n=parseData(JSON.parse(await f.text()));hist();S=n;lastFile=dataKey();render();toast(L('loadedFile'))}catch(_){alert(L('badFile'))}
+  const name=f.name.replace(/\.json$/i,'').replace(/-encrypted$/,''),show=obj=>{try{openImport(parseWorkspace(obj,name),'file')}catch(err){alert(L(err&&err.message==='limit'?'tooBig':'badFile'))}};
+  let j;try{j=JSON.parse(await f.text())}catch(_){alert(L('badFile'));return}
+  if(j&&j.format==='weekly-schedules-encrypted'){
+    if(!hasCrypto()){alert(L('noCrypto'));return}
+    let blob;try{blob=unb64u(String(j.data))}catch(_){alert(L('badFile'));return}
+    askPassword(blob,show);return;
+  }
+  show(j);
 };
 $('rs').onpointerdown=ev=>{
   ev.preventDefault();const x0=ev.clientX,w0=$('sb').offsetWidth;
@@ -1137,6 +1421,6 @@ function setLang(l){
 }
 applyPrefs();applyTheme();
 if(window.ResizeObserver){let rt;new ResizeObserver(()=>{if(!prefs.fit)return;clearTimeout(rt);rt=setTimeout(zoomRender,80)}).observe($('wrap'))}
-{const m=memGet();try{if(!m)throw 0;S=parseData(JSON.parse(m));lastBrowser=dataKey()}catch(e){initDefault()}}
-setLang(lang);
+loadStore();
+setLang(lang);handleShareLink();window.addEventListener('hashchange',handleShareLink);
 </script></body></html>

@@ -18,12 +18,21 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 - Rhythms and phases: coloured background bands (sleep, meals, work…) with name tabs, an Events/Phases edit switch and a per-rhythm agenda
 - Eye-icon visibility toggles and a per-schedule opacity slider
 - Icons for people (in their colour) and schedules; calendar favicon
-- Save / load everything as a JSON file
+- Workspaces: several independent schedules sets, import (new / insert / replace an existing one), and copy or move schedules, rhythms and phases between them
+- Save / load everything as a JSON file, in browser memory, or as a password-protected encrypted file or link (AES-256; the data travels inside the URL fragment)
 
 ## Use
 Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
-Plain JSON (`version: 3`): `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `showEarly`. See `CLAUDE.md` for the schema.
+A saved file or link holds one workspace as plain JSON (`version: 1`, `id`, `name`): `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema.
 
-Data lives only in memory — use **Save JSON** to keep your work.
+Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
+
+## Tests
+The app is one static file and needs no build. Optional security regression tests (dev-only, uses jsdom):
+
+```
+npm install
+npm test
+```
