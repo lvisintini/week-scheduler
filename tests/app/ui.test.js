@@ -1,0 +1,165 @@
+import { describe, it, expect } from 'vitest';
+import { openApp, setData, blank, ev1, person, pointer, PREFS_KEY } from '../helpers/app.js';
+
+const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
+const sections = a => a.qa('#sbin .sec');
+const before = (a, s1, s2) => !!(a.q(s1).compareDocumentPosition(a.q(s2)) & 4);   // true when s1 comes before s2 in the document
+
+describe('R-UI-01 Everything lives in a collapsible, resizable sidebar', () => {
+  it('there is no page header: all controls are in the sidebar', () => {
+    const a = fresh(); expect(a.q('header')).toBeNull(); expect(a.q('#sb .sbtop')).not.toBeNull(); expect(a.q('#sb .tbar')).not.toBeNull();
+  });
+  it('the collapse button hides the sidebar and a second click brings it back; the choice is remembered', () => {
+    const a = fresh(); const btn = a.q('.sbtop button[title="Collapse sidebar"]'); btn.click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(true);
+    expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).collapsed).toBe(true); expect(openApp({ storage: a.storage() }).q('#sb').classList.contains('collapsed')).toBe(true);
+    a.q('.sbtop button[title="Expand sidebar"], .sbtop button:last-child').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(false);
+  });
+  const dragHandle = (a, dx) => { a.q('#rs').onpointerdown({ preventDefault() {}, clientX: 300 }); pointer(a, 'pointermove', { x: 300 + dx }); pointer(a, 'pointerup', { x: 300 + dx }); };
+  it('dragging the divider changes the sidebar width', () => { const a = fresh(); dragHandle(a, 400); expect(a.ev('prefs.w')).toBe(400); });
+  it('the sidebar can be no narrower than 230 px and no wider than 560 px', () => {
+    const a = fresh(); dragHandle(a, -5000); expect(a.ev('prefs.w')).toBe(230); dragHandle(a, 5000); expect(a.ev('prefs.w')).toBe(560);
+  });
+  it('the width is saved when the drag ends', () => { const a = fresh(); dragHandle(a, 300); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).w).toBe(300); });
+});
+
+describe('R-UI-02 Sidebar layout, top to bottom', () => {
+  it('top row: favicon, title, help, settings and collapse', () => {
+    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar']);
+    expect(top.querySelector('.ttl').textContent).toBe('Weekly Schedules');
+  });
+  it('a bullet appears after the title while anything is unsaved', () => {
+    const a = fresh(); a.ev('S.schedules[0].name="x";render()'); expect(a.q('.ttl').textContent).toBe('Weekly Schedules •');
+  });
+  it('then the workspace switcher, the Events | Phases switch, the six toolbar buttons (each with a tooltip), and the sections', () => {
+    const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
+    expect(a.qa('.tbar button')).toHaveLength(6); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
+  });
+  it('the sections are Schedules, People and Rhythms in that order', () => {
+    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Rhythms']);
+  });
+  it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
+    const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
+  });
+  it('the Help button opens a "How to use" dialog with twelve tips', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li')).toHaveLength(12);
+  });
+});
+
+describe('R-UI-03 Settings dialog', () => {
+  it('has the sections View, Zoom, Data and Language', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg h4').map(h => h.textContent)).toEqual(['View', 'Zoom', 'Data', 'Language']);
+  });
+  it('the Data section has Restart and Clear memory, each with an explanation', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgButtons()).toEqual(expect.arrayContaining(['Restart', 'Clear memory'])); expect(a.dlgText()).toContain('Discard all unsaved changes and reload what is in browser memory.');
+  });
+  it('the Language section offers English and Español and the current language is selected', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); const sel = a.q('#xDlg select'); expect([...sel.options].map(o => o.textContent)).toEqual(['English', 'Español']); expect(sel.value).toBe('en');
+  });
+  it('the language is not remembered between visits (it follows the browser)', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); const sel = a.q('#xDlg select'); sel.value = 'es'; sel.onchange(); expect(a.w.localStorage.getItem(PREFS_KEY) || '').not.toMatch(/"lang"|es/);
+  });
+  it('every control has an explanation underneath so its effect is clear', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg .sopt small').length).toBeGreaterThanOrEqual(5);
+  });
+  it('the Close button of the Settings dialog closes it', () => { const a = fresh(); a.q('.sbtop .gear').click(); a.click('Close'); expect(a.dlgOpen()).toBe(false); });
+});
+
+describe('R-UI-04 Colour picker', () => {
+  const open = () => { const a = fresh(); sections(a)[0].querySelector('.sch .pick').click(); return a; };
+  const pop = a => a.q('.cpop'), hex = a => pop(a).querySelector('input[type=text]'), sliders = a => [...pop(a).querySelectorAll('input[type=range]')];
+  it('has colour swatches, hue / saturation / lightness sliders, a hex field and Cancel / Apply buttons', () => {
+    const a = open(); expect(pop(a).querySelectorAll('.sw').length).toBeGreaterThanOrEqual(12); expect(sliders(a).map(s => [s.min, s.max])).toEqual([['0', '359'], ['0', '100'], ['8', '92']]); expect([...pop(a).querySelectorAll('button:not(.sw)')].map(b => b.textContent)).toEqual(['Cancel', 'Apply']);
+  });
+  it('starts with the current colour in the hex field', () => { expect(hex(open()).value).toBe('#3b6df0'); });
+  it('clicking a swatch puts its colour in the hex field without applying it yet', () => {
+    const a = open(); a.qa('.cpop .sw')[1].click(); expect(hex(a).value).toBe('#e5484d'); expect(a.ev('S.schedules[0].color')).toBe('#3b6df0');
+  });
+  it('moving a slider updates the hex field', () => {
+    const a = open(); const before = hex(a).value; sliders(a)[0].value = 10; sliders(a)[0].oninput(); expect(hex(a).value).not.toBe(before);
+  });
+  it('typing a valid hex colour moves the sliders to match', () => {
+    const a = open(); hex(a).value = '#ff0000'; hex(a).oninput(); expect(+sliders(a)[0].value).toBe(0); expect(+sliders(a)[1].value).toBe(100);
+  });
+  it('Apply uses the chosen colour and closes the picker', () => {
+    const a = open(); hex(a).value = '#0a0b0c'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('S.schedules[0].color')).toBe('#0a0b0c'); expect(pop(a)).toBeNull();
+  });
+  it('an invalid hex value is never applied', () => {
+    const a = open(); hex(a).value = 'url(x)'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('S.schedules[0].color')).toMatch(/^#[0-9a-f]{6}$/);
+  });
+  it('the same picker is used for events, people and phases', () => {
+    const a = fresh(blank({ people: [person()] })); sections(a)[1].querySelector('.sch .pick').click(); expect(pop(a)).not.toBeNull(); pop(a).querySelectorAll('button')[0].click();
+    a.toolbar('add').click(); a.q('#fC').click(); expect(pop(a)).not.toBeNull();
+  });
+});
+
+describe('R-UI-05 Undo and redo', () => {
+  const change = (a, name) => { a.ev(`hist();S.schedules[0].name=${JSON.stringify(name)}`); a.ev('renderSide()'); };
+  it('both buttons start disabled', () => { const a = fresh(); expect([a.toolbar('undo').disabled, a.toolbar('redo').disabled]).toEqual([true, true]); });
+  it('a change enables Undo; undoing enables Redo; a new change after an undo clears Redo', () => {
+    const a = fresh(); change(a, 'one'); expect(a.toolbar('undo').disabled).toBe(false); a.toolbar('undo').click(); expect(a.toolbar('redo').disabled).toBe(false); change(a, 'two'); expect(a.toolbar('redo').disabled).toBe(true);
+  });
+  it('Undo and Redo walk back and forth through the changes', () => {
+    const a = fresh(); change(a, 'one'); change(a, 'two'); a.toolbar('undo').click(); expect(a.ev('S.schedules[0].name')).toBe('one'); a.toolbar('undo').click(); expect(a.ev('S.schedules[0].name')).toBe('Routine'); a.toolbar('redo').click(); expect(a.ev('S.schedules[0].name')).toBe('one');
+  });
+  it.each([['Ctrl+Z', { ctrlKey: true }, 'z'], ['Cmd+Z', { metaKey: true }, 'z']])('the keyboard shortcut %s undoes the last change', (_, mod, key) => {
+    const a = fresh(); change(a, 'one'); a.key(key, mod); expect(a.ev('S.schedules[0].name')).toBe('Routine');
+  });
+  it.each([['Ctrl+Y', { ctrlKey: true }, 'y'], ['Ctrl+Shift+Z', { ctrlKey: true, shiftKey: true }, 'z']])('the keyboard shortcut %s redoes the undone change', (_, mod, key) => {
+    const a = fresh(); change(a, 'one'); a.toolbar('undo').click(); a.key(key, mod); expect(a.ev('S.schedules[0].name')).toBe('one');
+  });
+  it('the shortcuts are ignored while typing in a field, so text editing keeps its own undo', () => {
+    const a = fresh(); change(a, 'one'); const input = a.q('#sbin input[type=text]'); input.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })); expect(a.ev('S.schedules[0].name')).toBe('one');
+  });
+  it('the shortcuts are ignored while a dialog is open', () => {
+    const a = fresh(); change(a, 'one'); a.toolbar('add').click(); a.key('z', { ctrlKey: true }); expect(a.ev('S.schedules[0].name')).toBe('one');
+  });
+  it('the undo history keeps the most recent 100 steps and drops older ones', () => {
+    const a = fresh(); for (let i = 0; i < 120; i++) a.ev('hist()'); expect(a.ev('undoSt.length')).toBe(100);
+  });
+  it('undo and redo do nothing harmful when there is nothing to undo', () => {
+    const a = fresh(); a.ev('undo();redo()'); expect(a.ev('S.schedules.length')).toBe(1);
+  });
+});
+
+describe('R-UI-06 Toasts', () => {
+  const delays = a => { const d = []; a.w.setTimeout = (f, ms) => { d.push(ms); return 1; }; return d; };
+  it('a plain message disappears after 2.2 seconds', () => { const a = fresh(); const d = delays(a); a.ev('toast("Saved")'); expect(a.toast()).toBe('Saved'); expect(d).toContain(2200); });
+  it('a message with action buttons stays for 7 seconds', () => { const a = fresh(); const d = delays(a); a.ev('toast("Applied",[{label:"Undo",fn(){}}])'); expect(d).toContain(7000); });
+  it('action buttons run their action and dismiss the toast', () => {
+    const a = fresh(); let ran = 0; a.w.__act = () => { ran++; }; a.ev('toast("Applied",[{label:"Do it",fn:()=>window.__act()}])'); [...a.q('#toast').querySelectorAll('button')].find(b => b.textContent === 'Do it').click(); expect(ran).toBe(1); expect(a.q('#toast').classList.contains('on')).toBe(false);
+  });
+  it('a new toast replaces the one that is showing', () => { const a = fresh(); a.ev('toast("first");toast("second")'); expect(a.toast()).toBe('second'); });
+});
+
+describe('R-UI-07 Event dialog layout', () => {
+  const dialog = () => { const a = fresh(blank({ events: [ev1()], people: [person()] })); a.ev('openDlg(S.events[0])'); return a; };
+  it('title and colour swatch share the first row, followed by description, responsible person, involved people and the repetition tabs', () => {
+    const a = dialog(); expect(a.q('#fT').closest('.row')).toBe(a.q('#fC').closest('.row')); [['#fT', '#fD'], ['#fD', '#fP'], ['#fP', '#fInv'], ['#fInv', '#tabQ']].forEach(([x, y]) => expect(before(a, x, y), `${x} before ${y}`).toBe(true));
+  });
+  it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
+  it('the Quick tab is the default and Advanced is next to it', () => { const a = dialog(); expect(a.qa('#dlg .tabs button').map(b => b.textContent)).toEqual(['Quick', 'Advanced']); expect(a.q('#tabQ').classList.contains('on')).toBe(true); });
+});
+
+describe('R-UI-08 Light and dark theme', () => {
+  const root = a => a.d.documentElement.getAttribute('data-theme');
+  it('"System" (the default) sets nothing, so the device\'s own preference decides', () => { expect(root(fresh())).toBeNull(); });
+  it('"Dark" and "Light" force the theme and are remembered', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); a.click('Dark'); expect(root(a)).toBe('dark'); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).theme).toBe('dark');
+    a.click('Light'); expect(root(a)).toBe('light'); a.click('System'); expect(root(a)).toBeNull();
+  });
+  it('the chosen theme is applied again at the next visit', () => { const a = fresh(); a.ev('prefs.theme="dark";savePrefs()'); expect(root(openApp({ storage: a.storage() }))).toBe('dark'); });
+  it('the dark palette exists both for the forced theme and for the system preference', () => {
+    const css = fresh().d.querySelector('style').textContent; expect(css).toContain(':root[data-theme="dark"]'); expect(css).toContain('@media(prefers-color-scheme:dark)');
+  });
+  it('the current theme button is highlighted in the dialog', () => { const a = fresh(); a.ev('prefs.theme="dark"'); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg .seg button').find(b => b.textContent === 'Dark').classList.contains('on')).toBe(true); });
+});
+
+describe('R-UI-09 Icons', () => {
+  it('schedules use a calendar icon and people use a user icon, both in the item\'s colour', () => {
+    const a = fresh(blank({ people: [person({ color: '#2fa66a' })] })); const s = sections(a)[0].querySelector('.sch .pick'), p = sections(a)[1].querySelector('.sch .pick');
+    expect(s.querySelector('svg')).not.toBeNull(); expect(p.querySelector('svg')).not.toBeNull(); expect(s.querySelector('svg').innerHTML).not.toBe(p.querySelector('svg').innerHTML); expect(p.style.color).toMatch(/#2fa66a|rgb\(47, 166, 106\)/);
+  });
+  it('the page has a calendar favicon (an embedded image, no file) that is also used beside the title', () => {
+    const a = fresh(); expect(a.q('link[rel=icon]').href).toMatch(/^data:image\/svg\+xml/); expect(a.q('.sbtop img.fav').src).toBe(a.q('link[rel=icon]').href);
+  });
+});

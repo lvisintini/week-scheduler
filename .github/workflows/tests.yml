@@ -1,0 +1,45 @@
+name: tests
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '17 3 * * *'   # nightly: every browser
+
+jobs:
+  fast:                      # lint + 789 jsdom tests (about 2 minutes) on every push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  browser-chromium:          # real-browser tests (Chromium + phone emulation) on every push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: test-results/ }
+
+  browser-all:               # nightly only: Firefox and WebKit as well
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npm run test:e2e
+        env: { ALL_BROWSERS: '1' }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces-all, path: test-results/ }

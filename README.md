@@ -25,14 +25,20 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
-A saved file or link holds one workspace as plain JSON (`version: 1`, `id`, `name`): `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema.
+A saved file or link holds one workspace (`version: 1`, `id`, `name`), always encrypted with a password you choose. Inside it is plain JSON with: `schedules`, `people`, `events` (each with `slots`, `involved`, `schedules`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema.
 
 Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
 
 ## Tests
-The app is one static file and needs no build. Optional security regression tests (dev-only, uses jsdom):
+The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test
+npm test                    # 793 fast tests (jsdom), about 2.5 minutes
+npx playwright install      # once: downloads the test browsers
+npm run test:e2e            # 114 real-browser tests (Chromium + a phone profile), about 4 minutes
+npm run lint                # ESLint on the tests
+ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```
+
+Every requirement in `CLAUDE.md` has an ID such as `R-REP-06`; each test group starts with the ID of the requirement it checks, so the console reads like a specification. `tests/requirements.test.js` fails if a requirement has no test. See `CLAUDE.md` §14 for how the tests are organised and how to add one. GitHub Actions (`.github/workflows/tests.yml`) runs lint and the fast tests on every push, the Chromium browser tests on every push, and all browsers nightly.

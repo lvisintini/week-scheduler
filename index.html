@@ -499,7 +499,7 @@ function saveMem(scope){
 }
 function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
   if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)
-  if(WS.length<2){saveMem('current');return}
+  if(WS.length<2){saveMem('all');return}   // with a single workspace "current" and "all" are the same, and saving all also drops deleted workspaces from the store
   setTimeout(()=>xdlg({title:L('scopeTitle'),body:`<p>${esc(L('scopeBody'))}</p>`,buttons:[{label:L('scopeCur',{n:cw().name}),cls:'p',fn:()=>saveMem('current')},{label:L('scopeAll',{n:WS.length}),fn:()=>saveMem('all')},{label:L('cancel'),dismiss:true}]}),0);
 }
 function addWorkspace(){
@@ -753,7 +753,8 @@ const eVis=e=>e.rhythms?phVis(e):visible(e);
 const eLock=e=>e.rhythms?false:isLocked(e);
 const sVis=(e,s)=>e.rhythms?true:slotVisible(e,s);
 const act=()=>editMode==='phases'?S.phases:S.events;
-const ink=c=>hexToHsl(c)[2]>.62?'#1d2330':'#fff';
+const lum=c=>{const v=[1,3,5].map(i=>{const x=parseInt(c.slice(i,i+2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
+const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/(lum('#1d2330')+.05)>1.05/(L+.05)?'#1d2330':'#fff'};   // text colour with the better WCAG contrast (relative luminance)
 const visible=e=>e.schedules.some(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.visible});
 const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.locked});
 const evOp=e=>Math.max(...e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
@@ -1044,14 +1045,14 @@ function render(){
         if(selK&&selK.id===p.id&&selK.i===i)bx.classList.add('sel');
         el('span','pl',bx).textContent=p.title+' · '+range;
         const rz=el('div','rz',bx);bx.title=p.title+'\n'+range+(p.desc?'\n'+p.desc:'');
-        bx.onpointerdown=ev=>{ev.stopPropagation();const md=ev.target===rz?'resize':'move';press(ev,e2=>grab(e2,{e:p,s,i,piece:0},md),p2=>tapOpen(p2,p))};
+        bx.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=ev.target===rz?'resize':'move';press(ev,e2=>grab(e2,{e:p,s,i,piece:0},md),p2=>tapOpen(p2,p))};
       }
       if(!(k>0&&phByCol[k-1].some(y=>y.key===x.key))){
         let n=1;while(k+n<days.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
         const lp=el('div','lip',ln);lp.style.cssText=`top:${top}px;height:${h}px;background:${esc(p.color)};color:${ink(p.color)}`;
         el('span','',lp).textContent=p.title;
         lp.title=p.title+'\n'+(n>1?DAYS[di].slice(0,3)+'–'+DAYS[days[k+n-1]].slice(0,3)+' ':'')+range+(p.desc?'\n'+p.desc:'');
-        lp.onpointerdown=ev=>{if(editMode==='phases'){ev.stopPropagation();press(ev,e2=>grab(e2,{e:p,s,i,piece:0},'move'),p2=>tapOpen(p2,p))}};
+        lp.onpointerdown=ev=>{if(editMode==='phases'&&!ev.button){ev.stopPropagation();press(ev,e2=>grab(e2,{e:p,s,i,piece:0},'move'),p2=>tapOpen(p2,p))}};
       }else{
         const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.phaseOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;
       }
@@ -1079,7 +1080,7 @@ function render(){
       if(e.desc)info.push(e.desc);if(warn)info.push('⚠ '+L('ovTip'));
       d.setAttribute('aria-label',info.join(', '));
       const rz=(!it.cont||it.piece)?el('div','rz',d):null;
-      if(!lk&&editMode==='events')d.onpointerdown=ev=>{ev.stopPropagation();const md=rz&&rz===ev.target?'resize':'move';press(ev,e2=>grab(e2,it,md),p2=>tapOpen(p2,e))};
+      if(!lk&&editMode==='events')d.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=rz&&rz===ev.target?'resize':'move';press(ev,e2=>grab(e2,it,md),p2=>tapOpen(p2,e))};
     });
     const pts=[...new Set(evs.flatMap(e=>[Math.max(e.start,a*60),e.end]))].sort((x,y)=>x-y);
     for(let i=0;i<pts.length-1;i++){
@@ -1113,7 +1114,11 @@ function press(ev,onStart,onTap){
   if(ev.pointerType!=='touch'){onStart(ev);return}
   const x0=ev.clientX,y0=ev.clientY;let last={x:x0,y:y0};
   const off=()=>{clearTimeout(tm);document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',off)};
-  const tm=setTimeout(()=>{off();touchDrag=true;if(navigator.vibrate)navigator.vibrate(12);onStart({clientX:last.x,clientY:last.y,shiftKey:false,pointerType:'touch',preventDefault(){},stopPropagation(){}})},400);
+  const tm=setTimeout(()=>{off();touchDrag=true;try{document.body.setPointerCapture(ev.pointerId)}catch(_){}   // keep receiving this finger's pointer events after the grid is redrawn
+    // Touch events keep going to the element the finger started on even after a redraw removes it from the page, so the
+    // listener that blocks scrolling during the drag must sit on that element itself (a document listener would miss them and the browser would start scrolling).
+    const tgt=ev.target;if(tgt&&tgt.addEventListener){const stop=e=>{if(e.cancelable)e.preventDefault()},end=()=>{tgt.removeEventListener('touchmove',stop);document.removeEventListener('pointerup',end,true);document.removeEventListener('pointercancel',end,true)};tgt.addEventListener('touchmove',stop,{passive:false});document.addEventListener('pointerup',end,true);document.addEventListener('pointercancel',end,true)}
+    if(navigator.vibrate)navigator.vibrate(12);onStart({clientX:last.x,clientY:last.y,shiftKey:false,pointerType:'touch',preventDefault(){},stopPropagation(){}})},400);
   const mv=p=>{last={x:p.clientX,y:p.clientY};if(Math.hypot(p.clientX-x0,p.clientY-y0)>8)off()};
   const up=p=>{off();if(onTap)onTap(p)};
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',off);

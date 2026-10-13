@@ -1,0 +1,22 @@
+{
+  "name": "weekly-schedules",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tooling: the app itself is the single static index.html and needs no build or dependencies.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test",
+    "lint": "eslint tests"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.50.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "jsdom": "^25.0.0",
+    "vitest": "^3.0.0"
+  }
+}
