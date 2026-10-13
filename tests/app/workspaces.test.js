@@ -20,7 +20,7 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
   });
   it('"New workspace…" asks for a name, creates a fresh default workspace and switches to it', () => {
-    const a = fresh(); openMenu(a); menuClick(a, 'New workspace'); expect(names(a)).toEqual(['Workspace', 'Second']); expect(a.ev('cw().name')).toBe('Second'); expect(a.ev('S.schedules[0].name')).toBe('Routine'); expect(a.ev('S.phases.length')).toBe(9);
+    const a = fresh(); openMenu(a); menuClick(a, 'New workspace'); expect(names(a)).toEqual(['Workspace', 'Second']); expect(a.ev('cw().name')).toBe('Second'); expect(a.ev('S.schedules[0].name')).toBe('Routine'); expect(a.ev('S.phases.length')).toBe(7); expect(a.ev('S.types.length')).toBe(8);
   });
   it('a name that already exists is made unique with (2)', () => {
     const a = fresh({ promptAnswer: 'Workspace' }); a.ev('addWorkspace()'); expect(names(a)).toEqual(['Workspace', 'Workspace (2)']);
@@ -73,7 +73,7 @@ describe('R-DATA-02 Saving to browser memory: one workspace or all', () => {
   });
   it('the saved store has the documented shape (version, current, workspaces with id, name and data)', () => {
     const a = fresh(); a.chooseSave('Browser memory'); const s = store(a);
-    expect(Object.keys(s).sort()).toEqual(['current', 'version', 'workspaces']); expect(Object.keys(s.workspaces[0]).sort()).toEqual(['events', 'id', 'name', 'people', 'phaseOpacity', 'phases', 'rhythms', 'schedules']);
+    expect(Object.keys(s).sort()).toEqual(['current', 'version', 'workspaces']); expect(Object.keys(s.workspaces[0]).sort()).toEqual(['events', 'id', 'name', 'people', 'phaseOpacity', 'phases', 'rhythms', 'schedules', 'types']);
   });
   it('with several workspaces it asks: only the current one, or all', async () => {
     const a = twoWs(); a.chooseSave('Browser memory'); await a.sleep(20); expect(a.dlgTitle()).toBe('Save which workspaces?'); expect(a.dlgButtons()).toEqual(['Only "Workspace"', 'All workspaces (2)', 'Cancel']);

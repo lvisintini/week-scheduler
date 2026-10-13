@@ -91,12 +91,12 @@ describe('R-PHS-02 Only one rhythm can be shown at a time', () => {
   });
   it('showing a rhythm through its eye hides the others', () => {
     setData(app, rh(true, false));
-    app.qa('#sbin .sec')[2].querySelectorAll('.sch')[1].querySelector('.eye').click();
+    app.qa('#sbin .sec')[3].querySelectorAll('.sch')[1].querySelector('.eye').click();
     expect(ev('S.rhythms.map(r=>r.visible)')).toEqual([false, true]);
   });
   it('clicking the eye of the visible rhythm hides it, leaving none visible', () => {
     setData(app, rh(true, false));
-    app.qa('#sbin .sec')[2].querySelectorAll('.sch')[0].querySelector('.eye').click();
+    app.qa('#sbin .sec')[3].querySelectorAll('.sch')[0].querySelector('.eye').click();
     expect(ev('S.rhythms.every(r=>!r.visible)')).toBe(true);
   });
 });

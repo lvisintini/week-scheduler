@@ -5,6 +5,7 @@ const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, dat
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
 const save = a => a.q('#fOk').click();
 const events = a => a.ev('JSON.parse(JSON.stringify(S.events))');
+const iconHTML = (a, k) => a.ev(`(()=>{const d=document.createElement("span");d.innerHTML=tIcon(${JSON.stringify(k)});return d.innerHTML})()`);   // as the browser serialises it
 const cssRule = (a, selector) => [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === selector);
 
 describe('R-EVT-01 Creating, moving, resizing and removing events', () => {
@@ -365,46 +366,61 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
   });
 });
 
-describe('R-EVT-11 Free time: a whole event marked as free time stands out but behaves like any event', () => {
-  const freeEv = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', free: true, slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
+describe('R-EVT-11 Activity type: each event has at most one type, shown by its icon; soft-look types stand out', () => {
+  const types = [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }, { id: 'tm', name: 'Meal', color: '#e8912d', icon: 'meal' }];
+  const typed = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', type: 'tf', slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
-  it('the event dialog has a "Free time" checkbox under "Show as", ticked for free-time events', () => {
-    const a = fresh(blank({ events: [freeEv(), ev1({ id: 'n' })] })); open(a, 0); expect(a.q('#fFree').checked).toBe(true);
-    expect(a.q('#fFree').closest('label').textContent).toBe('Free time'); a.q('#fCancel').click(); open(a, 1); expect(a.q('#fFree').checked).toBe(false);
+  const pick = (a, v) => { a.q('#fTy').value = v; a.q('#fTy').dispatchEvent(new a.w.Event('change')); };
+  it('the event dialog has an "Activity type" list with "(none)" first and the types of the workspace in order', () => {
+    const a = fresh(blank({ types, events: [typed(), ev1({ id: 'n' })] })); open(a, 0);
+    expect([...a.q('#fTy').options].map(o => o.textContent)).toEqual(['(none)', 'Free time', 'Meal']); expect(a.q('#fTy').value).toBe('tf');
+    a.q('#fCancel').click(); open(a, 1); expect(a.q('#fTy').value).toBe('');
   });
-  it('ticking it and saving marks the event as free time; unticking removes the mark again', () => {
-    const a = fresh(blank({ events: [ev1()] })); open(a); a.q('#fFree').checked = true; save(a); expect(events(a)[0].free).toBe(true);
-    open(a); a.q('#fFree').checked = false; save(a); expect('free' in events(a)[0]).toBe(false);
+  it('the icon of the chosen type is shown next to the list in the type colour', () => {
+    const a = fresh(blank({ types, events: [ev1()] })); open(a); expect(a.q('#fTyIc').innerHTML).toBe('');
+    pick(a, 'tm'); expect(a.q('#fTyIc svg')).not.toBeNull(); expect(a.q('#fTyIc').style.color).toMatch(/#e8912d|rgb\(232, 145, 45\)/);
   });
-  it('a new event can be created as free time', async () => {
-    const a = fresh(blank()); await createDrag(a, { col: 1, min: 600 }, { col: 1, min: 660 }); fillDialog(a, { title: 'Nap' }); a.q('#fFree').checked = true; save(a);
-    expect(events(a)[0]).toMatchObject({ title: 'Nap', free: true });
+  it('choosing a type and saving sets it on the whole event; "(none)" removes it again', () => {
+    const a = fresh(blank({ types, events: [ev1()] })); open(a); pick(a, 'tm'); save(a); expect(events(a)[0].type).toBe('tm');
+    open(a); pick(a, ''); save(a); expect('type' in events(a)[0]).toBe(false);
   });
-  it('every repetition is drawn as a soft box in the event colour with a solid colour edge and a sun icon', () => {
-    const a = fresh(blank({ events: [freeEv()] })); const boxes = a.qa('.ev'); expect(boxes).toHaveLength(2);
-    boxes.forEach(b => { expect(b.classList.contains('free')).toBe(true); expect(b.style.getPropertyValue('--c')).toBe('#2fa66a'); expect(b.querySelector('.flags svg circle')).not.toBeNull(); });
-    const rule = cssRule(a, '.ev.free').style; expect(rule.getPropertyValue('background')).toMatch(/color-mix\(in srgb, ?var\(--c\) 28%, ?var\(--card\)\)/); expect(rule.getPropertyValue('border-left')).toMatch(/4px solid var\(--c\)/);
+  it('a new event can be created with a type', async () => {
+    const a = fresh(blank({ types })); await createDrag(a, { col: 1, min: 600 }, { col: 1, min: 660 }); fillDialog(a, { title: 'Nap' }); pick(a, 'tf'); save(a);
+    expect(events(a)[0]).toMatchObject({ title: 'Nap', type: 'tf' });
   });
-  it('ordinary events are not marked', () => {
-    const a = fresh(blank({ events: [ev1()] })); expect(a.q('.ev').classList.contains('free')).toBe(false); expect(a.q('.ev .flags')).toBeNull();
+  it('every repetition shows the type icon first among the status icons', () => {
+    const a = fresh(blank({ types, events: [typed({ type: 'tm' })] })); const boxes = a.qa('.ev'); expect(boxes).toHaveLength(2);
+    boxes.forEach(b => expect(b.querySelector('.flags span').innerHTML).toBe(iconHTML(a, 'meal')));
   });
-  it('screen readers, the hover card and the day agenda say "Free time"', async () => {
-    const a = fresh(blank({ events: [freeEv()] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Free time');
+  it('a type with the soft look draws a soft box in the event colour with a solid colour edge (the event keeps its own colour)', () => {
+    const a = fresh(blank({ types, events: [typed()] }));
+    a.qa('.ev').forEach(b => { expect(b.classList.contains('soft')).toBe(true); expect(b.style.getPropertyValue('--c')).toBe('#2fa66a'); });
+    const rule = cssRule(a, '.ev.soft').style; expect(rule.getPropertyValue('background')).toMatch(/color-mix\(in srgb, ?var\(--c\) 28%, ?var\(--card\)\)/); expect(rule.getPropertyValue('border-left')).toMatch(/4px solid var\(--c\)/);
+  });
+  it('types without the soft look and events without a type are drawn normally (no icon when there is no type)', () => {
+    const a = fresh(blank({ types, events: [typed({ type: 'tm' }), ev1({ id: 'n', slots: [{ day: 4, start: 600, end: 660, person: '' }] })] }));
+    expect(a.qa('.ev.soft')).toHaveLength(0); expect(a.q('.day[data-d="4"] .ev .flags')).toBeNull();
+  });
+  it('screen readers, the hover card and the day agenda name the type', () => {
+    const a = fresh(blank({ types, events: [typed()] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Free time');
     expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Free time');
     a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Free time');
   });
-  it('the overlap rules do not change: a free-time event sharing a person with another overlaps with stripes', () => {
-    const a = fresh(blank({ people, events: [freeEv({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'A' }] })] }));
+  it('the overlap rules do not change: a soft-look event sharing a person with another overlaps with stripes', () => {
+    const a = fresh(blank({ people, types, events: [typed({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'A' }] })] }));
     expect(a.qa('.ov')).toHaveLength(1);
   });
-  it('the mark survives copying the event and is validated on import (only true counts)', () => {
-    const a = fresh(blank({ schedules: [sched(), sched({ id: 's2', name: 'S2' })], events: [freeEv()] })); a.ev('openCopy(S.events[0])'); a.click('Copy');
-    expect(events(a).map(e => e.free)).toEqual([true, true]);
-    expect(a.ev('parseData({schedules:[],events:[{id:"x",schedules:[],slots:[{day:0,start:0,end:60}],free:"yes"}]}).events[0]').free).toBeUndefined();
+  it('the type survives copying the event to another schedule', () => {
+    const a = fresh(blank({ types, schedules: [sched(), sched({ id: 's2', name: 'S2' })], events: [typed()] })); a.ev('openCopy(S.events[0])'); a.click('Copy');
+    expect(events(a).map(e => e.type)).toEqual(['tf', 'tf']);
   });
-  it('the checkbox is translated and hidden for phases', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fFree').closest('label').textContent).toBe('Tiempo libre');
-    expect(a.q('#fFree').closest('.fflags').classList.contains('ev-only')).toBe(true);
+  it('the old free-time flag no longer exists: no checkbox, and "free" in data is dropped', () => {
+    const a = fresh(blank({ events: [ev1({ free: true })] })); expect(a.q('#fFree')).toBeNull(); expect('free' in events(a)[0]).toBe(false);
+  });
+  it('the list is labelled and translated, and hidden for phases', () => {
+    const a = fresh(blank({ types, events: [ev1()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fTy').options[0].textContent).toBe('(ninguno)');
+    expect(a.q('#fTy').getAttribute('aria-label')).toBe('Tipo de actividad'); expect(a.q('#fTy').closest('.row').classList.contains('ev-only')).toBe(true);
+    expect([...a.qa('#dlg label')].some(l => l.textContent === 'Tipo de actividad')).toBe(true);
   });
 });
 

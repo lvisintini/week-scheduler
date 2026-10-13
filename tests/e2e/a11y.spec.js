@@ -33,6 +33,11 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank());
     const r = await new AxeBuilder({ page }).include('.zsec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
+  test('the Activity types section and its icon grid add no accessibility violation (named fields and icon buttons)', async ({ page }) => {
+    await openApp(page); await page.locator('.tysec .sch .pick').first().click();
+    let r = await new AxeBuilder({ page }).include('.tysec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+    r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+  });
   test('the dark theme shows no accessibility violation beyond the known ones: contrast of the selected switch button', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), { 'color-contrast': 1, label: 1, 'scrollable-region-focusable': 1 });

@@ -16,10 +16,10 @@ const modeBtn = (a, label) => a.qa('.seg button').find(b => b.textContent === la
 describe('R-PHS-01 Rhythms and phases in the interface', () => {
   it('the sidebar has a Rhythms section and an Events | Phases switch', () => {
     const a = fresh(data()); expect(a.qa('.seg button').map(b => b.textContent)).toEqual(['Events', 'Phases']);
-    expect(sections(a)[2].querySelector('.shbtn span').textContent).toBe('Rhythms');
+    expect(sections(a)[3].querySelector('.shbtn span').textContent).toBe('Rhythms');
   });
   it('in Spanish they are called Ritmos and Franjas', () => {
-    const a = openApp({ languages: ['es'] }); expect(a.qa('.seg button').map(b => b.textContent)).toEqual(['Eventos', 'Franjas']); expect(sections(a)[2].querySelector('.shbtn span').textContent).toBe('Ritmos');
+    const a = openApp({ languages: ['es'] }); expect(a.qa('.seg button').map(b => b.textContent)).toEqual(['Eventos', 'Franjas']); expect(sections(a)[3].querySelector('.shbtn span').textContent).toBe('Ritmos');
   });
   it('a rhythm has a name; a phase belongs to one or more rhythms (stored as ids)', () => {
     const a = fresh(data({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })], phases: [phase({ rhythms: ['r1', 'r2'] })] })); expect(phaseList(a)[0].rhythms).toEqual(['r1', 'r2']);
@@ -28,20 +28,20 @@ describe('R-PHS-01 Rhythms and phases in the interface', () => {
 
 describe('R-PHS-02 One rhythm shown at a time and one opacity control for all', () => {
   it('there is a single opacity slider under the rhythm list, for all rhythms together', () => {
-    const a = fresh(data({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })] })); expect(sections(a)[2].querySelectorAll('input[type=range]')).toHaveLength(1);
+    const a = fresh(data({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })] })); expect(sections(a)[3].querySelectorAll('input[type=range]')).toHaveLength(1);
   });
   it('moving the slider fades every phase background but not the lips', () => {
-    const a = fresh(data()); const slider = sections(a)[2].querySelector('input[type=range]'); slider.value = 0.6; slider.oninput();
+    const a = fresh(data()); const slider = sections(a)[3].querySelector('input[type=range]'); slider.value = 0.6; slider.oninput();
     expect(a.ev('S.phaseOpacity')).toBe(0.6); a.qa('.phbg').forEach(b => expect(b.style.opacity).toBe('0.6')); lips(a, 0).forEach(l => expect(l.style.opacity).toBe(''));
   });
   it('the slider runs from 5 % to 100 %', () => {
-    const s = sections(fresh(data()))[2].querySelector('input[type=range]'); expect([s.min, s.max]).toEqual(['0.05', '1']);
+    const s = sections(fresh(data()))[3].querySelector('input[type=range]'); expect([s.min, s.max]).toEqual(['0.05', '1']);
   });
   it('the rhythm opacity and visibility are view state (no undo step)', () => {
-    const a = fresh(data()); const depth = a.ev('undoSt.length'); const s = sections(a)[2].querySelector('input[type=range]'); s.value = 0.5; s.oninput(); sections(a)[2].querySelector('.sch .eye').click(); expect(a.ev('undoSt.length')).toBe(depth);
+    const a = fresh(data()); const depth = a.ev('undoSt.length'); const s = sections(a)[3].querySelector('input[type=range]'); s.value = 0.5; s.oninput(); sections(a)[3].querySelector('.sch .eye').click(); expect(a.ev('undoSt.length')).toBe(depth);
   });
   it('a hidden rhythm draws nothing and removes the label lane', () => {
-    const a = fresh(data()); sections(a)[2].querySelector('.sch .eye').click(); expect(a.qa('.phx, .lip, .lbg')).toHaveLength(0); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('0px');
+    const a = fresh(data()); sections(a)[3].querySelector('.sch .eye').click(); expect(a.qa('.phx, .lip, .lbg')).toHaveLength(0); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('0px');
   });
 });
 
@@ -200,7 +200,7 @@ describe('R-PHS-07 Rhythm agenda', () => {
     expect(lines(agenda([phase({ title: 'Work', slots: [{ day: 0, start: 495, end: 720 }, { day: 0, start: 780, end: 1005 }] })]))).toEqual(['Work', 'Monday', '08:15–12:00', '13:00–16:45']);
   });
   it('is opened with the agenda icon of the rhythm row and can be printed', () => {
-    const a = fresh(data()); sections(a)[2].querySelector('.sch button[title*="Agenda"]').click(); expect(a.d.getElementById('agDlg').open).toBe(true);
+    const a = fresh(data()); sections(a)[3].querySelector('.sch button[title*="Agenda"]').click(); expect(a.d.getElementById('agDlg').open).toBe(true);
     a.q('#agPrint').click(); expect(a.w.__printCount).toBe(1); expect(a.w.__printed).toContain('Lunch');
   });
   it('is shown in Spanish as "Lunes a Jueves"', () => {
@@ -211,38 +211,34 @@ describe('R-PHS-07 Rhythm agenda', () => {
   });
 });
 
-describe('R-PHS-08 The default first-run rhythm', () => {
+describe('R-PHS-08 The default first-run rhythm: seven parts of the day', () => {
   const a = openApp(); const byTitle = t => a.ev('JSON.parse(JSON.stringify(S.phases))').filter(p => p.title === t);
-  it('a new installation has one visible rhythm called "Normal rhythm" with nine phases', () => {
-    expect(a.ev('S.rhythms.map(r=>[r.name,r.visible])')).toEqual([['Normal rhythm', true]]); expect(a.ev('S.phases.length')).toBe(9);
+  it('a new installation has one visible rhythm called "Normal rhythm" with seven phases', () => {
+    expect(a.ev('S.rhythms.map(r=>[r.name,r.visible])')).toEqual([['Normal rhythm', true]]); expect(a.ev('S.phases.length')).toBe(7);
   });
-  it('every phase name ends with "time" (Work/School time, Free time, Bed time …)', () => {
-    expect(a.ev('S.phases.map(p=>p.title)').every(t => /time$/.test(t))).toBe(true);
+  it('the phases are Midnight, Early morning, Morning, Noon, Afternoon, Evening and Night, covering the whole day without gaps', () => {
+    const ph = a.ev('JSON.parse(JSON.stringify(S.phases))').sort((x, y) => x.slots[0].start - y.slots[0].start);
+    expect(ph.map(p => p.title)).toEqual(['Midnight', 'Early morning', 'Morning', 'Noon', 'Afternoon', 'Evening', 'Night']);
+    expect(ph.map(p => [p.slots[0].start, p.slots[0].end])).toEqual([[0, 300], [300, 480], [480, 720], [720, 840], [840, 1080], [1080, 1260], [1260, 1440]]);
   });
-  it('sleep time is two phases: 00:00–06:00 ("4 cycles") and 22:30–24:00 ("5 cycles"), every day', () => {
-    const [night, late] = byTitle('Sleep time'); expect([night.desc, late.desc]).toEqual(['4 cycles', '5 cycles']);
-    expect(night.slots.map(s => [s.start, s.end])).toEqual(Array(7).fill([0, 360])); expect(late.slots.map(s => [s.start, s.end])).toEqual(Array(7).fill([1350, 1440]));
+  it('every phase has the same times on all seven days and no description', () => {
+    a.ev('JSON.parse(JSON.stringify(S.phases))').forEach(p => { expect(p.slots.map(s => s.day)).toEqual([0, 1, 2, 3, 4, 5, 6]); expect(new Set(p.slots.map(s => s.start + '-' + s.end)).size).toBe(1); expect(p.desc).toBe(''); });
   });
-  it('Wake, Breakfast, Lunch, Dinner and Bed time are the agreed times, every day', () => {
-    const t = (title, a1, a2) => expect(byTitle(title)[0].slots.map(s => [s.start, s.end])).toEqual(Array(7).fill([a1, a2]));
-    t('Wake time', 360, 435); t('Breakfast time', 435, 495); t('Lunch time', 720, 780); t('Dinner time', 1005, 1170); t('Bed time', 1170, 1350);
+  it('the old phases (Sleep time, Work/School time, Free time …) are gone', () => {
+    ['Sleep time', 'Work/School time', 'Free time', 'Bed time'].forEach(t => expect(byTitle(t)).toHaveLength(0));
   });
-  it('Work/School time is Monday–Friday 08:15–12:00 and 13:00–16:45; Free time is the same two blocks on Saturday and Sunday', () => {
-    const w = byTitle('Work/School time')[0], f = byTitle('Free time')[0];
-    expect(new Set(w.slots.map(s => s.day))).toEqual(new Set([0, 1, 2, 3, 4])); expect(new Set(f.slots.map(s => s.day))).toEqual(new Set([5, 6]));
-    [w, f].forEach(p => expect(new Set(p.slots.map(s => `${s.start}-${s.end}`))).toEqual(new Set(['495-720', '780-1005'])));
-  });
-  it('the phases are drawn at first start (label lanes and bands are visible)', () => {
-    expect(a.qa('.lip').length).toBeGreaterThan(10); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px');
+  it('the phases are drawn at first start: lips on Monday only, since every day has the same times', () => {
+    const lips = a.qa('.lip'); expect(lips.length).toBe(6);   // Midnight lies in the hidden early hours
+    expect(lips.every(l => l.closest('.dw') === a.qa('.dw')[0])).toBe(true); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px');
   });
   it('all default phases belong to the rhythm and use valid colours', () => {
     const rid = a.ev('S.rhythms[0].id'); expect(a.ev('S.phases.every(p=>p.rhythms[0]===' + JSON.stringify(rid) + ')')).toBe(true); a.ev('S.phases.map(p=>p.color)').forEach(c => expect(c).toMatch(/^#[0-9a-f]{6}$/));
   });
-  it('in Spanish the default phase names are Spanish', () => {
-    const es = openApp({ languages: ['es'] }); expect(new Set(es.ev('S.phases.map(p=>p.title)'))).toEqual(new Set(['Hora de dormir', 'Hora de despertarse', 'Hora del desayuno', 'Trabajo/Escuela', 'Tiempo libre', 'Hora de la comida', 'Hora de la cena', 'Hora de acostarse']));
+  it('in Spanish the default phase names are Spanish (Madrugada … Noche)', () => {
+    const es = openApp({ languages: ['es'] }); expect(new Set(es.ev('S.phases.map(p=>p.title)'))).toEqual(new Set(['Madrugada', 'Primera hora', 'Mañana', 'Mediodía', 'Tarde', 'Atardecer', 'Noche']));
   });
   it('Clear memory restarts with the same default rhythm', () => {
-    const b = openApp(); b.ev('S.phases=[];S.rhythms=[];render()'); b.ev('clearMem()'); expect(b.ev('S.phases.length')).toBe(9);
+    const b = openApp(); b.ev('S.phases=[];S.rhythms=[];render()'); b.ev('clearMem()'); expect(b.ev('S.phases.length')).toBe(7);
   });
 });
 

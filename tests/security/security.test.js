@@ -37,8 +37,8 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
   it.each(payloads)('the text %j is shown as text everywhere and never runs', async payload => {
     const a = openApp();
     const hostile = workspace({
-      name: payload, schedules: [{ id: 's1', name: payload, color: '#3b6df0', opacity: 1, locked: false, visible: true }], people: [{ id: 'p1', name: payload, color: '#f00000', visible: true }],
-      events: [{ id: 'e1', title: payload, desc: payload, color: '#3b6df0', schedules: ['s1'], involved: ['p1'], slots: [{ day: 0, start: 600, end: 720, person: 'p1' }, { day: 0, start: 660, end: 780, person: 'p1' }] }],
+      name: payload, schedules: [{ id: 's1', name: payload, color: '#3b6df0', opacity: 1, locked: false, visible: true }], people: [{ id: 'p1', name: payload, color: '#f00000', visible: true }], types: [{ id: 't1', name: payload, color: '#3b6df0', icon: payload }],
+      events: [{ id: 'e1', title: payload, desc: payload, color: '#3b6df0', type: 't1', schedules: ['s1'], involved: ['p1'], slots: [{ day: 0, start: 600, end: 720, person: 'p1' }, { day: 0, start: 660, end: 780, person: 'p1' }] }],
       rhythms: [{ id: 'r1', name: payload, visible: true }], phases: [{ id: 'ph1', title: payload, desc: payload, color: '#3b6df0', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }, { day: 1, start: 720, end: 780 }] }],
     });
     a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(hostile)});S=w.data;cw().data=w.data;cw().name=w.name;render()})()`);
@@ -67,13 +67,13 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
   });
   it('user text is only ever added with textContent or esc(): no raw innerHTML of data fields', () => {
     const risky = [...script.matchAll(/(?:innerHTML|insertAdjacentHTML\([^,]+,)\s*=?\s*([^;\n]{0,160})/g)].map(m => m[0]);
-    const raw = risky.filter(r => /\b(e|s|q|p|ph|w|r|rh)\.(title|name|desc)\b/.test(r) && !/esc\(/.test(r)); expect(raw).toEqual([]);
+    const raw = risky.filter(r => /\b(e|s|q|p|ph|w|r|rh|t|ty)\.(title|name|desc)\b/.test(r) && !/esc\(/.test(r)); expect(raw).toEqual([]);
   });
 });
 
 describe('R-SEC-03 Imports are limited so hostile files cannot hang the browser (see also the data validation tests)', () => {
-  it('the limits are 100 schedules, 500 people, 5,000 events, 100 rhythms, 2,000 phases and 200 repetitions each', () => {
-    expect(openApp().ev('JSON.stringify(LIM)')).toMatch(/100[\s\S]*500[\s\S]*5000[\s\S]*100[\s\S]*2000[\s\S]*200/);
+  it('the limits are 100 schedules, 500 people, 100 activity types, 5,000 events, 100 rhythms, 2,000 phases and 200 repetitions each', () => {
+    expect(openApp().ev('JSON.stringify(LIM)')).toMatch(/100[\s\S]*500[\s\S]*100[\s\S]*5000[\s\S]*100[\s\S]*2000[\s\S]*200/);
   });
   it('the decrypted size is capped (a small file cannot expand into gigabytes)', () => { expect(script).toMatch(/2e6|2000000/); });
   it('the key-derivation work factor of incoming data is bounded in both directions', () => { expect(script).toMatch(/iter[^;]{0,60}(2e6|2000000)|(2e6|2000000)[^;]{0,60}iter/i); });

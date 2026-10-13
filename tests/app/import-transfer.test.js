@@ -69,7 +69,7 @@ describe('R-DATA-03 Insert into the current workspace', () => {
   it('adds the file\'s schedules, people, events, rhythms and phases as new items', async () => {
     const a = fresh(); await insertInto(a, workspace());
     expect(a.ev('S.schedules.map(s=>s.name)')).toEqual(['Routine', 'Team']); expect(a.ev('S.people.map(p=>p.name)')).toEqual(['Ann']); expect(a.ev('S.events.map(e=>e.title)')).toEqual(['Standup']);
-    expect(a.ev('S.rhythms.map(r=>r.name)')).toEqual(['Normal rhythm', 'Normal']); expect(a.ev('S.phases.length')).toBe(10);
+    expect(a.ev('S.rhythms.map(r=>r.name)')).toEqual(['Normal rhythm', 'Normal']); expect(a.ev('S.phases.length')).toBe(8);
   });
   it('gives everything new ids and keeps the references between them correct', async () => {
     const a = fresh(); await insertInto(a, workspace());

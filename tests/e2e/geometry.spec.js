@@ -162,13 +162,13 @@ test.describe('R-EVT-10 Side-by-side events in a real browser', () => {
   });
 });
 
-test.describe('R-EVT-11 R-EVT-12 Free time and flexible time as drawn by a real browser', () => {
+test.describe('R-EVT-11 R-EVT-12 Soft-look activity types and flexible time as drawn by a real browser', () => {
   const look = (page, title) => page.locator('.ev', { hasText: title }).evaluate(b => { const c = getComputedStyle(b); return { bg: c.backgroundColor, left: c.borderLeftWidth + ' ' + c.borderLeftStyle, top: c.borderTopWidth + ' ' + c.borderTopStyle, color: c.color }; });
   test.beforeEach(async ({ page }) => {
-    await openApp(page); await seed(page, blank({ events: [ev({ id: 'n', title: 'Plain', color: '#2fa66a', slots: [slot(0, 600, 660)] }), ev({ id: 'f', title: 'Park', color: '#2fa66a', free: true, slots: [slot(1, 600, 660)] }),
+    await openApp(page); await seed(page, blank({ types: [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }], events: [ev({ id: 'n', title: 'Plain', color: '#2fa66a', slots: [slot(0, 600, 660)] }), ev({ id: 'f', title: 'Park', color: '#2fa66a', type: 'tf', slots: [slot(1, 600, 660)] }),
       ev({ id: 'x', title: 'Homework', color: '#e8912d', slots: [{ ...slot(2, 600, 660), flex: true }] })] }));
   });
-  test('a free-time box is a lighter tint of its colour with a 4 px solid edge and dark text', async ({ page }) => {
+  test('a box of a soft-look type (Free time) is a lighter tint of its colour with a 4 px solid edge and dark text', async ({ page }) => {
     const plain = await look(page, 'Plain'), free = await look(page, 'Park');
     expect(free.bg).not.toBe(plain.bg); expect(free.left).toBe('4px solid'); expect(free.color).toBe('rgb(29, 35, 48)');
     const ch = free.bg.match(/[\d.]+/g).slice(0, 3).map(Number), scale = free.bg.startsWith('color(') ? 255 : 1;   // Chrome reports color-mix() as color(srgb r g b) in 0–1

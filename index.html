@@ -70,11 +70,13 @@ aside.collapsed .help{display:none}
 .gl{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--hh) - 1px),var(--line) calc(var(--hh) - 1px) var(--hh))}
 .ev{position:absolute;left:3px;right:3px;border-radius:8px;padding:4px 7px;color:#fff;overflow:hidden;cursor:grab;font-size:12px;box-shadow:0 1px 3px #0003;border:1px solid #0002}
 .ev.locked{pointer-events:none;cursor:default}
-/* free time: soft tint of the event colour with a solid colour edge; flexible time: dashed border */
-.ev.free{background:color-mix(in srgb,var(--c) 28%,var(--card))!important;color:var(--fg);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-left:4px solid var(--c)}
-.ev.free .r1,.ev.free .r2,.ev.free .clipm{text-shadow:none}.ev.free .flags{color:var(--fg)}.ev.free .flags svg{filter:none}.ev.free.clipped::after{background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.12))}
-.ev.flex{border:2px dashed var(--dash)}.ev.free.flex{border-left:4px solid var(--c)}
+/* activity types with the soft look (e.g. Free time): soft tint of the event colour with a solid colour edge; flexible time: dashed border */
+.ev.soft{background:color-mix(in srgb,var(--c) 28%,var(--card))!important;color:var(--fg);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-left:4px solid var(--c)}
+.ev.soft .r1,.ev.soft .r2,.ev.soft .clipm{text-shadow:none}.ev.soft .flags{color:var(--fg)}.ev.soft .flags svg{filter:none}.ev.soft.clipped::after{background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.12))}
+.ev.flex{border:2px dashed var(--dash)}.ev.soft.flex{border-left:4px solid var(--c)}
 .fflags label{font-weight:400}.fflags .ic{margin:0 4px 0 2px;vertical-align:-2px}.fflags .ic svg{width:14px;height:14px}
+.igrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:2px}.igrid button{padding:5px;display:flex;justify-content:center;color:var(--fg)}.igrid button.on{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.igrid svg{width:18px;height:18px}
+#fTyIc svg{width:16px;height:16px}
 .fxbox{display:inline-block;width:14px;height:11px;border:2px dashed currentColor;border-radius:3px;vertical-align:-1px;margin:0 4px 0 2px}
 .fxt{padding:2px 5px;color:var(--mut);line-height:1}.fxt .fxbox{margin:0}.fxt.on{color:var(--acc);border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}
 .ev .r1,.ev .r2{position:relative;z-index:3;text-shadow:0 1px 2px #0008;line-height:1.25}
@@ -170,7 +172,8 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <label>Description</label><textarea id="fD" rows="2"></textarea>
 <label class="ev-only">Person responsible</label><div class="row ev-only" style="align-items:center"><span id="fPic" class="ic"></span><select id="fP"></select></div>
 <label class="ev-only">Persons involved</label><div class="chk ev-only" id="fInv"></div>
-<label class="ev-only">Show as</label><div class="chk ev-only fflags"><label title="Marks the whole event (every repetition) as free time: rest, leisure or play. It is drawn as a lighter box with a coloured edge and a sun icon; otherwise it behaves like any event."><input type="checkbox" id="fFree"><span class="ic" id="fFreeIc"></span>Free time</label><label title="The activity happens around these times but does not necessarily take the whole slot. Drawn with a dashed border. Ticking it here applies it to every repetition; use the dashed-box toggle on a day or block to set it for that repetition only."><input type="checkbox" id="fFlex"><span class="fxbox"></span>Flexible time</label></div>
+<label class="ev-only" title="What kind of activity this is (Sleep, Meal, Work/School…), for the whole event. Its icon is shown on the event. Manage the list in the sidebar under Activity types.">Activity type</label><div class="row ev-only" style="align-items:center"><span id="fTyIc" class="ic"></span><select id="fTy" aria-label="Activity type"></select></div>
+<label class="ev-only">Show as</label><div class="chk ev-only fflags"><label title="The activity happens around these times but does not necessarily take the whole slot. Drawn with a dashed border. Ticking it here applies it to every repetition; use the dashed-box toggle on a day or block to set it for that repetition only."><input type="checkbox" id="fFlex"><span class="fxbox"></span>Flexible time</label></div>
 <div class="tabs"><button type="button" id="tabQ" class="on" title="Quick mode: tick the days and set the times. One block per day.">Quick</button><button type="button" id="tabA" title="Advanced mode: a list of blocks. Allows several blocks on the same day, but you can't go back to Quick mode once a day has more than one.">Advanced</button></div>
 <div id="paneQ"><div class="row"><div><label>Start</label><select id="fS"></select></div><div><label>End</label><select id="fE"></select></div></div>
 <label title="Tick the days this event repeats on. Each day can have its own times and responsible person.">Repeat on days — each day has start, end and responsible person; they follow the general values above until you change them</label><div id="fDays"></div></div>
@@ -232,8 +235,12 @@ dayTo:'{a} to {b}',agPrintDay:'Print day view',addEvT:'New event. You can also d
 rhH:'Rhythms',rhTip:'A rhythm is the regular cadence of a home or workplace over a week: phases such as sleep, meals and work colour the background of the calendar, with a tab on the left showing the name. Only one rhythm can be shown at a time (e.g. Normal, Holiday). Switch to "Phases" to edit them.',addRhTip:'Create a rhythm, e.g. "Holiday rhythm".',pRh:'Rhythm name?',rhDefault:'New rhythm',
 confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will also be deleted.',rhEye:'Show this rhythm (only one rhythm can be shown at a time)',phOp:'Opacity of the phase backgrounds (all rhythms together). The tabs on the left stay fully opaque.',
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
-dRh:'Normal rhythm',dSleep:'Sleep time',dWake:'Wake time',dBreak:'Breakfast time',dWork:'Work/School time',dFree:'Free time',dLunch:'Lunch time',dDinner:'Dinner time',dBed:'Bed time',dCyc4:'4 cycles',dCyc5:'5 cycles',
-setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',freeL:'Free time',flexNote:'Flexible time (around these times)',flexRowTip:'Flexible time for this repetition only: the activity happens around these times but may take less time. Drawn with a dashed border.',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
+dRh:'Normal rhythm',dMid:'Midnight',dEarly:'Early morning',dMorn:'Morning',dNoon:'Noon',dAft:'Afternoon',dEve:'Evening',dNight:'Night',
+tSleep:'Sleep',tMeal:'Meal',tWork:'Work/School',tFocus:'Focus time',tChore:'Chore',tFree:'Free time',tCare:'Personal care',tTravel:'Travel',
+tyH:'Activity types',tyLbl:'Activity type',tyTip:'What kind of activity each event is (Sleep, Meal, Work/School…). Each event has at most one type; its icon is shown on the event. The colour is used only for statistics; the event keeps its own colour.',addTyTip:'Add an activity type',pTy:'Activity type name?',tyNone:'(none)',mIcon:'Icon…',mSoft:'Soft look',softTip:'Events of this type are drawn as a light tint of their colour with a coloured edge, so they stand out from busy time (used for Free time by default).',mStatColor:'Colour for statistics…',iconTitle:'Choose an icon',iconTip:'Click to choose the icon',confTy:'Delete the activity type "{n}"?',confTyLost:' {k} event(s) will have no type.',
+help13:'Activity types (sidebar) say what each event is: Sleep, Meal, Work/School… Pick one in the event dialog. Types with the soft look, like Free time, are drawn lighter.',
+
+setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',flexNote:'Flexible time (around these times)',flexRowTip:'Flexible time for this repetition only: the activity happens around these times but may take less time. Drawn with a dashed border.',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
 toLink:'Shareable link',shareTitle:'Shareable link',shareBody:'Anyone who opens this link and knows the password gets a copy of this workspace. The data is encrypted on this device before it goes into the link, and is never sent to the web server that hosts the app.',shareLen:'{n} characters.',shareFile:'The app is open from a local file, so this link only works on this computer. Host the app (e.g. GitHub Pages) to share it with others.',shareLong:'This link is very long: some apps and servers may cut it. Consider exporting a JSON file instead.',shareCopy:'Copy link',shareCopied:'Copied ✓',shareFail:'Could not create the link.',
 linkBad:'The shared link is invalid or damaged.',linkLoaded:'Shared schedule loaded',
 wsDefault:'Workspace',wsImported:'Imported workspace',wsShared:'Shared workspace',wsMenuTip:'Switch workspace, or create, rename, duplicate or delete one',wsNew:'New workspace…',wsRename:'Rename current…',wsDup:'Duplicate current',wsDel:'Delete current…',pWs:'Workspace name?',wsCopySuffix:' (copy)',confWs:'Delete workspace "{n}" and all its data? Its saved copy in browser memory stays until you save all workspaces.',wsLast:"You can't delete the only workspace.",
@@ -294,8 +301,12 @@ dayTo:'{a} a {b}',agPrintDay:'Imprimir vista del día',addEvT:'Nuevo evento. Tam
 rhH:'Ritmos',rhTip:'Un ritmo es la cadencia regular de un hogar o lugar de trabajo a lo largo de una semana: franjas como sueño, comidas y trabajo colorean el fondo del calendario, con una pestaña a la izquierda con el nombre. Solo se puede mostrar un ritmo a la vez (p. ej. Normal, Vacaciones). Cambia a "Franjas" para editarlas.',addRhTip:'Crea un ritmo, p. ej. "Ritmo de vacaciones".',pRh:'¿Nombre del ritmo?',rhDefault:'Nuevo ritmo',
 confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} franja(s) que solo están en este ritmo.',rhEye:'Mostrar este ritmo (solo se puede mostrar uno a la vez)',phOp:'Opacidad del fondo de las franjas (todos los ritmos a la vez). Las pestañas de la izquierda siguen totalmente opacas.',
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
-dRh:'Ritmo normal',dSleep:'Hora de dormir',dWake:'Hora de despertarse',dBreak:'Hora del desayuno',dWork:'Trabajo/Escuela',dFree:'Tiempo libre',dLunch:'Hora de la comida',dDinner:'Hora de la cena',dBed:'Hora de acostarse',dCyc4:'4 ciclos',dCyc5:'5 ciclos',
-setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',freeL:'Tiempo libre',flexNote:'Horario flexible (alrededor de estas horas)',flexRowTip:'Horario flexible solo para esta repetición: la actividad ocurre alrededor de estas horas pero puede durar menos. Se dibuja con un borde discontinuo.',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
+dRh:'Ritmo normal',dMid:'Madrugada',dEarly:'Primera hora',dMorn:'Mañana',dNoon:'Mediodía',dAft:'Tarde',dEve:'Atardecer',dNight:'Noche',
+tSleep:'Dormir',tMeal:'Comida',tWork:'Trabajo/Escuela',tFocus:'Concentración',tChore:'Tarea doméstica',tFree:'Tiempo libre',tCare:'Cuidado personal',tTravel:'Desplazamiento',
+tyH:'Tipos de actividad',tyLbl:'Tipo de actividad',tyTip:'Qué tipo de actividad es cada evento (Dormir, Comida, Trabajo/Escuela…). Cada evento tiene como mucho un tipo; su icono se muestra en el evento. El color solo se usa para las estadísticas; el evento conserva su propio color.',addTyTip:'Añadir un tipo de actividad',pTy:'¿Nombre del tipo de actividad?',tyNone:'(ninguno)',mIcon:'Icono…',mSoft:'Aspecto suave',softTip:'Los eventos de este tipo se dibujan con un tono claro de su color y un borde de color, para que se distingan del tiempo ocupado (se usa para Tiempo libre por defecto).',mStatColor:'Color para estadísticas…',iconTitle:'Elige un icono',iconTip:'Haz clic para elegir el icono',confTy:'¿Eliminar el tipo de actividad "{n}"?',confTyLost:' {k} evento(s) se quedarán sin tipo.',
+help13:'Los tipos de actividad (barra lateral) dicen qué es cada evento: Dormir, Comida, Trabajo/Escuela… Elige uno en el diálogo del evento. Los tipos con aspecto suave, como Tiempo libre, se dibujan más claros.',
+
+setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',flexNote:'Horario flexible (alrededor de estas horas)',flexRowTip:'Horario flexible solo para esta repetición: la actividad ocurre alrededor de estas horas pero puede durar menos. Se dibuja con un borde discontinuo.',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
 toLink:'Enlace para compartir',shareTitle:'Enlace para compartir',shareBody:'Quien abra este enlace y conozca la contraseña recibe una copia de este espacio de trabajo. Los datos se cifran en este dispositivo antes de ir al enlace y nunca se envían al servidor web que aloja la aplicación.',shareLen:'{n} caracteres.',shareFile:'La aplicación está abierta desde un archivo local, así que este enlace solo funciona en este ordenador. Aloja la aplicación (p. ej. en GitHub Pages) para compartirla con otras personas.',shareLong:'Este enlace es muy largo: algunas aplicaciones y servidores pueden cortarlo. Considera exportar un archivo JSON.',shareCopy:'Copiar enlace',shareCopied:'Copiado ✓',shareFail:'No se pudo crear el enlace.',
 linkBad:'El enlace compartido no es válido o está dañado.',linkLoaded:'Horario compartido cargado',
 wsDefault:'Espacio de trabajo',wsImported:'Espacio importado',wsShared:'Espacio compartido',wsMenuTip:'Cambiar de espacio de trabajo, o crear, renombrar, duplicar o eliminar uno',wsNew:'Nuevo espacio de trabajo…',wsRename:'Renombrar el actual…',wsDup:'Duplicar el actual',wsDel:'Eliminar el actual…',pWs:'¿Nombre del espacio de trabajo?',wsCopySuffix:' (copia)',confWs:'¿Eliminar el espacio de trabajo "{n}" y todos sus datos? Su copia guardada en la memoria del navegador permanece hasta que guardes todos los espacios.',wsLast:'No puedes eliminar el único espacio de trabajo.',
@@ -313,7 +324,7 @@ pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige un
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
-['Title *','Título *'],['Show as','Mostrar como'],['Free time','Tiempo libre'],['Flexible time','Horario flexible'],['Marks the whole event','Marca todo el evento (cada repetición) como tiempo libre: descanso, ocio o juego. Se dibuja como una caja más clara con un borde de color y un icono de sol; por lo demás se comporta como cualquier evento.'],['The activity happens around','La actividad ocurre alrededor de estas horas pero no tiene por qué ocupar toda la franja. Se dibuja con un borde discontinuo. Marcarlo aquí lo aplica a todas las repeticiones; usa el botón de caja discontinua de un día o bloque para ponerlo solo en esa repetición.'],['Description','Descripción'],['Person responsible','Persona responsable'],['Persons involved','Personas implicadas'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
+['Title *','Título *'],['Show as','Mostrar como'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Flexible time','Horario flexible'],['The activity happens around','La actividad ocurre alrededor de estas horas pero no tiene por qué ocupar toda la franja. Se dibuja con un borde discontinuo. Marcarlo aquí lo aplica a todas las repeticiones; usa el botón de caja discontinua de un día o bloque para ponerlo solo en esa repetición.'],['Description','Descripción'],['Person responsible','Persona responsable'],['Persons involved','Personas implicadas'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
 ['Repeat on days — each day','Repetir en los días — cada día tiene inicio, fin y persona responsable; siguen los valores generales de arriba hasta que los cambies'],
 ['Tick the days this event','Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable.'],
 ['Schedules * (at least one)','Horarios * (al menos uno)'],
@@ -360,11 +371,33 @@ const ICON_SAVE=I('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2
 const ICON_FOLDER=I('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>');
 const ICON_PRINT=I('<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>');
 const ICON_HELP=I('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>');
-const ICON_FREE=I('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>');
+const ICON_SUN_P='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+/* built-in icons for activity types (inline SVG only: the CSP allows no outside images); names for tooltips in TYN */
+const TICONS={dot:'<circle cx="12" cy="12" r="4"/>',moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',bed:'<path d="M3 18V6M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="2"/>',sun:ICON_SUN_P,
+meal:'<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2 1.5-3 4-3 7v3h3"/>',coffee:'<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 2v3M12 2v3"/>',cook:'<path d="M4 10h16v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M2 10h20M9 6c0-1 1-1.5 1-2.5M14 6c0-1 1-1.5 1-2.5"/>',
+work:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',school:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6"/>',book:'<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/>',
+pencil:'<path d="M16 3.5l4.5 4.5L8 20.5H3.5V16z"/><path d="M13.5 6l4.5 4.5"/>',laptop:'<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',broom:'<path d="M20 3l-7.5 7.5"/><path d="M11 9l4 4-2 7c-4-1-7.5-4-9-8z"/><path d="M7.5 15.5l2.5-2.5"/>',shirt:'<path d="M8 3L3 6l2 4 2-1v12h10V9l2 1 2-4-5-3c0 1.7-1.3 3-3 3s-3-1.3-3-3z"/>',
+cart:'<path d="M3 4h2l2.5 11h11l2-8H6.5"/><circle cx="9" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10M10 20v-6h4v6"/>',
+drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',smile:'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1.8 2 5.2 2 7 0M9 9.5h.01M15 9.5h.01"/>',heart:'<path d="M12 20s-7.5-4.6-9-9.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 9 4.5C19.5 15.4 12 20 12 20z"/>',
+health:'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',pill:'<rect x="2.6" y="8.5" width="18.8" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M9.5 9.5l5 5"/>',dumbbell:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
+ball:'<circle cx="12" cy="12" r="9"/><path d="M3.5 9.5c3 1 6 4 6.5 11M20.5 14.5c-3-1-6-4-6.5-11"/>',bike:'<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h6l2 7M10 9l2 7h6M14 6h3"/>',car:'<path d="M4 16v-4l2.5-5h11l2.5 5v4z"/><path d="M4 12h16M6 16v3M18 16v3"/>',
+bus:'<rect x="5" y="3" width="14" height="15" rx="2"/><path d="M5 11h14M8 18v3M16 18v3M8.5 14.5h.01M15.5 14.5h.01"/>',plane:'<path d="M2 13l20-8-6 16-4-6z"/><path d="M12 15l4-6"/>',people:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .7 3.5 2.8 3.5 6"/>',
+chat:'<path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/>',phone:'<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',tv:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8M8 2l4 4 4-4"/>',
+game:'<rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 13.5h.01"/>',music:'<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',palette:'<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.4-1.3-1.6-1.3-2.8 0-1 .8-1.5 1.8-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+camera:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',paw:'<circle cx="6.5" cy="10.5" r="1.8"/><circle cx="10.5" cy="6.5" r="1.8"/><circle cx="15.5" cy="7" r="1.8"/><circle cx="19" cy="11.5" r="1.8"/><path d="M8.5 18.5c0-3 2.2-6 4.5-6s4.5 3 4 5.5c-.4 2-3 1.5-4.3 1.5s-4.2 1.5-4.2-1z"/>',leaf:'<path d="M12 21v-9"/><path d="M12 12C12 7 8 4 4 4c0 5 3.5 8 8 8zM12 14c0-4 3-7 8-7 0 4-3 7-8 7z"/>',
+tree:'<path d="M12 22v-6"/><path d="M12 2l6 9h-3l4 5H5l4-5H6z"/>',star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3l-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+coin:'<circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2s1.3 1.6 3 2 3 .9 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2"/>',gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8c-1.5-3-5-4-5-1.5S10 8 12 8zM12 8c1.5-3 5-4 5-1.5S14 8 12 8z"/>'};
+const tIcon=k=>I(TICONS[k]||TICONS.dot);
+const TYN={en:{dot:'Dot',moon:'Moon',bed:'Bed',sun:'Sun',meal:'Cutlery',coffee:'Cup',cook:'Pot',work:'Briefcase',school:'School',book:'Book',pencil:'Pencil',laptop:'Computer',target:'Target',clock:'Clock',broom:'Broom',shirt:'Clothes',cart:'Shopping',tool:'Tools',home:'Home',drop:'Water',smile:'Smile',heart:'Heart',health:'Health',pill:'Medicine',dumbbell:'Exercise',ball:'Ball',bike:'Bicycle',car:'Car',bus:'Bus',plane:'Trip',people:'People',chat:'Talk',phone:'Phone',tv:'TV',game:'Games',music:'Music',palette:'Art',camera:'Photo',paw:'Pets',leaf:'Plant',tree:'Outdoors',star:'Star',flag:'Goal',coin:'Money',gift:'Gift'},
+es:{dot:'Punto',moon:'Luna',bed:'Cama',sun:'Sol',meal:'Cubiertos',coffee:'Taza',cook:'Olla',work:'Maletín',school:'Escuela',book:'Libro',pencil:'Lápiz',laptop:'Ordenador',target:'Diana',clock:'Reloj',broom:'Escoba',shirt:'Ropa',cart:'Compras',tool:'Herramientas',home:'Casa',drop:'Agua',smile:'Sonrisa',heart:'Corazón',health:'Salud',pill:'Medicina',dumbbell:'Ejercicio',ball:'Pelota',bike:'Bicicleta',car:'Coche',bus:'Autobús',plane:'Viaje',people:'Personas',chat:'Conversación',phone:'Teléfono',tv:'Televisión',game:'Juegos',music:'Música',palette:'Arte',camera:'Foto',paw:'Mascotas',leaf:'Planta',tree:'Aire libre',star:'Estrella',flag:'Meta',coin:'Dinero',gift:'Regalo'}};
+const iconName=k=>(TYN[lang]||TYN.en)[k]||k;
 const ICON_WARN=I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>');
 const ICON_RHYTHM=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
 const ICON_WS=I('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'),ICON_CHECK=I('<path d="M5 12l5 5 9-10"/>');
 const FAV=document.querySelector('link[rel=icon]').href;
+const tyOf=e=>e.type?S.types.find(t=>t.id===e.type):null;
+const tyTag=t=>`<span class="ic" style="color:${esc(t.color)}">${tIcon(t.icon)}</span>${esc(t.name)}`;
 const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
 const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
 const pIc=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q):''};
@@ -424,11 +457,11 @@ function iconPicker(parent,svg,color,onchange){
 }
 /* ---------- state, history, persistence ---------- */
 const WKEY='weekly-schedules-workspaces',PKEY='weekly-schedules-prefs';
-let S={schedules:[],events:[],people:[],rhythms:[],phases:[],phaseOpacity:.3};
+let S={schedules:[],events:[],people:[],types:[],rhythms:[],phases:[],phaseOpacity:.3};
 let selK=null,editMode='events';
 const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
 let WS=[],curId=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
-const keyOf=d=>JSON.stringify({schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
+const keyOf=d=>JSON.stringify({schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types,events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
 const dataKey=()=>keyOf(S);
 const cw=()=>WS.find(w=>w.id===curId);
 const wsData=w=>w.id===curId?S:w.data;
@@ -451,39 +484,44 @@ function restoreState(str){
 }
 function undo(){if(!undoSt.length)return;selK=null;redoSt.push(JSON.stringify(S));restoreState(undoSt.pop());render()}
 function redo(){if(!redoSt.length)return;selK=null;undoSt.push(JSON.stringify(S));restoreState(redoSt.pop());render()}
-const LIM={schedules:100,people:500,events:5000,rhythms:100,phases:2000,slots:200};   // applied to imported files and links
+const LIM={schedules:100,people:500,types:100,events:5000,rhythms:100,phases:2000,slots:200};   // applied to imported files and links
 function parseData(j,strict){
   if(!j||!Array.isArray(j.schedules)||!Array.isArray(j.events))throw new Error('bad');
   const arr=x=>Array.isArray(x)?x:[],clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const lim=(x,n)=>{const a=arr(x);if(strict&&a.length>n)throw new Error('limit');return a};
-  lim(j.schedules,LIM.schedules);lim(j.people,LIM.people);lim(j.events,LIM.events);lim(j.rhythms,LIM.rhythms);lim(j.phases,LIM.phases);
+  lim(j.schedules,LIM.schedules);lim(j.people,LIM.people);lim(j.types,LIM.types);lim(j.events,LIM.events);lim(j.rhythms,LIM.rhythms);lim(j.phases,LIM.phases);
   const slot=(x,max,person)=>{const st=clamp(+x.start||0,0,1425),o={day:clamp(+x.day||0,0,6),start:st,end:Math.min(max,Math.max(st+SNAP,+x.end||0))};if(person){o.person=x.person!=null?String(x.person):'';if(x.flex===true)o.flex=true}return o};
   const item=v=>({id:String(v.id||uid()),title:String(v.title||'Untitled').slice(0,200),desc:String(v.desc||'').slice(0,5000),color:normHex(v.color)||PAL[0]});
+  const types=arr(j.types).map((t,i)=>({id:String(t.id),name:String(t.name).slice(0,200),color:normHex(t.color)||PAL[i%PAL.length],icon:Object.hasOwn(TICONS,t.icon)?t.icon:'dot',...(t.soft===true?{soft:true}:{})})),tids=new Set(types.map(t=>t.id));
   const rhythms=arr(j.rhythms).map(s=>({id:String(s.id),name:String(s.name).slice(0,200),visible:!!s.visible}));
   {let seen=false;rhythms.forEach(s=>{if(s.visible&&seen)s.visible=false;if(s.visible)seen=true})}
   return {
     schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name).slice(0,200),color:normHex(s.color)||PAL[0],opacity:s.opacity==null?1:clamp(+s.opacity||1,.1,1),locked:!!s.locked,visible:s.visible!==false})),
     people:arr(j.people).map((q,i)=>({id:String(q.id),name:String(q.name).slice(0,200),color:normHex(q.color)||PAL[i%PAL.length],visible:q.visible!==false})),
-    events:arr(j.events).map(v=>({...item(v),...(v.free===true?{free:true}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,MAXEND,true))})).filter(e=>e.slots.length),
+    types,
+    events:arr(j.events).map(v=>({...item(v),...(v.type!=null&&tids.has(String(v.type))?{type:String(v.type)}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,MAXEND,true))})).filter(e=>e.slots.length),
     rhythms,
     phases:arr(j.phases).map(v=>({...item(v),rhythms:arr(v.rhythms).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,1440,false))})).filter(p=>p.slots.length),
     phaseOpacity:j.phaseOpacity==null?.3:clamp(+j.phaseOpacity||.3,.05,1)
   };
 }
 function defaultRhythm(){
-  const rid=uid(),all=[0,1,2,3,4,5,6],wk=[0,1,2,3,4],we=[5,6];
+  const rid=uid(),all=[0,1,2,3,4,5,6];
   const ph=(k,col,days,blocks,desc)=>({id:uid(),title:L(k),desc:desc||'',color:col,rhythms:[rid],slots:days.flatMap(d=>blocks.map(([a,b])=>({day:d,start:a,end:b})))});
   return {rhythms:[{id:rid,name:L('dRh'),visible:true}],phases:[
-    ph('dSleep','#3f51b5',all,[[0,360]],L('dCyc4')),ph('dWake','#f5c518',all,[[360,435]]),ph('dBreak','#e8912d',all,[[435,495]]),
-    ph('dWork','#2fa66a',wk,[[495,720],[780,1005]]),ph('dFree','#12a5b5',we,[[495,720],[780,1005]]),ph('dLunch','#3b6df0',all,[[720,780]]),
-    ph('dDinner','#e5484d',all,[[1005,1170]]),ph('dBed','#8e4ec6',all,[[1170,1350]]),ph('dSleep','#3f51b5',all,[[1350,1440]],L('dCyc5'))]};
+    ph('dMid','#3f51b5',all,[[0,300]]),ph('dEarly','#f5c518',all,[[300,480]]),ph('dMorn','#2fa66a',all,[[480,720]]),ph('dNoon','#e8912d',all,[[720,840]]),
+    ph('dAft','#12a5b5',all,[[840,1080]]),ph('dEve','#e5484d',all,[[1080,1260]]),ph('dNight','#8e4ec6',all,[[1260,1440]])]};
 }
-function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],...defaultRhythm(),phaseOpacity:.3}}
+function defaultTypes(){
+  return [['tSleep','#3f51b5','moon'],['tMeal','#e8912d','meal'],['tWork','#2fa66a','work'],['tFocus','#8e4ec6','target'],['tChore','#a1662f','broom'],['tFree','#12a5b5','sun',true],['tCare','#d6409f','drop'],['tTravel','#607d8b','car']]
+    .map(([k,color,icon,soft])=>({id:uid(),name:L(k),color,icon,...(soft?{soft:true}:{})}));
+}
+function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],types:defaultTypes(),...defaultRhythm(),phaseOpacity:.3}}
 function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);WS=[w];curId=w.id;S=w.data;undoSt=w.undo;redoSt=w.redo}
 /* ---------- workspaces: several named data sets in browser memory ---------- */
 const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};
 const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
-const pickData=d=>({schedules:d.schedules,people:d.people,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity});
+const pickData=d=>({schedules:d.schedules,people:d.people,types:d.types,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity});
 const wsEntry=w=>({id:w.id,name:w.name,...pickData(wsData(w))});
 function buildFile(){syncWs();const w=cw();return {version:1,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
 const parseWorkspace=(j,fallbackName)=>({id:j&&j.id?String(j.id):null,name:String((j&&j.name)||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)});
@@ -540,11 +578,16 @@ function applyImport(w,target,source){   // target = existing workspace to repla
   else{rec=newWs(uniqueName(w.name,WS.map(x=>x.name)),w.data,source==='file');if(w.id&&!WS.some(x=>x.id===w.id))rec.id=w.id;WS.push(rec);toast(L('impDone'))}
   if(rec.id!==curId)switchWs(rec.id);else render();
 }
+function mapTypes(src,td){   // activity types travel by name (case-insensitive): an existing type of that name is used, otherwise it is created
+  const m={};src.forEach(t=>{const same=td.types.find(x=>x.name.toLowerCase()===t.name.toLowerCase());if(same)m[t.id]=same.id;else{const n={...t,id:uid()};td.types.push(n);m[t.id]=n.id}});return m;
+}
+function retype(c,tm){if(c.type&&tm[c.type])c.type=tm[c.type];else delete c.type}
 function insertInto(src){
   hist();const d=S,mp={s:{},p:{},r:{}};
+  const tm=mapTypes(src.types,d);
   src.people.forEach(q=>{const id=uid();mp.p[q.id]=id;d.people.push({...q,id,name:uniqueName(q.name,d.people.map(x=>x.name))})});
   src.schedules.forEach(s=>{const id=uid();mp.s[s.id]=id;d.schedules.push({...s,id,name:uniqueName(s.name,d.schedules.map(x=>x.name)),visible:true})});
-  src.events.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=c.schedules.map(i=>mp.s[i]).filter(Boolean);c.involved=c.involved.map(i=>mp.p[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=mp.p[sl.person]||''});if(c.schedules.length)d.events.push(c)});
+  src.events.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=c.schedules.map(i=>mp.s[i]).filter(Boolean);c.involved=c.involved.map(i=>mp.p[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=mp.p[sl.person]||''});retype(c,tm);if(c.schedules.length)d.events.push(c)});
   const had=d.rhythms.some(r=>r.visible);
   src.rhythms.forEach((r,i)=>{const id=uid();mp.r[r.id]=id;d.rhythms.push({...r,id,name:uniqueName(r.name,d.rhythms.map(x=>x.name)),visible:!had&&i===0})});
   src.phases.forEach(p=>{const c=JSON.parse(JSON.stringify(p));c.id=uid();c.rhythms=c.rhythms.map(i=>mp.r[i]).filter(Boolean);if(c.rhythms.length)d.phases.push(c)});
@@ -602,7 +645,8 @@ function doTransfer(kind,obj,tw,move){
       pushUndoWs(tw);const pm={};
       Object.entries(map).forEach(([pid,v])=>{if(v==='__new__'){const q=src.people.find(x=>x.id===pid),nq={id:uid(),name:q.name,color:q.color,visible:true};td.people.push(nq);pm[pid]=nq.id}else pm[pid]=v});
       const ns={...obj,id:uid(),name:uniqueName(obj.name,td.schedules.map(x=>x.name)),visible:true};td.schedules.push(ns);
-      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=sl.person?(pm[sl.person]||''):''});td.events.push(c)});
+      const tm=mapTypes(src.types.filter(t=>evs.some(e=>e.type===t.id)),td);
+      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=sl.person?(pm[sl.person]||''):''});retype(c,tm);td.events.push(c)});
       if(move){pushUndoWs(cw());removeSchedule(S,obj)}
       render();toast(L(move?'trMoved':'trDone',{n:tw.name}));
     };
@@ -874,7 +918,7 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=12;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=13;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }
 /* agenda / print */
@@ -889,7 +933,7 @@ function agendaHTML(di){
   items.forEach(({e,s,q})=>{
     const bits=[];
     if(q.p)bits.push(`<i>${esc(L('contFrom',{d:DAYS[s.day],t:fmt(s.start)}))}</i>`);
-    if(e.free)bits.push(`<span class="ic">${ICON_FREE}</span>`+esc(L('freeL')));if(s.flex)bits.push(esc(L('flexNote')));
+    const ty=tyOf(e);if(ty)bits.push(tyTag(ty));if(s.flex)bits.push(esc(L('flexNote')));
     if(s.person)bits.push(`<b>${esc(L('resp'))}</b> `+pTag(s.person));
     const inv=e.involved.map(pTag).filter(Boolean);if(inv.length)bits.push(`<b>${esc(L('withl'))}</b> `+inv.join(', '));
     bits.push(`<b>${esc(L('schl'))}</b> `+e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', '));
@@ -964,6 +1008,23 @@ function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
   mi(chip(q.color),L('mColor'),()=>pickColor(anchor,q.color,v=>{hist();q.color=v;render()}));
   mi('<span class="ic" style="margin:0">'+ICON_USER+'</span>',L('mDelete'),()=>delPerson(q),'d');
 })}
+function iconMenu(anchor,t){rowMenu(anchor,(m,mi,close)=>{
+  el('div','oh',m).textContent=L('iconTitle');
+  const g=el('div','igrid',m);
+  Object.keys(TICONS).forEach(k=>{const b=el('button',k===t.icon?'on':'',g);b.type='button';b.innerHTML=tIcon(k);b.title=iconName(k);b.setAttribute('aria-label',iconName(k));
+    b.onclick=()=>{close();if(k!==t.icon){hist();t.icon=k;render()}}});
+})}
+function tyMenu(anchor,t){rowMenu(anchor,(m,mi)=>{
+  mi(chip(t.color),L('mStatColor'),()=>pickColor(anchor,t.color,v=>{hist();t.color=v;render()}));
+  mi(tIcon(t.icon),L('mIcon'),()=>iconMenu([...document.querySelectorAll('.tysec .pick')].find(x=>x._ty===t.id)||anchor,t));   // the menu closed and the sidebar was redrawn: anchor on the new row
+  mi(t.soft?ICON_CHECK:'<span class="ic" style="margin:0"></span>',L('mSoft'),()=>{hist();if(t.soft)delete t.soft;else t.soft=true;render()});m.lastChild.title=L('softTip');
+  mi(tIcon(t.icon),L('mDelete'),()=>delType(t),'d');
+})}
+function delType(t){
+  const lost=S.events.filter(e=>e.type===t.id).length;
+  if(!confirm(L('confTy',{n:t.name})+(lost?L('confTyLost',{k:lost}):'')))return;hist();
+  S.types=S.types.filter(x=>x!==t);S.events.forEach(e=>{if(e.type===t.id)delete e.type});render();
+}
 function secHead(parent,key,count,tipKey,ck,addFn,addTip){
   const h=el('div','sech',parent);
   const b=el('button','shbtn',h);b.innerHTML=(prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span>`+(count==null?'':`<em>${count}</em>`);
@@ -1013,6 +1074,15 @@ function renderSide(){
     iconPicker(r,ICON_USER,q.color,v=>{hist();q.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=q.name;n.onchange=()=>{const v=n.value||q.name;if(v!==q.name){hist();q.name=v}render()};
     const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>perMenu(mb,q);
+  });
+  // activity types
+  const s5=el('div','sec tysec',body);
+  secHead(s5,'tyH',S.types.length,'tyTip','secTyp',()=>{const n=prompt(L('pTy'));if(!n||!n.trim())return;hist();S.types.push({id:uid(),name:n.trim().slice(0,200),color:PAL[S.types.length%PAL.length],icon:'dot'});render()},'addTyTip');
+  if(!prefs.secTyp)S.types.forEach(t=>{
+    const r=el('div','sch',s5);
+    const ib=el('span','ic pick',r);ib.style.color=t.color;ib.innerHTML=tIcon(t.icon);ib.title=L('iconTip');ib._ty=t.id;ib.onclick=()=>iconMenu(ib,t);
+    const n=el('input','',r);n.type='text';n.value=t.name;n.setAttribute('aria-label',L('tyH'));n.onchange=()=>{const v=n.value.trim().slice(0,200)||t.name;if(v!==t.name){hist();t.name=v}render()};
+    const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>tyMenu(mb,t);
   });
   const s3=el('div','sec',body);
   secHead(s3,'rhH',S.rhythms.length,'rhTip','secRh',()=>{const n=prompt(L('pRh'),L('rhDefault'));if(!n)return;hist();S.rhythms.forEach(x=>x.visible=false);S.rhythms.push({id:uid(),name:n.trim(),visible:true});render()},'addRhTip');
@@ -1126,9 +1196,9 @@ function render(){
       const e=it.e,s=it.s,d=el('div','ev',col),v=lv.get(it);laneMap.set(e.id+'|'+e.slots.indexOf(s)+'|'+it.piece,[v.l,v.n]);lanePos(d,v);lk=isLocked(e),warn=ovOf(e).has(s);fitList.push(d);
       d.style.top=(Math.max(it.start,a*60)-a*60)/60*HH+'px';d.style.height=Math.max(14,(it.end-Math.max(it.start,a*60))/60*HH-1)+'px';
       d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');
-      d.style.setProperty('--c',e.color);if(e.free)d.classList.add('free');if(s.flex){d.classList.add('flex');d.style.setProperty('--dash',e.free?`color-mix(in srgb,${e.color} 65%,#000)`:ink(e.color)==='#fff'?'#ffffffd9':'#1d2330b3')}if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
+      const ty=tyOf(e);d.style.setProperty('--c',e.color);if(ty&&ty.soft)d.classList.add('soft');if(s.flex){d.classList.add('flex');d.style.setProperty('--dash',ty&&ty.soft?`color-mix(in srgb,${e.color} 65%,#000)`:ink(e.color)==='#fff'?'#ffffffd9':'#1d2330b3')}if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
       if(it.cont)d.style.borderRadius=it.piece?'0 0 8px 8px':'8px 8px 0 0';
-      const fl=[];if(e.free)fl.push(ICON_FREE);if(e.slots.length>1)fl.push(ICON_REPEAT);if(warn)fl.push('<b style="color:#ffd23f;display:flex">'+ICON_WARN+'</b>');if(lk)fl.push(ICON_LOCK);
+      const fl=[];if(ty)fl.push(tIcon(ty.icon));if(e.slots.length>1)fl.push(ICON_REPEAT);if(warn)fl.push('<b style="color:#ffd23f;display:flex">'+ICON_WARN+'</b>');if(lk)fl.push(ICON_LOCK);
       if(fl.length){const f=el('span','flags',d);f.innerHTML=fl.map(x=>x.startsWith('<b')?x:'<span>'+x+'</span>').join('')}
       const r1=el('div','r1',d);if(fl.length)r1.style.paddingRight=fl.length*16+'px';
       const tt=el('span','t',r1);tt.innerHTML=(s.person?pIc(s.person):'')+esc(e.title);
@@ -1137,7 +1207,7 @@ function render(){
       const by=s.person?pname(s.person):'',invTags=e.involved.map(pTag).filter(Boolean),invNames=e.involved.map(pname).filter(Boolean);
       if(by||invTags.length){const r2=el('div','r2',d);if(by)el('span','by',r2).textContent=L('byl')+' '+by;if(invTags.length){const wi=el('span','wi',r2);wi.innerHTML=esc(L('withl'))+' '+invTags.join(', ')}}
       const info=[e.title,timeTxt];if(by)info.push(L('byl')+' '+by);if(invNames.length)info.push(L('withl')+' '+invNames.join(', '));
-      if(e.free)info.push(L('freeL'));if(s.flex)info.push(L('flexNote'));
+      if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));
       if(e.desc)info.push(e.desc);if(warn)info.push('⚠ '+L('ovTip'));
       d.setAttribute('aria-label',info.join(', '));
       const rz=(!it.cont||it.piece)&&!lk&&editMode==='events'?el('div','rz',col):null;
@@ -1206,7 +1276,7 @@ function peekHTML(items){
   return items.slice(-3).reverse().map(({e,s,piece})=>{
     const time=piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end);
     const inv=e.involved.map(pTag).filter(Boolean),rows=[`<div class="pt1"><i style="background:${esc(e.color)}"></i>${s.person?pIc(s.person):''}${esc(e.title)}</div>`,`<div>${esc(time)}</div>`];
-    if(e.free)rows.push(`<div><span class="ic">${ICON_FREE}</span>${esc(L('freeL'))}</div>`);if(s.flex)rows.push(`<div>${esc(L('flexNote'))}</div>`);
+    const ty=tyOf(e);if(ty)rows.push(`<div>${tyTag(ty)}</div>`);if(s.flex)rows.push(`<div>${esc(L('flexNote'))}</div>`);
     if(s.person)rows.push(`<div>${esc(L('byl'))} ${esc(pname(s.person))}</div>`);
     if(inv.length)rows.push(`<div>${esc(L('withl'))} ${inv.join(', ')}</div>`);
     if(e.desc)rows.push(`<div style="white-space:pre-wrap;margin-top:4px">${esc(e.desc)}</div>`);
@@ -1341,7 +1411,8 @@ function fxBtn(parent){const b=el('button','fxt ev-only',parent);b.type='button'
 function fxSet(o,v){o.fx=!!v;o.fxb.classList.toggle('on',o.fx);o.fxb.setAttribute('aria-pressed',String(o.fx))}
 function updFlexAll(){const it=fmode==='quick'?rows.filter(o=>o.cb.checked):blocks,n=it.filter(o=>o.fx).length,c=$('fFlex');c.checked=!!it.length&&n===it.length;c.indeterminate=n>0&&n<it.length}
 $('fFlex').onchange=()=>{const v=$('fFlex').checked;rows.forEach(o=>fxSet(o,v));blocks.forEach(o=>fxSet(o,v));updFlexAll()};
-$('fFreeIc').innerHTML=ICON_FREE;
+function updTyIc(){const t=S.types.find(x=>x.id===$('fTy').value);$('fTyIc').innerHTML=t?tIcon(t.icon):'';$('fTyIc').style.color=t?t.color:''}
+$('fTy').onchange=updTyIc;
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
 function sync(o){o.s.value=$('fS').value;o.en.value=$('fE').value;updEnd(o.s,o.en)}
 function formSlots(){
@@ -1418,7 +1489,7 @@ function openDlg(e,def){
   const c=$('fSch');c.innerHTML='';
   (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});
-  $('fFree').checked=!!d.free;
+  $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
   $('dlg').showModal();$('fT').focus();
@@ -1432,9 +1503,9 @@ $('fOk').onclick=()=>{
   if(bad)return $('err').textContent=L('errEnd',{d:DAYS[bad.day]});
   if(!sch.length)return $('err').textContent=L(dkind==='phase'?'errRh':'errSch');
   const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,rhythms:sch,slots:slots.map(({day,start,end})=>({day,start,end}))}
-    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fFree').checked?{free:true}:{}),schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
+    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
   hist();
-  if(cur&&dkind==='event')delete cur.free;
+  if(cur&&dkind==='event')delete cur.type;
   if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
   $('dlg').close();render();
 };
