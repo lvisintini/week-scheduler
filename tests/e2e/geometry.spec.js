@@ -178,3 +178,41 @@ test.describe('R-EVT-11 R-EVT-12 Soft-look activity types and flexible time as d
     expect((await look(page, 'Homework')).top).toBe('2px dashed'); expect((await look(page, 'Plain')).top).toBe('1px solid');
   });
 });
+
+test.describe('R-UI-03 The settings dialog in a real browser', () => {
+  test('switching tabs never changes the size of the dialog (the largest tab sets it)', async ({ page }) => {
+    await openApp(page); await page.locator('.sbtop .gear').click(); const sizes = [];
+    for (const tab of ['View', 'Data', 'UI']) { await page.locator('#xDlg .stabs button', { hasText: tab }).click(); const b = await page.locator('#xDlg').boundingBox(); sizes.push([Math.round(b.width), Math.round(b.height)]); }
+    expect(new Set(sizes.map(String)).size).toBe(1);
+  });
+  test('the theme switch spans the full width of its pane', async ({ page }) => {
+    await openApp(page); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: 'UI' }).click();
+    const sw = await page.locator('#xDlg .seg.theme').boundingBox(), pane = await page.locator('#xDlg .ssec:not(.off)').boundingBox();
+    expect(Math.abs(sw.width - pane.width)).toBeLessThan(2);
+  });
+});
+
+test.describe('R-EVT-13 Spanning lanes in a real browser', () => {
+  test('an unassigned event over two parallel ones reaches across both lanes (minus its cascade indent), and they keep their own lanes', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })], events: [ev({ id: 'a', title: 'Ann task', slots: [slot(0, 600, 720, 'A')] }), ev({ id: 'b', title: 'Bob task', slots: [slot(0, 600, 720, 'B')] }), ev({ id: 'x', title: 'Family', slots: [slot(0, 660, 780)] })] }));
+    const a = await boxOf(page.locator('.ev', { hasText: 'Ann task' })), b = await boxOf(page.locator('.ev', { hasText: 'Bob task' })), x = await boxOf(page.locator('.ev', { hasText: 'Family' }));
+    expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1); expect(Math.abs((x.x + x.width) - (b.x + b.width))).toBeLessThan(2);
+    expect(Math.abs(x.x - (a.x + 0.2 * (b.x + b.width - a.x)))).toBeLessThan(3);   // it starts later, so it is cascaded one level (R-EVT-14)
+  });
+});
+
+test.describe('R-EVT-14 Cascaded clashing events in a real browser', () => {
+  test.beforeEach(async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ id: 'a', title: 'Dentist', color: '#3b6df0', slots: [slot(0, 600, 720, 'A')] }), ev({ id: 'b', title: 'School run', color: '#e5484d', slots: [slot(0, 615, 720, 'A')] })] }));
+  });
+  test('the lower box keeps a visible strip on the left, and the upper box hides the lower box text beneath it', async ({ page }) => {
+    const lower = await boxOf(page.locator('.ev', { hasText: 'Dentist' })), upper = await boxOf(page.locator('.ev', { hasText: 'School run' }));
+    expect(upper.x - lower.x).toBeGreaterThan(lower.width * 0.15);
+    const hit = (x, y) => page.evaluate(([x, y]) => document.elementFromPoint(x, y).closest('.ev')?.getAttribute('aria-label').split(',')[0], [x, y]);
+    expect(await hit(lower.x + 6, upper.y + 20)).toBe('Dentist'); expect(await hit(upper.x + upper.width / 2, upper.y + 20)).toBe('School run');
+  });
+  test('the title of the upper box is drawn above the stripes', async ({ page }) => {
+    const t = page.locator('.ev', { hasText: 'School run' }).locator('.r1 .t'); const b = await boxOf(t);
+    expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y).closest('.r1'), [b.x + 4, b.y + b.height / 2])).toBe(true);
+  });
+});

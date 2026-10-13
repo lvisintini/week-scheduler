@@ -215,7 +215,7 @@ describe('R-GRID-08 Scrolling: sticky time column and headers, visible scrollbar
 });
 
 describe('R-GRID-10 Layer order inside a day column', () => {
-  it('phase background, then hour lines, then events, then overlap stripes', () => {
+  it('phase background, then hour lines, then events; overlap stripes sit inside the topmost event, above its colour and below its text', () => {
     const a = fresh({
       ...blank({ events: [ev1({ id: 'a', title: 'A', color: '#3b6df0' }), ev1({ id: 'b', title: 'B', color: '#e5484d' })] }),
       rhythms: [{ id: 'r', name: 'R', visible: true }],
@@ -223,6 +223,8 @@ describe('R-GRID-10 Layer order inside a day column', () => {
     });
     const kids = [...a.q('.day[data-d="0"]').children].map(c => c.className.split(' ')[0]);
     const idx = n => kids.indexOf(n);
-    expect(idx('phx')).toBeLessThan(idx('gl')); expect(idx('gl')).toBeLessThan(idx('ev')); expect(idx('ev')).toBeLessThan(idx('ov'));
+    expect(idx('phx')).toBeLessThan(idx('gl')); expect(idx('gl')).toBeLessThan(idx('ev')); expect(idx('ov')).toBe(-1);
+    expect(a.q('.ov').parentElement.classList.contains('ev')).toBe(true);
+    const z = sel => +[...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || "").replace(/\s*,\s*/g, ',') === sel).style.getPropertyValue('z-index'); expect(z('.ov')).toBeLessThan(z('.ev .r1,.ev .r2'));
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, sched, ev1, person } from '../helpers/app.js';
+import { openApp, setData, blank, sched, ev1, person, pointer } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const sections = a => a.qa('#sbin .sec');
@@ -155,5 +155,34 @@ describe('R-PPL-01 The People list works like the schedule list', () => {
   });
   it('person visibility is view state (no undo step, not an unsaved change)', () => {
     const a = withPeople(); a.ev('cw().lf=keyOf(S)'); const depth = a.ev('undoSt.length'); eye(peopleRows(a)[0]).click(); expect(a.ev('undoSt.length')).toBe(depth); expect(a.ev('isDirty()')).toBe(false);
+  });
+});
+
+describe('R-PPL-02 People can be reordered in the sidebar (the order sets the side-by-side lanes)', () => {
+  const three = () => fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' }), person({ id: 'C', name: 'Cy' })] }));
+  const names = a => a.ev('S.people.map(p=>p.name)'), grips = a => [...peopleRows(a)].map(r => r.querySelector('.grip'));
+  it('each person row starts with a grip handle that names the person and explains how to use it', () => {
+    const a = three(); const g = grips(a); expect(g.every(Boolean)).toBe(true); expect(g[0]).toBe(peopleRows(a)[0].firstElementChild);
+    expect(g[1].getAttribute('aria-label')).toBe('Move Bob'); expect(g[1].title).toContain('Drag to reorder');
+  });
+  it('the arrow keys on a focused grip move the person up or down; the grip keeps the focus', () => {
+    const a = three(); grips(a)[0].onkeydown({ key: 'ArrowDown', preventDefault() {} }); expect(names(a)).toEqual(['Bob', 'Ann', 'Cy']);
+    expect(a.d.activeElement.getAttribute('aria-label')).toBe('Move Ann'); grips(a)[2].onkeydown({ key: 'ArrowUp', preventDefault() {} }); expect(names(a)).toEqual(['Bob', 'Cy', 'Ann']);
+  });
+  it('moving past either end does nothing (and adds no undo step)', () => {
+    const a = three(); const d = a.ev('undoSt.length'); grips(a)[0].onkeydown({ key: 'ArrowUp', preventDefault() {} }); expect(names(a)).toEqual(['Ann', 'Bob', 'Cy']); expect(a.ev('undoSt.length')).toBe(d);
+  });
+  it('dragging the grip below the last row moves the person to the end; it can be undone', () => {
+    const a = three(); grips(a)[0].onpointerdown({ button: 0, preventDefault() {}, stopPropagation() {} }); expect(peopleRows(a)[0].classList.contains('dragging')).toBe(true);
+    pointer(a, 'pointermove', { x: 10, y: 500 }); expect(peopleRows(a)[2].classList.contains('dropa')).toBe(true); pointer(a, 'pointerup', { x: 10, y: 500 });
+    expect(names(a)).toEqual(['Bob', 'Cy', 'Ann']); a.toolbar('undo').click(); expect(names(a)).toEqual(['Ann', 'Bob', 'Cy']);
+  });
+  it('the new order is used for the side-by-side lanes', () => {
+    const a = fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A' }] }), ev1({ id: 'b', title: 'B', slots: [{ day: 0, start: 600, end: 660, person: 'B' }] })] }));
+    const laneOf = t => a.qa('.ev').find(b => b.getAttribute('aria-label').startsWith(t + ',')).dataset.lane; expect(laneOf('A')).toBe('0/2');
+    grips(a)[0].onkeydown({ key: 'ArrowDown', preventDefault() {} }); expect(laneOf('A')).toBe('1/2'); expect(laneOf('B')).toBe('0/2');
+  });
+  it('the grip label is translated into Spanish', () => {
+    const a = fresh(blank({ people: [person()] }), { languages: ['es'] }); expect(grips(a)[0].getAttribute('aria-label')).toBe('Mover Ann');
   });
 });

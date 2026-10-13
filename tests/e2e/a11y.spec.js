@@ -23,7 +23,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
     ratchet(await scan(page), { 'button-name': 1, label: 2, 'select-name': 24 });
   });
-  for (const tab of ['View', 'Data', 'Language']) {
+  for (const tab of ['View', 'Data', 'UI']) {
     test(`the ${tab} tab of the settings dialog has no serious accessibility violation`, async ({ page }) => {
       await openApp(page); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: tab }).click();
       ratchet(await scan(page), {});

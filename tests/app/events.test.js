@@ -177,7 +177,7 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
     expect(a.q('#peek').textContent).toContain('Locked one'); expect(a.q('#peek').textContent).toContain("Locked: can't be moved or edited.");
   });
   it('overlapping events are listed together, topmost first, up to three', async () => {
-    const a = fresh(blank({ events: ['a', 'b', 'c', 'd'].map(id => ev1({ id, title: 'Event ' + id })) })); hover(a, 0, 630); await sleep(420);
+    const a = fresh(blank({ events: ['a', 'b', 'c', 'd'].map(id => ev1({ id, title: 'Event ' + id })) })); a.qa('.day')[0].onpointermove({ pointerType: 'mouse', buttons: 0, clientX: 95, clientY: a.y(630) }); await sleep(420);
     const titles = a.qa('#peek .pt1').map(t => t.textContent); expect(titles).toEqual(['Event d', 'Event c', 'Event b']);
   });
   const stubBox = (H, r2top, r3, titleOverflow = false) => {
@@ -262,7 +262,7 @@ describe('R-EVT-09 Overlapping events show diagonal stripes of their colours', (
   const overlapped = (c1, c2) => fresh(blank({ events: [ev1({ id: 'a', color: c1, slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', color: c2, slots: [{ day: 0, start: 660, end: 780, person: '' }] })] }));
   it('exactly the shared time range gets a stripe overlay', () => {
     const o = overlapped('#e5484d', '#2fa66a').q('.day[data-d="0"] .ov'); expect(o).not.toBeNull();
-    expect(o.style.top).toBe(`${(660 - 300) / 60 * 48}px`); expect(parseFloat(o.style.height)).toBeCloseTo(60 / 60 * 48 - 1, 0);
+    expect(parseFloat(o.parentElement.style.top) + parseFloat(o.style.top)).toBe((660 - 300) / 60 * 48); expect(parseFloat(o.style.height)).toBeCloseTo(60 / 60 * 48 - 1, 0);
   });
   it('events that only touch do not get a stripe', () => {
     const a = fresh(blank({ events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 720, person: '' }] })] })); expect(a.qa('.ov')).toHaveLength(0);
@@ -276,7 +276,7 @@ describe('R-EVT-09 Overlapping events show diagonal stripes of their colours', (
   });
   it('the stripes follow the opacity of the most opaque event', () => {
     const a = fresh(blank({ schedules: [sched({ opacity: 0.5 })], events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: '' }] })] }));
-    expect(parseFloat(a.q('.ov').style.opacity)).toBeCloseTo(0.85 * 0.5, 2);
+    expect(+a.q('.ov').parentElement.style.opacity).toBe(0.5); expect(+cssRule(a, '.ov').style.opacity).toBe(0.85);   // 0.85 × the box's 0.5
   });
 });
 
@@ -305,8 +305,8 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
   it('an event without any people overlaps the other with stripes, as before', () => {
     const a = pair({}, { slots: [{ day: 0, start: 660, end: 780, person: '' }] }); expect(lane(box(a, 'A'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
   });
-  it('an event with only involved people (no responsible person) still goes side by side with someone else', () => {
-    const a = pair({}, { involved: ['C'], slots: [{ day: 0, start: 660, end: 780, person: '' }] }); expect(lane(box(a, 'B'))).toBe(0.5); expect(a.qa('.ov')).toHaveLength(0);
+  it('an event with no responsible person overlaps everyone with stripes, even when it has involved people (they are busy, and nobody else is assigned)', () => {
+    const a = pair({}, { involved: ['C'], slots: [{ day: 0, start: 660, end: 780, person: '' }] }); expect(lane(box(a, 'B'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
   });
   it('lanes follow the order of the People list, not the order of the events', () => {
     const a = pair({}, {}, { people: [people[1], people[0], people[2]] }); expect([lane(box(a, 'B')), lane(box(a, 'A'))]).toEqual([0, 0.5]);
@@ -363,6 +363,104 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
     const a = pair(); const col = a.q('.day[data-d="0"]');
     col.oncontextmenu({ clientX: 75, clientY: a.y(690), preventDefault() {} });
     expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['B']);
+  });
+});
+
+describe('R-EVT-13 An occurrence that clashes with several parallel ones spans their lanes', () => {
+  const P4 = [...people, person({ id: 'D', name: 'Dee', color: '#e8912d' })];
+  const at = (id, title, person, start, end, o = {}) => ev1({ id, title, slots: [{ day: 0, start, end, person }], ...o });
+  const box = (a, title) => a.qa('.day[data-d="0"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  const lanes = (a, ...titles) => titles.map(x => box(a, x).dataset.lane || null);
+  const ovLanes = a => a.qa('.day[data-d="0"] .ov').map(o => o.dataset.lane || null).sort();
+  const abx = (x = {}, data = {}) => fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('x', 'X', '', 660, 780, x)], ...data }));
+  it('two parallel events stay side by side when an unassigned event overlaps both; it covers both lanes', () => {
+    const a = abx(); expect(lanes(a, 'A', 'B', 'X')).toEqual(['0/2', '1/2', '0-1/2']);
+  });
+  it('each overlap is striped on its own, inside the lane of the event it overlaps', () => {
+    expect(ovLanes(abx())).toEqual(['0/2', '1/2']);
+  });
+  it('an event shared by the two people (responsible one, involved the other) spans their lanes too', () => {
+    const a = abx({ slots: [{ day: 0, start: 660, end: 780, person: 'A' }], involved: ['B'] }); expect(lanes(a, 'A', 'B', 'X')).toEqual(['0/2', '1/2', '0-1/2']); expect(ovLanes(a)).toEqual(['0/2', '1/2']);
+  });
+  it('lanes are reordered when needed so that the shared event can span: Ann and Cy become neighbours, Bob moves aside', () => {
+    const a = fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['C'] })] }));
+    expect(lanes(a, 'A', 'C', 'B', 'X')).toEqual(['0/3', '1/3', '2/3', '0-1/3']); expect(ovLanes(a)).toEqual(['0/3', '1/3']);
+  });
+  it('without a need to reorder, the People order is kept', () => {
+    const a = fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['B'] })] }));
+    expect(lanes(a, 'A', 'B', 'C', 'X')).toEqual(['0/3', '1/3', '2/3', '0-1/3']);
+  });
+  it('with "Keep lanes in the order of the People list" the order is fixed, and what cannot span is merged into one lane with stripes', () => {
+    const a = fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['C'] })] }));
+    a.ev('prefs.sideFix=true;render()'); expect(lanes(a, 'A', 'C', 'X', 'B')).toEqual(['0/2', '0/2', '0/2', '1/2']); expect(a.qa('.day[data-d="0"] .ov').length).toBeGreaterThan(0);
+  });
+  it('a layout that no lane order can satisfy falls back to merging everything involved into stripes', () => {
+    const a = fresh(blank({ people: P4, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('d', 'D', 'D', 600, 720),
+      at('x', 'X', 'A', 660, 780, { involved: ['C'] }), at('y', 'Y', 'B', 660, 780, { involved: ['D'] }), at('z', 'Z', 'A', 660, 780, { involved: ['D'] })] }));
+    expect(lanes(a, 'A', 'B', 'C', 'D', 'X', 'Y', 'Z')).toEqual(Array(7).fill(null)); expect(a.qa('.day[data-d="0"] .ov').length).toBeGreaterThan(0);
+  });
+  it('clicking or hovering uses the lane under the pointer: over the left lane you get A and the spanning event, over the right lane B and it', () => {
+    const a = abx(); const ids = fx => a.ev(`piecesAt(0,690,true,${fx}).map(x=>x.e.id).sort()`);
+    expect(ids(0.25)).toEqual(['a', 'x']); expect(ids(0.75)).toEqual(['b', 'x']); expect(a.ev('piecesAt(0,750,true,0.75).map(x=>x.e.id)')).toEqual(['x']);
+  });
+  it('the setting sits under "Show parallel events side by side", is off by default, is disabled while that is off and is remembered per browser', () => {
+    const a = abx(); expect(a.ev('prefs.sideFix')).toBe(false); a.ev('openSettings()');
+    const row = t => a.qa('#xDlg .sopt').find(l => l.textContent.includes(t)), fix = row('Keep lanes in the order of the People list');
+    expect(fix.classList.contains('sub')).toBe(true); expect(row('Show parallel events side by side').nextElementSibling).toBe(fix);
+    const side = row('Show parallel events side by side').querySelector('input'); side.checked = false; side.dispatchEvent(new a.w.Event('change')); expect(fix.querySelector('input').disabled).toBe(true);
+    side.checked = true; side.dispatchEvent(new a.w.Event('change')); fix.querySelector('input').checked = true; fix.querySelector('input').dispatchEvent(new a.w.Event('change'));
+    expect(JSON.parse(a.storage()['weekly-schedules-prefs']).sideFix).toBe(true);
+  });
+  it('many overlapping events without people are still drawn quickly as one striped lane', () => {
+    const a = fresh(blank({ events: Array.from({ length: 300 }, (_, i) => at('e' + i, 'E' + i, '', 600 + (i % 8) * 15, 720)) })); const t0 = Date.now(); a.ev('render()');
+    expect(Date.now() - t0).toBeLessThan(3000); expect(a.qa('.day[data-d="0"] .ev[data-lane]')).toHaveLength(0);
+  });
+});
+
+describe('R-EVT-14 Clashing events cascade, and their labels stay readable over the stripes', () => {
+  const at = (id, title, start, end, person = 'A') => ev1({ id, title, slots: [{ day: 0, start, end, person }] });
+  const box = (a, title) => a.qa('.day[data-d="0"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  const clash = (...evs) => fresh(blank({ people, events: evs }));
+  it('the later of two clashing events is indented one level and drawn above the earlier one', () => {
+    const a = clash(at('b', 'Later', 615, 720), at('a', 'Earlier', 600, 720));
+    expect(box(a, 'Earlier').dataset.depth).toBeUndefined(); expect(box(a, 'Later').dataset.depth).toBe('1'); expect(box(a, 'Later').style.zIndex).toBe('2');
+    expect(box(a, 'Later').style.left).toContain('0.2'); expect(box(a, 'Later').style.width).toContain('0.8');
+  });
+  it('with the same start, the longer event stays below and the shorter one is indented', () => {
+    const a = clash(at('s', 'Short', 600, 630), at('l', 'Long', 600, 720)); expect(box(a, 'Short').dataset.depth).toBe('1'); expect(box(a, 'Long').dataset.depth).toBeUndefined();
+  });
+  it('each further clash goes one level deeper, up to three levels', () => {
+    const a = clash(...[0, 1, 2, 3, 4].map(k => at('e' + k, 'E' + k, 600 + k * 15, 780)));
+    expect([0, 1, 2, 3, 4].map(k => box(a, 'E' + k).dataset.depth || '0')).toEqual(['0', '1', '2', '3', '3']);
+  });
+  it('a later event that only touches the earlier one is not indented', () => {
+    const a = clash(at('a', 'A1', 600, 660), at('b', 'B1', 660, 720)); expect(a.qa('.ev[data-depth]')).toHaveLength(0);
+  });
+  it('parallel events side by side are never indented', () => {
+    const a = fresh(blank({ people, events: [at('a', 'Ann', 600, 720, 'A'), at('b', 'Bob', 615, 720, 'B')] })); expect(a.qa('.ev[data-depth]')).toHaveLength(0);
+  });
+  it('the stripes are drawn inside the topmost box only, which then shows its title, time and icons on solid chips', () => {
+    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720)); const top = box(a, 'Later');
+    expect(a.qa('.ov')).toHaveLength(1); expect(a.q('.ov').parentElement).toBe(top); expect(top.classList.contains('striped')).toBe(true); expect(box(a, 'Earlier').classList.contains('striped')).toBe(false);
+    const rule = [...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || '').replace(/\s*,\s*/g, ',') === '.ev.striped .r1,.ev.striped .r2'); expect(rule.style.getPropertyValue('background')).toBe('var(--chip)');
+  });
+  it('inside an indented box the stripe covers the box width at the shared time only', () => {
+    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 690)); const o = a.q('.ov');
+    expect(o.style.left).toBe('0%'); expect(o.style.width).toBe('100%'); expect(o.style.top).toBe('0px'); expect(parseFloat(o.style.height)).toBeCloseTo(75 / 60 * 48 - 1, 0);
+  });
+  it('the visible strip of the lower box belongs to it alone: clicking there opens it without a chooser', () => {
+    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720));
+    expect(a.ev('piecesAt(0,650,true,0.1).map(x=>x.e.id)')).toEqual(['a']); expect(a.ev('piecesAt(0,650,true,0.6).map(x=>x.e.id)').sort()).toEqual(['a', 'b']);
+  });
+  it('the resize handle of an indented box follows its indent', () => {
+    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 690)); const b = box(a, 'Later'); expect(b._rz.style.left).toBe(b.style.left); expect(b._rz.style.width).toBe(b.style.width);
+  });
+  it('a selected box is raised above every cascade level', () => {
+    const a = clash(at('a', 'A', 600, 720)); const rule = [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === '.ev.sel');
+    expect(rule.style.getPropertyValue('z-index')).toBe('5'); expect(rule.style.getPropertyPriority('z-index')).toBe('important');
+  });
+  it('every box is its own layer, so the text of a lower box never shows through a higher one', () => {
+    const a = clash(at('a', 'A', 600, 720)); expect([...a.d.styleSheets[0].cssRules].some(r => r.selectorText === '.ev' && r.style.getPropertyValue('isolation') === 'isolate')).toBe(true);
   });
 });
 
