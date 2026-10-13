@@ -84,12 +84,18 @@ test.describe('R-GRID-07 Zoom in a real browser', () => {
     const fs = () => page.evaluate(() => [getComputedStyle(document.querySelector('.ev .t')).fontSize, getComputedStyle(document.querySelector('.times span')).fontSize, getComputedStyle(document.querySelector('.dh:not(.c)')).fontSize]);
     const before = await fs(); await page.evaluate(() => { prefs.rowH = 120; prefs.colW = 250; render(); }); expect(await fs()).toEqual(before);
   });
-  test('the column width setting is the exact width of a column: wide weeks scroll sideways, narrow ones are not stretched', async ({ page }) => {
-    const m = () => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth }; });
-    await page.evaluate(() => { prefs.colW = 260; prefs.collapsed = true; applyPrefs(); render(); });
-    let r = await m(); expect(r.day).toBeCloseTo(260, 0); expect(r.scroll).toBeGreaterThan(0);
+  const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
+  test('by default the columns fill the window width (no empty strip), and a large column width still scrolls sideways', async ({ page }) => {
+    await page.evaluate(() => { prefs.colW = 70; prefs.collapsed = true; applyPrefs(); render(); });
+    let r = await m(page); expect(r.day).toBeGreaterThan(100); expect(r.scroll).toBeLessThanOrEqual(0); expect(Math.abs(r.empty)).toBeLessThan(20);
+    await page.evaluate(() => { prefs.colW = 600; render(); });
+    r = await m(page); expect(r.day).toBeCloseTo(600, 0); expect(r.scroll).toBeGreaterThan(0);
+  });
+  test('with "Fill the window width" off the column width is exact: wide weeks scroll sideways, narrow ones are not stretched', async ({ page }) => {
+    await page.evaluate(() => { prefs.fillW = false; prefs.colW = 260; prefs.collapsed = true; applyPrefs(); render(); });
+    let r = await m(page); expect(r.day).toBeCloseTo(260, 0); expect(r.scroll).toBeGreaterThan(0);
     await page.evaluate(() => { prefs.colW = 70; render(); });
-    r = await m(); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0);
+    r = await m(page); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.empty).toBeGreaterThan(100);
   });
   test('"Fit to window" makes the whole day fit without vertical scrolling', async ({ page }) => {
     await page.evaluate(() => { prefs.fit = true; render(); });

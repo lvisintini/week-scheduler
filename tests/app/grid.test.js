@@ -132,15 +132,24 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
     const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=96;render()');
     expect(a.ev('HH')).toBe(96); expect(parseFloat(a.q('.ev').style.height)).toBeCloseTo(95, 0); expect(a.qa('.times span')[1].style.top).toBe('96px');
   });
-  it('the column width slider sets the exact width of the columns (no stretching), so a wide week scrolls sideways', () => {
-    const a = fresh(blank()); a.ev('prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+  it('by default ("Fill the window width" on) columns are at least the slider width and stretch to fill the free space', () => {
+    const a = fresh(blank()); expect(a.ev('prefs.fillW')).toBe(true); a.ev('prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(200px,1fr))');
+  });
+  it('with "Fill the window width" off the slider sets the exact width of the columns, so nothing is stretched', () => {
+    const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+  });
+  it('the "Fill the window width" checkbox applies at once, is remembered per browser and is disabled by "Fit to window"', () => {
+    const a = fresh(blank()); a.ev('openSettings()'); const box = () => a.qa('#xDlg .sopt').find(l => l.textContent.includes('Fill the window width')).querySelector('input');
+    expect(box().checked).toBe(true); box().checked = false; box().dispatchEvent(new a.w.Event('change'));
+    expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,110px)'); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).fillW).toBe(false);
+    a.ev('prefs.fit=true;openSettings()'); expect(box().disabled).toBe(true);
   });
   it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
-    const a = fresh(blank()); a.ev('prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
+    const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
   });
-  it('the sliders offer 24–120 px per hour and 70–260 px per column', () => {
+  it('the sliders offer 24–120 px per hour and 70–600 px per column (enough to fill a very wide screen)', () => {
     const a = fresh(); a.ev('openSettings()'); const r = a.qa('#xDlg .zrow input');
-    expect([r[0].min, r[0].max]).toEqual(['24', '120']); expect([r[1].min, r[1].max]).toEqual(['70', '260']);
+    expect([r[0].min, r[0].max]).toEqual(['24', '120']); expect([r[1].min, r[1].max]).toEqual(['70', '600']);
   });
   it('moving a slider applies at once and is remembered per browser', () => {
     const a = fresh(); a.ev('openSettings()'); const r = a.q('#xDlg .zrow input'); r.value = 72; r.oninput();
@@ -155,18 +164,19 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
     const a = fresh(blank()); a.ev('prefs.fit=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toContain('minmax(40px');
     a.ev('openSettings()'); expect(a.qa('#xDlg .zrow input').every(i => i.disabled)).toBe(true);
   });
-  it('"Reset zoom" restores 48 px per hour, 110 px columns and fit off', () => {
-    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fit=true;openSettings()'); a.click('Reset zoom');
-    expect([a.ev('prefs.rowH'), a.ev('prefs.colW'), a.ev('prefs.fit')]).toEqual([48, 110, false]);
+  it('"Reset zoom" restores 48 px per hour, 110 px columns, fill-the-width on and fit off', () => {
+    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fillW=false;prefs.fit=true;openSettings()'); a.click('Reset zoom');
+    expect([a.ev('prefs.rowH'), a.ev('prefs.colW'), a.ev('prefs.fillW'), a.ev('prefs.fit')]).toEqual([48, 110, true, false]);
   });
   it('out-of-range stored zoom values are corrected on start (too large → maximum, too small → minimum, unusable → default)', () => {
     const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 5000, colW: -1 }) } });
     expect(a.ev('prefs.rowH')).toBe(120); expect(a.ev('prefs.colW')).toBe(70);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colW: 9999 }) } }).ev('prefs.colW')).toBe(600);
     const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 'x', colW: 0 }) } });
     expect(b.ev('prefs.rowH')).toBe(48); expect(b.ev('prefs.colW')).toBe(110);
   });
   it('a visible rhythm adds its 18 px label lane to every column', () => {
-    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,128px)');
+    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(128px,1fr))');
   });
   it('the text size is not touched by zoom (no font size is set on the grid)', () => {
     const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=120;render()');
