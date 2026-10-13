@@ -38,6 +38,11 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     let r = await new AxeBuilder({ page }).include('.tysec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
     r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
+  test('the statistics dialog (one person and Everyone) adds no accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup', slots: [{ day: 0, start: 600, end: 660, person: 'p1' }] })] })); await page.locator('.tbar button').nth(6).click();
+    let r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+    await page.locator('#xDlg select').selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+  });
   test('the dark theme shows no accessibility violation beyond the known ones: contrast of the selected switch button', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), { 'color-contrast': 1, label: 1, 'scrollable-region-focusable': 1 });

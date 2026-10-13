@@ -9,6 +9,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser â€
 - Events repeat on chosen days, with per-day times and per-day responsible person
 - Give each event an **activity type** (Sleep, Meal, Work/School, Focus time, Chore, Free timeâ€¦; your own list with built-in icons) shown as an icon on the event; *Free time* has a soft look. Mark any event or single repetition as **flexible time** (dashed border: it happens around those times but may take less)
 - Overlapping events that share a person (or where either has no responsible person) render as diagonal stripes of the overlapping colours; events at the same time that share nobody sit side by side, and an event that concerns several of them spans their lanes
+- **Statistics** per person or for everyone: how the week is spent by activity type (168-hour bar, day bars, table), double-booked and unplanned time; copy as a table, download CSV or print
 - **People** list that works like schedules (toggle to show/hide their events; drag to reorder, which sets the lane order)
 - Drag to create, move (across days) and resize events
 - Day agenda (click a day header) with print support; printable weekly schedule
@@ -35,10 +36,10 @@ The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test                    # 921 fast tests (jsdom), about 40 seconds
+npm test                    # 951 fast tests (jsdom), about 40 seconds
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
-npm run test:e2e            # 136 real-browser tests (Chromium + a phone profile), about 4 minutes
+npm run test:e2e            # 139 real-browser tests (Chromium + a phone profile), about 4 minutes
 npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```

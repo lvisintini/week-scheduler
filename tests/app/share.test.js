@@ -33,8 +33,8 @@ describe('R-SHARE-01 Links are always password-protected; files are by default',
   it('an empty password is refused', async () => {
     const a = fresh(); await protectDialog(a, 'file'); setPw(a, ''); a.click('Save file'); expect(a.q('#xDlg .err').textContent).toBe('The password must be at least 20 characters long.'); expect(a.w.__file).toBeUndefined();
   });
-  it('the only place that creates a downloadable file in the whole app is the JSON file export', () => {
-    expect((html.match(/new Blob\(/g) || []).length).toBe(1); expect(html).toMatch(/async function saveFile[\s\S]*?new Blob/);
+  it('only two places create a downloadable file: the JSON file export and the statistics CSV', () => {
+    expect((html.match(/new Blob\(/g) || []).length).toBe(2); expect(html).toMatch(/async function saveFile[\s\S]*?new Blob/); expect(html).toMatch(/const csv=\(\)=>[^\n]*new Blob/);
   });
   it('an encrypted file never contains the data in the clear (no readable text in the file)', async () => {
     const a = fresh(); const text = await makeFile(a); expect(text).not.toMatch(/Granny|Doctor|4711|Care/);

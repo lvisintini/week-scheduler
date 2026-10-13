@@ -44,7 +44,7 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
     a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(hostile)});S=w.data;cw().data=w.data;cw().name=w.name;render()})()`);
     const bits = [
       'openAgenda(0)', 'openRhythmAgenda(S.rhythms[0])', 'openDlg(S.events[0])', 'closeDlgs&&closeDlgs()', 'openCopy(S.events[0])', 'openTransfer("schedule",S.schedules[0])', 'openSettings()',
-      'printSchedule()', 'printDay(0)', 'editMode="phases";render();openDlg(S.phases[0])', 'editMode="events";render()',
+      'printSchedule()', 'printDay(0)', 'openStats("p1")', 'stP="*";openStats()', 'editMode="phases";render();openDlg(S.phases[0])', 'editMode="events";render()',
     ];
     for (const b of bits) { try { a.ev(b); } catch { /* a missing helper is fine; escaping is what matters */ } }
     a.qa('.wsbtn').forEach(b => b.click()); a.qa('#sbin button').forEach(b => { try { if (/⋯|more/i.test(b.title)) b.click(); } catch { /* ignore */ } });

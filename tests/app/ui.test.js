@@ -30,9 +30,9 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('a bullet appears after the title while anything is unsaved', () => {
     const a = fresh(); a.ev('S.schedules[0].name="x";render()'); expect(a.q('.ttl').textContent).toBe('Weekly Schedules •');
   });
-  it('then the workspace switcher, the Events | Phases switch, the six toolbar buttons (each with a tooltip), and the sections', () => {
+  it('then the workspace switcher, the Events | Phases switch, the seven toolbar buttons (each with a tooltip), and the sections', () => {
     const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
-    expect(a.qa('.tbar button')).toHaveLength(6); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
+    expect(a.qa('.tbar button')).toHaveLength(7); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
   });
   it('the sections are Schedules, People, Activity types, Rhythms and Zoom in that order', () => {
     expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Activity types', 'Rhythms', 'Zoom']);
@@ -40,8 +40,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with thirteen tips', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li')).toHaveLength(13);
+  it('the Help button opens a "How to use" dialog with fourteen tips', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li')).toHaveLength(14);
   });
 });
 

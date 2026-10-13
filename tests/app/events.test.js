@@ -417,50 +417,31 @@ describe('R-EVT-13 An occurrence that clashes with several parallel ones spans t
   });
 });
 
-describe('R-EVT-14 Clashing events cascade, and their labels stay readable over the stripes', () => {
+describe('R-EVT-14 Labels of overlapping events stay readable: no text bleeds through, stripes stay under the text', () => {
   const at = (id, title, start, end, person = 'A') => ev1({ id, title, slots: [{ day: 0, start, end, person }] });
   const box = (a, title) => a.qa('.day[data-d="0"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
   const clash = (...evs) => fresh(blank({ people, events: evs }));
-  it('the later of two clashing events is indented one level and drawn above the earlier one', () => {
-    const a = clash(at('b', 'Later', 615, 720), at('a', 'Earlier', 600, 720));
-    expect(box(a, 'Earlier').dataset.depth).toBeUndefined(); expect(box(a, 'Later').dataset.depth).toBe('1'); expect(box(a, 'Later').style.zIndex).toBe('2');
-    expect(box(a, 'Later').style.left).toContain('0.2'); expect(box(a, 'Later').style.width).toContain('0.8');
-  });
-  it('with the same start, the longer event stays below and the shorter one is indented', () => {
-    const a = clash(at('s', 'Short', 600, 630), at('l', 'Long', 600, 720)); expect(box(a, 'Short').dataset.depth).toBe('1'); expect(box(a, 'Long').dataset.depth).toBeUndefined();
-  });
-  it('each further clash goes one level deeper, up to three levels', () => {
-    const a = clash(...[0, 1, 2, 3, 4].map(k => at('e' + k, 'E' + k, 600 + k * 15, 780)));
-    expect([0, 1, 2, 3, 4].map(k => box(a, 'E' + k).dataset.depth || '0')).toEqual(['0', '1', '2', '3', '3']);
-  });
-  it('a later event that only touches the earlier one is not indented', () => {
-    const a = clash(at('a', 'A1', 600, 660), at('b', 'B1', 660, 720)); expect(a.qa('.ev[data-depth]')).toHaveLength(0);
-  });
-  it('parallel events side by side are never indented', () => {
-    const a = fresh(blank({ people, events: [at('a', 'Ann', 600, 720, 'A'), at('b', 'Bob', 615, 720, 'B')] })); expect(a.qa('.ev[data-depth]')).toHaveLength(0);
+  it('clashing events are not indented or shifted: both keep the full lane width', () => {
+    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720)); expect(box(a, 'Later').style.left).toBe(''); expect(box(a, 'Later').dataset.depth).toBeUndefined();
   });
   it('the stripes are drawn inside the topmost box only, which then shows its title, time and icons on solid chips', () => {
     const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720)); const top = box(a, 'Later');
     expect(a.qa('.ov')).toHaveLength(1); expect(a.q('.ov').parentElement).toBe(top); expect(top.classList.contains('striped')).toBe(true); expect(box(a, 'Earlier').classList.contains('striped')).toBe(false);
     const rule = [...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || '').replace(/\s*,\s*/g, ',') === '.ev.striped .r1,.ev.striped .r2'); expect(rule.style.getPropertyValue('background')).toBe('var(--chip)');
   });
-  it('inside an indented box the stripe covers the box width at the shared time only', () => {
+  it('inside the box the stripe covers its width at the shared time only', () => {
     const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 690)); const o = a.q('.ov');
     expect(o.style.left).toBe('0%'); expect(o.style.width).toBe('100%'); expect(o.style.top).toBe('0px'); expect(parseFloat(o.style.height)).toBeCloseTo(75 / 60 * 48 - 1, 0);
   });
-  it('the visible strip of the lower box belongs to it alone: clicking there opens it without a chooser', () => {
-    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720));
-    expect(a.ev('piecesAt(0,650,true,0.1).map(x=>x.e.id)')).toEqual(['a']); expect(a.ev('piecesAt(0,650,true,0.6).map(x=>x.e.id)').sort()).toEqual(['a', 'b']);
-  });
-  it('the resize handle of an indented box follows its indent', () => {
-    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 690)); const b = box(a, 'Later'); expect(b._rz.style.left).toBe(b.style.left); expect(b._rz.style.width).toBe(b.style.width);
-  });
-  it('a selected box is raised above every cascade level', () => {
-    const a = clash(at('a', 'A', 600, 720)); const rule = [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === '.ev.sel');
-    expect(rule.style.getPropertyValue('z-index')).toBe('5'); expect(rule.style.getPropertyPriority('z-index')).toBe('important');
+  it('soft-look boxes use their light tint for the chips', () => {
+    const a = clash(at('a', 'A', 600, 720)); expect([...a.d.styleSheets[0].cssRules].some(r => r.selectorText === '.ev.soft' && /color-mix/.test(r.style.getPropertyValue('--chip')))).toBe(true);
   });
   it('every box is its own layer, so the text of a lower box never shows through a higher one', () => {
     const a = clash(at('a', 'A', 600, 720)); expect([...a.d.styleSheets[0].cssRules].some(r => r.selectorText === '.ev' && r.style.getPropertyValue('isolation') === 'isolate')).toBe(true);
+  });
+  it('a selected box is raised above the others', () => {
+    const a = clash(at('a', 'A', 600, 720)); const rule = [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === '.ev.sel');
+    expect(rule.style.getPropertyValue('z-index')).toBe('5'); expect(rule.style.getPropertyPriority('z-index')).toBe('important');
   });
 });
 

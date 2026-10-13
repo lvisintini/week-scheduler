@@ -90,14 +90,14 @@ aside.collapsed .help{display:none}
 .ev .flags{position:absolute;top:3px;right:4px;z-index:5;display:flex;gap:3px;color:#fff;pointer-events:none}
 .ev .flags span{display:flex}.ev .flags svg{width:13px;height:13px;filter:drop-shadow(0 1px 1px #000a)}
 .ov{position:absolute;z-index:2;pointer-events:none;border-radius:4px;opacity:.85}
-.ev{isolation:isolate;--chip:var(--c)}.ev.soft{--chip:color-mix(in srgb,var(--c) 28%,var(--card))}.ev[data-depth]{box-shadow:0 0 0 1px var(--card),0 1px 4px #0005}
+.ev{isolation:isolate;--chip:var(--c)}.ev.soft{--chip:color-mix(in srgb,var(--c) 28%,var(--card))}
 .ev.striped .r1,.ev.striped .r2{background:var(--chip);border-radius:4px;margin:0 -3px;padding:0 3px;width:fit-content;max-width:calc(100% + 6px)}.ev.striped .r1{width:auto}.ev.striped .flags{background:var(--chip);border-radius:4px;padding:1px 2px}
 .ghost{position:absolute;left:3px;right:3px;background:var(--acc);opacity:.3;border-radius:8px;pointer-events:none}
 .now{position:absolute;left:0;right:0;height:0;border-top:2px solid #e5342d;z-index:6;pointer-events:none}
 .now::before{content:'';position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:#e5342d}
 /* dialogs & popups */
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);padding:18px;width:min(540px,95vw)}
-dialog::backdrop{background:#0006}#xDlg{width:min(460px,95vw)}#xDlg h3{margin:0 0 10px}.note{color:var(--mut);font-size:12px}
+dialog::backdrop{background:#0006}#xDlg{width:min(460px,95vw)}#xDlg.wide{width:min(760px,95vw)}#xDlg h3{margin:0 0 10px}.note{color:var(--mut);font-size:12px}
 label{display:block;margin:8px 0 3px;font-size:12px;color:var(--mut)}
 dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .row{display:flex;gap:8px}.row>div{flex:1}
@@ -137,6 +137,10 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .cpr input[type=text]{flex:1;min-width:0;font:inherit;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .cpop .btns{margin-top:6px}
 .omenu{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 8px 28px #0005;min-width:210px;max-width:300px}
+.stbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:10px}.stbar label{display:flex;gap:5px;align-items:center;font-size:13px}
+.stwk{display:block;width:100%;height:22px;border-radius:5px;margin:4px 0 12px}.stnp{fill:var(--line)}.stday{display:block;width:100%;max-width:420px;margin:0 auto 10px}.stday text{font-size:10px;fill:currentColor}
+.sttab{width:100%;border-collapse:collapse;font-size:13px}.sttab th,.sttab td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:right}.sttab th:first-child,.sttab td:first-child{text-align:left}.sttab .ic svg{width:13px;height:13px}.sttab .ic{margin-right:4px;vertical-align:-2px}.sttot td{font-weight:600}.stnpr td{color:var(--mut)}.stfoot{font-size:13px;margin:8px 0 0}.ststat{font-size:12px;color:var(--acc);min-height:1em;margin:4px 0 0}
+.stp{display:grid;grid-template-columns:minmax(80px,140px) 1fr auto;gap:8px;align-items:center;margin:4px 0}.stp .stwk{height:14px;margin:0}.stn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stleg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:10px;font-size:12px}.stleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}.stnpi{background:var(--line)}
 .omenu .oh{font-size:11px;color:var(--mut);padding:2px 6px 4px}
 .omenu .oi{display:flex;gap:8px;align-items:center;width:100%;border:0;text-align:left;padding:5px 6px}
 .oi i{width:12px;height:12px;border-radius:3px;flex-shrink:0}.oi small{color:var(--mut);margin-left:auto;white-space:nowrap}
@@ -242,7 +246,7 @@ confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
 dRh:'Normal rhythm',dMid:'Midnight',dEarly:'Early morning',dMorn:'Morning',dNoon:'Noon',dAft:'Afternoon',dEve:'Evening',dNight:'Night',
 tSleep:'Sleep',tMeal:'Meal',tWork:'Work/School',tFocus:'Focus time',tChore:'Chore',tFree:'Free time',tCare:'Personal care',tTravel:'Travel',
-tyH:'Activity types',tyLbl:'Activity type',tyTip:'What kind of activity each event is (Sleep, Meal, Work/School…). Each event has at most one type; its icon is shown on the event. The colour is used only for statistics; the event keeps its own colour.',addTyTip:'Add an activity type',pTy:'Activity type name?',tyNone:'(none)',mIcon:'Icon…',mSoft:'Soft look',softTip:'Events of this type are drawn as a light tint of their colour with a coloured edge, so they stand out from busy time (used for Free time by default).',mStatColor:'Colour for statistics…',iconTitle:'Choose an icon',iconTip:'Click to choose the icon',confTy:'Delete the activity type "{n}"?',confTyLost:' {k} event(s) will have no type.',
+tyH:'Activity types',stTitle:'Statistics',stMenu:'Statistics…',stTip:'Statistics: how each person spends the week, by activity type',stWho:'Person',stAll:'Everyone',stInv:'Include time as involved person',stInvTip:'When off, only occurrences the person is responsible for count.',stNoType:'No type',stNotPl:'Not planned',stPlanned:'Planned',stHours:'Hours',stPctW:'% of week',stPctP:'% of planned',stOver:'Overlapping: {h} in {n} place(s)',stFlex:'of which flexible: {h}',stNote:'Counts the visible schedules only (for a two-week rota, show one week at a time). Every hour of the week counts, including hidden early hours and a hidden weekend. Double-booked time counts once, split evenly between its activity types. Events without any people count for nobody.',stNoPpl:'Add people in the sidebar first.',stCopy:'Copy table',stCsv:'Download CSV',stPrint:'Print',stCopied:'Table copied: paste it into a spreadsheet.',stCopyFail:"Couldn't copy to the clipboard.",stCsvDone:'CSV file downloaded. It is not encrypted: it contains names and hours.',stNothing:'Nothing planned for {n} in the visible schedules.',stPerson:'Person',stFlexH:'Flexible hours',stOverH:'Overlapping hours',stDays:'Hours per day',help14:'Statistics (chart button, or ⋯ on a person) show how each person spends the week by activity type, and how much is double-booked or not planned.',tyLbl:'Activity type',tyTip:'What kind of activity each event is (Sleep, Meal, Work/School…). Each event has at most one type; its icon is shown on the event. The colour is used only for statistics; the event keeps its own colour.',addTyTip:'Add an activity type',pTy:'Activity type name?',tyNone:'(none)',mIcon:'Icon…',mSoft:'Soft look',softTip:'Events of this type are drawn as a light tint of their colour with a coloured edge, so they stand out from busy time (used for Free time by default).',mStatColor:'Colour for statistics…',iconTitle:'Choose an icon',iconTip:'Click to choose the icon',confTy:'Delete the activity type "{n}"?',confTyLost:' {k} event(s) will have no type.',
 help13:'Activity types (sidebar) say what each event is: Sleep, Meal, Work/School… Pick one in the event dialog. Types with the soft look, like Free time, are drawn lighter.',
 
 setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',flexNote:'Flexible time (around these times)',flexRowTip:'Flexible time for this repetition only: the activity happens around these times but may take less time. Drawn with a dashed border.',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
@@ -308,7 +312,7 @@ confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} fra
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
 dRh:'Ritmo normal',dMid:'Madrugada',dEarly:'Primera hora',dMorn:'Mañana',dNoon:'Mediodía',dAft:'Tarde',dEve:'Atardecer',dNight:'Noche',
 tSleep:'Dormir',tMeal:'Comida',tWork:'Trabajo/Escuela',tFocus:'Concentración',tChore:'Tarea doméstica',tFree:'Tiempo libre',tCare:'Cuidado personal',tTravel:'Desplazamiento',
-tyH:'Tipos de actividad',tyLbl:'Tipo de actividad',tyTip:'Qué tipo de actividad es cada evento (Dormir, Comida, Trabajo/Escuela…). Cada evento tiene como mucho un tipo; su icono se muestra en el evento. El color solo se usa para las estadísticas; el evento conserva su propio color.',addTyTip:'Añadir un tipo de actividad',pTy:'¿Nombre del tipo de actividad?',tyNone:'(ninguno)',mIcon:'Icono…',mSoft:'Aspecto suave',softTip:'Los eventos de este tipo se dibujan con un tono claro de su color y un borde de color, para que se distingan del tiempo ocupado (se usa para Tiempo libre por defecto).',mStatColor:'Color para estadísticas…',iconTitle:'Elige un icono',iconTip:'Haz clic para elegir el icono',confTy:'¿Eliminar el tipo de actividad "{n}"?',confTyLost:' {k} evento(s) se quedarán sin tipo.',
+tyH:'Tipos de actividad',stTitle:'Estadísticas',stMenu:'Estadísticas…',stTip:'Estadísticas: cómo pasa la semana cada persona, por tipo de actividad',stWho:'Persona',stAll:'Todos',stInv:'Incluir el tiempo como persona implicada',stInvTip:'Si está desactivado, solo cuentan las repeticiones de las que la persona es responsable.',stNoType:'Sin tipo',stNotPl:'Sin planificar',stPlanned:'Planificado',stHours:'Horas',stPctW:'% de la semana',stPctP:'% de lo planificado',stOver:'Superpuesto: {h} en {n} sitio(s)',stFlex:'de ello flexible: {h}',stNote:'Solo cuentan los horarios visibles (para una rotación de dos semanas, muestra una semana cada vez). Cuentan todas las horas de la semana, también las horas tempranas y el fin de semana ocultos. El tiempo con doble reserva cuenta una vez, repartido a partes iguales entre sus tipos de actividad. Los eventos sin personas no cuentan para nadie.',stNoPpl:'Primero añade personas en la barra lateral.',stCopy:'Copiar tabla',stCsv:'Descargar CSV',stPrint:'Imprimir',stCopied:'Tabla copiada: pégala en una hoja de cálculo.',stCopyFail:'No se pudo copiar al portapapeles.',stCsvDone:'Archivo CSV descargado. No está cifrado: contiene nombres y horas.',stNothing:'Nada planificado para {n} en los horarios visibles.',stPerson:'Persona',stFlexH:'Horas flexibles',stOverH:'Horas superpuestas',stDays:'Horas por día',help14:'Las estadísticas (botón de gráfico, o ⋯ en una persona) muestran cómo pasa la semana cada persona por tipo de actividad, y cuánto tiempo tiene doble reserva o está sin planificar.',tyLbl:'Tipo de actividad',tyTip:'Qué tipo de actividad es cada evento (Dormir, Comida, Trabajo/Escuela…). Cada evento tiene como mucho un tipo; su icono se muestra en el evento. El color solo se usa para las estadísticas; el evento conserva su propio color.',addTyTip:'Añadir un tipo de actividad',pTy:'¿Nombre del tipo de actividad?',tyNone:'(ninguno)',mIcon:'Icono…',mSoft:'Aspecto suave',softTip:'Los eventos de este tipo se dibujan con un tono claro de su color y un borde de color, para que se distingan del tiempo ocupado (se usa para Tiempo libre por defecto).',mStatColor:'Color para estadísticas…',iconTitle:'Elige un icono',iconTip:'Haz clic para elegir el icono',confTy:'¿Eliminar el tipo de actividad "{n}"?',confTyLost:' {k} evento(s) se quedarán sin tipo.',
 help13:'Los tipos de actividad (barra lateral) dicen qué es cada evento: Dormir, Comida, Trabajo/Escuela… Elige uno en el diálogo del evento. Los tipos con aspecto suave, como Tiempo libre, se dibujan más claros.',
 
 setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',flexNote:'Horario flexible (alrededor de estas horas)',flexRowTip:'Horario flexible solo para esta repetición: la actividad ocurre alrededor de estas horas pero puede durar menos. Se dibuja con un borde discontinuo.',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
@@ -400,6 +404,7 @@ const iconName=k=>(TYN[lang]||TYN.en)[k]||k;
 const ICON_WARN=I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>');
 const ICON_RHYTHM=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
 const ICON_WS=I('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'),ICON_CHECK=I('<path d="M5 12l5 5 9-10"/>');
+const ICON_STATS=I('<path d="M3 21h18M6 17v-5M11 17V6M16 17v-8M21 17v-3"/>');
 const ICON_GRIP='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 const FAV=document.querySelector('link[rel=icon]').href;
 const tyOf=e=>e.type?S.types.find(t=>t.id===e.type):null;
@@ -879,16 +884,12 @@ function laneLayout(its){
   uf([...Array(n).keys()],(i,j)=>O[i][j]).forEach((G,gi)=>{
     let r=arrange(G);
     if(!r){const {lane,m}=pack(G);r={sp:new Map(G.map(x=>[x,[lane.get(x),lane.get(x)]])),m}}   // fallback: merge into stripes
-    // cascade (R-EVT-14): among clashing occurrences sharing a lane, each later one (later start, then shorter) is one level deeper, up to 3
-    const ord=[...G].sort((x,y)=>its[x].start-its[y].start||its[y].end-its[x].end||x-y),dep=new Map();
-    ord.forEach((x,k)=>{let d=0;const [a0,a1]=r.sp.get(x);for(let j=0;j<k;j++){const y=ord[j],[b0,b1]=r.sp.get(y);if(C[x][y]&&a0<=b1&&b0<=a1)d=Math.max(d,dep.get(y)+1)}dep.set(x,Math.min(3,d))});
-    G.forEach(x=>{const [l,l1]=r.sp.get(x);out.set(its[x],{l,l1,n:r.m,g:gi,d:dep.get(x)})});
+    G.forEach(x=>{const [l,l1]=r.sp.get(x);out.set(its[x],{l,l1,n:r.m,g:gi})});
   });
   return out;
 }
-let laneMap=new Map();   // 'eventId|slotIndex|piece' -> [first lane, last lane, lanes, cascade level] of the last drawn grid, for hit-testing by x
-const CASC=.2;   // cascade indent per level, as a share of the box's lane range
-const inLane=(e,i,p,fx)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(e.id+'|'+i+'|'+p);return !v||(fx>=v[0]/v[2]+(v[1]-v[0]+1)/v[2]*CASC*v[3]&&fx<(v[1]+1)/v[2])};
+let laneMap=new Map();   // 'eventId|slotIndex|piece' -> [first lane, last lane, lanes] of the last drawn grid, for hit-testing by x
+const inLane=(e,i,p,fx)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(e.id+'|'+i+'|'+p);return !v||(fx>=v[0]/v[2]&&fx<(v[1]+1)/v[2])};
 const fxAt=(c,x)=>{const r=c.getBoundingClientRect();return r.width?(x-r.left)/r.width:null};
 const piecesAt=(di,m,all,fx)=>act().filter(e=>eVis(e)&&(all||!eLock(e))).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&sVis(e,s)&&inLane(e,i,q.p,fx)).map(q=>({e,s,i,piece:q.p}))));
 const itemsAt=(di,m,fx)=>piecesAt(di,m,false,fx);
@@ -916,6 +917,7 @@ function xdlg(o){
   const d=$('xDlg');d.innerHTML='';let done=false;const tok=++xTok;
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
+  d.classList.toggle('wide',!!o.wide);
   const bt=el('div','btns',d);
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
     x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
@@ -956,8 +958,101 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=13;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=14;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
+}
+/* ---------- statistics: how a person's week is spent, by activity type (R-STAT-01..04) ---------- */
+function personStats(pid,inv){
+  // occurrences of the visible schedules the person leads (or is involved in); events without any people count for nobody.
+  // Every minute counts once: double-booked time is split evenly between the occurrences at that time.
+  const days=[...Array(7)].map(()=>[]);
+  S.events.filter(visible).forEach(e=>e.slots.forEach(s=>{
+    if(s.person!==pid&&!(inv&&e.involved.includes(pid)))return;
+    const t=e.type&&S.types.some(x=>x.id===e.type)?e.type:'';
+    piecesOf(s).forEach(q=>days[q.day].push({a:q.a,b:q.b,t,fx:!!s.flex}))}));
+  const by=new Map(),fx=new Map(),perDay=days.map(()=>new Map()),add=(m,k,v)=>m.set(k,(m.get(k)||0)+v);let planned=0,overlap=0,places=0;
+  days.forEach((its,di)=>{
+    const pts=[...new Set(its.flatMap(x=>[x.a,x.b]))].sort((x,y)=>x-y);let inOv=false;
+    for(let i=0;i<pts.length-1;i++){
+      const p=pts[i],q=pts[i+1],act=its.filter(x=>x.a<=p&&x.b>=q),d=q-p;
+      if(!act.length){inOv=false;continue}
+      planned+=d;act.forEach(x=>{const v=d/act.length;add(by,x.t,v);add(perDay[di],x.t,v);if(x.fx)add(fx,x.t,v)});
+      if(act.length>1){overlap+=d;if(!inOv)places++;inOv=true}else inOv=false;
+    }
+  });
+  return {by,fx,perDay,planned,overlap,places,flex:[...fx.values()].reduce((a,b)=>a+b,0)};
+}
+const fmtDur=m=>{m=Math.round(m);return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')};
+const pctOf=(x,t)=>t?Math.round(x/t*100)+' %':'–';
+const stKeys=st=>[...S.types.map(t=>t.id),''].filter(k=>(st.by.get(k)||0)>0);   // activity types in list order, then "No type"
+const stInfo=k=>{const t=S.types.find(x=>x.id===k);return t||{name:L('stNoType'),color:'#9aa0a6',icon:'dot'}};
+const stSvgDefs='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="sth" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="#fff" fill-opacity=".5"/></pattern></defs></svg>';
+function stWeekBar(st,h){   // one bar for the 168-hour week: activity types, then "No type", then "Not planned"
+  let x=0,r='';const W=7*1440,seg=(w,fill,tip,fxw)=>{if(w<=0)return;const a=x/W*1000,b=w/W*1000;r+=`<rect x="${a}" width="${b}" height="${h}" fill="${fill}"><title>${esc(tip)}</title></rect>`;if(fxw>0)r+=`<rect x="${a}" width="${fxw/W*1000}" height="${h}" fill="url(#sth)"/>`;x+=w};
+  stKeys(st).forEach(k=>{const i=stInfo(k),m=st.by.get(k);seg(m,esc(i.color),i.name+' '+fmtDur(m),st.fx.get(k)||0)});
+  r+=`<rect class="stnp" x="${x/W*1000}" width="${1000-x/W*1000}" height="${h}"><title>${esc(L('stNotPl')+' '+fmtDur(W-st.planned))}</title></rect>`;
+  return `<svg class="stwk" viewBox="0 0 1000 ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(L('stPlanned')+' '+fmtDur(st.planned)+', '+L('stNotPl')+' '+fmtDur(W-st.planned))}">${r}</svg>`;
+}
+function stDayBars(st){   // a stacked 24-hour bar per day
+  let r='';const H=120;
+  st.perDay.forEach((m,di)=>{let y=H;const x=di*40+8;r+=`<rect class="stnp" x="${x}" y="0" width="24" height="${H}"/>`;
+    stKeys(st).forEach(k=>{const v=m.get(k)||0;if(!v)return;const hh=v/1440*H;y-=hh;const i=stInfo(k);r+=`<rect x="${x}" y="${y}" width="24" height="${hh}" fill="${esc(i.color)}"><title>${esc(DAYS[di]+': '+i.name+' '+fmtDur(v))}</title></rect>`});
+    r+=`<text x="${x+12}" y="${H+14}" text-anchor="middle">${esc(DAYS[di].slice(0,3))}</text>`});
+  return `<svg class="stday" viewBox="0 0 280 ${H+20}" role="img" aria-label="${esc(L('stDays'))}">${r}</svg>`;
+}
+function statsOneHTML(pid,inv){
+  const q=S.people.find(x=>x.id===pid),st=personStats(pid,inv),W=7*1440;
+  if(!st.planned)return `<p>${esc(L('stNothing',{n:q.name}))}</p>`+stWeekBar(st,22);
+  let h=stWeekBar(st,22)+stDayBars(st)+`<table class="sttab"><thead><tr><th>${esc(L('tyLbl'))}</th><th>${esc(L('stHours'))}</th><th>${esc(L('stPctW'))}</th><th>${esc(L('stPctP'))}</th></tr></thead><tbody>`;
+  stKeys(st).forEach(k=>{const i=stInfo(k),m=st.by.get(k),f=st.fx.get(k)||0;
+    h+=`<tr><td>${k?tyTag(i):esc(i.name)}${f?` <small>(${esc(L('stFlex',{h:fmtDur(f)}))})</small>`:''}</td><td>${fmtDur(m)}</td><td>${pctOf(m,W)}</td><td>${pctOf(m,st.planned)}</td></tr>`});
+  h+=`<tr class="sttot"><td>${esc(L('stPlanned'))}</td><td>${fmtDur(st.planned)}</td><td>${pctOf(st.planned,W)}</td><td></td></tr><tr class="stnpr"><td>${esc(L('stNotPl'))}</td><td>${fmtDur(W-st.planned)}</td><td>${pctOf(W-st.planned,W)}</td><td></td></tr></tbody></table>`;
+  const notes=[];if(st.overlap)notes.push(L('stOver',{h:fmtDur(st.overlap),n:st.places}));if(st.flex)notes.push(L('stFlex',{h:fmtDur(st.flex)}));
+  if(notes.length)h+=`<p class="stfoot">${esc(notes.join(' · '))}</p>`;
+  return h;
+}
+function statsAllHTML(inv){
+  let h='<div class="stall">';
+  S.people.forEach(q=>{const st=personStats(q.id,inv);h+=`<div class="stp"><span class="stn">${pIcon(q)}${esc(q.name)}</span>${stWeekBar(st,14)}<b>${fmtDur(st.planned)}</b></div>`});
+  const used=[...S.types.map(t=>t.id),''].filter(k=>S.people.some(q=>(personStats(q.id,inv).by.get(k)||0)>0));
+  h+='</div><div class="stleg">'+used.map(k=>{const i=stInfo(k);return `<span><i style="background:${esc(i.color)}"></i>${esc(i.name)}</span>`}).join('')+`<span><i class="stnpi"></i>${esc(L('stNotPl'))}</span></div>`;
+  return h;
+}
+function statsRows(pid,inv){   // the table behind the current view, for the clipboard and CSV (hours as decimal numbers)
+  const hrs=m=>(Math.round(m)/60).toFixed(2),W=7*1440;
+  if(pid==='*'){
+    const keys=[...S.types.map(t=>t.id),''];
+    return [[L('stPerson'),...keys.map(k=>stInfo(k).name),L('stPlanned'),L('stNotPl'),L('stOverH'),L('stFlexH')],...S.people.map(q=>{const st=personStats(q.id,inv);
+      return [q.name,...keys.map(k=>hrs(st.by.get(k)||0)),hrs(st.planned),hrs(W-st.planned),hrs(st.overlap),hrs(st.flex)]})];
+  }
+  const st=personStats(pid,inv),q=S.people.find(x=>x.id===pid);
+  return [[L('stPerson'),L('tyLbl'),L('stHours'),L('stPctW'),L('stPctP'),...DAYS,L('stFlexH')],
+    ...stKeys(st).map(k=>[q.name,stInfo(k).name,hrs(st.by.get(k)),pctOf(st.by.get(k),W),pctOf(st.by.get(k),st.planned),...st.perDay.map(m=>hrs(m.get(k)||0)),hrs(st.fx.get(k)||0)]),
+    [q.name,L('stPlanned'),hrs(st.planned),pctOf(st.planned,W),'',...st.perDay.map(m=>hrs([...m.values()].reduce((a,b)=>a+b,0))),hrs(st.flex)],
+    [q.name,L('stNotPl'),hrs(W-st.planned),pctOf(W-st.planned,W),'',...st.perDay.map(m=>hrs(1440-[...m.values()].reduce((a,b)=>a+b,0))),''],
+    [q.name,L('stOverH'),hrs(st.overlap),'','',...DAYS.map(()=>''),'']];
+}
+const cellSafe=v=>{v=String(v);return /^[=+\-@\t\r]/.test(v)?"'"+v:v};   // a name like "=HYPERLINK(…)" must not run as a spreadsheet formula
+const toCsv=rows=>rows.map(r=>r.map(c=>{c=cellSafe(c);return /[",\r\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')).join('\r\n');
+const toTsv=rows=>rows.map(r=>r.map(c=>cellSafe(c).replace(/[\t\r\n]+/g,' ')).join('\t')).join('\n');
+let stP=null,stInv=true;   // last statistics view (person id, or '*' for everyone) and the involved toggle, kept while the page is open
+function openStats(pid){
+  if(!S.people.length){toast(L('stNoPpl'));return}
+  if(pid)stP=pid;if(!stP||(stP!=='*'&&!S.people.some(q=>q.id===stP)))stP=(S.people.find(q=>q.visible)||S.people[0]).id;
+  const body=el('div','stats'),bar=el('div','stbar',body);
+  const sel=el('select','',bar);fillSel(sel,[...S.people.map(q=>[q.id,q.name]),['*',L('stAll')]]);sel.value=stP;sel.setAttribute('aria-label',L('stWho'));
+  const cl=el('label','',bar),cb=el('input','',cl);cb.type='checkbox';cb.checked=stInv;cl.append(' '+L('stInv'));cl.title=L('stInvTip');
+  const out=el('div','stout',body);
+  const draw=()=>{out.innerHTML=stSvgDefs+(stP==='*'?statsAllHTML(stInv):statsOneHTML(stP,stInv))};
+  sel.onchange=()=>{stP=sel.value;draw()};cb.onchange=()=>{stInv=cb.checked;draw()};draw();
+  el('p','note',body).textContent=L('stNote');
+  const stat=el('p','ststat',body);stat.setAttribute('role','status');const msg=k=>{stat.textContent=L(k)};   // a toast would be hidden behind the dialog
+  const who=()=>stP==='*'?L('stAll'):S.people.find(x=>x.id===stP).name;
+  const copy=()=>{const txt=toTsv(statsRows(stP,stInv)),ok=()=>msg('stCopied'),fb=()=>{const t=el('textarea','',body);t.value=txt;t.select();let r=false;try{r=document.execCommand('copy')}catch(e){}t.remove();msg(r?'stCopied':'stCopyFail')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb()};
+  const csv=()=>{const a=el('a');a.href=URL.createObjectURL(new Blob(['﻿'+toCsv(statsRows(stP,stInv))],{type:'text/csv'}));a.download='weekly-schedules-stats-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('stCsvDone')};
+  const print=()=>{const w=el('div','stats');w.innerHTML=`<h1>${esc(L('stTitle')+' — '+who())}</h1>`+metaLine()+out.innerHTML+`<p class="note">${esc(L('stNote'))}</p>`;doPrint(w,false)};
+  xdlg({title:L('stTitle'),body,wide:true,buttons:[{label:L('stCopy'),fn:()=>{copy();return false}},{label:L('stCsv'),fn:()=>{csv();return false}},{label:L('stPrint'),fn:()=>{print();return false}},{label:L('closeB'),cls:'p'}]});
 }
 /* agenda / print */
 function metaLine(){
@@ -1044,6 +1139,7 @@ function schMenu(anchor,s){rowMenu(anchor,(m,mi)=>{
 })}
 function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
   mi(chip(q.color),L('mColor'),()=>pickColor(anchor,q.color,v=>{hist();q.color=v;render()}));
+  mi(ICON_STATS,L('stMenu'),()=>openStats(q.id));
   mi('<span class="ic" style="margin:0">'+ICON_USER+'</span>',L('mDelete'),()=>delPerson(q),'d');
 })}
 function iconMenu(anchor,t){rowMenu(anchor,(m,mi,close)=>{
@@ -1106,6 +1202,7 @@ function renderSide(){
   tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_PRINT,L('printTip'),printSchedule);
+  tbtn(ICON_STATS,L('stTip'),()=>openStats());
   // schedules
   const s1=el('div','sec',body);
   secHead(s1,'schH',S.schedules.length,'schHTip','secSch',()=>{const n=prompt(L('pSch'));if(!n)return;hist();S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],opacity:1,locked:false,visible:true});render()},'addSchTip');
@@ -1209,8 +1306,7 @@ function render(){
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
   const vsel=vrhythm(),fitList=[];laneMap=new Map();
-  const lanePos=(x,v)=>{const l1=v.l1??v.l,ind=CASC*(v.d||0);if(v.n<2&&!ind)return;if(v.n>1)x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;if(ind)x.dataset.depth=v.d;
-    const sf=(l1-v.l+1)/v.n;x.style.left=`calc(3px + (100% - 6px) * ${v.l/v.n+sf*ind})`;x.style.right='auto';x.style.width=`calc((100% - 6px) * ${sf*(1-ind)} - ${l1<v.n-1?2:0}px)`};
+  const lanePos=(x,v)=>{if(v.n<2)return;const l1=v.l1??v.l;x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + (100% - 6px) * ${v.l/v.n})`;x.style.right='auto';x.style.width=`calc((100% - 6px) * ${(l1-v.l+1)/v.n} - ${l1<v.n-1?2:0}px)`};
   const phByCol=days.map(di=>vsel?S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di)):[]);
   days.forEach((di,k)=>{
     const dw=el('div','dw',g);dw.dataset.d=di;
@@ -1246,7 +1342,7 @@ function render(){
     const evs=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&slotVisible(e,s)).map(q=>({e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,color:e.color,op:evOp(e)}))));
     const lay=laneLayout(evs.map(it=>({...it,start:Math.max(it.start,a*60),src:it}))),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
     evs.forEach(it=>{
-      const e=it.e,s=it.s,d=el('div','ev',col),v=lv.get(it);laneMap.set(e.id+'|'+e.slots.indexOf(s)+'|'+it.piece,[v.l,v.l1,v.n,v.d]);lanePos(d,v);if(v.d)d.style.zIndex=1+v.d;d._it=it;lk=isLocked(e),warn=ovOf(e).has(s);fitList.push(d);
+      const e=it.e,s=it.s,d=el('div','ev',col),v=lv.get(it);laneMap.set(e.id+'|'+e.slots.indexOf(s)+'|'+it.piece,[v.l,v.l1,v.n]);lanePos(d,v);d._it=it;lk=isLocked(e),warn=ovOf(e).has(s);fitList.push(d);
       d.style.top=(Math.max(it.start,a*60)-a*60)/60*HH+'px';d.style.height=Math.max(14,(it.end-Math.max(it.start,a*60))/60*HH-1)+'px';
       d.style.background=e.color;d.style.opacity=it.op;if(lk)d.classList.add('locked');
       const ty=tyOf(e);d.style.setProperty('--c',e.color);if(ty&&ty.soft)d.classList.add('soft');if(s.flex){d.classList.add('flex');d.style.setProperty('--dash',ty&&ty.soft?`color-mix(in srgb,${e.color} 65%,#000)`:ink(e.color)==='#fff'?'#ffffffd9':'#1d2330b3')}if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
@@ -1278,10 +1374,10 @@ function render(){
           const key=p+'|'+q+'|'+cov.map(c=>evs.indexOf(c)).join(','),sg=segs.get(key);if(sg&&sg.l1===k-1)sg.l1=k;else{const ns={p,q,cov,l:k,l1:k};segs.set(key,ns);all.push(ns)}}
       }
       all.forEach(({p,q,cov,l,l1})=>{
-        // drawn inside the topmost box of the overlap (highest cascade level, then the later box), under its text (R-EVT-14)
-        const top=cov.reduce((t,c)=>(lv.get(c).d||0)>=(lv.get(t).d||0)?c:t),tv=lv.get(top),bx=boxOf.get(top);if(!bx)return;
+        // drawn inside the topmost box of the overlap (the one drawn last), under its text (R-EVT-14)
+        const top=cov[cov.length-1],tv=lv.get(top),bx=boxOf.get(top);if(!bx)return;
         const o=el('div','ov',bx);if(N>1)o.dataset.lane=(l1>l?l+'-'+l1:l)+'/'+N;bx.classList.add('striped');
-        const sf=((tv.l1??tv.l)-tv.l+1)/N,bl=tv.l/N+sf*CASC*(tv.d||0),bw=sf*(1-CASC*(tv.d||0)),sl=Math.max(l/N,bl),sr=Math.min((l1+1)/N,bl+bw);
+        const bl=tv.l/N,bw=((tv.l1??tv.l)-tv.l+1)/N,sl=Math.max(l/N,bl),sr=Math.min((l1+1)/N,bl+bw);
         o.style.left=((sl-bl)/bw*100)+'%';o.style.width=((sr-sl)/bw*100)+'%';
         o.style.top=(p-Math.max(top.start,a*60))/60*HH+'px';o.style.height=(q-p)/60*HH-1+'px';
         const st=[],seen=[],w=7;

@@ -138,3 +138,16 @@ test.describe('R-SHARE-07 Unencrypted JSON files, downloaded and opened for real
     const d = await data(other); expect(d.events[0].title).toBe('Doctor visit'); expect(d.people[0].name).toBe('Granny Rose'); await ctx.close();
   });
 });
+
+test.describe('R-STAT-04 Statistics exports in a real browser', () => {
+  test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, rich()); await page.locator('.tbar button').nth(6).click(); });
+  test('"Download CSV" really downloads weekly-schedules-stats-<date>.csv with the person and the hours', async ({ page }) => {
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), dialogButton(page, 'Download CSV').click()]);
+    expect(dl.suggestedFilename()).toMatch(/^weekly-schedules-stats-\d{4}-\d{2}-\d{2}\.csv$/);
+    const text = fs.readFileSync(await dl.path(), 'utf8'); expect(text.charCodeAt(0)).toBe(0xfeff); expect(text).toContain('Granny Rose,No type,1.00');
+  });
+  test('"Copy table" really puts the table on the clipboard', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']); await dialogButton(page, 'Copy table').click();
+    await expect(page.locator('#xDlg .ststat')).toContainText('Table copied'); expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Granny Rose\tNo type\t1.00');
+  });
+});

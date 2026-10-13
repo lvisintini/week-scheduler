@@ -145,8 +145,8 @@ describe('R-PPL-01 The People list works like the schedule list', () => {
     const a = withPeople(); const input = peopleRows(a)[0].querySelector('input[type=text]'); input.value = 'Anna'; input.onchange(); expect(a.ev('S.people[0].name')).toBe('Anna');
     a.toolbar('undo').click(); expect(a.ev('S.people[0].name')).toBe('Ann');
   });
-  it('the people menu offers Colour… and Delete', () => {
-    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Delete']);
+  it('the people menu offers Colour…, Statistics… and Delete', () => {
+    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Statistics…', 'Delete']);
   });
   it('deleting a person asks for confirmation and removes them from every event (responsible and involved)', () => {
     const a = fresh(blank({ people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ involved: ['A', 'B'], slots: [{ day: 0, start: 600, end: 660, person: 'A' }] })] }));
