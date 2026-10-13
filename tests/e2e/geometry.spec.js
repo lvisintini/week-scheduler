@@ -199,17 +199,3 @@ test.describe('R-EVT-13 Spanning lanes in a real browser', () => {
     expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1); expect(Math.abs(x.x - a.x)).toBeLessThan(2); expect(Math.abs((x.x + x.width) - (b.x + b.width))).toBeLessThan(2);
   });
 });
-
-test.describe('R-EVT-14 Readable labels of overlapping events in a real browser', () => {
-  test.beforeEach(async ({ page }) => {
-    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ id: 'a', title: 'Dentist', color: '#3b6df0', slots: [slot(0, 600, 720, 'A')] }), ev({ id: 'b', title: 'School run', color: '#e5484d', slots: [slot(0, 600, 720, 'A')] })] }));
-  });
-  test('the upper box fully hides the lower one: no text of the lower box shows through', async ({ page }) => {
-    const t = await boxOf(page.locator('.ev', { hasText: 'Dentist' }).locator('.r1 .t'));
-    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y).closest('.ev').getAttribute('aria-label').split(',')[0], [t.x + 4, t.y + t.height / 2])).toBe('School run');
-  });
-  test('the title of the upper box is drawn above the stripes', async ({ page }) => {
-    const b = await boxOf(page.locator('.ev', { hasText: 'School run' }).locator('.r1 .t'));
-    expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y).closest('.r1'), [b.x + 4, b.y + b.height / 2])).toBe(true);
-  });
-});

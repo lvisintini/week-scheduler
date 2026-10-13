@@ -89,9 +89,7 @@ aside.collapsed .help{display:none}
 .ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-2px;margin-right:3px}.ev .ic svg{width:10px;height:10px}
 .ev .flags{position:absolute;top:3px;right:4px;z-index:5;display:flex;gap:3px;color:#fff;pointer-events:none}
 .ev .flags span{display:flex}.ev .flags svg{width:13px;height:13px;filter:drop-shadow(0 1px 1px #000a)}
-.ov{position:absolute;z-index:2;pointer-events:none;border-radius:4px;opacity:.85}
-.ev{isolation:isolate;--chip:var(--c)}.ev.soft{--chip:color-mix(in srgb,var(--c) 28%,var(--card))}
-.ev.striped .r1,.ev.striped .r2{background:var(--chip);border-radius:4px;margin:0 -3px;padding:0 3px;width:fit-content;max-width:calc(100% + 6px)}.ev.striped .r1{width:auto}.ev.striped .flags{background:var(--chip);border-radius:4px;padding:1px 2px}
+.ov{position:absolute;left:3px;right:3px;z-index:2;pointer-events:none;border-radius:4px}
 .ghost{position:absolute;left:3px;right:3px;background:var(--acc);opacity:.3;border-radius:8px;pointer-events:none}
 .now{position:absolute;left:0;right:0;height:0;border-top:2px solid #e5342d;z-index:6;pointer-events:none}
 .now::before{content:'';position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:#e5342d}
@@ -128,7 +126,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 #peek hr{border:0;border-top:1px solid var(--line);margin:8px 0}.pk .pt1{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}.pk i{width:10px;height:10px;border-radius:3px;flex-shrink:0}.pk .mut{color:var(--mut)}.pk .how{margin-top:8px;color:var(--mut)}
 .zrow{display:grid;grid-template-columns:1fr auto;grid-template-areas:'l v' 's s';gap:0 6px;align-items:center;margin:2px 0 6px;font-size:12px}.zrow>span:first-child{grid-area:l}.zrow .zv{grid-area:v;color:var(--mut);white-space:nowrap}.zrow input{grid-area:s;width:100%;margin:2px 0 0;accent-color:var(--acc)}
 .zck{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:12px;cursor:pointer}.zck input{margin:0;accent-color:var(--acc)}.zreset{margin-top:4px;font-size:12px;padding:3px 10px}
-.ev.sel{z-index:5!important;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
+.ev.sel{z-index:1;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
 .err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 .cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
 .sws{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:8px}.sw{height:20px;border-radius:5px;border:1px solid #0003;padding:0}
@@ -1365,7 +1363,6 @@ function render(){
       if(rz)rz.onpointerdown=d.onpointerdown;
     });
     // stripes: per group and lane, where at least two occurrences of that lane overlap; identical neighbouring lanes are joined
-    const boxOf=new Map([...col.querySelectorAll('.ev')].filter(b=>b._it).map(b=>[b._it,b]));
     const byG=new Map();evs.forEach(it=>{const v=lv.get(it);if(!byG.has(v.g))byG.set(v.g,[]);byG.get(v.g).push(it)});
     byG.forEach(mem=>{const N=lv.get(mem[0]).n,segs=new Map(),all=[];
       for(let k=0;k<N;k++){
@@ -1374,15 +1371,12 @@ function render(){
           const key=p+'|'+q+'|'+cov.map(c=>evs.indexOf(c)).join(','),sg=segs.get(key);if(sg&&sg.l1===k-1)sg.l1=k;else{const ns={p,q,cov,l:k,l1:k};segs.set(key,ns);all.push(ns)}}
       }
       all.forEach(({p,q,cov,l,l1})=>{
-        // drawn inside the topmost box of the overlap (the one drawn last), under its text (R-EVT-14)
-        const top=cov[cov.length-1],tv=lv.get(top),bx=boxOf.get(top);if(!bx)return;
-        const o=el('div','ov',bx);if(N>1)o.dataset.lane=(l1>l?l+'-'+l1:l)+'/'+N;bx.classList.add('striped');
-        const bl=tv.l/N,bw=((tv.l1??tv.l)-tv.l+1)/N,sl=Math.max(l/N,bl),sr=Math.min((l1+1)/N,bl+bw);
-        o.style.left=((sl-bl)/bw*100)+'%';o.style.width=((sr-sl)/bw*100)+'%';
-        o.style.top=(p-Math.max(top.start,a*60))/60*HH+'px';o.style.height=(q-p)/60*HH-1+'px';
+        const o=el('div','ov',col);lanePos(o,{l,l1,n:N});
+        o.style.top=(p-a*60)/60*HH+'px';o.style.height=(q-p)/60*HH-1+'px';
         const st=[],seen=[],w=7;
         cov.forEach((c,k)=>{let cc=normHex(c.color)||c.color;if(seen.includes(cc))cc=shiftColor(cc,seen);seen.push(cc);st.push(`${cc} ${k*w}px ${(k+1)*w}px`)});
         o.style.background=`repeating-linear-gradient(45deg,${st.join(',')})`;
+        o.style.opacity=.85*Math.max(...cov.map(c=>c.op));
       });
     });
   });

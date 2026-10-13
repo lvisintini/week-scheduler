@@ -262,7 +262,7 @@ describe('R-EVT-09 Overlapping events show diagonal stripes of their colours', (
   const overlapped = (c1, c2) => fresh(blank({ events: [ev1({ id: 'a', color: c1, slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', color: c2, slots: [{ day: 0, start: 660, end: 780, person: '' }] })] }));
   it('exactly the shared time range gets a stripe overlay', () => {
     const o = overlapped('#e5484d', '#2fa66a').q('.day[data-d="0"] .ov'); expect(o).not.toBeNull();
-    expect(parseFloat(o.parentElement.style.top) + parseFloat(o.style.top)).toBe((660 - 300) / 60 * 48); expect(parseFloat(o.style.height)).toBeCloseTo(60 / 60 * 48 - 1, 0);
+    expect(o.style.top).toBe(`${(660 - 300) / 60 * 48}px`); expect(parseFloat(o.style.height)).toBeCloseTo(60 / 60 * 48 - 1, 0);
   });
   it('events that only touch do not get a stripe', () => {
     const a = fresh(blank({ events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 720, person: '' }] })] })); expect(a.qa('.ov')).toHaveLength(0);
@@ -276,7 +276,7 @@ describe('R-EVT-09 Overlapping events show diagonal stripes of their colours', (
   });
   it('the stripes follow the opacity of the most opaque event', () => {
     const a = fresh(blank({ schedules: [sched({ opacity: 0.5 })], events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: '' }] })] }));
-    expect(+a.q('.ov').parentElement.style.opacity).toBe(0.5); expect(+cssRule(a, '.ov').style.opacity).toBe(0.85);   // 0.85 × the box's 0.5
+    expect(parseFloat(a.q('.ov').style.opacity)).toBeCloseTo(0.85 * 0.5, 2);
   });
 });
 
@@ -414,34 +414,6 @@ describe('R-EVT-13 An occurrence that clashes with several parallel ones spans t
   it('many overlapping events without people are still drawn quickly as one striped lane', () => {
     const a = fresh(blank({ events: Array.from({ length: 300 }, (_, i) => at('e' + i, 'E' + i, '', 600 + (i % 8) * 15, 720)) })); const t0 = Date.now(); a.ev('render()');
     expect(Date.now() - t0).toBeLessThan(3000); expect(a.qa('.day[data-d="0"] .ev[data-lane]')).toHaveLength(0);
-  });
-});
-
-describe('R-EVT-14 Labels of overlapping events stay readable: no text bleeds through, stripes stay under the text', () => {
-  const at = (id, title, start, end, person = 'A') => ev1({ id, title, slots: [{ day: 0, start, end, person }] });
-  const box = (a, title) => a.qa('.day[data-d="0"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
-  const clash = (...evs) => fresh(blank({ people, events: evs }));
-  it('clashing events are not indented or shifted: both keep the full lane width', () => {
-    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720)); expect(box(a, 'Later').style.left).toBe(''); expect(box(a, 'Later').dataset.depth).toBeUndefined();
-  });
-  it('the stripes are drawn inside the topmost box only, which then shows its title, time and icons on solid chips', () => {
-    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 720)); const top = box(a, 'Later');
-    expect(a.qa('.ov')).toHaveLength(1); expect(a.q('.ov').parentElement).toBe(top); expect(top.classList.contains('striped')).toBe(true); expect(box(a, 'Earlier').classList.contains('striped')).toBe(false);
-    const rule = [...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || '').replace(/\s*,\s*/g, ',') === '.ev.striped .r1,.ev.striped .r2'); expect(rule.style.getPropertyValue('background')).toBe('var(--chip)');
-  });
-  it('inside the box the stripe covers its width at the shared time only', () => {
-    const a = clash(at('a', 'Earlier', 600, 720), at('b', 'Later', 615, 690)); const o = a.q('.ov');
-    expect(o.style.left).toBe('0%'); expect(o.style.width).toBe('100%'); expect(o.style.top).toBe('0px'); expect(parseFloat(o.style.height)).toBeCloseTo(75 / 60 * 48 - 1, 0);
-  });
-  it('soft-look boxes use their light tint for the chips', () => {
-    const a = clash(at('a', 'A', 600, 720)); expect([...a.d.styleSheets[0].cssRules].some(r => r.selectorText === '.ev.soft' && /color-mix/.test(r.style.getPropertyValue('--chip')))).toBe(true);
-  });
-  it('every box is its own layer, so the text of a lower box never shows through a higher one', () => {
-    const a = clash(at('a', 'A', 600, 720)); expect([...a.d.styleSheets[0].cssRules].some(r => r.selectorText === '.ev' && r.style.getPropertyValue('isolation') === 'isolate')).toBe(true);
-  });
-  it('a selected box is raised above the others', () => {
-    const a = clash(at('a', 'A', 600, 720)); const rule = [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === '.ev.sel');
-    expect(rule.style.getPropertyValue('z-index')).toBe('5'); expect(rule.style.getPropertyPriority('z-index')).toBe('important');
   });
 });
 
