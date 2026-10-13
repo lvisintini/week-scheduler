@@ -124,7 +124,7 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
   });
   it('dragging a repetition so that it newly overlaps another one shows a warning toast with Undo', async () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(5, 1320, 1440), slot(6, 30, 90)] })] }));
-    const box = a.q('.day[data-d="5"] .ev'); await dragFrom(a, box, { col: 5, min: 1435 }, { col: 6, min: 420 }, { target: box.querySelector('.rz') });
+    const box = a.q('.day[data-d="5"] .ev'); await dragFrom(a, box, { col: 5, min: 1435 }, { col: 6, min: 420 }, { target: box._rz });
     expect(slots(a)[0].end).toBe(1860); expect(a.toast()).toContain('⚠ Some repetitions now overlap'); expect(toastButtons(a)).toContain('Undo');
   });
 });
@@ -169,12 +169,12 @@ describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift cha
     expect(slots(a).map(s => s.start)).toEqual([720, 720, 720]); expect(a.ev('S.events[0].title')).toBe('Renamed');
   });
   it('resizing one repetition lengthens or shortens all of them by the same amount', async () => {
-    const a = three(); const box = a.q('.day[data-d="0"] .ev'); await dragFrom(a, box, { col: 0, min: 655 }, { col: 0, min: 690 }, { target: box.querySelector('.rz') });
+    const a = three(); const box = a.q('.day[data-d="0"] .ev'); await dragFrom(a, box, { col: 0, min: 655 }, { col: 0, min: 690 }, { target: box._rz });
     expect(slots(a).map(s => s.end - s.start)).toEqual([90, 90, 90]);
   });
   it('resizing never removes a repetition: every one keeps at least 15 minutes', async () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(1, 600, 630), slot(2, 600, 660)] })] }));
-    const box = a.q('.day[data-d="0"] .ev'); await dragFrom(a, box, { col: 0, min: 715 }, { col: 0, min: 612 }, { target: box.querySelector('.rz') });
+    const box = a.q('.day[data-d="0"] .ev'); await dragFrom(a, box, { col: 0, min: 715 }, { col: 0, min: 612 }, { target: box._rz });
     expect(slots(a)).toHaveLength(3); expect(slots(a).every(s => s.end - s.start >= 15)).toBe(true); expect(slots(a)[1].end - slots(a)[1].start).toBe(15);
   });
   it('when the whole set is moved a Sunday repetition wraps to Monday', async () => {
@@ -183,7 +183,7 @@ describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift cha
   });
   it('dragging the bottom handle into the next day\'s column extends the event past midnight', async () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(5, 1320, 1440)] })] })); const box = a.q('.day[data-d="5"] .ev');
-    await dragFrom(a, box, { col: 5, min: 1435 }, { col: 6, min: 120 }, { target: box.querySelector('.rz') });
+    await dragFrom(a, box, { col: 5, min: 1435 }, { col: 6, min: 120 }, { target: box._rz });
     expect(slots(a)[0].end).toBe(1560);
   });
   it('a single-day quick event moves freely; a quick event will not let one repetition land on a day that already has one', async () => {
@@ -204,7 +204,7 @@ describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift cha
 describe('R-REP-07 Dragging repeating events never asks for confirmation', () => {
   it('no dialog opens and no confirm box appears while moving or resizing repetitions', async () => {
     const a = three(); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 1, min: 750 });
-    const box = a.q('.day[data-d="1"] .ev'); await dragFrom(a, box, { col: 1, min: 790 }, { col: 1, min: 820 }, { target: box.querySelector('.rz') });
+    const box = a.q('.day[data-d="1"] .ev'); await dragFrom(a, box, { col: 1, min: 790 }, { col: 1, min: 820 }, { target: box._rz });
     expect(a.dlgOpen()).toBe(false); expect(a.log.confirms).toEqual([]); expect(a.log.alerts).toEqual([]);
   });
 });

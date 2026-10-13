@@ -50,7 +50,7 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     await expect(page.locator('.omenu .oi')).toHaveCount(2);
   });
   test('resize handles are taller on touch screens so a finger can hit them', async ({ page }) => {
-    await seed(page, blank({ events: [ev()] })); const h = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.ev .rz')).height)); expect(h).toBeGreaterThanOrEqual(16);
+    await seed(page, blank({ events: [ev()] })); const h = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.rz')).height)); expect(h).toBeGreaterThanOrEqual(16);
   });
   test('the page itself does not scroll or zoom sideways: the grid area does the scrolling', async ({ page }) => {
     const r = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth, body: getComputedStyle(document.body).overflow }));

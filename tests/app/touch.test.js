@@ -37,7 +37,7 @@ describe('R-TOUCH-01 Touch: scrolling stays native, long-press creates/moves/res
     const css = fresh().d.querySelector('style').textContent; expect(css).toMatch(/\.day\{[^}]*touch-action:pan-x pan-y/); expect(css).toMatch(/\.lane\{touch-action:pan-x pan-y\}/);
   });
   it('resize handles are taller on touch screens', () => {
-    expect(fresh().d.querySelector('style').textContent).toMatch(/@media\(pointer:coarse\)\{\.ev \.rz,\.phx \.rz\{height:16px\}\}/);
+    expect(fresh().d.querySelector('style').textContent).toMatch(/@media\(pointer:coarse\)\{\.rz\{height:16px\}\}/);
   });
   it('tapping an event opens it', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', move: false });

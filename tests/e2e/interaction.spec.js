@@ -164,3 +164,30 @@ test.describe('R-UI-07 Keyboard-only use of the event dialog', () => {
     await seed(page, blank()); await toolbar(page, 'add').click(); await page.keyboard.press('Escape'); await toolbar(page, 'add').click(); await expect(page.locator('#dlg')).toBeVisible();
   });
 });
+
+// The bottom edge of a box must stay grabbable when a later-drawn (or more opaque / less opaque) box overlaps it.
+const edge = (page, sel, label) => page.evaluate(([sel, label]) => { const b = [...document.querySelectorAll(sel)].find(x => x.textContent.startsWith(label)).getBoundingClientRect(), x = b.left + b.width / 2, y = b.bottom - 3, e = document.elementFromPoint(x, y);
+  return { x, y, handle: e.classList.contains('rz'), cursor: getComputedStyle(e).cursor }; }, [sel, label]);
+test.describe('R-PHS-06 Resizing a phase whose bottom edge lies inside another phase', () => {
+  const ph = (id, start, end) => ({ id, title: id, desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start, end }] });
+  for (const order of [['A', 'B'], ['B', 'A']]) {
+    test(`with the phases listed ${order.join(' then ')}, the edge shows the resize cursor and dragging it resizes the upper phase`, async ({ page }) => {
+      const P = { A: ph('A', 600, 720), B: ph('B', 660, 780) };
+      await seed(page, blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: order.map(k => P[k]) })); await page.locator('.seg button', { hasText: 'Phases' }).click();
+      const e = await edge(page, '.day[data-d="0"] .phx', 'A ·'); expect(e).toMatchObject({ handle: true, cursor: 'ns-resize' });
+      await page.mouse.move(e.x, e.y); await page.mouse.down(); await page.mouse.move(e.x, e.y + 24, { steps: 5 }); await page.mouse.up();
+      expect(await page.evaluate(() => Object.fromEntries(S.phases.map(p => [p.id, p.slots[0].end])))).toEqual({ A: 750, B: 780 });
+    });
+  }
+});
+test.describe('R-EVT-01 Resizing an event whose bottom edge lies inside another event', () => {
+  for (const op of [1, 0.5]) for (const order of [['A', 'B'], ['B', 'A']]) {
+    test(`at ${op * 100}% schedule opacity with the events listed ${order.join(' then ')}, the edge shows the resize cursor and resizes the upper event`, async ({ page }) => {
+      const E = { A: ev({ id: 'A', title: 'AAA', slots: [slot(0, 600, 720)] }), B: ev({ id: 'B', title: 'BBB', color: '#e5484d', slots: [slot(0, 660, 780)] }) };
+      await seed(page, blank({ schedules: [sched({ opacity: op })], events: order.map(k => E[k]) }));
+      const e = await edge(page, '.day[data-d="0"] .ev', 'AAA'); expect(e).toMatchObject({ handle: true, cursor: 'ns-resize' });
+      await page.mouse.move(e.x, e.y); await page.mouse.down(); await page.mouse.move(e.x, e.y + 24, { steps: 5 }); await page.mouse.up();
+      expect(await page.evaluate(() => Object.fromEntries(S.events.map(x => [x.id, x.slots[0].end])))).toEqual({ A: 750, B: 780 });
+    });
+  }
+});

@@ -140,7 +140,7 @@ describe('R-PHS-06 Events | Phases edit mode', () => {
     const a = phasesMode(); expect(a.q('#grid').classList.contains('phmode')).toBe(true); expect(a.q('.ev').onpointerdown).toBeFalsy(); expect(a.d.querySelector('style').textContent).toMatch(/\.phmode \.ev\{[^}]*opacity:\.35!important/);
   });
   it('phase boxes become interactive: dashed outline in their colour, a label and a resize handle', () => {
-    const a = phasesMode(); const box = a.q('.dw[data-d="0"] .phx'); expect(box.onpointerdown).toBeTruthy(); expect(box.style.outline).toContain('dashed'); expect(box.querySelector('.pl').textContent).toBe('Lunch · 12:00–13:00'); expect(box.querySelector('.rz')).not.toBeNull();
+    const a = phasesMode(); const box = a.q('.dw[data-d="0"] .phx'); expect(box.onpointerdown).toBeTruthy(); expect(box.style.outline).toContain('dashed'); expect(box.querySelector('.pl').textContent).toBe('Lunch · 12:00–13:00'); expect(box._rz).not.toBeNull();
     expect(a.q('#wrap').classList.contains('phm')).toBe(true);
   });
   it('in Events mode phases are pure background: no handlers, no outline', () => {
@@ -161,7 +161,7 @@ describe('R-PHS-06 Events | Phases edit mode', () => {
     const b = phasesMode(); await dragFrom(b, b.q('.dw[data-d="0"] .phx'), { col: 0, min: 750 }, { col: 0, min: 810 }, { shift: true }); expect(phaseList(b)[0].slots.map(s => s.start)).toEqual([780, 720, 720, 720, 720]);
   });
   it('resizing a phase handle changes every repetition by the same amount', async () => {
-    const a = phasesMode(); const box = a.q('.dw[data-d="0"] .phx'); await dragFrom(a, box, { col: 0, min: 775 }, { col: 0, min: 805 }, { target: box.querySelector('.rz') });
+    const a = phasesMode(); const box = a.q('.dw[data-d="0"] .phx'); await dragFrom(a, box, { col: 0, min: 775 }, { col: 0, min: 805 }, { target: box._rz });
     expect(phaseList(a)[0].slots.map(s => s.end - s.start)).toEqual([90, 90, 90, 90, 90]);
   });
   it('the lip is a drag handle for the phase in Phases mode', async () => {

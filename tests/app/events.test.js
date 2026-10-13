@@ -40,7 +40,7 @@ describe('R-EVT-01 Creating, moving, resizing and removing events', () => {
   });
   it('dragging the bottom edge resizes the event', async () => {
     const a = fresh(blank({ events: [ev1()] })); const box = a.q('.ev');
-    await dragFrom(a, box, { col: 0, min: 655 }, { col: 0, min: 706 }, { target: box.querySelector('.rz') });
+    await dragFrom(a, box, { col: 0, min: 655 }, { col: 0, min: 706 }, { target: box._rz });
     expect(events(a)[0].slots[0]).toMatchObject({ start: 600, end: 705 });
   });
   it('events may overlap other events and both stay', () => {
@@ -362,5 +362,112 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
     const a = pair(); const col = a.q('.day[data-d="0"]');
     col.oncontextmenu({ clientX: 75, clientY: a.y(690), preventDefault() {} });
     expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['B']);
+  });
+});
+
+describe('R-EVT-11 Free time: a whole event marked as free time stands out but behaves like any event', () => {
+  const freeEv = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', free: true, slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
+  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  it('the event dialog has a "Free time" checkbox under "Show as", ticked for free-time events', () => {
+    const a = fresh(blank({ events: [freeEv(), ev1({ id: 'n' })] })); open(a, 0); expect(a.q('#fFree').checked).toBe(true);
+    expect(a.q('#fFree').closest('label').textContent).toBe('Free time'); a.q('#fCancel').click(); open(a, 1); expect(a.q('#fFree').checked).toBe(false);
+  });
+  it('ticking it and saving marks the event as free time; unticking removes the mark again', () => {
+    const a = fresh(blank({ events: [ev1()] })); open(a); a.q('#fFree').checked = true; save(a); expect(events(a)[0].free).toBe(true);
+    open(a); a.q('#fFree').checked = false; save(a); expect('free' in events(a)[0]).toBe(false);
+  });
+  it('a new event can be created as free time', async () => {
+    const a = fresh(blank()); await createDrag(a, { col: 1, min: 600 }, { col: 1, min: 660 }); fillDialog(a, { title: 'Nap' }); a.q('#fFree').checked = true; save(a);
+    expect(events(a)[0]).toMatchObject({ title: 'Nap', free: true });
+  });
+  it('every repetition is drawn as a soft box in the event colour with a solid colour edge and a sun icon', () => {
+    const a = fresh(blank({ events: [freeEv()] })); const boxes = a.qa('.ev'); expect(boxes).toHaveLength(2);
+    boxes.forEach(b => { expect(b.classList.contains('free')).toBe(true); expect(b.style.getPropertyValue('--c')).toBe('#2fa66a'); expect(b.querySelector('.flags svg circle')).not.toBeNull(); });
+    const rule = cssRule(a, '.ev.free').style; expect(rule.getPropertyValue('background')).toMatch(/color-mix\(in srgb, ?var\(--c\) 28%, ?var\(--card\)\)/); expect(rule.getPropertyValue('border-left')).toMatch(/4px solid var\(--c\)/);
+  });
+  it('ordinary events are not marked', () => {
+    const a = fresh(blank({ events: [ev1()] })); expect(a.q('.ev').classList.contains('free')).toBe(false); expect(a.q('.ev .flags')).toBeNull();
+  });
+  it('screen readers, the hover card and the day agenda say "Free time"', async () => {
+    const a = fresh(blank({ events: [freeEv()] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Free time');
+    expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Free time');
+    a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Free time');
+  });
+  it('the overlap rules do not change: a free-time event sharing a person with another overlaps with stripes', () => {
+    const a = fresh(blank({ people, events: [freeEv({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'A' }] })] }));
+    expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('the mark survives copying the event and is validated on import (only true counts)', () => {
+    const a = fresh(blank({ schedules: [sched(), sched({ id: 's2', name: 'S2' })], events: [freeEv()] })); a.ev('openCopy(S.events[0])'); a.click('Copy');
+    expect(events(a).map(e => e.free)).toEqual([true, true]);
+    expect(a.ev('parseData({schedules:[],events:[{id:"x",schedules:[],slots:[{day:0,start:0,end:60}],free:"yes"}]}).events[0]').free).toBeUndefined();
+  });
+  it('the checkbox is translated and hidden for phases', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fFree').closest('label').textContent).toBe('Tiempo libre');
+    expect(a.q('#fFree').closest('.fflags').classList.contains('ev-only')).toBe(true);
+  });
+});
+
+describe('R-EVT-12 Flexible time: events or single repetitions with approximate timing get a dashed border', () => {
+  const flexAll = a => a.q('#fFlex');
+  const rowBtn = (a, day) => a.qa('#fDays .dr')[day].querySelector('.fxt');
+  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const twoDays = (f0 = false, f2 = false) => ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', ...(f0 ? { flex: true } : {}) }, { day: 2, start: 600, end: 660, person: '', ...(f2 ? { flex: true } : {}) }] });
+  it('a flexible repetition is drawn with a dashed border; the other repetitions keep the normal border', () => {
+    const a = fresh(blank({ events: [twoDays(true, false)] }));
+    const [mon, wed] = [a.q('.day[data-d="0"] .ev'), a.q('.day[data-d="2"] .ev')];
+    expect(mon.classList.contains('flex')).toBe(true); expect(mon.style.getPropertyValue('--dash')).not.toBe(''); expect(wed.classList.contains('flex')).toBe(false);
+    expect(cssRule(a, '.ev.flex').style.getPropertyValue('border')).toMatch(/2px dashed var\(--dash\)/);
+  });
+  it('the dashed border colour contrasts with the box: light on dark colours, dark on light ones', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'd', color: '#1d2330', slots: [{ day: 0, start: 600, end: 660, person: '', flex: true }] }), ev1({ id: 'y', color: '#f5c518', slots: [{ day: 1, start: 600, end: 660, person: '', flex: true }] })] }));
+    expect(a.q('.day[data-d="0"] .ev').style.getPropertyValue('--dash')).toMatch(/^#fff/); expect(a.q('.day[data-d="1"] .ev').style.getPropertyValue('--dash')).toMatch(/^#1d2330/);
+  });
+  it('screen readers, the hover card and the agenda say "Flexible time (around these times)"', () => {
+    const a = fresh(blank({ events: [twoDays(true)] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Flexible time (around these times)');
+    expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Flexible time'); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Flexible time');
+  });
+  it('the event-level checkbox makes every repetition flexible when saved', () => {
+    const a = fresh(blank({ events: [twoDays()] })); open(a); expect(flexAll(a).checked).toBe(false);
+    flexAll(a).checked = true; flexAll(a).onchange(); save(a); expect(events(a)[0].slots.map(s => s.flex)).toEqual([true, true]);
+  });
+  it('the per-day toggle makes only that repetition flexible, and the event-level checkbox then shows a mixed state', () => {
+    const a = fresh(blank({ events: [twoDays()] })); open(a); rowBtn(a, 2).click();
+    expect(rowBtn(a, 2).getAttribute('aria-pressed')).toBe('true'); expect(flexAll(a).indeterminate).toBe(true); expect(flexAll(a).checked).toBe(false);
+    save(a); expect(events(a)[0].slots.map(s => !!s.flex)).toEqual([false, true]);
+  });
+  it('opening an event with some flexible repetitions shows them pressed and the event checkbox mixed', () => {
+    const a = fresh(blank({ events: [twoDays(true, false)] })); open(a);
+    expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, false]); expect(flexAll(a).indeterminate).toBe(true);
+  });
+  it('unticking the event-level checkbox clears every repetition', () => {
+    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); expect(flexAll(a).checked).toBe(true);
+    flexAll(a).checked = false; flexAll(a).onchange(); save(a); expect(events(a)[0].slots.some(s => s.flex)).toBe(false);
+  });
+  it('a day ticked while the whole event is flexible becomes flexible too', () => {
+    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); const cb = a.qa('#fDays .dr')[4].querySelector('input'); cb.checked = true; cb.onchange();
+    save(a); expect(events(a)[0].slots.map(s => [s.day, !!s.flex])).toEqual([[0, true], [2, true], [4, true]]);
+  });
+  it('Advanced mode has the same toggle on each block, and switching modes keeps the choice', () => {
+    const a = fresh(blank({ events: [twoDays(false, true)] })); open(a); a.q('#tabA').click();
+    const bt = a.qa('#fBlocks .br .fxt'); expect(bt.map(b => b.classList.contains('on'))).toEqual([false, true]); bt[0].click(); expect(flexAll(a).checked).toBe(true);
+    a.q('#tabQ').click(); expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, true]);
+    save(a); expect(events(a)[0].slots.every(s => s.flex)).toBe(true);
+  });
+  it('dragging a flexible event keeps the mark on every repetition', async () => {
+    const a = fresh(blank({ events: [twoDays(true, false)] })); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 0, min: 690 });
+    expect(events(a)[0].slots.map(s => [s.start, !!s.flex])).toEqual([[660, true], [660, false]]);
+  });
+  it('only a true value is accepted on import, and phases never get the mark', () => {
+    const p = a => a.ev('parseData({schedules:[],rhythms:[{id:"r"}],events:[{id:"x",schedules:[],slots:[{day:0,start:0,end:60,flex:true},{day:1,start:0,end:60,flex:1}]}],phases:[{id:"p",rhythms:["r"],slots:[{day:0,start:0,end:60,flex:true}]}]})');
+    const d = p(fresh()); expect(d.events[0].slots.map(s => s.flex)).toEqual([true, undefined]); expect(d.phases[0].slots[0].flex).toBeUndefined();
+  });
+  it('the overlap rules do not change: overlapping flexible events with nobody in common still sit side by side', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: 'A', flex: true }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'B', flex: true }] })] }));
+    expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('the per-day toggles are translated when the language changes', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); expect(rowBtn(a, 0).title).toMatch(/^Horario flexible solo para esta repetición/);
+    open(a); expect(flexAll(a).closest('label').textContent).toBe('Horario flexible');
   });
 });

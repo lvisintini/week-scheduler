@@ -84,7 +84,7 @@ describe('R-SEL-02 Dragging where things overlap asks which one you mean', () =>
   it('two events whose bottom edges are close together ask which one to resize', async () => {
     const a = fresh(blank({ events: [A({ slots: [slot(0, 600, 720)] }), B({ slots: [slot(0, 660, 724)] })] }));
     const box = a.qa('.day')[0].querySelector('.ev');
-    box.onpointerdown({ clientX: a.x(0), clientY: a.y(718), button: 0, target: box.querySelector('.rz'), pointerType: 'mouse', stopPropagation() {}, preventDefault() {} });
+    box.onpointerdown({ clientX: a.x(0), clientY: a.y(718), button: 0, target: box._rz, pointerType: 'mouse', stopPropagation() {}, preventDefault() {} });
     const e = new a.w.MouseEvent('pointermove', { clientX: a.x(0), clientY: a.y(780), bubbles: true }); Object.defineProperty(e, 'pointerType', { value: 'mouse' }); a.d.dispatchEvent(e);
     expect(menuTitle(a)).toBe('Several events or repetitions here — pick the one to resize'); expect(menuItems(a)).toHaveLength(2);
   });
