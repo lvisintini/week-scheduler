@@ -139,20 +139,32 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
     const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
   });
   it('the "Fill the window width" checkbox applies at once, is remembered per browser and is disabled by "Fit to window"', () => {
-    const a = fresh(blank()); a.ev('openSettings()'); const box = () => a.qa('#xDlg .sopt').find(l => l.textContent.includes('Fill the window width')).querySelector('input');
+    const a = fresh(blank()); const box = () => a.qa('#sbin .zck').find(l => l.textContent.includes('Fill the window width')).querySelector('input');
     expect(box().checked).toBe(true); box().checked = false; box().dispatchEvent(new a.w.Event('change'));
     expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,110px)'); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).fillW).toBe(false);
-    a.ev('prefs.fit=true;openSettings()'); expect(box().disabled).toBe(true);
+    a.ev('prefs.fit=true;render()'); expect(box().disabled).toBe(true);
+  });
+  it('the zoom controls live in a collapsible Zoom section at the bottom of the sidebar, with labelled sliders', () => {
+    const a = fresh(); const sec = a.qa('#sbin .sec').at(-1); expect(sec.querySelector('.shbtn span').textContent).toBe('Zoom');
+    expect(sec.querySelector('.shbtn em')).toBeNull(); expect(sec.querySelector('.sech .eye')).toBeNull();
+    expect([...sec.querySelectorAll('.zrow input')].map(i => i.getAttribute('aria-label'))).toEqual(['Row height', 'Column width']);
+    expect([...sec.querySelectorAll('.zck')].map(l => l.textContent)).toEqual(['Fill the window width', 'Fit to window']);
+    expect(sec.querySelector('.zck').title).toMatch(/stretch/); sec.querySelector('.shbtn').click();
+    expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).secZoom).toBe(true);
+  });
+  it('the Settings dialog has nothing about zoom any more', () => {
+    const a = fresh(); a.ev('openSettings()'); expect(a.qa('#xDlg .zrow, #xDlg .zck, #xDlg input[type=range]')).toHaveLength(0);
+    expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit to window|Fill the window|Reset zoom/);
   });
   it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
     const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
   });
   it('the sliders offer 24–120 px per hour and 70–600 px per column (enough to fill a very wide screen)', () => {
-    const a = fresh(); a.ev('openSettings()'); const r = a.qa('#xDlg .zrow input');
+    const a = fresh(); const r = a.qa('#sbin .zrow input');
     expect([r[0].min, r[0].max]).toEqual(['24', '120']); expect([r[1].min, r[1].max]).toEqual(['70', '600']);
   });
   it('moving a slider applies at once and is remembered per browser', () => {
-    const a = fresh(); a.ev('openSettings()'); const r = a.q('#xDlg .zrow input'); r.value = 72; r.oninput();
+    const a = fresh(); const r = a.q('#sbin .zrow input'); r.value = 72; r.oninput();
     expect(a.ev('HH')).toBe(72); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).rowH).toBe(72);
     expect(openApp({ storage: a.storage() }).ev('HH')).toBe(72);
   });
@@ -162,10 +174,10 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
   });
   it('with "Fit to window" the columns share the width (small minimum) and the sliders are disabled', () => {
     const a = fresh(blank()); a.ev('prefs.fit=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toContain('minmax(40px');
-    a.ev('openSettings()'); expect(a.qa('#xDlg .zrow input').every(i => i.disabled)).toBe(true);
+    expect(a.qa('#sbin .zrow input').every(i => i.disabled)).toBe(true); expect(a.q('#sbin .zrow input').title).toContain('Fit to window');
   });
   it('"Reset zoom" restores 48 px per hour, 110 px columns, fill-the-width on and fit off', () => {
-    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fillW=false;prefs.fit=true;openSettings()'); a.click('Reset zoom');
+    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fillW=false;prefs.fit=true;render()'); a.q('#sbin .zreset').click();
     expect([a.ev('prefs.rowH'), a.ev('prefs.colW'), a.ev('prefs.fillW'), a.ev('prefs.fit')]).toEqual([48, 110, true, false]);
   });
   it('out-of-range stored zoom values are corrected on start (too large → maximum, too small → minimum, unusable → default)', () => {

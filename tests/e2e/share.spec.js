@@ -112,11 +112,29 @@ test.describe('R-DATA-05 Leaving the page, clearing and failing storage', () => 
   });
   test('Clear memory (after confirmation) wipes the saved data and restarts with the default workspace', async ({ page }) => {
     await openApp(page); await seed(page, rich()); await page.evaluate(() => saveMem('all')); await page.locator('.sbtop .gear').click(); page.once('dialog', d => d.accept());
-    await dialogButton(page, 'Clear memory').click(); await expect(page.locator('#toast')).toContainText('restarted');
+    await page.locator('#xDlg .stabs button', { hasText: 'Data' }).click(); await dialogButton(page, 'Clear memory').click(); await expect(page.locator('#toast')).toContainText('restarted');
     expect(await page.evaluate(() => localStorage.getItem('weekly-schedules-workspaces'))).toBeNull(); expect((await data(page)).events).toHaveLength(0);
   });
   test('when the browser refuses to store more data, the user is told instead of nothing happening', async ({ page }) => {
     await openApp(page); await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); }; });
     await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click(); await expect(page.locator('#toast')).toContainText('Browser memory is not available');
+  });
+});
+
+test.describe('R-SHARE-07 Unencrypted JSON files, downloaded and opened for real', () => {
+  test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, rich()); });
+  test('choosing Unencrypted shows the warning, hides the password and downloads readable weekly-schedules-<date>.json', async ({ page }) => {
+    await startProtect(page, 'file'); await page.locator('#xDlg .encsel button', { hasText: 'Unencrypted' }).click();
+    await expect(page.locator('#xDlg .plainwarn')).toBeVisible(); await expect(page.locator('#xDlg input[type=text]')).toBeHidden();
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), dialogButton(page, 'Save file').click()]);
+    expect(dl.suggestedFilename()).toMatch(/^weekly-schedules-\d{4}-\d{2}-\d{2}\.json$/);
+    const w = JSON.parse(fs.readFileSync(await dl.path(), 'utf8')); expect(w.people[0].name).toBe('Granny Rose'); expect(w.events[0].desc).toBe('door code 4711');
+  });
+  test('the unencrypted file opens in another browser profile without a password and imports every detail', async ({ page, browser }) => {
+    await startProtect(page, 'file'); await page.locator('#xDlg .encsel button', { hasText: 'Unencrypted' }).click();
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), dialogButton(page, 'Save file').click()]);
+    const { ctx, page: other } = await visitor(browser); await openApp(other); await other.locator('#file').setInputFiles(await dl.path());
+    await expect(other.locator('#xDlg h3')).toHaveText('Import'); await dialogButton(other, 'Import').click();
+    const d = await data(other); expect(d.events[0].title).toBe('Doctor visit'); expect(d.people[0].name).toBe('Granny Rose'); await ctx.close();
   });
 });

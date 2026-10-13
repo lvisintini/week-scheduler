@@ -115,7 +115,8 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 @media(pointer:coarse){.ev .rz,.phx .rz{height:16px}}
 #peek{position:fixed;z-index:9000;display:none;pointer-events:none;max-width:320px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:0 8px 28px #0005;font-size:12px;line-height:1.35}
 #peek hr{border:0;border-top:1px solid var(--line);margin:8px 0}.pk .pt1{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}.pk i{width:10px;height:10px;border-radius:3px;flex-shrink:0}.pk .mut{color:var(--mut)}.pk .how{margin-top:8px;color:var(--mut)}
-.zrow{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;margin:8px 0;font-size:13px}.zrow input{width:100%}.zrow .zv{color:var(--mut);text-align:right}
+.zrow{display:grid;grid-template-columns:1fr auto;grid-template-areas:'l v' 's s';gap:0 6px;align-items:center;margin:2px 0 6px;font-size:12px}.zrow>span:first-child{grid-area:l}.zrow .zv{grid-area:v;color:var(--mut);white-space:nowrap}.zrow input{grid-area:s;width:100%;margin:2px 0 0;accent-color:var(--acc)}
+.zck{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:12px;cursor:pointer}.zck input{margin:0;accent-color:var(--acc)}.zreset{margin-top:4px;font-size:12px;padding:3px 10px}
 .ev.sel{z-index:1;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
 .err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 .cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
@@ -133,7 +134,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .wsbtn{display:flex;align-items:center;gap:6px;width:100%;margin-bottom:8px;padding:6px 8px;text-align:left}.wsbtn .wsn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.wsbtn .chev svg{width:14px;height:14px}
 .omenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}.mrow{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin:8px 0}#toast.act{pointer-events:auto}#toast button{margin-left:10px;padding:2px 10px;font-size:12px;background:#fff;color:#222;border-radius:12px;border:0}
 .sopt{display:flex;gap:10px;align-items:flex-start;margin:10px 0;color:var(--fg);font-size:14px}.sopt input{margin-top:3px}.sopt small{display:block;color:var(--mut);font-size:12px;font-weight:400}
-.ssec h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.stabs{margin:0 0 12px}.plainwarn{border:1px solid #e8912d;background:#e8912d1a;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px}.plainwarn p{margin:0}.encsel{margin:8px 0}.ssec h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
 /* agenda & print */
 .agenda h1,#pr h1{font-size:18px;margin:0 0 6px}
 .pg{margin-top:6px}.pt{margin-left:18px;font-variant-numeric:tabular-nums}
@@ -190,7 +191,7 @@ clear:'Clear memory',clearTip:'Delete the data saved in this browser and restart
 viewH:'View',earlyTip:'Reveal or hide the 00:00-05:00 rows. Events in those hours are kept either way.',
 nowTip:'Red line on the current weekday column. The app has no real dates, so with a two-week rota it shows in every visible week.',
 clockTip:'Switch between the 24-hour clock and AM/PM.',
-weTip:'Hide or show the Saturday and Sunday columns.',setSide:'Show parallel events side by side',sideTip:'Events at the same time that share nobody (no common responsible or involved person) are drawn next to each other. Events that share a person, or have no people at all, are drawn on top of each other with stripes, because that may be a conflict. If the boxes get too narrow, raise the column width in Zoom and scroll sideways.',
+weTip:'Hide or show the Saturday and Sunday columns.',setSide:'Show parallel events side by side',sideTip:'Events at the same time that share nobody (no common responsible or involved person) are drawn next to each other. Events that share a person, or have no people at all, are drawn on top of each other with stripes, because that may be a conflict. If the boxes get too narrow, raise the column width in the Zoom section of the sidebar and scroll sideways.',
 printTip:'Prints the grid as shown, with the visible schedules and people listed at the top. To print just one week of a two-week rota, solo that week first.',
 schH:'Schedules',schHTip:'Tip - emulating a two-week rota: create two schedules, e.g. Week A and Week B. Put weekly events in both (tick both schedules in the event dialog) and use Copy to start Week B from Week A. Use the eye to show one or both; solo flips between them in one click.',
 pplH:'People',pplTip:'Use the eyes to choose whose calendar you see. An event with no responsible person is always shown. Otherwise it is shown when its responsible person is shown or any involved person is shown, so viewing one person hides only events led by someone else that they are not involved in.',
@@ -224,7 +225,7 @@ rhH:'Rhythms',rhTip:'A rhythm is the regular cadence of a home or workplace over
 confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will also be deleted.',rhEye:'Show this rhythm (only one rhythm can be shown at a time)',phOp:'Opacity of the phase backgrounds (all rhythms together). The tabs on the left stay fully opaque.',
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
 dRh:'Normal rhythm',dSleep:'Sleep time',dWake:'Wake time',dBreak:'Breakfast time',dWork:'Work/School time',dFree:'Free time',dLunch:'Lunch time',dDinner:'Dinner time',dBed:'Bed time',dCyc4:'4 cycles',dCyc5:'5 cycles',
-setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',lockedNote:"Locked: can't be moved or edited.",
+setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
 toLink:'Shareable link',shareTitle:'Shareable link',shareBody:'Anyone who opens this link and knows the password gets a copy of this workspace. The data is encrypted on this device before it goes into the link, and is never sent to the web server that hosts the app.',shareLen:'{n} characters.',shareFile:'The app is open from a local file, so this link only works on this computer. Host the app (e.g. GitHub Pages) to share it with others.',shareLong:'This link is very long: some apps and servers may cut it. Consider exporting a JSON file instead.',shareCopy:'Copy link',shareCopied:'Copied ✓',shareFail:'Could not create the link.',
 linkBad:'The shared link is invalid or damaged.',linkLoaded:'Shared schedule loaded',
 wsDefault:'Workspace',wsImported:'Imported workspace',wsShared:'Shared workspace',wsMenuTip:'Switch workspace, or create, rename, duplicate or delete one',wsNew:'New workspace…',wsRename:'Rename current…',wsDup:'Duplicate current',wsDel:'Delete current…',pWs:'Workspace name?',wsCopySuffix:' (copy)',confWs:'Delete workspace "{n}" and all its data? Its saved copy in browser memory stays until you save all workspaces.',wsLast:"You can't delete the only workspace.",
@@ -234,9 +235,9 @@ trTitle:'Copy or move to another workspace',trTarget:'Target workspace',trCopy:'
 mapTitle:'People',mapBody:'The events go to "{t}". For each person they refer to, choose what to do there:',mapNew:'Create "{n}" in the target workspace',mapUse:'Use existing: {n}',mapBlank:'Leave blank (no responsible person / not involved)',mapCont:'Continue',
 
 impOverPick:'Replace an existing workspace (you choose which, then confirm)',impPickTitle:'Which workspace should be replaced?',impPickBody:'Choose the workspace to replace with "{s}". Everything in it will be replaced.',impConfTitle:'Replace workspace?',impConf1:'Replace everything in the workspace "{t}" with "{s}"?',impConfUndo:'You can undo a replacement with Undo in that workspace.',impReplace:'Replace',flagActive:'active',flagId:'same id',flagName:'same name',
-tooBig:'That file or link has too many items to import safely (limits per workspace: 100 schedules, 500 people, 5,000 events, 100 rhythms, 2,000 phases, 200 repetitions each).',noCrypto:'Encryption is not available here. Use a modern browser, and open the app over https or from a local file.',protBodyLink:'Links are always password-protected: the data is encrypted on this device before it goes into the link. Anyone who has both the link and the password can read it.',protBodyFile:'Saved files are always password-protected (encrypted on this device).',
+tooBig:'That file or link has too many items to import safely (limits per workspace: 100 schedules, 500 people, 5,000 events, 100 rhythms, 2,000 phases, 200 repetitions each).',noCrypto:'Encryption is not available here. Use a modern browser, and open the app over https or from a local file.',protBodyLink:'Links are always password-protected: the data is encrypted on this device before it goes into the link. Anyone who has both the link and the password can read it.',protBodyFile:'The file is password-protected (encrypted on this device) unless you choose Unencrypted.',plainBody:'The file will contain your data as readable text, with no password.',saveFileTitle:'Save JSON file',encOn:'Encrypted (recommended)',encOff:'Unencrypted',plainWarn:'⚠ Anyone who gets this file can read everything in it: names, descriptions and the plans of the people it describes, who may be children or other vulnerable people. Think of an email that is forwarded, a shared or cloud folder, a lost USB stick or another person using this computer. Use it only as a private backup you keep safe; to send data to someone, prefer an encrypted file or tick "Leave out personal details".',
 anonTitle:'Leave out personal details',anonTip:'People become "Person 1", "Person 2"… and descriptions are removed. Titles and the names of schedules, rhythms and the workspace are kept, so check them.',protPw:'Password (at least 20 characters)',protNew:'New password',protShort:'The password must be at least 20 characters long.',
-protWarn:'Give the password to the other person by a different route than the link or file (for example by phone). Keep it safe: without it the data cannot be recovered.',protMakeLink:'Create link',protSaveFile:'Save file',protFileTitle:'Save encrypted file',anonPerson:'Person',sharePw:'Password:',shareCopyPw:'Copy password',
+protWarn:'Give the password to the other person by a different route than the link or file (for example by phone). Keep it safe: without it the data cannot be recovered.',protMakeLink:'Create link',protSaveFile:'Save file',anonPerson:'Person',sharePw:'Password:',shareCopyPw:'Copy password',
 pwTitle:'Password needed',pwAsk:'This is password-protected. Enter the password to open it.',pwShow:'Show password',pwOpen:'Open',pwWrong:'Wrong password, or the data has been altered.',pwWorking:'Checking…',
 pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
 agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
@@ -252,7 +253,7 @@ clear:'Borrar memoria',clearTip:'Elimina los datos guardados en este navegador y
 viewH:'Vista',earlyTip:'Muestra u oculta las filas de 00:00 a 05:00. Los eventos de esas horas se conservan en ambos casos.',
 nowTip:'Línea roja en la columna del día de la semana actual. La aplicación no usa fechas reales, así que con una rotación de dos semanas aparece en todas las semanas visibles.',
 clockTip:'Cambia entre el reloj de 24 horas y AM/PM.',
-weTip:'Oculta o muestra las columnas de sábado y domingo.',setSide:'Mostrar eventos simultáneos uno al lado del otro',sideTip:'Los eventos a la misma hora que no comparten a nadie (ninguna persona responsable o implicada en común) se dibujan uno al lado del otro. Los que comparten una persona, o no tienen personas, se dibujan superpuestos con rayas, porque puede ser un conflicto. Si las cajas quedan muy estrechas, aumenta el ancho de columna en Zoom y desplázate hacia los lados.',
+weTip:'Oculta o muestra las columnas de sábado y domingo.',setSide:'Mostrar eventos simultáneos uno al lado del otro',sideTip:'Los eventos a la misma hora que no comparten a nadie (ninguna persona responsable o implicada en común) se dibujan uno al lado del otro. Los que comparten una persona, o no tienen personas, se dibujan superpuestos con rayas, porque puede ser un conflicto. Si las cajas quedan muy estrechas, aumenta el ancho de columna en la sección Zoom de la barra lateral y desplázate hacia los lados.',
 printTip:'Imprime la cuadrícula tal como se ve, con los horarios y personas visibles indicados arriba. Para imprimir solo una semana de una rotación de dos semanas, pon antes esa semana en solo.',
 schH:'Horarios',schHTip:'Consejo - para emular una rotación de dos semanas: crea dos horarios, p. ej. Semana A y Semana B. Pon los eventos semanales en ambos (marca los dos horarios en el evento) y usa Copiar para crear la Semana B a partir de la A. Usa el ojo para mostrar uno o ambos; solo alterna entre ellos con un clic.',
 pplH:'Personas',pplTip:'Usa los ojos para elegir el calendario de quién ves. Un evento sin persona responsable se muestra siempre. Si no, se muestra cuando su persona responsable o alguna persona implicada está visible; así, al ver a una sola persona solo se ocultan los eventos dirigidos por otra persona en los que no participa.',
@@ -286,7 +287,7 @@ rhH:'Ritmos',rhTip:'Un ritmo es la cadencia regular de un hogar o lugar de traba
 confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} franja(s) que solo están en este ritmo.',rhEye:'Mostrar este ritmo (solo se puede mostrar uno a la vez)',phOp:'Opacidad del fondo de las franjas (todos los ritmos a la vez). Las pestañas de la izquierda siguen totalmente opacas.',
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
 dRh:'Ritmo normal',dSleep:'Hora de dormir',dWake:'Hora de despertarse',dBreak:'Hora del desayuno',dWork:'Trabajo/Escuela',dFree:'Tiempo libre',dLunch:'Hora de la comida',dDinner:'Hora de la cena',dBed:'Hora de acostarse',dCyc4:'4 ciclos',dCyc5:'5 ciclos',
-setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',lockedNote:'Bloqueado: no se puede mover ni editar.',
+setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
 toLink:'Enlace para compartir',shareTitle:'Enlace para compartir',shareBody:'Quien abra este enlace y conozca la contraseña recibe una copia de este espacio de trabajo. Los datos se cifran en este dispositivo antes de ir al enlace y nunca se envían al servidor web que aloja la aplicación.',shareLen:'{n} caracteres.',shareFile:'La aplicación está abierta desde un archivo local, así que este enlace solo funciona en este ordenador. Aloja la aplicación (p. ej. en GitHub Pages) para compartirla con otras personas.',shareLong:'Este enlace es muy largo: algunas aplicaciones y servidores pueden cortarlo. Considera exportar un archivo JSON.',shareCopy:'Copiar enlace',shareCopied:'Copiado ✓',shareFail:'No se pudo crear el enlace.',
 linkBad:'El enlace compartido no es válido o está dañado.',linkLoaded:'Horario compartido cargado',
 wsDefault:'Espacio de trabajo',wsImported:'Espacio importado',wsShared:'Espacio compartido',wsMenuTip:'Cambiar de espacio de trabajo, o crear, renombrar, duplicar o eliminar uno',wsNew:'Nuevo espacio de trabajo…',wsRename:'Renombrar el actual…',wsDup:'Duplicar el actual',wsDel:'Eliminar el actual…',pWs:'¿Nombre del espacio de trabajo?',wsCopySuffix:' (copia)',confWs:'¿Eliminar el espacio de trabajo "{n}" y todos sus datos? Su copia guardada en la memoria del navegador permanece hasta que guardes todos los espacios.',wsLast:'No puedes eliminar el único espacio de trabajo.',
@@ -296,9 +297,9 @@ trTitle:'Copiar o mover a otro espacio de trabajo',trTarget:'Espacio de destino'
 mapTitle:'Personas',mapBody:'Los eventos van a "{t}". Para cada persona a la que se refieren, elige qué hacer allí:',mapNew:'Crear "{n}" en el espacio de destino',mapUse:'Usar la existente: {n}',mapBlank:'Dejar en blanco (sin responsable / sin participar)',mapCont:'Continuar',
 
 impOverPick:'Reemplazar un espacio existente (tú eliges cuál y luego confirmas)',impPickTitle:'¿Qué espacio de trabajo reemplazar?',impPickBody:'Elige el espacio que se reemplazará por "{s}". Se reemplazará todo su contenido.',impConfTitle:'¿Reemplazar el espacio?',impConf1:'¿Reemplazar todo el contenido del espacio "{t}" por "{s}"?',impConfUndo:'Puedes deshacer un reemplazo con Deshacer en ese espacio.',impReplace:'Reemplazar',flagActive:'activo',flagId:'mismo id',flagName:'mismo nombre',
-tooBig:'Ese archivo o enlace tiene demasiados elementos para importarlo con seguridad (límites por espacio: 100 horarios, 500 personas, 5.000 eventos, 100 ritmos, 2.000 franjas, 200 repeticiones cada uno).',noCrypto:'El cifrado no está disponible aquí. Usa un navegador moderno y abre la aplicación por https o desde un archivo local.',protBodyLink:'Los enlaces siempre están protegidos con contraseña: los datos se cifran en este dispositivo antes de ir al enlace. Quien tenga el enlace y la contraseña podrá leerlos.',protBodyFile:'Los archivos guardados siempre están protegidos con contraseña (cifrados en este dispositivo).',
+tooBig:'Ese archivo o enlace tiene demasiados elementos para importarlo con seguridad (límites por espacio: 100 horarios, 500 personas, 5.000 eventos, 100 ritmos, 2.000 franjas, 200 repeticiones cada uno).',noCrypto:'El cifrado no está disponible aquí. Usa un navegador moderno y abre la aplicación por https o desde un archivo local.',protBodyLink:'Los enlaces siempre están protegidos con contraseña: los datos se cifran en este dispositivo antes de ir al enlace. Quien tenga el enlace y la contraseña podrá leerlos.',protBodyFile:'El archivo queda protegido con contraseña (cifrado en este dispositivo) salvo que elijas Sin cifrar.',plainBody:'El archivo contendrá tus datos como texto legible, sin contraseña.',saveFileTitle:'Guardar archivo JSON',encOn:'Cifrado (recomendado)',encOff:'Sin cifrar',plainWarn:'⚠ Cualquiera que consiga este archivo puede leer todo su contenido: nombres, descripciones y los planes de las personas que describe, que pueden ser niños u otras personas vulnerables. Piensa en un correo que se reenvía, una carpeta compartida o en la nube, una memoria USB perdida u otra persona que use este ordenador. Úsalo solo como copia privada que guardes bien; para enviar datos a alguien, mejor un archivo cifrado o marca "Omitir datos personales".',
 anonTitle:'Omitir datos personales',anonTip:'Las personas pasan a ser "Persona 1", "Persona 2"… y se quitan las descripciones. Se mantienen los títulos y los nombres de horarios, ritmos y del espacio de trabajo, así que revísalos.',protPw:'Contraseña (mínimo 20 caracteres)',protNew:'Nueva contraseña',protShort:'La contraseña debe tener al menos 20 caracteres.',
-protWarn:'Dale la contraseña a la otra persona por un medio distinto al del enlace o archivo (por ejemplo por teléfono). Guárdala bien: sin ella no se pueden recuperar los datos.',protMakeLink:'Crear enlace',protSaveFile:'Guardar archivo',protFileTitle:'Guardar archivo cifrado',anonPerson:'Persona',sharePw:'Contraseña:',shareCopyPw:'Copiar contraseña',
+protWarn:'Dale la contraseña a la otra persona por un medio distinto al del enlace o archivo (por ejemplo por teléfono). Guárdala bien: sin ella no se pueden recuperar los datos.',protMakeLink:'Crear enlace',protSaveFile:'Guardar archivo',anonPerson:'Persona',sharePw:'Contraseña:',shareCopyPw:'Copiar contraseña',
 pwTitle:'Se necesita contraseña',pwAsk:'Esto está protegido con contraseña. Escríbela para abrirlo.',pwShow:'Mostrar contraseña',pwOpen:'Abrir',pwWrong:'Contraseña incorrecta, o los datos han sido alterados.',pwWorking:'Comprobando…',
 pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
@@ -666,18 +667,28 @@ function askPassword(blob,onOpen,onCancel){   // ask for the password of an encr
   xdlg({title:L('pwTitle'),body,buttons:[{label:L('pwOpen'),cls:'p',fn:()=>{go();return false}},{label:L('cancel'),dismiss:true}],onDismiss:onCancel});
   setTimeout(()=>pw.focus(),0);
 }
-function openProtect(kind){   // options + password for a link or file
-  if(!hasCrypto()){alert(L('noCrypto'));return}
-  const body=el('div');el('p','note',body).textContent=L(kind==='link'?'protBodyLink':'protBodyFile');
+function openProtect(kind){   // options + password for a link or file; files may also be saved unencrypted (links never)
+  const cry=hasCrypto();if(!cry&&kind==='link'){alert(L('noCrypto'));return}
+  let plain=!cry;
+  const body=el('div'),intro=el('p','note',body);intro.textContent=L(kind==='link'?'protBodyLink':'protBodyFile');
+  const pwBox=el('div'),plainBox=el('div','plainwarn',body);let upd=()=>{};
+  if(kind==='file'){
+    const sg=el('div','seg encsel',body);body.insertBefore(sg,plainBox);
+    [[false,'encOn'],[true,'encOff']].forEach(([v,k])=>{const b=el('button','',sg);b.type='button';b.textContent=L(k);if(!v&&!cry){b.disabled=true;b.title=L('noCrypto')}b.onclick=()=>{plain=v;upd()}});
+    upd=()=>{[...sg.children].forEach((b,i)=>b.classList.toggle('on',(i===1)===plain));pwBox.hidden=plain;plainBox.hidden=!plain;intro.textContent=L(plain?'plainBody':'protBodyFile')};
+  }
+  el('p','',plainBox).textContent=L('plainWarn');
   const al=el('label','sopt',body),ac=el('input','',al),asp=el('span','',al);ac.type='checkbox';asp.innerHTML=`<b>${esc(L('anonTitle'))}</b><small>${esc(L('anonTip'))}</small>`;
-  el('label','',body).textContent=L('protPw');
-  const row=el('div','row',body),pw=el('input','',row),nb=el('button','',row);
+  body.append(pwBox);el('label','',pwBox).textContent=L('protPw');
+  const row=el('div','row',pwBox),pw=el('input','',row),nb=el('button','',row);
   pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.style.cssText='flex:1;font-family:monospace';
-  nb.type='button';nb.textContent=L('protNew');const msg=el('div','err',body);nb.onclick=()=>{pw.value=genPassword();msg.textContent=''};
-  el('p','note',body).textContent=L('protWarn');
-  xdlg({title:L(kind==='link'?'shareTitle':'protFileTitle'),body,buttons:[{label:L(kind==='link'?'protMakeLink':'protSaveFile'),cls:'p',fn:()=>{
+  nb.type='button';nb.textContent=L('protNew');const msg=el('div','err',pwBox);nb.onclick=()=>{pw.value=genPassword();msg.textContent=''};
+  el('p','note',pwBox).textContent=L('protWarn');
+  upd();if(kind==='link')plainBox.hidden=true;
+  xdlg({title:L(kind==='link'?'shareTitle':'saveFileTitle'),body,buttons:[{label:L(kind==='link'?'protMakeLink':'protSaveFile'),cls:'p',fn:()=>{
+    const anon=ac.checked;if(plain){setTimeout(()=>saveFile(null,anon),0);return}
     const p=pw.value.trim();if(p.length<20){msg.textContent=L('protShort');return false}
-    const anon=ac.checked;setTimeout(()=>kind==='link'?openShare(p,anon):saveFile(p,anon),0)}},{label:L('cancel'),dismiss:true}]});
+    setTimeout(()=>kind==='link'?openShare(p,anon):saveFile(p,anon),0)}},{label:L('cancel'),dismiss:true}]});
 }
 async function openShare(pw,anon){
   let link;
@@ -704,10 +715,9 @@ async function handleShareLink(){
     openImport(w,'link');
   },clean);
 }
-async function saveFile(pw,anon){
-  let blob;try{const f=buildFile();blob=await seal(anon?anonymised(f):f,pw)}catch(e){toast(L('shareFail'));return}
-  const text=JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(blob)});
-  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+'-encrypted.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+async function saveFile(pw,anon){   // pw null = unencrypted (readable) file, chosen explicitly by the user
+  let text;try{const f=anon?anonymised(buildFile()):buildFile();text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}
+  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+(pw==null?'':'-encrypted')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   if(!anon)cw().lf=keyOf(S);   // an anonymised copy is not a backup of this workspace
   toast(L('savedFile'));renderSide();
 }
@@ -826,9 +836,11 @@ function xdlg(o){
   d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};
   if(!d.open)d.showModal();
 }
+let setTab='viewH';   // last Settings tab shown (kept while the page is open)
 function openSettings(){
-  const body=el('div','settings');
-  const sec=k=>{const s=el('div','ssec',body);el('h4','',s).textContent=L(k);return s};
+  const body=el('div','settings'),tabs=el('div','seg stabs',body),panes={};tabs.setAttribute('role','tablist');
+  const show=k=>{setTab=k;Object.entries(panes).forEach(([n,p])=>{p.hidden=n!==k;p._b.classList.toggle('on',n===k);p._b.setAttribute('aria-selected',String(n===k))})};
+  const sec=k=>{const s=el('div','ssec',body);s.setAttribute('role','tabpanel');const b=el('button','',tabs);b.type='button';b.textContent=L(k);b.setAttribute('role','tab');b.onclick=()=>show(k);s._b=b;panes[k]=s;return s};
   const opt=(p,label,desc,get,set)=>{const l=el('label','sopt',p),i=el('input','',l);i.type='checkbox';i.checked=get();
     const s=el('span','',l);s.innerHTML=`<b>${esc(L(label))}</b><small>${esc(L(desc))}</small>`;i.onchange=()=>{set(i.checked);savePrefs();render()}};
   const v=sec('viewH');el('small','note',v).textContent=L('viewNote');
@@ -841,23 +853,14 @@ function openSettings(){
   opt(v,'setClock','clockTip',()=>prefs.clock12,x=>{prefs.clock12=x});
   opt(v,'setWE','weTip',()=>prefs.hideWeekend,x=>{prefs.hideWeekend=x});
   opt(v,'setSide','sideTip',()=>prefs.side,x=>{prefs.side=x});
-  const zs=sec('zoomH');el('small','note',zs).textContent=L('zoomNote');
-  const zsl=(label,key,min,max,step,unit)=>{const r=el('div','zrow',zs);el('span','',r).textContent=L(label);
-    const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=prefs[key];i.disabled=prefs.fit;
-    const v=el('span','zv',r);v.textContent=prefs[key]+unit;i.oninput=()=>{prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()};return i};
-  const zr=zsl('zoomRow','rowH',24,120,4,' px/h'),zc=zsl('zoomCol','colW',70,600,10,' px');
-  const fw=(()=>{const l=el('label','sopt',zs),c=el('input','',l);c.type='checkbox';c.checked=prefs.fillW;c.disabled=prefs.fit;const sp=el('span','',l);sp.innerHTML=`<b>${esc(L('zoomFill'))}</b><small>${esc(L('zoomFillTip'))}</small>`;
-   c.onchange=()=>{prefs.fillW=c.checked;savePrefs();zoomRender()};return c})();
-  {const l=el('label','sopt',zs),c=el('input','',l);c.type='checkbox';c.checked=prefs.fit;const sp=el('span','',l);sp.innerHTML=`<b>${esc(L('zoomFit'))}</b><small>${esc(L('zoomFitTip'))}</small>`;
-   c.onchange=()=>{prefs.fit=c.checked;zr.disabled=zc.disabled=fw.disabled=c.checked;savePrefs();zoomRender()}}
-  {const b=el('button','',zs);b.type='button';b.textContent=L('zoomReset');b.onclick=()=>{prefs.rowH=48;prefs.colW=110;prefs.fillW=true;prefs.fit=false;savePrefs();zoomRender();openSettings()}}
   const dt=sec('dataH');
   [['restart','restartTip',restart,''],['clear','clearTip',clearMem,'d']].forEach(([lb,tp,fn,cls])=>{
     const r=el('div','sopt',dt),b=el('button',cls,r);b.textContent=L(lb);b.style.cssText='flex:0 0 140px';b.onclick=()=>{$('xDlg').close();fn()};
     el('small','',r).textContent=L(tp)});
   const lg=sec('lang'),ls=el('select','',lg);
   [['en','English'],['es','Español']].forEach(([c,n])=>{const o=el('option','',ls);o.value=c;o.textContent=n});
-  ls.value=lang;ls.onchange=()=>{setLang(ls.value);openSettings()};
+  ls.value=lang;ls.onchange=()=>{setLang(ls.value);openSettings()};ls.setAttribute('aria-label',L('lang'));
+  show(panes[setTab]?setTab:'viewH');
   xdlg({title:L('settings'),body,buttons:[{label:L('closeB'),cls:'p'}]});
 }
 function openHelp(){
@@ -953,10 +956,10 @@ function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
 })}
 function secHead(parent,key,count,tipKey,ck,addFn,addTip){
   const h=el('div','sech',parent);
-  const b=el('button','shbtn',h);b.innerHTML=(prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span><em>${count}</em>`;
+  const b=el('button','shbtn',h);b.innerHTML=(prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span>`+(count==null?'':`<em>${count}</em>`);
   b.onclick=()=>{prefs[ck]=!prefs[ck];savePrefs();renderSide()};
   const tp=el('span','tip',h);tp.textContent='ⓘ';tp.title=L(tipKey);
-  const a=el('button','eye',h);a.innerHTML=ICON_PLUS;a.title=L(addTip);a.onclick=addFn;
+  if(addFn){const a=el('button','eye',h);a.innerHTML=ICON_PLUS;a.title=L(addTip);a.onclick=addFn}
 }
 function renderSide(){
   const sb=$('sbin'),st=sb.scrollTop;sb.innerHTML='';
@@ -1015,6 +1018,20 @@ function renderSide(){
     const orow=el('div','sch',s3),oi=el('span','ic',orow);oi.innerHTML=ICON_OPAC;oi.title=L('phOp');
     const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=S.phaseOpacity;sl.title=L('phOp');
     sl.oninput=()=>{S.phaseOpacity=+sl.value;skipSide=true;render();skipSide=false};
+  }
+  // zoom (grid scale only; per-browser view state)
+  const s4=el('div','sec zsec',body);
+  secHead(s4,'zoomH',null,'zoomNote','secZoom');
+  if(!prefs.secZoom){
+    const zsl=(label,key,min,max,step,unit)=>{const r=el('div','zrow',s4);el('span','',r).textContent=L(label);
+      const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=prefs[key];i.disabled=prefs.fit;i.setAttribute('aria-label',L(label));i.title=L(prefs.fit?'zoomOffTip':label);
+      const v=el('span','zv',r);v.textContent=prefs[key]+unit;i.oninput=()=>{prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()}};
+    zsl('zoomRow','rowH',24,120,4,' px/h');zsl('zoomCol','colW',70,600,10,' px');
+    const ck=(label,tip,key,dis)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.checked=prefs[key];c.disabled=dis;el('span','',l).textContent=L(label);l.title=L(tip);
+      c.onchange=()=>{prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};
+    ck('zoomFill','zoomFillTip','fillW',prefs.fit);ck('zoomFit','zoomFitTip','fit',false);
+    const rb=el('button','zreset',s4);rb.type='button';rb.textContent=L('zoomReset');rb.title=L('zoomResetTip');
+    rb.onclick=()=>{prefs.rowH=48;prefs.colW=110;prefs.fillW=true;prefs.fit=false;savePrefs();zoomRender();renderSide()};
   }
   sb.scrollTop=st;
 }
@@ -1375,7 +1392,7 @@ function openDlg(e,def){
   if(isAdv(slots)){fmode='adv';slots.slice().sort((a,b)=>a.day-b.day||a.start-b.start).forEach(addBlock)}else fmode='quick';
   const iv=$('fInv');iv.innerHTML='';
   if(!S.people.length)iv.textContent=L('noPeople');
-  S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=d.involved.includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
+  S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
   (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});

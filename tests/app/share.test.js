@@ -18,24 +18,34 @@ const footer = a => a.qa('#xDlg .btns button').map(b => b.textContent.trim());
 const decrypt = (a, b64) => a.ev(`unseal(unb64u(${JSON.stringify(b64)}),${JSON.stringify(PASSWORD)})`);
 const dataOf = link => link.split('#data=e1.')[1];
 
-describe('R-SHARE-01 Links and files are always password-protected', () => {
+describe('R-SHARE-01 Links are always password-protected; files are by default', () => {
   it('the Save dialog has no plain (unencrypted) export option', () => {
     const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Cancel']);
   });
-  it.each([['link', 'Create link'], ['file', 'Save file']])('the %s dialog explains the protection and only offers "%s" and Cancel (no way to skip the password)', async (kind, label) => {
-    const a = fresh(); await protectDialog(a, kind); expect(footer(a)).toEqual([label, 'Cancel']); expect(a.dlgText()).toMatch(/always password-protected/);
+  it('the link dialog explains the protection and only offers "Create link" and Cancel (no way to skip the password)', async () => {
+    const a = fresh(); await protectDialog(a, 'link'); expect(footer(a)).toEqual(['Create link', 'Cancel']); expect(a.dlgText()).toMatch(/always password-protected/);
+    expect(a.qa('#xDlg .encsel')).toHaveLength(0); expect(a.dlgText()).not.toMatch(/Unencrypted/);
+  });
+  it('the file dialog starts on "Encrypted (recommended)" with the password field, and offers "Save file" and Cancel', async () => {
+    const a = fresh(); await protectDialog(a, 'file'); expect(footer(a)).toEqual(['Save file', 'Cancel']); expect(a.dlgText()).toMatch(/password-protected \(encrypted on this device\)/);
+    expect(a.qa('#xDlg .encsel button.on').map(b => b.textContent)).toEqual(['Encrypted (recommended)']); expect(a.q('#xDlg .plainwarn').hidden).toBe(true);
   });
   it('an empty password is refused', async () => {
     const a = fresh(); await protectDialog(a, 'file'); setPw(a, ''); a.click('Save file'); expect(a.q('#xDlg .err').textContent).toBe('The password must be at least 20 characters long.'); expect(a.w.__file).toBeUndefined();
   });
-  it('the only place that creates a downloadable file in the whole app is the encrypted export', () => {
+  it('the only place that creates a downloadable file in the whole app is the JSON file export', () => {
     expect((html.match(/new Blob\(/g) || []).length).toBe(1); expect(html).toMatch(/async function saveFile[\s\S]*?new Blob/);
   });
-  it('the data that is exported is never written in the clear anywhere (no readable text in the file)', async () => {
+  it('an encrypted file never contains the data in the clear (no readable text in the file)', async () => {
     const a = fresh(); const text = await makeFile(a); expect(text).not.toMatch(/Granny|Doctor|4711|Care/);
   });
-  it('in a browser without Web Crypto exporting is refused with an explanation instead of falling back to plain data', () => {
-    const a = openApp({ crypto: false }); a.toolbar('save').click(); a.click('JSON file'); return a.sleep(10).then(() => { expect(a.log.alerts[0]).toContain('Encryption is not available here'); expect(a.w.__file).toBeUndefined(); expect(a.dlgOpen()).toBe(false); });
+  it('in a browser without Web Crypto the file dialog only allows the unencrypted choice, which must still be confirmed by the user', async () => {
+    const a = openApp({ crypto: false }); a.toolbar('save').click(); a.click('JSON file'); await a.sleep(10);
+    const [enc, plain] = a.qa('#xDlg .encsel button'); expect(enc.disabled).toBe(true); expect(enc.title).toContain('Encryption is not available here');
+    expect(plain.classList.contains('on')).toBe(true); expect(a.q('#xDlg .plainwarn').hidden).toBe(false); expect(a.w.__file).toBeUndefined();
+  });
+  it('in a browser without Web Crypto creating a link is refused with an explanation instead of falling back to plain data', () => {
+    const a = openApp({ crypto: false }); a.toolbar('save').click(); a.click('Shareable link'); return a.sleep(10).then(() => { expect(a.log.alerts[0]).toContain('Encryption is not available here'); expect(a.w.__clip).toBeUndefined(); expect(a.dlgOpen()).toBe(false); });
   });
 });
 
@@ -171,7 +181,7 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
     const a = fresh(); await makeFile(a); expect(a.toast()).toBe('Saved to JSON file');
   });
   it('contains only the current workspace, and never asks which workspaces to save', async () => {
-    const a = fresh(); a.ev('addWorkspace()'); a.ev('switchWs(WS[0].id)'); a.toolbar('save').click(); a.click('JSON file'); await a.sleep(10); expect(a.dlgTitle()).toBe('Save encrypted file');
+    const a = fresh(); a.ev('addWorkspace()'); a.ev('switchWs(WS[0].id)'); a.toolbar('save').click(); a.click('JSON file'); await a.sleep(10); expect(a.dlgTitle()).toBe('Save JSON file');
     setPw(a, PASSWORD); a.click('Save file'); await waitFor(() => a.w.__file); const w = await decrypt(a, JSON.parse(a.w.__file).data); expect(w.name).toBe('Granny care'); expect(w.events).toHaveLength(1);
   });
   it('opening it asks for the password, then offers the import choices', async () => {
@@ -196,5 +206,40 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
   it('an encrypted file opened without Web Crypto explains why it cannot be read', async () => {
     const a = fresh(); const text = await makeFile(a); const b = openApp({ crypto: false });
     b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => text }], value: '' } }); await b.sleep(30); expect(b.log.alerts[0]).toContain('Encryption is not available here');
+  });
+});
+
+describe('R-SHARE-07 Unencrypted JSON files, only when chosen, with a clear warning', () => {
+  const choosePlain = async a => { await protectDialog(a, 'file'); a.qa('#xDlg .encsel button').find(b => b.textContent === 'Unencrypted').click(); };
+  async function makePlain(a, { anon = false } = {}) { await choosePlain(a); if (anon) tick(a); a.click('Save file'); await waitFor(() => a.w.__file); return a.w.__file; }
+  it('choosing "Unencrypted" hides the password and shows a warning about who can read the file', async () => {
+    const a = fresh(); await choosePlain(a);
+    expect(a.q('#xDlg input[type=text]').closest('[hidden]')).not.toBeNull(); const w = a.q('#xDlg .plainwarn');
+    expect(w.hidden).toBe(false); expect(w.textContent).toMatch(/Anyone who gets this file can read everything/); expect(w.textContent).toMatch(/vulnerable/); expect(w.textContent).toContain('Leave out personal details');
+  });
+  it('switching back to "Encrypted" brings the password field back and hides the warning', async () => {
+    const a = fresh(); await choosePlain(a); a.qa('#xDlg .encsel button')[0].click();
+    expect(a.q('#xDlg input[type=text]').closest('[hidden]')).toBeNull(); expect(a.q('#xDlg .plainwarn').hidden).toBe(true);
+  });
+  it('the unencrypted file is readable JSON with everything in it, named weekly-schedules-<date>.json, and needs no password', async () => {
+    const a = fresh(); await choosePlain(a); setPw(a, ''); a.click('Save file'); await waitFor(() => a.w.__file);
+    const w = JSON.parse(a.w.__file); expect(a.w.__download).toMatch(/^weekly-schedules-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(w).toMatchObject({ version: 1, name: 'Granny care' }); expect(w.people[0].name).toBe('Granny Rose'); expect(w.events[0].desc).toBe('door code 4711');
+  });
+  it('an unencrypted file counts as a backup of the workspace (it is no longer marked as unsaved)', async () => {
+    const a = fresh(); expect(a.ev('isDirty()')).toBe(true); await makePlain(a); expect(a.ev('isDirty()')).toBe(false);
+  });
+  it('"Leave out personal details" also works for unencrypted files, and such a copy is not a backup', async () => {
+    const a = fresh(); const w = JSON.parse(await makePlain(a, { anon: true }));
+    expect(w.people[0].name).toBe('Person 1'); expect(JSON.stringify(w)).not.toMatch(/Rose|4711/); expect(a.ev('isDirty()')).toBe(true);
+  });
+  it('an unencrypted file opens without a password, through the usual import dialog', async () => {
+    const a = fresh(); const text = await makePlain(a); const b = openApp();
+    b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => text }], value: '' } }); await waitFor(() => b.dlgTitle() === 'Import');
+    expect(b.dlgText()).toContain('Granny care');
+  });
+  it('the choice of "Unencrypted" is never remembered: the next file dialog starts on "Encrypted" again', async () => {
+    const a = fresh(); await makePlain(a); a.w.__file = undefined; await protectDialog(a, 'file');
+    expect(a.q('#xDlg .encsel button.on').textContent).toBe('Encrypted (recommended)');
   });
 });

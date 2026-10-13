@@ -23,9 +23,15 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
     ratchet(await scan(page), { 'button-name': 1, label: 2, 'select-name': 24 });
   });
-  test('the settings dialog shows no accessibility violation beyond the known ones: unlabeled zoom sliders and language select', async ({ page }) => {
-    await openApp(page); await page.locator('.sbtop .gear').click();
-    ratchet(await scan(page), { label: 2, 'select-name': 1 });
+  for (const tab of ['View', 'Data', 'Language']) {
+    test(`the ${tab} tab of the settings dialog has no serious accessibility violation`, async ({ page }) => {
+      await openApp(page); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: tab }).click();
+      ratchet(await scan(page), {});
+    });
+  }
+  test('the Zoom section of the sidebar adds no unlabeled controls (sliders have names)', async ({ page }) => {
+    await openApp(page); await seed(page, blank());
+    const r = await new AxeBuilder({ page }).include('.zsec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
   test('the dark theme shows no accessibility violation beyond the known ones: contrast of the selected switch button', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));

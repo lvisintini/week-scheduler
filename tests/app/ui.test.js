@@ -34,8 +34,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
     expect(a.qa('.tbar button')).toHaveLength(6); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
   });
-  it('the sections are Schedules, People and Rhythms in that order', () => {
-    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Rhythms']);
+  it('the sections are Schedules, People, Rhythms and Zoom in that order', () => {
+    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Rhythms', 'Zoom']);
   });
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
@@ -46,8 +46,20 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
 });
 
 describe('R-UI-03 Settings dialog', () => {
-  it('has the sections View, Zoom, Data and Language', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg h4').map(h => h.textContent)).toEqual(['View', 'Zoom', 'Data', 'Language']);
+  const tabs = a => a.qa('#xDlg .stabs button');
+  const shown = a => a.qa('#xDlg .ssec').filter(p => !p.hidden);
+  it('has three tabs, View, Data and Language, and opens on View', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'Language']);
+    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Theme');
+  });
+  it('clicking a tab shows only that section, and the last tab is shown again when Settings is reopened', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[1].click();
+    expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Clear memory'); expect(tabs(a)[1].classList.contains('on')).toBe(true);
+    a.click('Close'); a.q('.sbtop .gear').click(); expect(tabs(a)[1].getAttribute('aria-selected')).toBe('true'); expect(shown(a)[0].textContent).toContain('Restart');
+  });
+  it('switching the language from the Language tab keeps that tab open, now in the new language', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); const sel = a.q('#xDlg select'); sel.value = 'es'; sel.onchange();
+    expect(tabs(a).map(b => b.textContent)).toEqual(['Vista', 'Datos', 'Idioma']); expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true'); expect(sel.getAttribute('aria-label')).toBeTruthy();
   });
   it('the Data section has Restart and Clear memory, each with an explanation', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgButtons()).toEqual(expect.arrayContaining(['Restart', 'Clear memory'])); expect(a.dlgText()).toContain('Discard all unsaved changes and reload what is in browser memory.');

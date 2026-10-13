@@ -245,3 +245,25 @@ describe('R-PHS-08 The default first-run rhythm', () => {
     const b = openApp(); b.ev('S.phases=[];S.rhythms=[];render()'); b.ev('clearMem()'); expect(b.ev('S.phases.length')).toBe(9);
   });
 });
+
+describe('R-PHS-06 Clicking a phase in Phases mode opens its edit dialog', () => {
+  const people = [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }];
+  for (const [what, extra] of [['without people', {}], ['when the workspace has people (phases have no involved list)', { people }]]) {
+    it(`a plain click on a phase opens the edit dialog for that phase ${what}`, async () => {
+      const a = fresh(data(extra)); modeBtn(a, 'Phases').click();
+      await dragFrom(a, a.q('.dw[data-d="0"] .phx'), { col: 0, min: 750 }, { col: 0, min: 750 }, { move: false });
+      expect(a.log.errors).toEqual([]); expect(dlgOpen(a)).toBe(true); expect(a.q('#fT').value).toBe('Lunch'); expect(a.q('#fDel').style.display).toBe('');
+    });
+  }
+  it('a click on the phase label (lip) also opens the edit dialog when the workspace has people', async () => {
+    const a = fresh(data({ people })); modeBtn(a, 'Phases').click();
+    await dragFrom(a, lips(a, 0)[0], { col: 0, min: 750 }, { col: 0, min: 750 }, { move: false });
+    expect(a.log.errors).toEqual([]); expect(dlgOpen(a)).toBe(true); expect(a.q('#fT').value).toBe('Lunch');
+  });
+  it('saving an edited phase in a workspace with people keeps it free of people fields', async () => {
+    const a = fresh(data({ people })); modeBtn(a, 'Phases').click();
+    await dragFrom(a, a.q('.dw[data-d="0"] .phx'), { col: 0, min: 750 }, { col: 0, min: 750 }, { move: false });
+    a.q('#fT').value = 'Long lunch'; a.q('#fOk').click();
+    const p = phaseList(a)[0]; expect(p.title).toBe('Long lunch'); expect(p.involved).toBeUndefined(); expect(p.slots.every(s => s.person === undefined)).toBe(true);
+  });
+});
