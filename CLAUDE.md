@@ -136,7 +136,7 @@ Threat model: a static, client-only app (no server, accounts, network calls or t
 - Geometry: each day = `.dw` wrapper = `.lane` (outside-left, lips and `.lbg` bands) + `.day`; header cells `.dh` pad by the lane and draw their left separator (and the weekend hue, header only) with background gradients offset by `var(--lane)`.
 
 ## 14. Testing
-**Run:** `npm install`, then `npm test` (Vitest + jsdom, 793 tests, ~2.5 min), `npx playwright install` once, then `npm run test:e2e` (Playwright, 114 tests, ~4 min; Chromium + a Pixel 5 profile for `touch.spec.js`; `ALL_BROWSERS=1` adds Firefox/WebKit, which have not been run yet), `npm run lint`. CI: `.github/workflows/tests.yml` (lint + fast tests + Chromium on every push, all browsers nightly).
+**Run:** `npm install`, then `npm test` (Vitest 5 + jsdom, 793 tests, ~40 s), `npx playwright install` once (on WSL or a fresh Linux machine also `sudo npx playwright install-deps` once, otherwise Chromium can't start and *every* e2e test fails with `error while loading shared libraries`), then `npm run test:e2e` (Playwright, 114 tests, ~4 min; Chromium + a Pixel 5 profile for `touch.spec.js`; `ALL_BROWSERS=1` adds Firefox/WebKit, which have not been run yet), `npm run lint`. CI: `.github/workflows/tests.yml` (lint + fast tests + Chromium on every push, all browsers nightly).
 
 **Layout**
 - `tests/unit/` pure logic through the page's own functions (time, colours, visibility rules, validation, encryption, translations).

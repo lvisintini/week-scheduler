@@ -34,8 +34,9 @@ The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test                    # 793 fast tests (jsdom), about 2.5 minutes
+npm test                    # 793 fast tests (jsdom), about 40 seconds
 npx playwright install      # once: downloads the test browsers
+sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
 npm run test:e2e            # 114 real-browser tests (Chromium + a phone profile), about 4 minutes
 npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
