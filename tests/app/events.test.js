@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep } from '../helpers/app.js';
+import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep, pointer } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
@@ -276,5 +276,91 @@ describe('R-EVT-09 Overlapping events show diagonal stripes of their colours', (
   it('the stripes follow the opacity of the most opaque event', () => {
     const a = fresh(blank({ schedules: [sched({ opacity: 0.5 })], events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: '' }] })] }));
     expect(parseFloat(a.q('.ov').style.opacity)).toBeCloseTo(0.85 * 0.5, 2);
+  });
+});
+
+describe('R-EVT-10 Parallel events that share nobody are drawn side by side', () => {
+  // Ann leads 'a' (10:00–12:00), Bob leads 'b' (11:00–13:00) on Monday unless overridden
+  const pair = (oa = {}, ob = {}, data = {}) => fresh(blank({ people, events: [
+    ev1({ id: 'a', title: 'A', color: '#e5484d', slots: [{ day: 0, start: 600, end: 720, person: 'A' }], ...oa }),
+    ev1({ id: 'b', title: 'B', color: '#2fa66a', slots: [{ day: 0, start: 660, end: 780, person: 'B' }], ...ob })], ...data }));
+  const box = (a, title, day = 0) => a.qa(`.day[data-d="${day}"] .ev`).find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  const lane = b => { const v = b.dataset.lane; if (!v) return null; const [l, n] = v.split('/').map(Number); return l / n; };
+  const down = (a, el, x, min) => el.onpointerdown({ clientX: x, clientY: a.y(min), button: 0, target: el, pointerType: 'mouse', shiftKey: false, stopPropagation() {}, preventDefault() {} });
+  it('overlapping events led by different people get one half of the column each and no stripes', () => {
+    const a = pair(); expect([lane(box(a, 'A')), lane(box(a, 'B'))]).toEqual([0, 0.5]);
+    expect(box(a, 'A').dataset.lane).toBe('0/2'); expect(box(a, 'A').style.width).not.toBe(''); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('overlapping events led by the same person stay on top of each other with stripes (a conflict)', () => {
+    const a = pair({}, { slots: [{ day: 0, start: 660, end: 780, person: 'A' }] });
+    expect([lane(box(a, 'A')), lane(box(a, 'B'))]).toEqual([null, null]); expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('a person involved in one event and responsible for the other also counts as shared, so they overlap with stripes', () => {
+    const a = pair({}, { involved: ['A'] }); expect(lane(box(a, 'B'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('two events that only share an involved person overlap with stripes', () => {
+    const a = pair({ involved: ['C'] }, { involved: ['C'] }); expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('an event without any people overlaps the other with stripes, as before', () => {
+    const a = pair({}, { slots: [{ day: 0, start: 660, end: 780, person: '' }] }); expect(lane(box(a, 'A'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('an event with only involved people (no responsible person) still goes side by side with someone else', () => {
+    const a = pair({}, { involved: ['C'], slots: [{ day: 0, start: 660, end: 780, person: '' }] }); expect(lane(box(a, 'B'))).toBe(0.5); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('lanes follow the order of the People list, not the order of the events', () => {
+    const a = pair({}, {}, { people: [people[1], people[0], people[2]] }); expect([lane(box(a, 'B')), lane(box(a, 'A'))]).toEqual([0, 0.5]);
+  });
+  it('lanes are counted per group of overlapping events: an event that overlaps nothing keeps the full width', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A' }] }), ev1({ id: 'b', title: 'B', slots: [{ day: 0, start: 600, end: 660, person: 'B' }] }), ev1({ id: 'c', title: 'C', slots: [{ day: 0, start: 900, end: 960, person: 'C' }] })] }));
+    expect(lane(box(a, 'C'))).toBeNull(); expect(box(a, 'C').style.width).toBe('');
+  });
+  it('a clash inside one lane is striped only within that lane', () => {
+    const a = fresh(blank({ people, events: [
+      ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'a2', title: 'A2', slots: [{ day: 0, start: 660, end: 690, person: 'A' }] }),
+      ev1({ id: 'b', title: 'B', slots: [{ day: 0, start: 600, end: 720, person: 'B' }] })] }));
+    expect([lane(box(a, 'A')), lane(box(a, 'A2')), lane(box(a, 'B'))]).toEqual([0, 0, 0.5]);
+    const ov = a.qa('.ov'); expect(ov).toHaveLength(1); expect(ov[0].dataset.lane).toBe('0/2');
+  });
+  it('the rule is applied per repetition: each day uses that repetition’s responsible person', () => {
+    const a = pair({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 1, start: 600, end: 720, person: 'B' }] },
+      { slots: [{ day: 0, start: 660, end: 780, person: 'B' }, { day: 1, start: 660, end: 780, person: 'B' }] });
+    expect(lane(box(a, 'A', 0))).toBe(0); expect(a.qa('.day[data-d="0"] .ov')).toHaveLength(0);
+    expect(lane(box(a, 'A', 1))).toBeNull(); expect(a.qa('.day[data-d="1"] .ov')).toHaveLength(1);
+  });
+  it('overlapping repetitions of the same event stay on top of each other even with different people', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'B' }] })] }));
+    expect(a.qa('.day[data-d="0"] .ev').map(lane)).toEqual([null, null]); expect(a.qa('.ov')).toHaveLength(1);
+  });
+  it('only visible occurrences take a lane: hiding a person gives the other event the full width', () => {
+    const a = pair({}, {}, { people: [people[0], { ...people[1], visible: false }, people[2]] });
+    expect(box(a, 'B')).toBeUndefined(); expect(lane(box(a, 'A'))).toBeNull();
+  });
+  it('turning the setting off brings back the overlapping view with stripes, and it is remembered per browser', () => {
+    const a = pair(); expect(a.ev('prefs.side')).toBe(true);
+    a.ev('openSettings()'); const cb = a.qa('#xDlg .sopt').find(l => l.textContent.includes('Show parallel events side by side')).querySelector('input');
+    expect(cb.checked).toBe(true); cb.checked = false; cb.dispatchEvent(new a.w.Event('change'));
+    expect(lane(box(a, 'A'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
+    expect(JSON.parse(a.storage()['weekly-schedules-prefs']).side).toBe(false);
+  });
+  it('the settings tooltip explains the rule and the column-width workaround in both languages', () => {
+    const a = pair();
+    expect(a.ev("L('sideTip')")).toMatch(/share a person.*stripes.*column width/s);
+    a.ev("setLang('es')"); expect(a.ev("L('sideTip')")).toMatch(/comparten una persona.*rayas.*ancho de columna/s);
+  });
+  it('a click on the left half opens the left event directly instead of the chooser; the right half opens the other', () => {
+    for (const [x, title] of [[25, 'A'], [75, 'B']]) {
+      const a = pair(); const b = box(a, title); down(a, b, x, 690); pointer(a, 'pointerup', { x, y: a.y(690) });
+      expect(a.qa('.omenu')).toHaveLength(0); expect(dlgOpen(a)).toBe(true); expect(a.q('#fT').value).toBe(title);
+    }
+  });
+  it('dragging a side-by-side event moves it directly, without asking which event was meant', () => {
+    const a = pair(); down(a, box(a, 'A'), 25, 690);
+    pointer(a, 'pointermove', { x: 25, y: a.y(750) }); pointer(a, 'pointerup', { x: 25, y: a.y(750) });
+    expect(a.qa('.omenu')).toHaveLength(0); expect(events(a).map(e => e.slots[0].start)).toEqual([660, 660]);
+  });
+  it('right-click Copy lists only the event in the lane under the pointer', () => {
+    const a = pair(); const col = a.q('.day[data-d="0"]');
+    col.oncontextmenu({ clientX: 75, clientY: a.y(690), preventDefault() {} });
+    expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['B']);
   });
 });

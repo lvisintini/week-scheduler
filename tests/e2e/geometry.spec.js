@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, pt, boxOf } from './helpers.js';
+import { openApp, seed, blank, ev, slot, pt, boxOf, person } from './helpers.js';
 
 const rhythmData = (extra = {}) => blank({
   events: [ev({ id: 'a', title: 'Morning', slots: [slot(0, 600, 720)] })],
@@ -84,9 +84,12 @@ test.describe('R-GRID-07 Zoom in a real browser', () => {
     const fs = () => page.evaluate(() => [getComputedStyle(document.querySelector('.ev .t')).fontSize, getComputedStyle(document.querySelector('.times span')).fontSize, getComputedStyle(document.querySelector('.dh:not(.c)')).fontSize]);
     const before = await fs(); await page.evaluate(() => { prefs.rowH = 120; prefs.colW = 250; render(); }); expect(await fs()).toEqual(before);
   });
-  test('the column width setting is the minimum width of a column', async ({ page }) => {
-    await page.evaluate(() => { prefs.colW = 220; prefs.collapsed = true; applyPrefs(); render(); });
-    const w = await page.evaluate(() => document.querySelector('.day').getBoundingClientRect().width); expect(w).toBeGreaterThanOrEqual(219);
+  test('the column width setting is the exact width of a column: wide weeks scroll sideways, narrow ones are not stretched', async ({ page }) => {
+    const m = () => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth }; });
+    await page.evaluate(() => { prefs.colW = 260; prefs.collapsed = true; applyPrefs(); render(); });
+    let r = await m(); expect(r.day).toBeCloseTo(260, 0); expect(r.scroll).toBeGreaterThan(0);
+    await page.evaluate(() => { prefs.colW = 70; render(); });
+    r = await m(); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0);
   });
   test('"Fit to window" makes the whole day fit without vertical scrolling', async ({ page }) => {
     await page.evaluate(() => { prefs.fit = true; render(); });
@@ -130,5 +133,25 @@ test.describe('R-GRID-02 Hidden early hours in a real browser', () => {
     await openApp(page); const h0 = await boxOf(page.locator('.day').first());
     await page.evaluate(() => { prefs.showEarly = true; render(); }); const h1 = await boxOf(page.locator('.day').first());
     expect(h1.height - h0.height).toBeCloseTo(5 * 48, 0);
+  });
+});
+
+test.describe('R-EVT-10 Side-by-side events in a real browser', () => {
+  test.beforeEach(async ({ page }) => {
+    await openApp(page, { prefs: { colW: 240 } });
+    await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })], events: [
+      ev({ id: 'a', title: 'Swimming', color: '#e5484d', slots: [slot(0, 600, 720, 'A')] }), ev({ id: 'b', title: 'Homework', color: '#2fa66a', slots: [slot(0, 660, 780, 'B')] })] }));
+  });
+  test('the two boxes share the column width without covering each other and stay inside the column', async ({ page }) => {
+    const col = await boxOf(page.locator('.day').first()), a = await boxOf(page.locator('.ev', { hasText: 'Swimming' })), b = await boxOf(page.locator('.ev', { hasText: 'Homework' }));
+    expect(a.x + a.width).toBeLessThanOrEqual(b.x); expect(a.x).toBeGreaterThanOrEqual(col.x); expect(b.x + b.width).toBeLessThanOrEqual(col.x + col.width + 0.5);
+    expect(a.width).toBeGreaterThan(col.width * 0.4); expect(b.width).toBeGreaterThan(col.width * 0.4); expect(await page.locator('.ov').count()).toBe(0);
+  });
+  test('a real click on each box opens that event directly, with no chooser', async ({ page }) => {
+    for (const t of ['Swimming', 'Homework']) {
+      const b = await boxOf(page.locator('.ev', { hasText: t })); await page.mouse.click(b.x + b.width / 2, b.y + b.height - 12);
+      await expect(page.locator('#dlg')).toBeVisible(); expect(await page.locator('.omenu').count()).toBe(0); await expect(page.locator('#fT')).toHaveValue(t);
+      await page.keyboard.press('Escape'); await expect(page.locator('#dlg')).toBeHidden();
+    }
   });
 });

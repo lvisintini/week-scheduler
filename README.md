@@ -7,7 +7,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser â€
 - Multiple **schedules** that toggle on/off to overlay different views of the same week
 - Events with title, description, responsible person, involved people, colour
 - Events repeat on chosen days, with per-day times and per-day responsible person
-- Overlapping events render as diagonal stripes of the overlapping colours
+- Overlapping events that share a person (or have no people) render as diagonal stripes of the overlapping colours; events at the same time that share nobody sit side by side
 - **People** list that works like schedules (toggle to show/hide their events)
 - Drag to create, move (across days) and resize events
 - Day agenda (click a day header) with print support; printable weekly schedule
@@ -34,10 +34,10 @@ The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test                    # 793 fast tests (jsdom), about 40 seconds
+npm test                    # 812 fast tests (jsdom), about 40 seconds
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
-npm run test:e2e            # 114 real-browser tests (Chromium + a phone profile), about 4 minutes
+npm run test:e2e            # 116 real-browser tests (Chromium + a phone profile), about 4 minutes
 npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```

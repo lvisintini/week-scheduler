@@ -132,8 +132,11 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
     const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=96;render()');
     expect(a.ev('HH')).toBe(96); expect(parseFloat(a.q('.ev').style.height)).toBeCloseTo(95, 0); expect(a.qa('.times span')[1].style.top).toBe('96px');
   });
-  it('the column width slider sets the minimum width of the columns', () => {
-    const a = fresh(blank()); a.ev('prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(200px,1fr))');
+  it('the column width slider sets the exact width of the columns (no stretching), so a wide week scrolls sideways', () => {
+    const a = fresh(blank()); a.ev('prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+  });
+  it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
+    const a = fresh(blank()); a.ev('prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
   });
   it('the sliders offer 24–120 px per hour and 70–260 px per column', () => {
     const a = fresh(); a.ev('openSettings()'); const r = a.qa('#xDlg .zrow input');
@@ -163,7 +166,7 @@ describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
     expect(b.ev('prefs.rowH')).toBe(48); expect(b.ev('prefs.colW')).toBe(110);
   });
   it('a visible rhythm adds its 18 px label lane to every column', () => {
-    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(128px,1fr))');
+    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,128px)');
   });
   it('the text size is not touched by zoom (no font size is set on the grid)', () => {
     const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=120;render()');
