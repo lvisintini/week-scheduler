@@ -476,7 +476,9 @@ describe('R-EVT-11 Activity type: each event has at most one type, shown by its 
 });
 
 describe('R-EVT-12 Flexible time: events or single repetitions with approximate timing get a dashed border', () => {
-  const flexAll = a => a.q('#fFlex');
+  const tim = a => a.q('#fTim');
+  const setTim = (a, v) => { tim(a).value = v; tim(a).onchange(); };
+  const pick = (a, btn, k) => { btn.click(); a.q(`.tmpop .oi[data-tm="${k}"]`).click(); };
   const rowBtn = (a, day) => a.qa('#fDays .dr')[day].querySelector('.fxt');
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
   const twoDays = (f0 = false, f2 = false) => ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', ...(f0 ? { flex: true } : {}) }, { day: 2, start: 600, end: 660, person: '', ...(f2 ? { flex: true } : {}) }] });
@@ -494,22 +496,22 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
     const a = fresh(blank({ events: [twoDays(true)] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Flexible time (around these times)');
     expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Flexible time'); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Flexible time');
   });
-  it('the event-level checkbox makes every repetition flexible when saved', () => {
-    const a = fresh(blank({ events: [twoDays()] })); open(a); expect(flexAll(a).checked).toBe(false);
-    flexAll(a).checked = true; flexAll(a).onchange(); save(a); expect(events(a)[0].slots.map(s => s.flex)).toEqual([true, true]);
+  it('the Timing list set to "Flexible (around these times)" makes every repetition flexible when saved', () => {
+    const a = fresh(blank({ events: [twoDays()] })); open(a); expect(tim(a).value).toBe('');
+    setTim(a, 'flex'); save(a); expect(events(a)[0].slots.map(s => s.flex)).toEqual([true, true]);
   });
-  it('the per-day toggle makes only that repetition flexible, and the event-level checkbox then shows a mixed state', () => {
-    const a = fresh(blank({ events: [twoDays()] })); open(a); rowBtn(a, 2).click();
-    expect(rowBtn(a, 2).getAttribute('aria-pressed')).toBe('true'); expect(flexAll(a).indeterminate).toBe(true); expect(flexAll(a).checked).toBe(false);
+  it('the per-day toggle opens a popover; choosing flexible there marks only that repetition and the Timing list shows "Mixed"', () => {
+    const a = fresh(blank({ events: [twoDays()] })); open(a); pick(a, rowBtn(a, 2), 'flex');
+    expect(rowBtn(a, 2).getAttribute('aria-pressed')).toBe('true'); expect(a.q('.tmpop')).toBeNull(); expect(tim(a).value).toBe('mix'); expect(tim(a).querySelector('[value=mix]').hidden).toBe(false);
     save(a); expect(events(a)[0].slots.map(s => !!s.flex)).toEqual([false, true]);
   });
-  it('opening an event with some flexible repetitions shows them pressed and the event checkbox mixed', () => {
+  it('opening an event with some flexible repetitions shows them pressed and the Timing list "Mixed"', () => {
     const a = fresh(blank({ events: [twoDays(true, false)] })); open(a);
-    expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, false]); expect(flexAll(a).indeterminate).toBe(true);
+    expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, false]); expect(tim(a).value).toBe('mix');
   });
-  it('unticking the event-level checkbox clears every repetition', () => {
-    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); expect(flexAll(a).checked).toBe(true);
-    flexAll(a).checked = false; flexAll(a).onchange(); save(a); expect(events(a)[0].slots.some(s => s.flex)).toBe(false);
+  it('setting the Timing list to Fixed clears every repetition', () => {
+    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); expect(tim(a).value).toBe('flex'); expect(tim(a).querySelector('[value=mix]').hidden).toBe(true);
+    setTim(a, ''); save(a); expect(events(a)[0].slots.some(s => s.flex)).toBe(false);
   });
   it('a day ticked while the whole event is flexible becomes flexible too', () => {
     const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); const cb = a.qa('#fDays .dr')[4].querySelector('input'); cb.checked = true; cb.onchange();
@@ -517,7 +519,7 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
   });
   it('Advanced mode has the same toggle on each block, and switching modes keeps the choice', () => {
     const a = fresh(blank({ events: [twoDays(false, true)] })); open(a); a.q('#tabA').click();
-    const bt = a.qa('#fBlocks .br .fxt'); expect(bt.map(b => b.classList.contains('on'))).toEqual([false, true]); bt[0].click(); expect(flexAll(a).checked).toBe(true);
+    const bt = a.qa('#fBlocks .br .fxt'); expect(bt.map(b => b.classList.contains('on'))).toEqual([false, true]); pick(a, bt[0], 'flex'); expect(tim(a).value).toBe('flex');
     a.q('#tabQ').click(); expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, true]);
     save(a); expect(events(a)[0].slots.every(s => s.flex)).toBe(true);
   });
@@ -533,8 +535,126 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
     const a = fresh(blank({ people, events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: 'A', flex: true }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'B', flex: true }] })] }));
     expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
   });
-  it('the per-day toggles are translated when the language changes', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); expect(rowBtn(a, 0).title).toMatch(/^Horario flexible solo para esta repetición/);
-    open(a); expect(flexAll(a).closest('label').textContent).toBe('Horario flexible');
+  it('the per-day toggles and the Timing list are translated when the language changes', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); expect(rowBtn(a, 0).title).toMatch(/^Horas solo de esta repetición/);
+    open(a); expect([...tim(a).options].map(o => o.textContent)).toEqual(['Fijas', 'Inicio/fin flexible', 'Flexibles (alrededor de estas horas)', 'Mixto (por día)']);
+    expect([...a.qa('#dlg label')].some(l => l.textContent === 'Horas')).toBe(true); expect(tim(a).getAttribute('aria-label')).toBe('Horas');
+  });
+});
+
+describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that never cause stripes or lanes', () => {
+  const y = m => `${(m - 300) / 60 * 48}px`;
+  const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15 }], ...o });
+  const pickup = (person = 'B', start = 1005, o = {}) => ev1({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [{ day: 0, start, end: 1050, person, ...o }] });
+  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const tim = a => a.q('#fTim');
+  const rowBtn = (a, day) => a.qa('#fDays .dr')[day].querySelector('.fxt');
+  const col0 = a => a.q('.day[data-d="0"]');
+  it('the core is a normal box and the margins continue it above and below, with only the outer corners rounded', () => {
+    const a = fresh(blank({ people, events: [work()] })), core = a.q('.ev'), t = a.q('.mg.t'), b = a.q('.mg.b');
+    expect(core.style.top).toBe(y(570)); expect(parseFloat(core.style.height)).toBeCloseTo((1005 - 570) / 60 * 48, 1);
+    expect([t.style.top, t.style.height]).toEqual([y(540), '24px']); expect([b.style.top, b.style.height]).toEqual([y(1005), '12px']);
+    expect([core.style.borderRadius, t.style.borderRadius, b.style.borderRadius]).toEqual(['0px 0px 0px 0px', '8px 8px 0px 0px', '0px 0px 8px 8px']);
+    expect(core.classList.contains('flex')).toBe(false); expect(core._mg).toEqual([t, b]);
+  });
+  it('margins have a dashed border in the event colour and a translucent tint, with no border towards the core', () => {
+    const a = fresh(blank({ people, events: [work()] })); const r = cssRule(a, '.mg').style;
+    expect(r.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/); expect(r.getPropertyValue('background')).toMatch(/color-mix\(in srgb, ?var\(--c\) 30%, ?transparent\)/);
+    expect(cssRule(a, '.mg.t').style.getPropertyValue('border-bottom')).toMatch(/^(0|0px|medium none)/); expect(a.q('.mg').style.getPropertyValue('--c')).toBe('#3b6df0');
+  });
+  it('every margin comes before every core box in the day column, so a core always covers the margins of other events', () => {
+    const a = fresh(blank({ people, events: [pickup('B', 990, { fe: 30 }), work()] })), kids = [...col0(a).children];
+    const mg = a.qa('.mg').map(m => kids.indexOf(m)), cores = a.qa('.ev').map(c => kids.indexOf(c));
+    expect(mg.length).toBe(3); expect(Math.max(...mg)).toBeLessThan(Math.min(...cores)); expect(kids.indexOf(col0(a).querySelector('.gl'))).toBeLessThan(Math.min(...mg));
+  });
+  it('where two margins overlap, the one that starts later is drawn on top', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'x', slots: [{ day: 0, start: 600, end: 690, person: 'A', fe: 30 }] }), ev1({ id: 'z', slots: [{ day: 0, start: 645, end: 720, person: 'B', fs: 30 }] })] }));
+    expect(a.qa('.mg').map(m => m.style.top)).toEqual([y(645), y(660)]);
+  });
+  it('no stripes where a core only overlaps the margin of another event, even when they share a person', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('A')] })); expect(a.qa('.ov')).toHaveLength(0);
+    const b = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }] }), pickup('A')] })); expect(b.qa('.ov')).toHaveLength(1);
+  });
+  it('stripes between two cores cover only the cores, not the margins around them', () => {
+    const a = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A', fe: 15 }] }), pickup('A', 975)] })), ov = a.qa('.ov');
+    expect(ov).toHaveLength(1); expect(ov[0].style.top).toBe(y(975)); expect(parseFloat(ov[0].style.height)).toBeCloseTo(30 / 60 * 48 - 1, 1);
+  });
+  it('parallel events that touch only through a margin both keep the full column width (no side-by-side lanes)', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('B')] })); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual([undefined, undefined]);
+    const b = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }] }), pickup('B')] })); expect(b.qa('.ev').map(x => x.dataset.lane)).toEqual(['0/2', '1/2']);
+  });
+  it('when cores overlap and the events go side by side, their margins follow their lanes', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('B', 960)] })); expect(a.q('.mg.b').dataset.lane).toBe('0/2'); expect(a.q('.mg.t').dataset.lane).toBe('0/2');
+  });
+  it('repetitions that overlap only in their margins are not warned about', () => {
+    const a = fresh(); const set = (s1, s2) => a.ev(`overlapSet(${JSON.stringify([s1, s2])}).size`);
+    expect(set({ day: 0, start: 600, end: 690, fe: 30 }, { day: 0, start: 660, end: 720 })).toBe(0); expect(set({ day: 0, start: 600, end: 690 }, { day: 0, start: 660, end: 720 })).toBe(2);
+    expect(set({ day: 6, start: 1380, end: 1500, fe: 60 }, { day: 0, start: 0, end: 60, fs: 30 })).toBe(0);
+  });
+  it('the pointer over a margin covered by another core picks that core only; over margins alone it finds the margin', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('B')] }));
+    expect(a.ev('piecesAt(0,1010,true).map(x=>x.e.id)')).toEqual(['p']); expect(a.ev('piecesAt(0,550,true).map(x=>x.e.id)')).toEqual(['w']);
+    const b = fresh(blank({ people, events: [work(), pickup('B', 1005, { fs: 15 })] })); expect(b.ev('piecesAt(0,1010,true).map(x=>x.e.id)')).toEqual(['w', 'p']);
+  });
+  it('dragging a margin moves the whole event and the margins come along', async () => {
+    const a = fresh(blank({ people, events: [work()] })); await dragFrom(a, a.q('.mg.t'), { col: 0, min: 550 }, { col: 1, min: 610 });
+    expect(events(a)[0].slots[0]).toMatchObject({ day: 1, start: 600, end: 1080, fs: 30, fe: 15 });
+  });
+  it('resizing keeps the margin lengths and shrinks them (end margin first) when the core would drop below 15 minutes', async () => {
+    const a = fresh(blank({ people, events: [work()] })); let box = a.q('.ev');
+    await dragFrom(a, box, { col: 0, min: 1017 }, { col: 0, min: 735 }, { target: box._rz }); expect(events(a)[0].slots[0]).toMatchObject({ start: 540, end: 735, fs: 30, fe: 15 });
+    box = a.q('.ev'); await dragFrom(a, box, { col: 0, min: 732 }, { col: 0, min: 585 }, { target: box._rz });
+    const s = events(a)[0].slots[0]; expect([s.end, s.fs, s.fe]).toEqual([585, 30, undefined]);
+  });
+  it('the resize handle sits at the outer end of the bottom margin', () => {
+    const a = fresh(blank({ people, events: [work()] })); expect(a.q('.ev')._rz.style.top).toBe(y(1020));
+  });
+  it('a piece past midnight that is all margin is drawn as a dashed box with the title and keeps the full width', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 1320, end: 1470, person: 'A', fe: 30 }] }), ev1({ id: 'o', slots: [{ day: 1, start: 0, end: 60, person: 'B' }] })] }));
+    a.ev('prefs.showEarly=true;render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
+    expect(tue).not.toBeNull(); expect(tue.dataset.lane).toBeUndefined(); expect(tue.querySelector('.t').textContent).toBe('Event'); expect(tue._rz).toBeTruthy();
+    expect(cssRule(a, '.ev.mgo').style.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/);
+  });
+  it('screen readers, the hover card and the agenda give the flexible start and end times', () => {
+    const a = fresh(blank({ people, events: [work()] })), note = 'Start between 09:00 and 09:30 · Finish between 16:45 and 17:00';
+    expect(a.q('.ev').getAttribute('aria-label')).toContain(note); expect(a.ev('peekHTML(piecesAt(0,600,true))')).toContain(note);
+    a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain(note);
+    a.ev("setLang('es')"); expect(a.q('.ev').getAttribute('aria-label')).toContain('Empieza entre las 09:00 y las 09:30 · Termina entre las 16:45 y las 17:00');
+  });
+  it('import snaps margins to 15 minutes, keeps at least 15 minutes of core, ignores them on flexible-time slots and phases', () => {
+    const d = fresh().ev('parseData({schedules:[],rhythms:[{id:"r"}],events:[{id:"x",schedules:[],slots:[{day:0,start:600,end:720,fs:31,fe:-5},{day:1,start:600,end:660,fs:45,fe:45},{day:2,start:600,end:660,fs:15,flex:true},{day:3,start:600,end:660,fs:"x"}]}],phases:[{id:"p",rhythms:["r"],slots:[{day:0,start:0,end:60,fs:15}]}]})');
+    expect(d.events[0].slots.map(({ fs, fe, flex }) => [fs, fe, flex])).toEqual([[30, undefined, undefined], [45, undefined, undefined], [undefined, undefined, true], [undefined, undefined, undefined]]);
+    expect(d.phases[0].slots[0].fs).toBeUndefined();
+  });
+  it('the Timing list "Flexible start/end" shows two lists (15 min each by default) and applies them to every repetition', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }, { day: 2, start: 540, end: 1020, person: '' }] })] })); open(a);
+    expect(a.q('#fEdge').style.display).toBe('none'); tim(a).value = 'edge'; tim(a).onchange(); expect(a.q('#fEdge').style.display).toBe('');
+    expect([a.q('#fFs').value, a.q('#fFe').value]).toEqual(['15', '15']); a.q('#fFs').value = '30'; a.q('#fFs').onchange();
+    expect(rowBtn(a, 2).textContent).toBe('+30−15'); a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[30, 15], [30, 15]]);
+  });
+  it('a margin of 0 is not stored, and both at 0 means fixed times', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }] })] })); open(a);
+    tim(a).value = 'edge'; tim(a).onchange(); a.q('#fFe').value = '0'; a.q('#fFe').onchange(); a.q('#fOk').click(); expect(events(a)[0].slots[0]).not.toHaveProperty('fe'); expect(events(a)[0].slots[0].fs).toBe(15);
+  });
+  it('the per-day popover sets flexible start/end for one repetition only, and the Timing list then shows "Mixed"', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }, { day: 2, start: 540, end: 1020, person: '' }] })] })); open(a);
+    rowBtn(a, 2).click(); a.q('.tmpop .oi[data-tm="edge"]').click(); const [fs, fe] = a.qa('.tmpop select');
+    expect([fs.value, fe.value]).toEqual(['15', '15']); expect([fs.getAttribute('aria-label'), fe.getAttribute('aria-label')]).toEqual(['Flexible start', 'Flexible end']);
+    fe.value = '60'; fe.onchange(); expect(tim(a).value).toBe('mix'); expect(rowBtn(a, 2).title).toContain('may start up to 15 min late and finish up to 1 h early');
+    a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[undefined, undefined], [15, 60]]);
+  });
+  it('opening an event with flexible start/end shows it in the list and in the day toggles; Advanced mode keeps it', () => {
+    const a = fresh(blank({ people, events: [work()] })); open(a);
+    expect(tim(a).value).toBe('edge'); expect([a.q('#fFs').value, a.q('#fFe').value]).toEqual(['30', '15']); expect(rowBtn(a, 0).classList.contains('on')).toBe(true);
+    a.q('#tabA').click(); expect(a.q('#fBlocks .fxt').textContent).toBe('+30−15'); a.q('#fOk').click(); expect(events(a)[0].slots[0]).toMatchObject({ fs: 30, fe: 15 });
+  });
+  it('the two kinds of flexible time exclude each other on one repetition', () => {
+    const a = fresh(blank({ people, events: [work()] })); open(a); tim(a).value = 'flex'; tim(a).onchange(); a.q('#fOk').click();
+    expect(events(a)[0].slots[0]).toMatchObject({ flex: true }); expect(events(a)[0].slots[0]).not.toHaveProperty('fs');
+  });
+  it('saving refuses margins that leave less than 15 minutes of fixed time, naming the day', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 3, start: 540, end: 600, person: '' }] })] })); open(a);
+    tim(a).value = 'edge'; tim(a).onchange(); a.q('#fFs').value = '30'; a.q('#fFs').onchange(); a.q('#fFe').value = '30'; a.q('#fFe').onchange(); a.q('#fOk').click();
+    expect(a.q('#err').textContent).toBe('Thursday: the flexible start and end must leave at least 15 minutes of fixed time.'); expect(dlgOpen(a)).toBe(true);
   });
 });

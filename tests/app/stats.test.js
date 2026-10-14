@@ -144,3 +144,22 @@ describe('R-STAT-04 Copying, downloading and printing the statistics', () => {
     const a = two(); a.ev('openStats("A")'); a.click('Print'); expect(a.w.__printed).toContain('Statistics — Ann'); expect(a.w.__printed).toContain('sttab'); expect(a.dlgOpen()).toBe(true);
   });
 });
+
+describe('R-EVT-15 R-STAT-02 Flexible start/end in the statistics', () => {
+  it('flexible margins count as planned time and are added to the hatched "of which flexible" part', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ id: 'w', type: 'tw', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15 }] })] }));
+    const s = stats(a); expect(s.planned).toBe(480); expect(s.by).toEqual({ tw: 480 }); expect(s.fx).toEqual({ tw: 45 }); expect(s.flex).toBe(45);
+  });
+  it('a core beats a margin: the overlapped margin time goes to the other event and is not counted as overlapping', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ id: 'w', type: 'tw', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fe: 15 }] }), at('p', 0, 1005, 1050)] }));
+    const s = stats(a); expect(s.planned).toBe(510); expect(s.by).toEqual({ tw: 465, '': 45 }); expect(s.overlap).toBe(0); expect(s.places).toBe(0); expect(s.flex).toBe(0);
+  });
+  it('margin against margin is split evenly, counts as flexible and is not counted as overlapping', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ id: 'x', type: 'tw', slots: [{ day: 0, start: 540, end: 600, person: 'A', fe: 30 }] }), ev1({ id: 'z', type: 'tf', slots: [{ day: 0, start: 570, end: 630, person: 'A', fs: 30 }] })] }));
+    const s = stats(a); expect(s.by).toEqual({ tw: 45, tf: 45 }); expect(s.fx).toEqual({ tw: 15, tf: 15 }); expect(s.overlap).toBe(0);
+  });
+  it('cores that overlap are still double-booked and counted as overlapping', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ id: 'w', type: 'tw', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fe: 15 }] }), at('p', 0, 960, 1050)] }));
+    const s = stats(a); expect(s.overlap).toBe(45); expect(s.places).toBe(1); expect(s.by).toEqual({ tw: 420 + 22.5, '': 45 + 22.5 });
+  });
+});
