@@ -766,8 +766,8 @@ describe('R-EVT-17 Background activities of external people are slim strips that
     expect(col0(a).querySelectorAll('.bgb')).toHaveLength(1); expect([bb.style.top, bb.style.height]).toEqual([st.style.top, st.style.height]); expect(bb.style.right).toBe('14px');
     expect(bb.style.getPropertyValue('--c')).toBe('#12a5b5'); expect(a.q('.day[data-d="1"] .bgb')).toBeNull();
   });
-  it('the band fades from 30 % of the colour next to the strip to transparent at the left, and never takes the pointer', () => {
-    const r = cssRule(fresh(), '.bgb').style; expect(r.getPropertyValue('background')).toMatch(/linear-gradient\(to left, ?color-mix\(in srgb, ?var\(--c\) 30%, ?transparent\), ?transparent\)/);
+  it('the band starts in the full event colour next to the strip, fades to transparent at the left, and never takes the pointer', () => {
+    const r = cssRule(fresh(), '.bgb').style; expect(r.getPropertyValue('background')).toMatch(/linear-gradient\(to left, ?var\(--c\), ?transparent\)/);
     expect(r.getPropertyValue('pointer-events')).toBe('none'); expect(r.getPropertyValue('left')).toBe('0');
   });
   it('the band lies under the hour lines, the flexible margins and every box', () => {
