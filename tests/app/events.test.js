@@ -658,3 +658,92 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     expect(a.q('#err').textContent).toBe('Thursday: the flexible start and end must leave at least 15 minutes of fixed time.'); expect(dlgOpen(a)).toBe(true);
   });
 });
+
+describe('R-EVT-16 Involved people only on call: available, not busy', () => {
+  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const ann = (o = {}) => ev1({ id: 'a', title: 'Homework', slots: [{ day: 0, start: 600, end: 720, person: 'A' }], ...o });
+  const bobWithAnn = (o = {}) => ev1({ id: 'b', title: 'Repairs', color: '#2fa66a', involved: ['A'], slots: [{ day: 0, start: 630, end: 690, person: 'B' }], ...o });
+  it('the dialog has a labelled checkbox under the involved people; ticking it saves oncall:true, unticking removes it', () => {
+    const a = fresh(blank({ people, events: [bobWithAnn()] })); open(a); const cb = a.q('#fOnCall');
+    expect(cb.checked).toBe(false); expect(cb.closest('label').textContent).toBe('Involved people are only on call'); expect(cb.closest('label').title).toMatch(/^They are only available/);
+    cb.checked = true; save(a); expect(events(a)[0].oncall).toBe(true);
+    open(a); expect(a.q('#fOnCall').checked).toBe(true); a.q('#fOnCall').checked = false; save(a); expect(events(a)[0]).not.toHaveProperty('oncall');
+  });
+  it('people on call never make an event clash: it goes side by side with their own activities, without stripes', () => {
+    const a = fresh(blank({ people, events: [ann(), bobWithAnn({ oncall: true })] })); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
+    const b = fresh(blank({ people, events: [ann(), bobWithAnn()] })); expect(b.qa('.ov').length).toBeGreaterThan(0);
+  });
+  it('the responsible person still clashes, and an on-call event without a responsible person still clashes with everything', () => {
+    const a = fresh(blank({ people, events: [ann(), bobWithAnn({ oncall: true, slots: [{ day: 0, start: 630, end: 690, person: 'A' }] })] })); expect(a.qa('.ov').length).toBeGreaterThan(0);
+    const b = fresh(blank({ people, events: [ann(), bobWithAnn({ oncall: true, slots: [{ day: 0, start: 630, end: 690, person: '' }] })] })); expect(b.qa('.ov').length).toBeGreaterThan(0);
+  });
+  it('box, screen readers, hover card and agenda say "On call:" instead of "With:"', () => {
+    const a = fresh(blank({ people, events: [bobWithAnn({ oncall: true })] })), box = a.q('.ev');
+    expect(box.querySelector('.wi').textContent).toBe('On call: Ann'); expect(box.getAttribute('aria-label')).toContain('On call: Ann');
+    expect(a.ev('peekHTML(piecesAt(0,640,true))')).toContain('On call:'); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('On call: Ann');
+    a.ev("setLang('es')"); expect(a.q('.ev .wi').textContent).toBe('De guardia: Ann');
+  });
+  it('the people filter still shows the event when only an on-call person is shown', () => {
+    const a = fresh(blank({ people: [people[0], { ...people[1], visible: false }], events: [bobWithAnn({ oncall: true })] })); expect(a.qa('.ev')).toHaveLength(1);
+  });
+  it('import accepts the flag only when it is exactly true', () => {
+    const d = fresh().ev('parseData({schedules:[],events:[{id:"x",schedules:[],oncall:true,slots:[{day:0,start:0,end:60}]},{id:"y",schedules:[],oncall:1,slots:[{day:0,start:0,end:60}]}]})');
+    expect(d.events.map(e => e.oncall)).toEqual([true, undefined]);
+  });
+  it('the checkbox is translated', () => {
+    const a = fresh(blank({ people, events: [bobWithAnn()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fOnCall').closest('label').textContent).toBe('Las personas implicadas solo están de guardia');
+  });
+});
+
+describe('R-EVT-17 Background activities of external people are slim strips that never clash', () => {
+  const ppl = [...people, person({ id: 'X', name: 'Cleaner', color: '#12a5b5', external: true })];
+  const clean = (o = {}) => ev1({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [{ day: 0, start: 600, end: 780, person: 'X' }], ...o });
+  const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A' }], ...o });
+  const col0 = a => a.q('.day[data-d="0"]');
+  const at = (a, x, m) => a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return piecesAt(0,${m},true,fxAt(c,${x})).map(i=>i.e.id)})()`);
+  it('an activity led by an external person without involved people is a strip on the right, not a box', () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs');
+    expect(a.qa('.ev')).toHaveLength(0); expect(st.dataset.strip).toBe('0/1'); expect(st.style.right).toBe('3px'); expect(st.style.top).toBe(`${(600 - 300) / 60 * 48}px`);
+    expect(cssRule(a, '.bgs').style.getPropertyValue('width')).toBe('8px'); expect(st.getAttribute('aria-label')).toBe('Cleaning, 10:00–13:00, By: Cleaner (external)');
+  });
+  it('with involved people on call it is still a strip; with normally involved people it is a normal box with the usual rules', () => {
+    expect(fresh(blank({ people: ppl, events: [clean({ involved: ['A'], oncall: true })] })).qa('.bgs')).toHaveLength(1);
+    const a = fresh(blank({ people: ppl, events: [clean({ involved: ['A'] }), work()] })); expect(a.qa('.bgs')).toHaveLength(0); expect(a.qa('.ev')).toHaveLength(2); expect(a.qa('.ov').length).toBeGreaterThan(0);
+  });
+  it('a column with strips reserves a gutter for them; other columns do not', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }, { day: 1, start: 540, end: 1020, person: 'A' }] })] }));
+    expect(col0(a).style.getPropertyValue('--gut')).toBe('10px'); expect(a.q('.day[data-d="1"]').style.getPropertyValue('--gut')).toBe('');
+    expect(cssRule(a, '.ev').style.getPropertyValue('right')).toMatch(/^calc\(3px \+ var\(--gut, ?0px\)\)$/);
+  });
+  it('a strip never takes a lane or causes stripes, even next to an event without a responsible person', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), work(), ev1({ id: 'n', title: 'Nobody', slots: [{ day: 0, start: 600, end: 660, person: '' }] })] }));
+    expect(a.qa('.ov').length).toBeGreaterThan(0); expect(new Set(a.qa('.ov').map(o => o.style.top))).toEqual(new Set([`${(600 - 300) / 60 * 48}px`]));   // only Work × Nobody
+    const b = fresh(blank({ people: ppl, events: [clean(), work()] })); expect(b.qa('.ov')).toHaveLength(0); expect(b.q('.ev').dataset.lane).toBeUndefined();
+  });
+  it('overlapping strips sit next to each other in a wider gutter', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), clean({ id: 'g', title: 'Garden', slots: [{ day: 0, start: 720, end: 840, person: 'X' }] })] }));
+    expect(a.qa('.bgs').map(s => [s.dataset.strip, s.style.right])).toEqual([['0/2', '3px'], ['1/2', '13px']]); expect(col0(a).style.getPropertyValue('--gut')).toBe('20px');
+  });
+  it('the pointer near the right edge finds the strip; elsewhere it finds the boxes, never the strip', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), work()] }));
+    expect(at(a, 98, 630)).toEqual(['c']); expect(at(a, 50, 630)).toEqual(['w']); expect(at(a, 92, 630)).toEqual(['c']); expect(at(a, 85, 630)).toEqual(['w']);
+  });
+  it('a strip opens, moves and resizes like an event', async () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })); let st = a.q('.bgs');
+    await dragFrom(a, st, { col: 0, min: 610 }, { col: 1, min: 670 }); expect(events(a)[0].slots[0]).toMatchObject({ day: 1, start: 660, end: 840 });
+    st = a.q('.bgs'); expect(st._rz).toBeTruthy(); await dragFrom(a, st, { col: 1, min: 835 }, { col: 1, min: 900 }, { target: st._rz }); expect(events(a)[0].slots[0].end).toBe(900);
+    st = a.q('.bgs'); await dragFrom(a, st, { col: 1, min: 700 }, { col: 1, min: 700 }, { move: false }); expect(dlgOpen(a)).toBe(true); expect(a.q('#fT').value).toBe('Cleaning');
+  });
+  it('locked strips are click-through and get no resize handle; in Phases mode strips are inert', () => {
+    const a = fresh(blank({ people: ppl, schedules: [sched({ locked: true })], events: [clean()] })); expect(a.q('.bgs').classList.contains('locked')).toBe(true); expect(a.q('.bgs')._rz).toBeUndefined();
+    expect(cssRule(a, '.phmode .bgs').style.getPropertyValue('pointer-events')).toBe('none');
+  });
+  it('flexible start/end shows as a lighter part of the strip, flexible time as a dashed strip', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 600, end: 780, person: 'X', fs: 60 }] }), clean({ id: 'f', slots: [{ day: 1, start: 600, end: 780, person: 'X', flex: true }] })] }));
+    expect(a.q('.day[data-d="0"] .bgs').style.background).toContain('linear-gradient'); expect(a.q('.day[data-d="1"] .bgs').classList.contains('flex')).toBe(true);
+  });
+  it('a strip shows the hover card with its title, person and times', () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })); const h = a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return peekHTML(piecesAt(0,630,true,fxAt(c,98)))})()`);
+    expect(h).toContain('Cleaning'); expect(h).toContain('By: Cleaner'); expect(h).toContain('10:00–13:00');
+  });
+});

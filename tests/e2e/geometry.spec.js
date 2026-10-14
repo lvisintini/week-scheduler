@@ -196,6 +196,22 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
+test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
+  test.beforeEach(async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'X', name: 'Cleaner', external: true })], events: [
+      ev({ id: 'w', title: 'Work', slots: [slot(0, 540, 1020, 'A')] }), ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [slot(0, 600, 780, 'X')] })] }));
+  });
+  test('the strip is 8 px wide at the right edge of the day, and the box beside it stops before the gutter', async ({ page }) => {
+    const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), w = await boxOf(page.locator('.ev', { hasText: 'Work' }));
+    expect(Math.round(st.width)).toBe(8); expect(Math.abs((col.x + col.width - 3) - (st.x + st.width))).toBeLessThan(1.5);
+    expect(w.x + w.width).toBeLessThanOrEqual(st.x - 1); expect(w.width).toBeGreaterThan(col.width - 6 - 10 - 2);
+  });
+  test('clicking the strip with a real mouse opens its event, clicking the box beside it opens the box', async ({ page }) => {
+    await page.locator('.bgs').click(); await expect(page.locator('#fT')).toHaveValue('Cleaning'); await page.keyboard.press('Escape');
+    await page.locator('.ev', { hasText: 'Work' }).click({ position: { x: 20, y: 200 } }); await expect(page.locator('#fT')).toHaveValue('Work');
+  });
+});
+
 test.describe('R-UI-03 The settings dialog in a real browser', () => {
   test('switching tabs never changes the size of the dialog (the largest tab sets it)', async ({ page }) => {
     await openApp(page); await page.locator('.sbtop .gear').click(); const sizes = [];

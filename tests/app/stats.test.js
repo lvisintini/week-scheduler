@@ -163,3 +163,20 @@ describe('R-EVT-15 R-STAT-02 Flexible start/end in the statistics', () => {
     const s = stats(a); expect(s.overlap).toBe(45); expect(s.places).toBe(1); expect(s.by).toEqual({ tw: 420 + 22.5, '': 45 + 22.5 });
   });
 });
+
+describe('R-PPL-03 R-EVT-16 R-STAT-02 External people and on-call involvement in the statistics', () => {
+  const ppl = [...people, person({ id: 'X', name: 'Cleaner', color: '#12a5b5', external: true })];
+  it('external people are not in the person picker, the Everyone view or the table behind it', () => {
+    const a = fresh(blank({ people: ppl, events: [at('c', 0, 600, 720, 'X')] })); a.ev('openStats()');
+    expect([...a.q('#xDlg select').options].map(o => o.textContent)).toEqual(['Ann', 'Bob', 'Everyone']);
+    expect(a.ev('statsRows("*",true).map(r=>r[0])')).toEqual(['Person', 'Ann', 'Bob']);
+    const sel = a.q('#xDlg select'); sel.value = '*'; sel.onchange(); expect(a.qa('#xDlg .stp .stn').map(x => x.textContent)).toEqual(['Ann', 'Bob']);
+  });
+  it('with only external people the dialog explains that people are needed', () => {
+    const a = fresh(blank({ people: [ppl[2]] })); a.ev('openStats()'); expect(a.dlgOpen()).toBe(false); expect(a.toast()).toContain('Add people');
+  });
+  it('on-call involvement does not count, even with "Include time as involved person" on; normal involvement does', () => {
+    const a = fresh(blank({ people: ppl, events: [ev1({ id: 'c', oncall: true, involved: ['A'], slots: [{ day: 0, start: 600, end: 720, person: 'X' }] }), ev1({ id: 'm', involved: ['A'], slots: [{ day: 1, start: 600, end: 660, person: 'B' }] })] }));
+    expect(stats(a, 'A', true).planned).toBe(60); expect(stats(a, 'B', true).planned).toBe(60);
+  });
+});

@@ -145,8 +145,8 @@ describe('R-PPL-01 The People list works like the schedule list', () => {
     const a = withPeople(); const input = peopleRows(a)[0].querySelector('input[type=text]'); input.value = 'Anna'; input.onchange(); expect(a.ev('S.people[0].name')).toBe('Anna');
     a.toolbar('undo').click(); expect(a.ev('S.people[0].name')).toBe('Ann');
   });
-  it('the people menu offers Colour…, Statistics… and Delete', () => {
-    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Statistics…', 'Delete']);
+  it('the people menu offers Colour…, Statistics…, External (not one of us) and Delete', () => {
+    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Statistics…', 'External (not one of us)', 'Delete']);
   });
   it('deleting a person asks for confirmation and removes them from every event (responsible and involved)', () => {
     const a = fresh(blank({ people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ involved: ['A', 'B'], slots: [{ day: 0, start: 600, end: 660, person: 'A' }] })] }));
@@ -184,5 +184,38 @@ describe('R-PPL-02 People can be reordered in the sidebar (the order sets the si
   });
   it('the grip label is translated into Spanish', () => {
     const a = fresh(blank({ people: [person()] }), { languages: ['es'] }); expect(grips(a)[0].getAttribute('aria-label')).toBe('Mover Ann');
+  });
+});
+
+describe('R-PPL-03 External people (someone from outside the household, e.g. a cleaner)', () => {
+  const ppl = () => fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'C', name: 'Cleaner', color: '#12a5b5' })] }));
+  const extItem = a => a.qa('.omenu .oi').find(b => b.textContent.trim().startsWith('External'));
+  it('the person menu toggles "External (not one of us)" with a tick and an explanatory tooltip; it is undoable data', () => {
+    const a = ppl(); moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).title).toMatch(/^For someone from outside the household/); expect(extItem(a).querySelector('svg')).toBeNull();
+    menuClick(a, 'External'); expect(a.ev('S.people[1].external')).toBe(true); expect(a.ev('isDirty()')).toBe(true);
+    moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).querySelector('svg')).not.toBeNull(); a.key('Escape');
+    a.toolbar('undo').click(); expect(a.ev('S.people[1].external')).toBeUndefined();
+  });
+  it('switching it off again removes the flag instead of storing false', () => {
+    const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); menuClick(a, 'External'); expect(a.ev('"external" in S.people[1]')).toBe(false);
+  });
+  it('an external person row shows a labelled "external" marker; others do not', () => {
+    const a = ppl(); a.ev('S.people[1].external=true;render()');
+    expect(peopleRows(a)[0].querySelector('.extb')).toBeNull(); expect(peopleRows(a)[1].querySelector('.extb').getAttribute('aria-label')).toBe('External (not one of us)');
+  });
+  it('the menu of an external person has no Statistics… entry', () => {
+    const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); expect(menu(a)).toEqual(['Colour…', 'External (not one of us)', 'Delete']);
+  });
+  it('in the event dialog the responsible list marks external people, and they can still be chosen or involved', () => {
+    const a = ppl(); a.ev('S.people[1].external=true;render();openDlg()');
+    expect([...a.q('#fP').options].map(o => o.textContent)).toEqual(['— none —', 'Ann', 'Cleaner (external)']); expect(a.qa('#fInv label').map(l => l.textContent)).toEqual(['Ann', 'Cleaner']);
+    a.ev("setLang('es')"); a.ev('openDlg()'); expect(a.q('#fP').options[2].textContent).toBe('Cleaner (externa)');
+  });
+  it('import accepts the flag only when it is exactly true', () => {
+    const d = fresh().ev('parseData({schedules:[],events:[],people:[{id:"a",name:"A",external:true},{id:"b",name:"B",external:"yes"},{id:"c",name:"C"}]})');
+    expect(d.people.map(q => q.external)).toEqual([true, undefined, undefined]);
+  });
+  it('anonymised exports keep the flag', () => {
+    const a = ppl(); a.ev('S.people[1].external=true'); expect(a.ev('anonymised(buildFile()).people.map(q=>[q.name,!!q.external])')).toEqual([['Person 1', false], ['Person 2', true]]);
   });
 });

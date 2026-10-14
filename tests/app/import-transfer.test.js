@@ -219,3 +219,21 @@ describe('R-DATA-04 Copying and moving schedules and rhythms to another workspac
     const a = withPhases(); await transfer(a, 'rhythm'); expect(a.dlgOpen()).toBe(false);
   });
 });
+
+describe('R-PPL-03 External people keep their flag when inserted or copied to another workspace', () => {
+  async function importFile(a, obj) {
+    a.d.getElementById('file').onchange({ target: { files: [{ name: 'x.json', text: async () => JSON.stringify(obj) }], value: '' } });
+    await a.sleep(30);
+  }
+  it('"Insert into the current workspace" keeps an external person external', async () => {
+    const a = fresh(); await importFile(a, workspace({ people: [{ id: 'p1', name: 'Cleaner', color: '#f00000', visible: true, external: true }] }));
+    a.qa('#xDlg input[name=impm]').find(r => r.value === 'insert').checked = true; a.click('Import');
+    expect(a.ev('S.people.map(q=>[q.name,!!q.external])')).toEqual([['Cleaner', true]]);
+  });
+  it('a schedule transfer that creates the person in the target keeps the flag', async () => {
+    const a = fresh(); setData(a, blank({ people: [person({ id: 'C', name: 'Cleaner', external: true })], events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'C' }] })] }));
+    a.ev("const t=newWs('Target',defaultData(),true);WS.push(t);render()"); a.ev('openTransfer("schedule",S.schedules[0])');
+    a.click('Continue'); await a.sleep(20); a.click('Continue'); await a.sleep(20);
+    expect(a.ev('WS[1].data.people.map(q=>[q.name,!!q.external])')).toEqual([['Cleaner', true]]);
+  });
+});

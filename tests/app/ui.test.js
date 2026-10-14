@@ -41,7 +41,7 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
   it('the Help button opens a "How to use" dialog with fourteen tips', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li')).toHaveLength(14);
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li')).toHaveLength(15);
   });
 });
 
