@@ -100,6 +100,7 @@ aside.collapsed .help{display:none}
 .bgs span{writing-mode:vertical-rl;font-size:10px;font-weight:600;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;padding:3px 0;pointer-events:none}
 .bgs.flex{background:color-mix(in srgb,var(--c) 45%,transparent);border:2px dashed var(--c);border-left-width:0}.bgs.flex span{line-height:12px}.bgs.sel{box-shadow:0 0 0 2px var(--acc)}
 .phmode .bgs{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}
+.bgb{position:absolute;left:0;right:var(--gut,0px);pointer-events:none;background:linear-gradient(to left,color-mix(in srgb,var(--c) 30%,transparent),transparent)}.phmode .bgb{filter:saturate(.4)}
 .ev .ic{background:#fff;border-radius:50%;padding:1px;vertical-align:-2px;margin-right:3px}.ev .ic svg{width:10px;height:10px}
 .ev .flags{position:absolute;top:3px;right:4px;z-index:5;display:flex;gap:3px;color:#fff;pointer-events:none}
 .ev .flags span{display:flex}.ev .flags svg{width:13px;height:13px;filter:drop-shadow(0 1px 1px #000a)}
@@ -1460,6 +1461,10 @@ function render(){
         if(c0>0)lb.style.paddingTop=c0+3+'px'}   // the text starts where the solid core starts
       else if(it.ce<=it.cs){d.style.background=`color-mix(in srgb,${e.color} 40%,transparent)`;d.style.color='var(--fg)'}
       if(it.cont)d.style.borderRadius=it.piece?'0 0 6px 0':'0 6px 0 0';
+      // the band: the strip's colour fading leftwards across the column, under the hour lines and every box; purely visual (only the lip takes the pointer)
+      const bb=el('div','bgb');bb.style.cssText=`top:${d.style.top};height:${d.style.height};right:${r0+SW}px;opacity:${it.op*(s.flex?.5:it.ce<=it.cs?.45:1)}`;bb.style.setProperty('--c',e.color);
+      if(!s.flex&&it.ce>it.cs&&(it.cs>top||it.ce<it.end)){const c0=px(it.cs)-px(top),c1=px(it.ce)-px(top),mk=`linear-gradient(#00000073 0 ${c0}px,#000 ${c0}px ${c1}px,#00000073 ${c1}px)`;bb.style.maskImage=mk;bb.style.webkitMaskImage=mk}
+      col.insertBefore(bb,col.querySelector('.gl'));d._bb=bb;
       if(lk)d.classList.add('locked');if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
       const info=[e.title,it.piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end),L('byl')+' '+pname(s.person)+' ('+L('extSuf')+')'];
       const invNames=e.involved.map(pname).filter(Boolean);if(invNames.length)info.push(L('oncl')+' '+invNames.join(', '));if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));
@@ -1797,8 +1802,8 @@ function openDlg(e,def){
   $('fBlocks').innerHTML='';blocks=[];
   if(isAdv(slots)){fmode='adv';slots.slice().sort((a,b)=>a.day-b.day||a.start-b.start).forEach(addBlock)}else fmode='quick';
   const iv=$('fInv');iv.innerHTML='';
-  if(!S.people.length)iv.textContent=L('noPeople');
-  S.people.forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
+  if(!ourPeople().length)iv.textContent=L('noPeople');   // external people are never offered as involved (R-PPL-03)
+  ourPeople().forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   const c=$('fSch');c.innerHTML='';
   (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});

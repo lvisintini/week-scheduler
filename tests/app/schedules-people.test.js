@@ -206,10 +206,13 @@ describe('R-PPL-03 External people (someone from outside the household, e.g. a c
   it('the menu of an external person has no Statistics… entry', () => {
     const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); expect(menu(a)).toEqual(['Colour…', 'External (not one of us)', 'Delete']);
   });
-  it('in the event dialog the responsible list marks external people, and they can still be chosen or involved', () => {
+  it('in the event dialog external people can be chosen as responsible (marked) but are never offered as involved people', () => {
     const a = ppl(); a.ev('S.people[1].external=true;render();openDlg()');
-    expect([...a.q('#fP').options].map(o => o.textContent)).toEqual(['— none —', 'Ann', 'Cleaner (external)']); expect(a.qa('#fInv label').map(l => l.textContent)).toEqual(['Ann', 'Cleaner']);
+    expect([...a.q('#fP').options].map(o => o.textContent)).toEqual(['— none —', 'Ann', 'Cleaner (external)']); expect(a.qa('#fInv label').map(l => l.textContent)).toEqual(['Ann']);
     a.ev("setLang('es')"); a.ev('openDlg()'); expect(a.q('#fP').options[2].textContent).toBe('Cleaner (externa)');
+  });
+  it('with only external people the involved list shows the "no people" note instead of chips', () => {
+    const a = fresh(blank({ people: [person({ id: 'C', name: 'Cleaner', external: true })] })); a.ev('openDlg()'); expect(a.qa('#fInv label')).toHaveLength(0); expect(a.q('#fInv').textContent).toBe(a.ev("L('noPeople')"));
   });
   it('import accepts the flag only when it is exactly true', () => {
     const d = fresh().ev('parseData({schedules:[],events:[],people:[{id:"a",name:"A",external:true},{id:"b",name:"B",external:"yes"},{id:"c",name:"C"}]})');

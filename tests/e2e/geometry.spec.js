@@ -212,6 +212,17 @@ test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
     const r = await page.locator('.bgs').evaluate(e => { const c = getComputedStyle(e); return [c.borderTopLeftRadius, c.borderTopRightRadius, c.borderBottomRightRadius, c.borderBottomLeftRadius]; });
     expect(r).toEqual(['0px', '6px', '6px', '0px']);
   });
+  test('the band spans from the left edge of the column to the strip, and the pointer reaches the box through it', async ({ page }) => {
+    const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), bb = await boxOf(page.locator('.bgb'));
+    expect(Math.abs(bb.x - col.x)).toBeLessThan(1.5); expect(Math.abs((bb.x + bb.width) - st.x)).toBeLessThan(1.5); expect(Math.abs(bb.y - st.y)).toBeLessThan(1);
+    const top = await page.evaluate(() => { const b = document.querySelector('.bgb').getBoundingClientRect(), w = document.querySelector('.ev').getBoundingClientRect(); return [document.elementFromPoint(w.left + 10, b.top + 20).className, document.elementFromPoint(b.right - 4, b.top + 20).className]; });
+    expect(top[0]).toMatch(/\bev\b|\br1\b|\bt\b/); expect(top[1]).not.toContain('bgb');
+  });
+  test('only the lip is interactive: a real press-and-drag on the band area beside the box creates a new event', async ({ page }) => {
+    await seed(page, blank({ people: [person({ id: 'X', name: 'Cleaner', external: true })], events: [ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [slot(0, 600, 780, 'X')] })] }));
+    const bb = await boxOf(page.locator('.bgb')); await page.mouse.move(bb.x + 20, bb.y + 10); await page.mouse.down(); await page.mouse.move(bb.x + 20, bb.y + 60, { steps: 4 }); await page.mouse.up();
+    await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue('');
+  });
   test('clicking the strip with a real mouse opens its event, clicking the box beside it opens the box', async ({ page }) => {
     await page.locator('.bgs').click(); await expect(page.locator('#fT')).toHaveValue('Cleaning'); await page.keyboard.press('Escape');
     await page.locator('.ev', { hasText: 'Work' }).click({ position: { x: 20, y: 200 } }); await expect(page.locator('#fT')).toHaveValue('Work');

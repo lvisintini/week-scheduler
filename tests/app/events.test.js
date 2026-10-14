@@ -761,6 +761,32 @@ describe('R-EVT-17 Background activities of external people are slim strips that
     const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 1380, end: 1800, person: 'X' }] })] }));   // 23:00 → 06:00, past the hidden early hours
     expect([a.q('.day[data-d="0"] .bgs').style.borderRadius, a.q('.day[data-d="1"] .bgs').style.borderRadius]).toEqual(['0 6px 0 0', '0 0 6px 0']);
   });
+  it('a strip draws a background band across its column for its time window, reaching up to the strip', () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs'), bb = col0(a).querySelector('.bgb');
+    expect(col0(a).querySelectorAll('.bgb')).toHaveLength(1); expect([bb.style.top, bb.style.height]).toEqual([st.style.top, st.style.height]); expect(bb.style.right).toBe('14px');
+    expect(bb.style.getPropertyValue('--c')).toBe('#12a5b5'); expect(a.q('.day[data-d="1"] .bgb')).toBeNull();
+  });
+  it('the band fades from 30 % of the colour next to the strip to transparent at the left, and never takes the pointer', () => {
+    const r = cssRule(fresh(), '.bgb').style; expect(r.getPropertyValue('background')).toMatch(/linear-gradient\(to left, ?color-mix\(in srgb, ?var\(--c\) 30%, ?transparent\), ?transparent\)/);
+    expect(r.getPropertyValue('pointer-events')).toBe('none'); expect(r.getPropertyValue('left')).toBe('0');
+  });
+  it('the band lies under the hour lines, the flexible margins and every box', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30 }] })] })), kids = [...col0(a).children], at = sel => kids.findIndex(k => k.matches(sel));
+    expect(at('.bgb')).toBeGreaterThanOrEqual(0); expect(at('.bgb')).toBeLessThan(at('.gl')); expect(at('.bgb')).toBeLessThan(at('.mg')); expect(at('.bgb')).toBeLessThan(at('.ev'));
+  });
+  it('overlapping strips each get a band; each band reaches its own strip', () => {
+    const a = fresh(blank({ people: ppl, events: [clean(), clean({ id: 'g', title: 'Garden', slots: [{ day: 0, start: 720, end: 840, person: 'X' }] })] }));
+    expect([...col0(a).querySelectorAll('.bgb')].map(b => b.style.right)).toEqual(['14px', '30px']);
+  });
+  it('flexible start/end makes the band fainter outside the core; flexible time and all-margin pieces give a fainter band', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 600, end: 780, person: 'X', fs: 60 }] }), clean({ id: 'f', slots: [{ day: 1, start: 600, end: 780, person: 'X', flex: true }] })] }));
+    expect(a.q('.day[data-d="0"] .bgb').style.maskImage).toContain('48px'); expect(a.q('.day[data-d="1"] .bgb').style.maskImage).toBe(''); expect(+a.q('.day[data-d="1"] .bgb').style.opacity).toBe(0.5);
+  });
+  it('only the lip is interactive: a press on the band area starts a new event, and the strip is not found there', () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })); expect(at(a, 40, 630)).toEqual([]);
+    a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');c.onpointerdown({button:0,target:c,clientX:40,clientY:300,pointerId:1,pointerType:'mouse',preventDefault(){},stopPropagation(){}})})()`);
+    expect(a.q('.ghost')).not.toBeNull(); pointer(a, 'pointerup', { x: 40, y: 300 }); expect(dlgOpen(a)).toBe(true); expect(a.q('#fT').value).toBe('');
+  });
   it('a strip shows the hover card with its title, person and times', () => {
     const a = fresh(blank({ people: ppl, events: [clean()] })); const h = a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return peekHTML(piecesAt(0,630,true,fxAt(c,98)))})()`);
     expect(h).toContain('Cleaning'); expect(h).toContain('By: Cleaner'); expect(h).toContain('10:00–13:00');
