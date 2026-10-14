@@ -19,9 +19,9 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup' })] }));
     ratchet(await scan(page), { 'color-contrast': 19, label: 2, 'scrollable-region-focusable': 1 });
   });
-  test('the event dialog shows no accessibility violation beyond the known ones: unlabeled fields, selects and colour button', async ({ page }) => {
+  test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
-    ratchet(await scan(page), { 'button-name': 1, label: 2, 'select-name': 24 });
+    ratchet(await scan(page), {});
   });
   for (const tab of ['View', 'Data', 'UI']) {
     test(`the ${tab} tab of the settings dialog has no serious accessibility violation`, async ({ page }) => {

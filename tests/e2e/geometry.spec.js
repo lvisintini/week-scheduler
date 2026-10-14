@@ -201,10 +201,16 @@ test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'X', name: 'Cleaner', external: true })], events: [
       ev({ id: 'w', title: 'Work', slots: [slot(0, 540, 1020, 'A')] }), ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [slot(0, 600, 780, 'X')] })] }));
   });
-  test('the strip is 8 px wide at the right edge of the day, and the box beside it stops before the gutter', async ({ page }) => {
+  test('the strip is 14 px wide, flush with the right edge of the day, and the box beside it stops before the gutter', async ({ page }) => {
     const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), w = await boxOf(page.locator('.ev', { hasText: 'Work' }));
-    expect(Math.round(st.width)).toBe(8); expect(Math.abs((col.x + col.width - 3) - (st.x + st.width))).toBeLessThan(1.5);
-    expect(w.x + w.width).toBeLessThanOrEqual(st.x - 1); expect(w.width).toBeGreaterThan(col.width - 6 - 10 - 2);
+    expect(Math.round(st.width)).toBe(14); expect(Math.abs((col.x + col.width) - (st.x + st.width))).toBeLessThan(1.5);
+    expect(w.x + w.width).toBeLessThanOrEqual(st.x - 1); expect(w.width).toBeGreaterThan(col.width - 6 - 16 - 2);
+  });
+  test('the strip title is drawn vertically inside the strip, and only the right corners are rounded', async ({ page }) => {
+    const st = await boxOf(page.locator('.bgs')), sp = await boxOf(page.locator('.bgs span'));
+    expect(sp.height).toBeGreaterThan(sp.width * 3); expect(sp.x).toBeGreaterThanOrEqual(st.x - 0.5); expect(sp.x + sp.width).toBeLessThanOrEqual(st.x + st.width + 0.5); expect(sp.y).toBeLessThan(st.y + 8);
+    const r = await page.locator('.bgs').evaluate(e => { const c = getComputedStyle(e); return [c.borderTopLeftRadius, c.borderTopRightRadius, c.borderBottomRightRadius, c.borderBottomLeftRadius]; });
+    expect(r).toEqual(['0px', '6px', '6px', '0px']);
   });
   test('clicking the strip with a real mouse opens its event, clicking the box beside it opens the box', async ({ page }) => {
     await page.locator('.bgs').click(); await expect(page.locator('#fT')).toHaveValue('Cleaning'); await page.keyboard.press('Escape');
@@ -230,5 +236,28 @@ test.describe('R-EVT-13 Spanning lanes in a real browser', () => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })], events: [ev({ id: 'a', title: 'Ann task', slots: [slot(0, 600, 720, 'A')] }), ev({ id: 'b', title: 'Bob task', slots: [slot(0, 600, 720, 'B')] }), ev({ id: 'x', title: 'Family', slots: [slot(0, 660, 780)] })] }));
     const a = await boxOf(page.locator('.ev', { hasText: 'Ann task' })), b = await boxOf(page.locator('.ev', { hasText: 'Bob task' })), x = await boxOf(page.locator('.ev', { hasText: 'Family' }));
     expect(a.x + a.width).toBeLessThanOrEqual(b.x + 1); expect(Math.abs(x.x - a.x)).toBeLessThan(2); expect(Math.abs((x.x + x.width) - (b.x + b.width))).toBeLessThan(2);
+  });
+});
+
+test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', () => {
+  const data2 = () => blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })], events: [ev({ title: 'Swim', slots: [slot(0, 1020, 1080, 'A'), slot(2, 1020, 1080, 'B')] })] });
+  test('on a wide screen labels sit left of their fields; day rows line up with the header columns', async ({ page }) => {
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT'));
+    expect(lb.x + lb.width).toBeLessThan(f.x); expect(Math.abs((lb.y + lb.height / 2) - (f.y + f.height / 2))).toBeLessThan(4);
+    const hd = await boxOf(page.locator('#paneQ .dhd span').nth(1)), all = await boxOf(page.locator('#fS')), mon = await boxOf(page.locator('#fDays .dr').first().locator('select').first());
+    expect(Math.abs(all.x - mon.x)).toBeLessThan(1); expect(Math.abs(hd.x - mon.x)).toBeLessThan(1);
+  });
+  test('on a phone the labels move above their fields and the dialog does not scroll sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT')); expect(lb.y + lb.height).toBeLessThanOrEqual(f.y + 1);
+    expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
+    const sel = await boxOf(page.locator('#fS')); expect(sel.width).toBeGreaterThanOrEqual(67);
+  });
+  test('clicking a person chip with the mouse ticks it and shows "only on call"; clicking again unticks it', async ({ page }) => {
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await expect(page.locator('#fOcRow')).toBeHidden(); await page.locator('#fInv label', { hasText: 'Bob' }).click();
+    expect(await page.locator('#fInv input[value="B"]').isChecked()).toBe(true); await expect(page.locator('#fOcRow')).toBeVisible();
+    await page.locator('#fInv label', { hasText: 'Bob' }).click(); expect(await page.locator('#fInv input[value="B"]').isChecked()).toBe(false);
   });
 });

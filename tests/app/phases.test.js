@@ -50,7 +50,7 @@ describe('R-PHS-03 Phase fields and the phase dialog', () => {
   it('the dialog has no person fields; it lists rhythms instead of schedules', () => {
     const a = open(); a.ev('openDlg(null)');
     expect(a.q('#dlg').classList.contains('ph')).toBe(true); expect(a.qa('#dlg .ev-only').length).toBeGreaterThan(3); expect(a.d.querySelector('style').textContent).toContain('#dlg.ph .ev-only{display:none!important}');
-    const labels = a.qa('#dlg label').map(l => l.textContent); expect(labels.some(t => /Rhythms \* \(at least one\)/.test(t))).toBe(true); expect(a.qa('#fSch label')[0].textContent).toBe('Normal');
+    const heads = a.qa('#dlg .fsec span').filter(x => ![x, x.parentNode].some(n => a.w.getComputedStyle(n).display === 'none')).map(x => x.textContent); expect(heads).toEqual(['When', 'Rhythms *']); expect(a.qa('#fSch label')[0].textContent).toBe('Normal');
   });
   it('a name is required and at least one rhythm must be ticked', () => {
     const a = open(); a.ev('openDlg(null)'); a.q('#fOk').click(); expect(a.q('#err').textContent).toBe('Title is required.');

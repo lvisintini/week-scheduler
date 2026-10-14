@@ -470,14 +470,15 @@ describe('R-EVT-11 Activity type: each event has at most one type, shown by its 
   });
   it('the list is labelled and translated, and hidden for phases', () => {
     const a = fresh(blank({ types, events: [ev1()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fTy').options[0].textContent).toBe('(ninguno)');
-    expect(a.q('#fTy').getAttribute('aria-label')).toBe('Tipo de actividad'); expect(a.q('#fTy').closest('.row').classList.contains('ev-only')).toBe(true);
+    expect(a.q('#fTy').getAttribute('aria-label')).toBe('Tipo de actividad'); expect(a.q('#fTy').closest('.fcell').classList.contains('ev-only')).toBe(true);
     expect([...a.qa('#dlg label')].some(l => l.textContent === 'Tipo de actividad')).toBe(true);
   });
 });
 
 describe('R-EVT-12 Flexible time: events or single repetitions with approximate timing get a dashed border', () => {
-  const tim = a => a.q('#fTim');
-  const setTim = (a, v) => { tim(a).value = v; tim(a).onchange(); };
+  const tim = a => a.q('#fTim'), timV = a => tim(a).dataset.v;   // segmented control: data-v holds '' | 'edge' | 'flex' | 'mix'
+  const setTim = (a, v) => tim(a).querySelector(`button[data-tm="${v}"]`).click();
+  const pressed = a => [...tim(a).querySelectorAll('button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.tm);
   const pick = (a, btn, k) => { btn.click(); a.q(`.tmpop .oi[data-tm="${k}"]`).click(); };
   const rowBtn = (a, day) => a.qa('#fDays .dr')[day].querySelector('.fxt');
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
@@ -497,20 +498,20 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
     expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Flexible time'); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Flexible time');
   });
   it('the Timing list set to "Flexible (around these times)" makes every repetition flexible when saved', () => {
-    const a = fresh(blank({ events: [twoDays()] })); open(a); expect(tim(a).value).toBe('');
+    const a = fresh(blank({ events: [twoDays()] })); open(a); expect(timV(a)).toBe('');
     setTim(a, 'flex'); save(a); expect(events(a)[0].slots.map(s => s.flex)).toEqual([true, true]);
   });
   it('the per-day toggle opens a popover; choosing flexible there marks only that repetition and the Timing list shows "Mixed"', () => {
     const a = fresh(blank({ events: [twoDays()] })); open(a); pick(a, rowBtn(a, 2), 'flex');
-    expect(rowBtn(a, 2).getAttribute('aria-pressed')).toBe('true'); expect(a.q('.tmpop')).toBeNull(); expect(tim(a).value).toBe('mix'); expect(tim(a).querySelector('[value=mix]').hidden).toBe(false);
+    expect(rowBtn(a, 2).getAttribute('aria-pressed')).toBe('true'); expect(a.q('.tmpop')).toBeNull(); expect(timV(a)).toBe('mix'); expect(pressed(a)).toEqual([]); expect(a.q('#fTimMix').textContent).toBe('Mixed (set per day)');
     save(a); expect(events(a)[0].slots.map(s => !!s.flex)).toEqual([false, true]);
   });
   it('opening an event with some flexible repetitions shows them pressed and the Timing list "Mixed"', () => {
     const a = fresh(blank({ events: [twoDays(true, false)] })); open(a);
-    expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, false]); expect(tim(a).value).toBe('mix');
+    expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, false]); expect(timV(a)).toBe('mix');
   });
   it('setting the Timing list to Fixed clears every repetition', () => {
-    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); expect(tim(a).value).toBe('flex'); expect(tim(a).querySelector('[value=mix]').hidden).toBe(true);
+    const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); expect(timV(a)).toBe('flex'); expect(pressed(a)).toEqual(['flex']); expect(a.q('#fTimMix').textContent).toBe('');
     setTim(a, ''); save(a); expect(events(a)[0].slots.some(s => s.flex)).toBe(false);
   });
   it('a day ticked while the whole event is flexible becomes flexible too', () => {
@@ -519,7 +520,7 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
   });
   it('Advanced mode has the same toggle on each block, and switching modes keeps the choice', () => {
     const a = fresh(blank({ events: [twoDays(false, true)] })); open(a); a.q('#tabA').click();
-    const bt = a.qa('#fBlocks .br .fxt'); expect(bt.map(b => b.classList.contains('on'))).toEqual([false, true]); pick(a, bt[0], 'flex'); expect(tim(a).value).toBe('flex');
+    const bt = a.qa('#fBlocks .br .fxt'); expect(bt.map(b => b.classList.contains('on'))).toEqual([false, true]); pick(a, bt[0], 'flex'); expect(timV(a)).toBe('flex');
     a.q('#tabQ').click(); expect([rowBtn(a, 0), rowBtn(a, 2)].map(b => b.classList.contains('on'))).toEqual([true, true]);
     save(a); expect(events(a)[0].slots.every(s => s.flex)).toBe(true);
   });
@@ -537,7 +538,7 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
   });
   it('the per-day toggles and the Timing list are translated when the language changes', () => {
     const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); expect(rowBtn(a, 0).title).toMatch(/^Horas solo de esta repetición/);
-    open(a); expect([...tim(a).options].map(o => o.textContent)).toEqual(['Fijas', 'Inicio/fin flexible', 'Flexibles (alrededor de estas horas)', 'Mixto (por día)']);
+    open(a); expect([...tim(a).querySelectorAll('button')].map(o => o.textContent)).toEqual(['Fijas', 'Inicio/fin flexible', 'Flexibles (alrededor de estas horas)']);
     expect([...a.qa('#dlg label')].some(l => l.textContent === 'Horas')).toBe(true); expect(tim(a).getAttribute('aria-label')).toBe('Horas');
   });
 });
@@ -547,7 +548,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
   const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15 }], ...o });
   const pickup = (person = 'B', start = 1005, o = {}) => ev1({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [{ day: 0, start, end: 1050, person, ...o }] });
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
-  const tim = a => a.q('#fTim');
+  const tim = a => a.q('#fTim'), timV = a => tim(a).dataset.v, setTim = (a, v) => tim(a).querySelector(`button[data-tm="${v}"]`).click();
   const rowBtn = (a, day) => a.qa('#fDays .dr')[day].querySelector('.fxt');
   const col0 = a => a.q('.day[data-d="0"]');
   it('the core is a normal box and the margins continue it above and below, with only the outer corners rounded', () => {
@@ -628,33 +629,33 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
   });
   it('the Timing list "Flexible start/end" shows two lists (15 min each by default) and applies them to every repetition', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }, { day: 2, start: 540, end: 1020, person: '' }] })] })); open(a);
-    expect(a.q('#fEdge').style.display).toBe('none'); tim(a).value = 'edge'; tim(a).onchange(); expect(a.q('#fEdge').style.display).toBe('');
+    expect(a.q('#fEdge').style.display).toBe('none'); setTim(a, 'edge'); expect(a.q('#fEdge').style.display).toBe('');
     expect([a.q('#fFs').value, a.q('#fFe').value]).toEqual(['15', '15']); a.q('#fFs').value = '30'; a.q('#fFs').onchange();
     expect(rowBtn(a, 2).textContent).toBe('+30−15'); a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[30, 15], [30, 15]]);
   });
   it('a margin of 0 is not stored, and both at 0 means fixed times', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }] })] })); open(a);
-    tim(a).value = 'edge'; tim(a).onchange(); a.q('#fFe').value = '0'; a.q('#fFe').onchange(); a.q('#fOk').click(); expect(events(a)[0].slots[0]).not.toHaveProperty('fe'); expect(events(a)[0].slots[0].fs).toBe(15);
+    setTim(a, 'edge'); a.q('#fFe').value = '0'; a.q('#fFe').onchange(); a.q('#fOk').click(); expect(events(a)[0].slots[0]).not.toHaveProperty('fe'); expect(events(a)[0].slots[0].fs).toBe(15);
   });
   it('the per-day popover sets flexible start/end for one repetition only, and the Timing list then shows "Mixed"', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }, { day: 2, start: 540, end: 1020, person: '' }] })] })); open(a);
     rowBtn(a, 2).click(); a.q('.tmpop .oi[data-tm="edge"]').click(); const [fs, fe] = a.qa('.tmpop select');
     expect([fs.value, fe.value]).toEqual(['15', '15']); expect([fs.getAttribute('aria-label'), fe.getAttribute('aria-label')]).toEqual(['Flexible start', 'Flexible end']);
-    fe.value = '60'; fe.onchange(); expect(tim(a).value).toBe('mix'); expect(rowBtn(a, 2).title).toContain('may start up to 15 min late and finish up to 1 h early');
+    fe.value = '60'; fe.onchange(); expect(timV(a)).toBe('mix'); expect(rowBtn(a, 2).title).toContain('may start up to 15 min late and finish up to 1 h early');
     a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[undefined, undefined], [15, 60]]);
   });
   it('opening an event with flexible start/end shows it in the list and in the day toggles; Advanced mode keeps it', () => {
     const a = fresh(blank({ people, events: [work()] })); open(a);
-    expect(tim(a).value).toBe('edge'); expect([a.q('#fFs').value, a.q('#fFe').value]).toEqual(['30', '15']); expect(rowBtn(a, 0).classList.contains('on')).toBe(true);
+    expect(timV(a)).toBe('edge'); expect([a.q('#fFs').value, a.q('#fFe').value]).toEqual(['30', '15']); expect(rowBtn(a, 0).classList.contains('on')).toBe(true);
     a.q('#tabA').click(); expect(a.q('#fBlocks .fxt').textContent).toBe('+30−15'); a.q('#fOk').click(); expect(events(a)[0].slots[0]).toMatchObject({ fs: 30, fe: 15 });
   });
   it('the two kinds of flexible time exclude each other on one repetition', () => {
-    const a = fresh(blank({ people, events: [work()] })); open(a); tim(a).value = 'flex'; tim(a).onchange(); a.q('#fOk').click();
+    const a = fresh(blank({ people, events: [work()] })); open(a); setTim(a, 'flex'); a.q('#fOk').click();
     expect(events(a)[0].slots[0]).toMatchObject({ flex: true }); expect(events(a)[0].slots[0]).not.toHaveProperty('fs');
   });
   it('saving refuses margins that leave less than 15 minutes of fixed time, naming the day', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 3, start: 540, end: 600, person: '' }] })] })); open(a);
-    tim(a).value = 'edge'; tim(a).onchange(); a.q('#fFs').value = '30'; a.q('#fFs').onchange(); a.q('#fFe').value = '30'; a.q('#fFe').onchange(); a.q('#fOk').click();
+    setTim(a, 'edge'); a.q('#fFs').value = '30'; a.q('#fFs').onchange(); a.q('#fFe').value = '30'; a.q('#fFe').onchange(); a.q('#fOk').click();
     expect(a.q('#err').textContent).toBe('Thursday: the flexible start and end must leave at least 15 minutes of fixed time.'); expect(dlgOpen(a)).toBe(true);
   });
 });
@@ -703,8 +704,8 @@ describe('R-EVT-17 Background activities of external people are slim strips that
   const at = (a, x, m) => a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return piecesAt(0,${m},true,fxAt(c,${x})).map(i=>i.e.id)})()`);
   it('an activity led by an external person without involved people is a strip on the right, not a box', () => {
     const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs');
-    expect(a.qa('.ev')).toHaveLength(0); expect(st.dataset.strip).toBe('0/1'); expect(st.style.right).toBe('3px'); expect(st.style.top).toBe(`${(600 - 300) / 60 * 48}px`);
-    expect(cssRule(a, '.bgs').style.getPropertyValue('width')).toBe('8px'); expect(st.getAttribute('aria-label')).toBe('Cleaning, 10:00–13:00, By: Cleaner (external)');
+    expect(a.qa('.ev')).toHaveLength(0); expect(st.dataset.strip).toBe('0/1'); expect(st.style.right).toBe('0px'); expect(st.style.top).toBe(`${(600 - 300) / 60 * 48}px`);
+    expect(cssRule(a, '.bgs').style.getPropertyValue('width')).toBe('14px'); expect(st.getAttribute('aria-label')).toBe('Cleaning, 10:00–13:00, By: Cleaner (external)');
   });
   it('with involved people on call it is still a strip; with normally involved people it is a normal box with the usual rules', () => {
     expect(fresh(blank({ people: ppl, events: [clean({ involved: ['A'], oncall: true })] })).qa('.bgs')).toHaveLength(1);
@@ -712,7 +713,7 @@ describe('R-EVT-17 Background activities of external people are slim strips that
   });
   it('a column with strips reserves a gutter for them; other columns do not', () => {
     const a = fresh(blank({ people: ppl, events: [clean(), work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }, { day: 1, start: 540, end: 1020, person: 'A' }] })] }));
-    expect(col0(a).style.getPropertyValue('--gut')).toBe('10px'); expect(a.q('.day[data-d="1"]').style.getPropertyValue('--gut')).toBe('');
+    expect(col0(a).style.getPropertyValue('--gut')).toBe('16px'); expect(a.q('.day[data-d="1"]').style.getPropertyValue('--gut')).toBe('');
     expect(cssRule(a, '.ev').style.getPropertyValue('right')).toMatch(/^calc\(3px \+ var\(--gut, ?0px\)\)$/);
   });
   it('a strip never takes a lane or causes stripes, even next to an event without a responsible person', () => {
@@ -722,11 +723,11 @@ describe('R-EVT-17 Background activities of external people are slim strips that
   });
   it('overlapping strips sit next to each other in a wider gutter', () => {
     const a = fresh(blank({ people: ppl, events: [clean(), clean({ id: 'g', title: 'Garden', slots: [{ day: 0, start: 720, end: 840, person: 'X' }] })] }));
-    expect(a.qa('.bgs').map(s => [s.dataset.strip, s.style.right])).toEqual([['0/2', '3px'], ['1/2', '13px']]); expect(col0(a).style.getPropertyValue('--gut')).toBe('20px');
+    expect(a.qa('.bgs').map(s => [s.dataset.strip, s.style.right])).toEqual([['0/2', '0px'], ['1/2', '16px']]); expect(col0(a).style.getPropertyValue('--gut')).toBe('32px');
   });
   it('the pointer near the right edge finds the strip; elsewhere it finds the boxes, never the strip', () => {
     const a = fresh(blank({ people: ppl, events: [clean(), work()] }));
-    expect(at(a, 98, 630)).toEqual(['c']); expect(at(a, 50, 630)).toEqual(['w']); expect(at(a, 92, 630)).toEqual(['c']); expect(at(a, 85, 630)).toEqual(['w']);
+    expect(at(a, 98, 630)).toEqual(['c']); expect(at(a, 50, 630)).toEqual(['w']); expect(at(a, 88, 630)).toEqual(['c']); expect(at(a, 85, 630)).toEqual(['c']); expect(at(a, 83, 630)).toEqual(['w']);
   });
   it('a strip opens, moves and resizes like an event', async () => {
     const a = fresh(blank({ people: ppl, events: [clean()] })); let st = a.q('.bgs');
@@ -741,6 +742,24 @@ describe('R-EVT-17 Background activities of external people are slim strips that
   it('flexible start/end shows as a lighter part of the strip, flexible time as a dashed strip', () => {
     const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 600, end: 780, person: 'X', fs: 60 }] }), clean({ id: 'f', slots: [{ day: 1, start: 600, end: 780, person: 'X', flex: true }] })] }));
     expect(a.q('.day[data-d="0"] .bgs').style.background).toContain('linear-gradient'); expect(a.q('.day[data-d="1"] .bgs').classList.contains('flex')).toBe(true);
+  });
+  it('a strip is shaped like a lip (flush right, right corners rounded) and shows its title reading top-to-bottom', () => {
+    const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs'), r = cssRule(a, '.bgs').style, sp = cssRule(a, '.bgs span').style;
+    expect(r.getPropertyValue('border-radius')).toBe('0 6px 6px 0'); expect(st.querySelector('span').textContent).toBe('Cleaning');
+    expect(sp.getPropertyValue('writing-mode')).toBe('vertical-rl'); expect(sp.getPropertyValue('transform')).toBe(''); expect(sp.getPropertyValue('text-overflow')).toBe('ellipsis');
+    expect(st.style.color).toBe('rgb(29, 35, 48)');   // ink(): dark text on the light teal
+  });
+  it('a strip title is plain text, never markup', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ title: '<img src=x onerror=alert(1)>' })] })); const sp = a.q('.bgs span');
+    expect(sp.querySelector('img')).toBeNull(); expect(sp.textContent).toBe('<img src=x onerror=alert(1)>');
+  });
+  it('with a flexible start the title begins where the solid part begins; dashed and all-margin strips use the page text colour', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 600, end: 780, person: 'X', fs: 60 }] }), clean({ id: 'f', slots: [{ day: 1, start: 600, end: 780, person: 'X', flex: true }] })] }));
+    expect(a.q('.day[data-d="0"] .bgs span').style.paddingTop).toBe(`${48 + 3}px`); expect(a.q('.day[data-d="1"] .bgs').style.color).toBe('var(--fg)');
+  });
+  it('the part before midnight keeps only its top-right corner rounded, the part after only its bottom-right', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ slots: [{ day: 0, start: 1380, end: 1800, person: 'X' }] })] }));   // 23:00 → 06:00, past the hidden early hours
+    expect([a.q('.day[data-d="0"] .bgs').style.borderRadius, a.q('.day[data-d="1"] .bgs').style.borderRadius]).toEqual(['0 6px 0 0', '0 0 6px 0']);
   });
   it('a strip shows the hover card with its title, person and times', () => {
     const a = fresh(blank({ people: ppl, events: [clean()] })); const h = a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return peekHTML(piecesAt(0,630,true,fxAt(c,98)))})()`);

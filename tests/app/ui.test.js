@@ -157,10 +157,53 @@ describe('R-UI-06 Toasts', () => {
   it('a new toast replaces the one that is showing', () => { const a = fresh(); a.ev('toast("first");toast("second")'); expect(a.toast()).toBe('second'); });
 });
 
-describe('R-UI-07 Event dialog layout', () => {
-  const dialog = () => { const a = fresh(blank({ events: [ev1()], people: [person()] })); a.ev('openDlg(S.events[0])'); return a; };
-  it('title and colour swatch share the first row, followed by description, responsible person, involved people and the repetition tabs', () => {
-    const a = dialog(); expect(a.q('#fT').closest('.row')).toBe(a.q('#fC').closest('.row')); [['#fT', '#fD'], ['#fD', '#fP'], ['#fP', '#fInv'], ['#fInv', '#tabQ']].forEach(([x, y]) => expect(before(a, x, y), `${x} before ${y}`).toBe(true));
+describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, Schedules)', () => {
+  const dialog = (o = {}) => { const a = fresh(blank({ events: [ev1(o)], people: [person(), person({ id: 'B', name: 'Bob', color: '#2fa66a' })] })); a.ev('openDlg(S.events[0])'); return a; };
+  const shown = (a, n) => ![n, ...(n.closest('.ev-only,.ph-only,.fsec') ? [n.closest('.ev-only,.ph-only,.fsec')] : [])].some(x => a.w.getComputedStyle(x).display === 'none');
+  it('title and colour swatch share the first cell, followed by description, type, Who, When and the schedules', () => {
+    const a = dialog(); expect(a.q('#fT').closest('.fcell')).toBe(a.q('#fC').closest('.fcell'));
+    [['#fT', '#fD'], ['#fD', '#fTy'], ['#fTy', '#fP'], ['#fP', '#fInv'], ['#fInv', '#fTim'], ['#fTim', '#tabQ'], ['#tabQ', '#fDays'], ['#fDays', '#fSch']].forEach(([x, y]) => expect(before(a, x, y), `${x} before ${y}`).toBe(true));
+  });
+  it('fields have visible labels tied to them, and the colour swatch has a name', () => {
+    const a = dialog(); ['fT', 'fD', 'fTy', 'fP'].forEach(id => expect(a.q(`#dlg label[for="${id}"]`), id).not.toBeNull()); expect(a.q('#fC').getAttribute('aria-label')).toBe('Colour');
+    expect(a.q('#dlg label[for="fP"]').textContent).toBe('By'); expect(a.q('#fInv').closest('.fg').querySelector('label:not([for])').textContent).toBe('With');
+  });
+  it('section headers read Who, When and Schedules for events', () => {
+    const a = dialog(); expect(a.qa('#dlg .fsec span').filter(x => shown(a, x)).map(x => x.textContent)).toEqual(['Who', 'When', 'Schedules *']);
+    expect(a.q('#dlg .fsec .ev-only').title).toMatch(/^At least one\. Tick several/);
+  });
+  it('involved people and schedules are toggle chips that hold real checkboxes', () => {
+    const a = dialog({ involved: ['B'] }); expect(a.q('#fInv').classList.contains('chips')).toBe(true); expect(a.q('#fSch').classList.contains('chips')).toBe(true);
+    expect(a.qa('#fInv input[type=checkbox]').map(i => [i.value, i.checked])).toEqual([['p1', false], ['B', true]]);
+    const css = a.d.querySelector('style').textContent; expect(css).toContain('.chips label:has(input:checked)'); expect(css).toContain('.chips label:has(input:focus-visible)');
+  });
+  it('"only on call" is shown only while someone is involved, and keeps its value meanwhile', () => {
+    const a = dialog(); expect(a.q('#fOcRow').style.display).toBe('none');
+    const cb = a.q('#fInv input'); cb.checked = true; cb.dispatchEvent(new a.w.Event('change', { bubbles: true })); expect(a.q('#fOcRow').style.display).toBe('');
+    a.q('#fOnCall').checked = true; cb.checked = false; cb.dispatchEvent(new a.w.Event('change', { bubbles: true })); expect(a.q('#fOcRow').style.display).toBe('none'); expect(a.q('#fOnCall').checked).toBe(true);
+  });
+  it('Timing is a segmented control of three buttons with exactly one pressed', () => {
+    const a = dialog(), bs = a.qa('#fTim button'); expect(a.q('#fTim').getAttribute('role')).toBe('group'); expect(bs.map(b => b.textContent)).toEqual(['Fixed', 'Flexible start/end', 'Flexible (around these times)']);
+    expect(bs.map(b => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']); bs[1].click();
+    expect(bs.map(b => b.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false']); expect(a.q('#fEdge').style.display).toBe('');
+  });
+  it('Quick mode has a header row (Days, Start, End, Responsible) and an "All days" row with the general times', () => {
+    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent)).toEqual(['Days', 'Start', 'End', 'Responsible']);
+    expect(a.q('#paneQ .dhd span').title).toMatch(/follow the All days row/); expect(a.q('#fS').closest('.dr').querySelector('.dl').textContent).toBe('All days');
+    a.q('#tabA').click(); expect(a.qa('#paneA .dhd span').map(x => x.textContent)).toEqual(['Day', 'Start', 'End', 'Responsible']);
+  });
+  it('the day rows and blocks share one grid per pane, so their columns line up with the header', () => {
+    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ,#paneA{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dr,.br,.dhd,#fDays,#fBlocks{display:contents}');
+    expect(css).toContain('.dhd>:first-child,.dr>:first-child,.br>:first-child{grid-column-start:1}');
+  });
+  it('every time and person select of the day rows and blocks has a spoken name, also in Spanish', () => {
+    const a = dialog(); expect(a.q('#fS').getAttribute('aria-label')).toBe('All days: start'); const r = a.qa('#fDays .dr')[0].querySelectorAll('select');
+    expect([...r].map(x => x.getAttribute('aria-label'))).toEqual(['Monday: start', 'Monday: end', 'Monday: responsible person']);
+    a.q('#tabA').click(); expect([...a.q('#fBlocks .br').querySelectorAll('select')].map(x => x.getAttribute('aria-label'))).toEqual(['Block: day', 'Block: start', 'Block: end', 'Block: responsible person']);
+    a.ev("setLang('es')"); expect(a.q('#fE').getAttribute('aria-label')).toBe('Todos los días: fin'); expect(a.qa('#fDays .dr')[2].querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio');
+  });
+  it('on narrow screens the label column folds away (labels above their fields)', () => {
+    expect(dialog().d.querySelector('style').textContent).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/);
   });
   it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
   it('the Quick tab is the default and Advanced is next to it', () => { const a = dialog(); expect(a.qa('#dlg .tabs button').map(b => b.textContent)).toEqual(['Quick', 'Advanced']); expect(a.q('#tabQ').classList.contains('on')).toBe(true); });

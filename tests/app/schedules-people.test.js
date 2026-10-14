@@ -188,7 +188,7 @@ describe('R-PPL-02 People can be reordered in the sidebar (the order sets the si
 });
 
 describe('R-PPL-03 External people (someone from outside the household, e.g. a cleaner)', () => {
-  const ppl = () => fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'C', name: 'Cleaner', color: '#12a5b5' })] }));
+  const ppl = () => { const a = fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'C', name: 'Cleaner', color: '#12a5b5' })] })); a.ev('prefs.secExt=false;render()'); return a; };   // External group expanded (R-PPL-04)
   const extItem = a => a.qa('.omenu .oi').find(b => b.textContent.trim().startsWith('External'));
   it('the person menu toggles "External (not one of us)" with a tick and an explanatory tooltip; it is undoable data', () => {
     const a = ppl(); moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).title).toMatch(/^For someone from outside the household/); expect(extItem(a).querySelector('svg')).toBeNull();
@@ -217,5 +217,51 @@ describe('R-PPL-03 External people (someone from outside the household, e.g. a c
   });
   it('anonymised exports keep the flag', () => {
     const a = ppl(); a.ev('S.people[1].external=true'); expect(a.ev('anonymised(buildFile()).people.map(q=>[q.name,!!q.external])')).toEqual([['Person 1', false], ['Person 2', true]]);
+  });
+});
+
+describe('R-PPL-04 External people are kept in a collapsible sub-group at the end of the People list', () => {
+  const mix = () => fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'X', name: 'Cleaner', external: true }), person({ id: 'B', name: 'Bob' }), person({ id: 'Y', name: 'Gardener', external: true, visible: false })] }));
+  const sec = a => sections(a)[1], subh = a => sec(a).querySelector('.subh .shbtn');
+  const topRows = a => [...sec(a).children].filter(r => r.classList.contains('sch')).map(r => r.querySelector('input[type=text]').value);
+  const extRows = a => [...sec(a).querySelectorAll('.extg > .sch')].map(r => r.querySelector('input[type=text]').value);
+  const names = a => a.ev('S.people.map(p=>p.name)');
+  it('by default only our people are listed; external people are folded under "External (N)" with a hidden count', () => {
+    const a = mix(); expect(topRows(a)).toEqual(['Ann', 'Bob']); expect(sec(a).querySelector('.extg')).toBeNull();
+    expect(subh(a).textContent).toBe('External21 hidden'); expect(subh(a).getAttribute('aria-expanded')).toBe('false'); expect(sec(a).querySelector('.subh .tip').title).toMatch(/^People from outside the household/);
+  });
+  it('clicking the sub-header unfolds the external people, and the choice is remembered per browser', () => {
+    const a = mix(); subh(a).click(); expect(extRows(a)).toEqual(['Cleaner', 'Gardener']); expect(subh(a).getAttribute('aria-expanded')).toBe('true');
+    expect(subh(a).textContent).toBe('External2'); expect(JSON.parse(a.w.localStorage.getItem('weekly-schedules-prefs')).secExt).toBe(false);
+    const b = openApp({ storage: a.storage() }); setData(b, blank({ people: [person({ id: 'X', name: 'Cleaner', external: true })] })); expect(b.qa('.extg .sch')).toHaveLength(1);
+    subh(b).click(); expect(b.q('.extg')).toBeNull();
+  });
+  it('without external people there is no sub-header at all', () => {
+    const a = fresh(blank({ people: [person({ id: 'A', name: 'Ann' })] })); expect(sec(a).querySelector('.subh')).toBeNull();
+  });
+  it('marking someone external moves their row into the sub-group; the data order is unchanged', () => {
+    const a = fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })] })); a.ev('S.people[0].external=true;render()');
+    expect(topRows(a)).toEqual(['Bob']); expect(subh(a).textContent).toBe('External1'); expect(names(a)).toEqual(['Ann', 'Bob']);
+  });
+  it('the arrow keys reorder within a group and skip the other group\'s people in the data', () => {
+    const a = mix(); [...sec(a).children].find(r => r.classList?.contains('sch')).querySelector('.grip').onkeydown({ key: 'ArrowDown', preventDefault() {} });
+    expect(names(a)).toEqual(['Cleaner', 'Bob', 'Ann', 'Gardener']); expect(topRows(a)).toEqual(['Bob', 'Ann']);
+    a.ev('prefs.secExt=false;render()'); a.q('.extg .sch .grip').onkeydown({ key: 'ArrowDown', preventDefault() {} }); expect(extRows(a)).toEqual(['Gardener', 'Cleaner']);
+    expect(names(a)).toEqual(['Bob', 'Ann', 'Gardener', 'Cleaner']); a.q('.extg .sch .grip').onkeydown({ key: 'ArrowUp', preventDefault() {} }); expect(names(a)).toEqual(['Bob', 'Ann', 'Gardener', 'Cleaner']);
+  });
+  it('dragging a grip only considers the rows of its own group', () => {
+    const a = mix(); a.ev('prefs.secExt=false;render()'); const g = [...sec(a).children].find(r => r.classList?.contains('sch')).querySelector('.grip');
+    g.onpointerdown({ button: 0, preventDefault() {}, stopPropagation() {} }); pointer(a, 'pointermove', { x: 10, y: 500 }); pointer(a, 'pointerup', { x: 10, y: 500 });
+    expect(topRows(a)).toEqual(['Bob', 'Ann']); expect(extRows(a)).toEqual(['Cleaner', 'Gardener']);
+  });
+  it('side-by-side lanes follow the order shown: our people first, external people after them', () => {
+    const a = fresh(blank({ people: [person({ id: 'X', name: 'Sitter', external: true }), person({ id: 'A', name: 'Ann' })], events: [ev1({ id: 'x', title: 'Sit', involved: ['A'], slots: [{ day: 0, start: 600, end: 660, person: 'X' }] }), ev1({ id: 'b', title: 'Read', slots: [{ day: 0, start: 600, end: 660, person: 'A' }] })] }));
+    const laneOf = t => a.qa('.ev').find(b => b.getAttribute('aria-label').startsWith(t + ',')).dataset.lane;
+    expect(a.qa('.ov')).toHaveLength(1); expect(laneOf('Read')).toBeUndefined();   // they clash through Ann: one lane
+    const b = fresh(blank({ people: [person({ id: 'X', name: 'Sitter', external: true }), person({ id: 'A', name: 'Ann' }), person({ id: 'L', name: 'Lucía' })], events: [ev1({ id: 'x', title: 'Sit', involved: ['L'], slots: [{ day: 0, start: 600, end: 660, person: 'X' }] }), ev1({ id: 'b', title: 'Read', slots: [{ day: 0, start: 600, end: 660, person: 'A' }] })] }));
+    const lane = t => b.qa('.ev').find(x => x.getAttribute('aria-label').startsWith(t + ',')).dataset.lane; expect(lane('Read')).toBe('0/2'); expect(lane('Sit')).toBe('1/2');
+  });
+  it('the sub-header is translated into Spanish', () => {
+    const a = fresh(blank({ people: [person({ id: 'X', name: 'Cleaner', external: true, visible: false })] }), { languages: ['es'] }); expect(subh(a).textContent).toBe('Externas11 ocultas');
   });
 });
