@@ -465,6 +465,28 @@ describe('R-EVT-18 An occurrence also fills the lanes of its people when nothing
   });
 });
 
+describe('R-EVT-18 An occurrence without a responsible person concerns everyone and fills every lane of its group', () => {
+  const LIO = [person({ id: 'L', name: 'Luis', color: '#3f51b5' }), person({ id: 'I', name: 'Ioanna', color: '#e8b10c' }), person({ id: 'O', name: 'Olivia', color: '#2fa66a', visible: false })];
+  const at = (id, title, person, start, end, o = {}, so = {}) => ev1({ id, title, slots: [{ day: 0, start, end, person, ...so }], ...o });
+  const box = (a, title) => a.qa('.day[data-d="0"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  // the user's Monday: both work 13–17 (Luis may finish 15 minutes early); the school pickup 16:45–18:00 has no responsible person, Olivia involved
+  const monday = () => fresh(blank({ people: LIO, events: [at('lw', 'Luis work', 'L', 780, 1020, {}, { fe: 15 }), at('iw', 'Ioanna work', 'I', 780, 1020), at('p', 'School Pickup', '', 1005, 1080, { involved: ['O'] })] }));
+  it('the school pickup spans Luis\'s and Ioanna\'s lanes although it overlaps only Ioanna\'s work', () => {
+    const a = monday(); expect(['Luis work', 'Ioanna work', 'School Pickup'].map(t => box(a, t).dataset.lane)).toEqual(['0/2', '1/2', '0-1/2']);
+  });
+  it('it is striped only over Ioanna\'s work; Luis\'s flexible end lies under it, drawn before every box', () => {
+    const a = monday(); expect(a.qa('.day[data-d="0"] .ov').map(o => o.dataset.lane)).toEqual(['1/2']);
+    const col = [...a.q('.day[data-d="0"]').children], mg = a.q('.day[data-d="0"] .mg.b'); expect(mg.dataset.lane).toBe('0/2'); expect(col.indexOf(mg)).toBeLessThan(col.indexOf(box(a, 'School Pickup')));
+  });
+  it('the pickup can be clicked in Luis\'s lane too, and there it covers his flexible end', () => {
+    const a = monday(); expect(a.ev('piecesAt(0,1050,true,0.25).map(x=>x.e.id)')).toEqual(['p']); expect(a.ev('piecesAt(0,1010,true,0.25).map(x=>x.e.id)')).toEqual(['p']);
+  });
+  it('an unassigned event that overlaps only one of two side-by-side events also takes the free lane', () => {
+    const a = fresh(blank({ people: LIO, events: [at('a', 'A', 'L', 600, 720), at('b', 'B', 'I', 600, 780), at('x', 'X', '', 720, 780)] }));
+    expect(['A', 'B', 'X'].map(t => box(a, t).dataset.lane)).toEqual(['0/2', '1/2', '0-1/2']);
+  });
+});
+
 describe('R-EVT-11 Activity type: each event has at most one type, shown by its icon; soft-look types stand out', () => {
   const types = [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }, { id: 'tm', name: 'Meal', color: '#e8912d', icon: 'meal' }];
   const typed = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', type: 'tf', slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
