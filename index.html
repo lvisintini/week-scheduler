@@ -935,24 +935,33 @@ function laneLayout(its){
     const bs=uf(ids,(i,j)=>C[i][j]).map(m=>({m,ord:Math.min(1e9,...m.filter(x=>its[x].s.person).map(x=>pIdx(its[x].s.person))),st:Math.min(...m.map(x=>its[x].start))}));
     bs.sort((x,y)=>x.ord-y.ord||x.st-y.st);const lanes=[],lane=new Map();
     bs.forEach(b=>{let l=lanes.findIndex(ln=>!ln.some(x=>b.m.some(y=>O[x][y])));if(l<0){l=lanes.length;lanes.push([])}lanes[l].push(...b.m);b.m.forEach(x=>lane.set(x,l))});
-    return {lane,m:lanes.length};
+    const own=new Set(bs.filter(b=>{const ps=new Set(b.m.map(x=>its[x].s.person));return ps.size===1&&!ps.has('')}).flatMap(b=>b.m));   // bundles led by one person alone: that person's own lanes
+    return {lane,m:lanes.length,own};
   };
   const valid=(G,sp)=>G.every((x,a)=>G.slice(a+1).every(y=>{if(!O[x][y])return true;const [a0,a1]=sp.get(x),[b0,b1]=sp.get(y),meet=a0<=b1&&b0<=a1;return C[x][y]?meet:!meet}));
   const perms=m=>{const out=[],a=[...Array(m).keys()],rec=k=>{if(k===m){out.push([...a]);return}for(let i=k;i<m;i++){[a[k],a[i]]=[a[i],a[k]];rec(k+1);[a[k],a[i]]=[a[i],a[k]]}};rec(0);
     return out.sort((x,y)=>{for(let i=0;i<m;i++)if(x[i]!==y[i])return x[i]-y[i];return 0})};   // identity (People order) first
+  // R-EVT-18: an occurrence also reaches its people's own lanes (responsible or involved, not on call; a person's own lanes hold
+  // bundles led by that person alone), as far as no parallel occurrence is in the way; returns how many could not (0 = all did)
+  const fits=(G,sp,x,r)=>G.every(y=>y===x||!O[x][y]||C[x][y]||(([b0,b1])=>r[1]<b0||b1<r[0])(sp.get(y)));
+  const join=(G,own,sp)=>{
+    const want=G.map(x=>{const ls=G.filter(y=>y!==x&&own.has(y)&&ppl[x].includes(its[y].s.person)).map(y=>sp.get(y)[0]),[l,l1]=sp.get(x);
+      return ls.length?[x,Math.min(l,...ls),Math.max(l1,...ls)]:null}).filter(w=>w&&(w[1]!==sp.get(w[0])[0]||w[2]!==sp.get(w[0])[1]));
+    return want.filter(([x,a,b])=>{if(!fits(G,sp,x,[a,b]))return true;sp.set(x,[a,b]);return false}).length;
+  };
   function arrange(G){
     if(!G.some(x=>G.some(y=>O[x][y]&&!C[x][y]))){const sp=new Map(G.map(x=>[x,[0,0]]));return {sp,m:1}}   // nothing in parallel: one lane
     if(G.length>60)return null;
     const spn=new Set(G.filter(x=>{const cs=G.filter(y=>C[x][y]);return cs.some(y=>cs.some(z=>O[y][z]&&!C[y][z]))}));
     const base=G.filter(x=>!spn.has(x));if(!base.length)return null;
-    const {lane,m}=pack(base),orders=prefs.sideFix||m>6?[[...Array(m).keys()]]:perms(m);
+    const {lane,m,own}=pack(base),orders=prefs.sideFix||m>6?[[...Array(m).keys()]]:perms(m);let best=null;
     for(const pm of orders){
       const sp=new Map(base.map(x=>[x,[pm[lane.get(x)],pm[lane.get(x)]]]));
       let todo=[...spn];
       for(let pass=0;todo.length&&pass<=spn.size;pass++)todo=todo.filter(x=>{const ls=G.filter(y=>C[x][y]&&sp.has(y)).flatMap(y=>sp.get(y));if(!ls.length)return true;sp.set(x,[Math.min(...ls),Math.max(...ls)]);return false});
-      if(!todo.length&&valid(G,sp))return {sp,m};
+      if(!todo.length&&valid(G,sp)){const miss=join(G,own,sp);if(!miss)return {sp,m};if(!best||miss<best.miss)best={sp,m,miss}}   // the first order (closest to the People list) where every occurrence reaches its people's lanes, else the one where most do
     }
-    return null;
+    return best;
   }
   const out=new Map();
   uf([...Array(n).keys()],(i,j)=>O[i][j]).forEach((G,gi)=>{

@@ -417,6 +417,54 @@ describe('R-EVT-13 An occurrence that clashes with several parallel ones spans t
   });
 });
 
+describe('R-EVT-18 An occurrence also fills the lanes of its people when nothing parallel is in the way', () => {
+  const LI = [person({ id: 'L', name: 'Luis', color: '#3f51b5' }), person({ id: 'I', name: 'Ioanna', color: '#d6409f' })];
+  const at = (id, title, person, start, end, o = {}) => ev1({ id, title, slots: [{ day: 1, start, end, person }], ...o });
+  const box = (a, title) => a.qa('.day[data-d="1"] .ev').find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  const lanes = (a, ...titles) => titles.map(x => box(a, x).dataset.lane || null);
+  const ovLanes = a => a.qa('.day[data-d="1"] .ov').map(o => o.dataset.lane || null).sort();
+  // the user's Tuesday: Luis works 9–12 and 13–17, has lunch 12–13 with Ioanna, who works 10–16
+  const tuesday = (o = {}, ppl = LI) => fresh(blank({ people: ppl, events: [
+    ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
+    at('l', 'Lunch', 'L', 720, 780, { involved: ['I'], ...o }), at('i', 'Ioanna work', 'I', 600, 960)] }));
+  const workLanes = a => a.qa('.day[data-d="1"] .ev').filter(b => b.getAttribute('aria-label').startsWith('Work,')).map(b => b.dataset.lane);
+  it('Luis\'s lunch with Ioanna spans Luis\'s lane (free between his two work blocks) and Ioanna\'s lane', () => {
+    const a = tuesday(); expect(workLanes(a)).toEqual(['0/2', '0/2']); expect(lanes(a, 'Ioanna work', 'Lunch')).toEqual(['1/2', '0-1/2']);
+  });
+  it('the lunch is striped only where it overlaps Ioanna\'s work, in her lane', () => {
+    expect(ovLanes(tuesday())).toEqual(['1/2']);
+  });
+  it('the same happens when Ioanna comes first in the People list (lanes mirrored)', () => {
+    const a = tuesday({}, [LI[1], LI[0]]); expect(workLanes(a)).toEqual(['1/2', '1/2']); expect(lanes(a, 'Ioanna work', 'Lunch')).toEqual(['0/2', '0-1/2']);
+  });
+  it('people only on call do not pull the occurrence into their lane', () => {
+    const call = o => fresh(blank({ people: LI, events: [ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
+      at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Call', 'I', 720, 780, { involved: ['L'], ...o })] }));
+    expect(lanes(call({}), 'Call')).toEqual(['0-1/2']); expect(lanes(call({ oncall: true }), 'Call')).toEqual(['1/2']);
+  });
+  it('the occurrence does not grow into its person\'s lane where someone else\'s parallel occurrence is in the way', () => {
+    const P3 = [...LI, person({ id: 'C', name: 'Cy', color: '#2fa66a' })];
+    const a = fresh(blank({ people: P3, events: [
+      ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
+      at('l', 'Lunch', 'L', 720, 780, { involved: ['I'] }), at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Cy call', 'C', 720, 780)] }));
+    expect(lanes(a, 'Cy call', 'Ioanna work', 'Lunch')).toEqual(['0/2', '1/2', '1/2']); expect(ovLanes(a)).toEqual(['1/2']);
+  });
+  it('lanes are reordered so that Ioanna\'s lunch with Luis can reach his lane: Ioanna moves next to Luis, Cy aside', () => {
+    const P3 = [person({ id: 'L', name: 'Luis', color: '#3f51b5' }), person({ id: 'C', name: 'Cy', color: '#2fa66a' }), person({ id: 'I', name: 'Ioanna', color: '#d6409f' })];
+    const a = fresh(blank({ people: P3, events: [
+      ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
+      at('l', 'Lunch', 'I', 720, 780, { involved: ['L'] }), at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Cy work', 'C', 540, 1020)] }));
+    expect(workLanes(a)).toEqual(['0/3', '0/3']); expect(lanes(a, 'Ioanna work', 'Cy work', 'Lunch')).toEqual(['1/3', '2/3', '0-1/3']);
+  });
+  it('with "Keep lanes in the order of the People list" the order is kept and the occurrence stays in the lane it clashes in', () => {
+    const P3 = [person({ id: 'L', name: 'Luis', color: '#3f51b5' }), person({ id: 'C', name: 'Cy', color: '#2fa66a' }), person({ id: 'I', name: 'Ioanna', color: '#d6409f' })];
+    const a = fresh(blank({ people: P3, events: [
+      ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
+      at('l', 'Lunch', 'I', 720, 780, { involved: ['L'] }), at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Cy work', 'C', 540, 1020)] }));
+    a.ev('prefs.sideFix=true;render()'); expect(lanes(a, 'Cy work', 'Ioanna work', 'Lunch')).toEqual(['1/3', '2/3', '2/3']);
+  });
+});
+
 describe('R-EVT-11 Activity type: each event has at most one type, shown by its icon; soft-look types stand out', () => {
   const types = [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }, { id: 'tm', name: 'Meal', color: '#e8912d', icon: 'meal' }];
   const typed = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', type: 'tf', slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
