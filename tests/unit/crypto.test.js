@@ -59,8 +59,9 @@ describe('R-SHARE-04 Encryption (AES-256-GCM with a PBKDF2 key)', () => {
     expect(await message(unseal(blob.slice(0, 40)))).toBe('format');
     expect(await message(unseal(blob.slice(0, blob.length - 4)))).toBe('password');
   });
-  it('an unknown format version is refused', async () => {
-    const blob = await seal(); blob[0] = 9; expect(await message(unseal(blob))).toBe('format');
+  it('a layout byte of a later version is refused as newer, an impossible one (0) as not valid', async () => {
+    const blob = await seal(); blob[0] = 9; expect(await message(unseal(blob))).toBe('newer');
+    const b2 = await seal(); b2[0] = 0; expect(await message(unseal(b2))).toBe('format');
   });
   it.each([[1], [99999], [2000001], [4294967295]])('a crafted iteration count of %i is refused immediately, without long computation', async iter => {
     const blob = await seal(); new DataView(blob.buffer).setUint32(1, iter);

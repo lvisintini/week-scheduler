@@ -147,7 +147,7 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   it('cancelling the password dialog also removes the data from the address bar and loads nothing', async () => {
     const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.click('Cancel'); expect(b.w.location.hash).toBe(''); expect(b.ev('S.events.length')).toBe(0);
   });
-  it.each([['#data=e1.@@@@'], ['#data=plain-old-link'], ['#data=e2.AAAA']])('a damaged or unknown link %s is refused with a message and cleaned from the address', async hash => {
+  it.each([['#data=e1.@@@@'], ['#data=plain-old-link'], ['#data=e0.AAAA'], ['#data=ex.AAAA']])('a damaged or unknown link %s is refused with a message and cleaned from the address', async hash => {
     const b = openApp({ url: 'https://app.test/' + hash }); await b.sleep(10); expect(b.toast()).toBe('The shared link is invalid or damaged.'); expect(b.w.location.hash).toBe(''); expect(b.dlgOpen()).toBe(false);
   });
   it('a link with an empty payload still asks for a password and then reports that it is not a valid save', async () => {
@@ -197,8 +197,8 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
   it('plain JSON files from earlier versions can still be opened (only creating them is gone)', async () => {
     const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'old.json', text: async () => JSON.stringify(workspace()) }], value: '' } }); await b.sleep(30); expect(b.dlgTitle()).toBe('Import'); expect(b.dlgText()).toContain('Test workspace');
   });
-  it('an encrypted file whose inner format version is unknown is refused after the password step', async () => {
-    const a = fresh(); const f = JSON.parse(await makeFile(a)); const bytes = Buffer.from(f.data.replace(/-/g, '+').replace(/_/g, '/'), 'base64'); bytes[0] = 9;
+  it('an encrypted file whose layout byte is damaged (0) is refused after the password step', async () => {
+    const a = fresh(); const f = JSON.parse(await makeFile(a)); const bytes = Buffer.from(f.data.replace(/-/g, '+').replace(/_/g, '/'), 'base64'); bytes[0] = 0;
     f.data = bytes.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => JSON.stringify(f) }], value: '' } }); await waitFor(() => b.dlgTitle() === 'Password needed');
     b.q('#xDlg input').value = PASSWORD; b.click('Open'); await waitFor(() => /not a valid schedule save file/.test(b.dlgText()));

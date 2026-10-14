@@ -151,3 +151,21 @@ test.describe('R-STAT-04 Statistics exports in a real browser', () => {
     await expect(page.locator('#xDlg .ststat')).toContainText('Table copied'); expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Granny Rose\tNo type\t1.00');
   });
 });
+
+test.describe('R-DATA-08 Sample files of every published format open in a real browser', () => {
+  const FIX = new URL('../fixtures/', import.meta.url).pathname;
+  const versions = fs.readdirSync(FIX).filter(n => /^v\d+$/.test(n));
+  for (const v of versions) {
+    const read = f => fs.readFileSync(FIX + v + '/' + f, 'utf8');
+    test(`the ${v} link (encrypted outside the browser) opens with its password in Chromium`, async ({ browser }) => {
+      const { household, FIXTURE_PASSWORD } = await import('../fixtures/household.js');
+      const link = read('link.txt').trim(), { ctx, page } = await visitor(browser); await page.goto(BASE + '/' + link.slice(link.indexOf('#')));
+      await page.locator('#xDlg input[type=password]').fill(FIXTURE_PASSWORD); await dialogButton(page, 'Open').click();
+      await expect(page.locator('#toast')).toHaveText('Shared schedule loaded'); expect(await data(page)).toMatchObject(household); await ctx.close();
+    });
+    test(`the ${v} browser memory loads after a real page load with both workspaces`, async ({ page }) => {
+      await openApp(page, { storage: { 'weekly-schedules-workspaces': read('store.json') } });
+      await expect(page.locator('.wsbtn .wsn')).toContainText('Family week'); expect(await page.evaluate(() => WS.map(w => w.name))).toEqual(['Family week', 'Grandparents']);
+    });
+  }
+});

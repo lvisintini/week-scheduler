@@ -27,7 +27,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
-A saved file or link holds one workspace (`version: 1`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema.
+A saved file or link holds one workspace (`version: 1`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.
 
 Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
 
