@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, data, slots, blank, ev, slot, sched, person, pt, drag, toolbar } from './helpers.js';
+import { openApp, seed, data, slots, blank, ev, slot, sched, person, pt, drag, toolbar, boxOf } from './helpers.js';
 
 const three = () => blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660), slot(4, 600, 660)] })] });
 const overlapping = () => blank({ events: [ev({ id: 'a', title: 'A', slots: [slot(0, 600, 720)] }), ev({ id: 'b', title: 'B', color: '#e5484d', slots: [slot(0, 660, 750)] })] });
@@ -209,5 +209,30 @@ test.describe('R-GRID-11 Focusing on one day with a real mouse and keyboard', ()
   test('the focus button can be reached with the keyboard and becomes visible when focused', async ({ page }) => {
     const btn = page.locator('.dh[data-d="4"] .foc'); await btn.focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
     await expect(btn).toBeFocused(); await expect(btn).toHaveCSS('opacity', '1'); await page.keyboard.press('Enter'); await expect(page.locator('.day')).toHaveAttribute('data-d', '4');
+  });
+});
+
+test.describe('R-NST-02 R-NST-03 A nested activity inside its host, with a real mouse', () => {
+  const nestData = () => blank({ people: [person({ id: 'A' })], events: [
+    ev({ id: 'run', title: 'School run', slots: [slot(0, 480, 540, 'A')] }),
+    ev({ id: 'milk', title: 'Collect milk', color: '#e8912d', nest: true, slots: [slot(0, 495, 525, 'A')] }),
+  ] });
+  const host = page => page.locator('.ev:not(.nest)'), inner = page => page.locator('.ev.nest');
+  test('the nested box is drawn inside the host box, indented on the left, and on top of it', async ({ page }) => {
+    await seed(page, nestData()); const [h, n] = [await boxOf(host(page)), await boxOf(inner(page))];
+    expect(n.x).toBeGreaterThanOrEqual(h.x + 12); expect(n.x + n.width).toBeLessThanOrEqual(h.x + h.width + 1);
+    expect(n.y).toBeGreaterThan(h.y + 10); expect(n.y + n.height).toBeLessThan(h.y + h.height);
+    const top = await page.evaluate(([x, y]) => document.elementFromPoint(x, y).closest('.ev').classList.contains('nest'), [n.x + n.width / 2, n.y + n.height / 2]);
+    expect(top).toBe(true);
+  });
+  test('clicking the nested box opens it; clicking the host beside it opens the host', async ({ page }) => {
+    await seed(page, nestData()); const [h, n] = [await boxOf(host(page)), await boxOf(inner(page))];
+    await page.mouse.click(n.x + n.width / 2, n.y + n.height / 2); await expect(page.locator('#dlg')).toBeVisible(); expect(await page.inputValue('#fT')).toBe('Collect milk');
+    await page.click('#fCancel'); await page.mouse.click(h.x + 5, n.y + n.height / 2); await expect(page.locator('#dlg')).toBeVisible(); expect(await page.inputValue('#fT')).toBe('School run');
+  });
+  test('dragging the host takes the nested activity along', async ({ page }) => {
+    await seed(page, nestData()); await drag(page, { col: 0, min: 485 }, { col: 2, min: 605 });
+    expect((await slots(page, 0))[0]).toMatchObject({ day: 2, start: 600, end: 660 }); expect((await slots(page, 1))[0]).toMatchObject({ day: 2, start: 615, end: 645 });
+    await expect(page.locator('.day[data-d="2"] .ev.nest')).toHaveCount(1);
   });
 });

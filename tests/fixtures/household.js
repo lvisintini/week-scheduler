@@ -33,6 +33,8 @@ export const household = {
       slots: [{ day: 3, start: 600, end: 780, person: 'p-marta' }] },
     { id: 'e-night', title: 'Night shift', desc: 'Hospital, ward 3', color: '#8e4ec6', schedules: ['s-weekb'], involved: [],
       slots: [{ day: 6, start: 1320, end: 1800, person: 'p-luis' }] },
+    { id: 'e-milk', title: 'Collect milk', desc: '', color: '#e8912d', nest: true, schedules: ['s-home'], involved: [],
+      slots: [{ day: 0, start: 495, end: 510, person: 'p-luis' }, { day: 5, start: 540, end: 555, person: 'p-luis' }] },
     { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
       slots: [{ day: 5, start: 600, end: 720, person: '' }, { day: 5, start: 900, end: 960, person: '' }] },
   ],
@@ -50,6 +52,13 @@ export const grandparents = {
   schedules: [{ id: 's-gp', name: 'Visits', color: '#e5484d', opacity: 1, locked: false, visible: true }],
   people: [], types: [], events: [], rhythms: [], phases: [], phaseOpacity: 0.3,
 };
+
+// What each format version added to the household above; taking it away again gives the household as version v stored it
+// (the sample files of older versions are compared with this). Add an entry whenever FMT goes up.
+const ADDED = {
+  2: h => ({ ...h, events: h.events.filter(e => !e.nest) }),   // event.nest, nested activities (R-NST-01)
+};
+export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 
 /** Settings that differ from every default. */
 export const prefsSample = {

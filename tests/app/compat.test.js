@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openApp, workspace, blank, WS_KEY, PREFS_KEY, ROOT } from '../helpers/app.js';
-import { household, grandparents, prefsSample, FIXTURE_PASSWORD } from '../fixtures/household.js';
+import { household, householdAt, grandparents, prefsSample, FIXTURE_PASSWORD } from '../fixtures/household.js';
 
 const FIX = path.join(ROOT, 'tests/fixtures');
 const versions = fs.readdirSync(FIX).filter(n => /^v\d+$/.test(n)).map(n => +n.slice(1)).sort((a, b) => a - b);
@@ -24,20 +24,20 @@ const u64 = b => b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').re
 describe.each(versions)('R-DATA-08 Sample files of format version %i still load with the same content', v => {
   it(`the readable JSON file of version ${v} imports through the Load dialog with every detail`, async () => {
     const a = openApp(); await openFile(a, read(v, 'workspace.json')); expect(a.dlgTitle()).toBe('Import'); importNew(a);
-    expect(a.ev('cw().name')).toBe('Family week'); expect(a.ev('cw().id')).toBe('ws-family'); expect(loaded(a)).toMatchObject(household); expect(a.log.errors).toEqual([]);
+    expect(a.ev('cw().name')).toBe('Family week'); expect(a.ev('cw().id')).toBe('ws-family'); expect(loaded(a)).toMatchObject(householdAt(v)); expect(a.log.errors).toEqual([]);
   });
   it(`the encrypted JSON file of version ${v} opens with its password and has the same content`, async () => {
     const a = openApp(); await openFile(a, read(v, 'encrypted.json')); await waitFor(() => a.dlgTitle() === 'Password needed'); typePw(a);
-    await waitFor(() => a.dlgTitle() === 'Import'); importNew(a); expect(loaded(a)).toMatchObject(household);
+    await waitFor(() => a.dlgTitle() === 'Import'); importNew(a); expect(loaded(a)).toMatchObject(householdAt(v));
   });
   it(`the shareable link of version ${v} opens with its password and has the same content`, async () => {
     const a = openApp({ url: read(v, 'link.txt').trim() }); await waitFor(() => a.dlgTitle() === 'Password needed'); typePw(a);
-    await waitFor(() => a.ev('cw().name') === 'Family week'); expect(loaded(a)).toMatchObject(household); expect(a.w.location.hash).toBe('');
+    await waitFor(() => a.ev('cw().name') === 'Family week'); expect(loaded(a)).toMatchObject(householdAt(v)); expect(a.w.location.hash).toBe('');
   });
   it(`browser memory of version ${v} loads both workspaces at startup, unchanged and not marked unsaved`, () => {
     const a = openApp({ storage: { [WS_KEY]: read(v, 'store.json') } });
     expect(a.ev('WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(a.ev('curId')).toBe('ws-family');
-    expect(loaded(a)).toMatchObject(household); expect(JSON.parse(a.ev('JSON.stringify(WS[1].data)'))).toMatchObject(grandparents);
+    expect(loaded(a)).toMatchObject(householdAt(v)); expect(JSON.parse(a.ev('JSON.stringify(WS[1].data)'))).toMatchObject(grandparents);
     expect(a.ev('anyDirty()')).toBe(false); expect(a.log.alerts).toEqual([]);
   });
   it(`browser memory of version ${v} is rewritten in the current format only when the user saves`, () => {
@@ -69,6 +69,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
       '.rhythms[].name', '.rhythms[].visible', '.schedules', '.schedules[].color', '.schedules[].id', '.schedules[].locked', '.schedules[].name',
       '.schedules[].opacity', '.schedules[].visible', '.types', '.types[].color', '.types[].icon', '.types[].id', '.types[].name', '.types[].soft', '.version'],
   };
+  SHAPES[2] = [...SHAPES[1], '.events[].nest'].sort();   // 2: nested activities (R-NST-01)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));
