@@ -162,7 +162,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   const shown = (a, n) => ![n, ...(n.closest('.ev-only,.ph-only,.fsec') ? [n.closest('.ev-only,.ph-only,.fsec')] : [])].some(x => a.w.getComputedStyle(x).display === 'none');
   it('title and colour swatch share the first cell, followed by description, type, Who, When, How it fits in and the schedules', () => {
     const a = dialog(); expect(a.q('#fT').closest('.fcell')).toBe(a.q('#fC').closest('.fcell'));
-    [['#fT', '#fD'], ['#fD', '#fTy'], ['#fTy', '#fOw'], ['#fOw', '#fInv'], ['#fInv', '#tabQ'], ['#tabQ', '#fDays'], ['#fDays', '#fFit'], ['#fFit', '#fSch']].forEach(([x, y]) => expect(before(a, x, y), `${x} before ${y}`).toBe(true));
+    [['#fT', '#fD'], ['#fD', '#fTy'], ['#fTy', '#fOw'], ['#fOw', '#fInv'], ['#fInv', '#fDays'], ['#fDays', '#fFit'], ['#fFit', '#fSch']].forEach(([x, y]) => expect(before(a, x, y), `${x} before ${y}`).toBe(true));
   });
   it('fields have visible labels tied to them, and the colour swatch has a name', () => {
     const a = dialog(); ['fT', 'fD', 'fTy', 'fOw'].forEach(id => expect(a.q(`#dlg label[for="${id}"]`), id).not.toBeNull()); expect(a.q('#fC').getAttribute('aria-label')).toBe('Colour');
@@ -186,31 +186,31 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
     expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBg']);   // How it fits in: the event-wide switches together
   });
-  it('Quick and Advanced have a header row: Day(s), Start, End, Performed by, With, Timing', () => {
+  it('the day table has a header row: Days, Start, End, Performed by, With, Timing', () => {
     const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Timing']);
-    expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day/);
-    a.q('#tabA').click(); expect(a.qa('#paneA .dhd span').map(x => x.textContent)).toEqual(['Day', 'Start', 'End', 'Performed by', 'With', 'Timing']);
+    expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
   });
   it('a day row holds its times, performer, With button, timing, copy button and warning; flexible margins on a line below', () => {
-    const r = dialog().qa('#fDays .dr')[0]; expect([...r.children].map(c => c.tagName === 'LABEL' ? 'day' : ['wbtn', 'tsel', 'cpy', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
-      .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'tsel', 'cpy', 'wn', 'dsub']);
+    const r = dialog().qa('#fDays .dr')[0]; expect([...r.children].map(c => c.tagName === 'LABEL' ? 'day' : ['wbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
+      .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
   });
-  it('the day rows and blocks share one grid per pane, so their columns line up with the header', () => {
-    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ,#paneA{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dr,.br,.dhd,#fDays,#fBlocks{display:contents}');
-    expect(css).toContain('.dhd>:first-child,.dr>:first-child,.br>:first-child{grid-column-start:1}');
+  it('the day rows and the further-time lines share one grid, so their columns line up with the header', () => {
+    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dr,.dhd,#fDays{display:contents}');
+    expect(css).toContain('.dhd>:first-child,.dr>:first-child{grid-column-start:1}');
   });
   it('every time and person select of the day rows and blocks has a spoken name, also in Spanish', () => {
     const a = dialog(), r = a.qa('#fDays .dr')[0];
     expect([...r.querySelectorAll('select')].map(x => x.getAttribute('aria-label'))).toEqual(['Monday: start', 'Monday: end', 'Monday: performed by', 'Monday: timing', 'Flexible start', 'Flexible end']);
     expect(r.querySelector('.wbtn').getAttribute('aria-label')).toMatch(/^Monday: with: Default/); expect(r.querySelector('.cpy').getAttribute('aria-label')).toMatch(/^Copy this day to all the other days/);
-    a.q('#tabA').click(); expect([...a.q('#fBlocks .br').querySelectorAll('select')].map(x => x.getAttribute('aria-label'))).toEqual(['Block: day', 'Block: start', 'Block: end', 'Block: performed by', 'Block: timing', 'Flexible start', 'Flexible end']);
-    a.ev("setLang('es')"); expect(a.qa('#fDays .dr')[2].querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio'); expect(a.qa('#fDays .dr')[2].querySelectorAll('select')[2].getAttribute('aria-label')).toBe('Miércoles: lo hace');
+    r.querySelector('.addt').click(); const x = a.q('#fDays .dr.dx');
+    expect([...x.querySelectorAll('select')].slice(0, 4).map(y => y.getAttribute('aria-label'))).toEqual(['Monday, time 2: start', 'Monday, time 2: end', 'Monday, time 2: performed by', 'Monday, time 2: timing']); expect(x.querySelector('.bx').getAttribute('aria-label')).toBe('Remove this time');
+    a.ev("setLang('es')"); const wed = a.qa('#fDays .dr:not(.dx)')[2]; expect(wed.querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio'); expect(wed.querySelectorAll('select')[2].getAttribute('aria-label')).toBe('Miércoles: lo hace');
+    expect(a.q('#fDays .dr.dx select').getAttribute('aria-label')).toBe('Lunes, hora 2: inicio');
   });
   it('on narrow screens the label column folds away (labels above their fields) and each day folds onto two lines', () => {
-    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/); expect(css).toMatch(/@media \(max-width:560px\)\{[^]*\.dhd,\.dr,\.br\{display:grid;[^}]*grid-template-areas:"d s e c n" "p p w w x" "t t t \. \."/);
+    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/); expect(css).toMatch(/@media \(max-width:560px\)\{[^]*\.dhd,\.dr\{display:grid;[^}]*grid-template-areas:"d s e c x" "p p w w n" "t t t \. \."/);
   });
   it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
-  it('the Quick tab is the default and Advanced is next to it', () => { const a = dialog(); expect(a.qa('#dlg .tabs button').map(b => b.textContent)).toEqual(['Quick', 'Advanced']); expect(a.q('#tabQ').classList.contains('on')).toBe(true); });
 });
 
 describe('R-UI-08 Light and dark theme', () => {

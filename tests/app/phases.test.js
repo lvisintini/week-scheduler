@@ -64,8 +64,8 @@ describe('R-PHS-03 Phase fields and the phase dialog', () => {
     const a = open({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })] }); a.ev('openDlg(null)'); fillDialog(a, { title: 'Both', schedules: ['r1', 'r2'] }); a.q('#fOk').click();
     expect(phaseList(a).at(-1).rhythms).toEqual(['r1', 'r2']);
   });
-  it('phases support the same Quick and Advanced repetition modes (several blocks per day)', () => {
-    const a = open(); a.ev('openDlg(P)'.replace('P', 'S.phases[0]')); a.q('#tabA').click(); a.q('#fAddBlock').click(); expect(a.q('#tabQ').disabled).toBe(true); a.q('#fOk').click();
+  it('phases use the same day table, with several times per day', () => {
+    const a = open(); a.ev('openDlg(S.phases[0])'); a.qa('#fDays .dr')[4].querySelector('.addt').click(); expect(a.q('#fDays .dr.dx .wbtn').offsetParent).toBeFalsy(); a.q('#fOk').click();
     expect(phaseList(a)[0].slots.filter(s => s.day === 4)).toHaveLength(2);
   });
   it('a phase never runs past the end of its day', () => {

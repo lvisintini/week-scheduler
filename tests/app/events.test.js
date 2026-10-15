@@ -64,7 +64,7 @@ describe('R-EVT-02 Event fields and validation', () => {
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'X', schedules: [] }); save(a);
     expect(a.q('#err').textContent).toBe('Pick at least one schedule.'); expect(events(a)).toHaveLength(0);
   });
-  it('at least one day is required in Quick mode', () => {
+  it('at least one day is required to save an event', () => {
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'X', days: {} }); save(a);
     expect(a.q('#err').textContent).toBe('Pick at least one day.');
   });
@@ -585,11 +585,9 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
     const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); const cb = a.qa('#fDays .dr')[4].querySelector('input'); cb.checked = true; cb.onchange();
     expect(tsel(a, 4).value).toBe(''); expect(rowT(a, 4)).toEqual(['600', '660']); save(a); expect(events(a)[0].slots.map(s => [s.day, !!s.flex])).toEqual([[0, true], [2, true], [4, false]]);
   });
-  it('Advanced mode has the same Timing list on each block, and switching modes keeps each choice', () => {
-    const a = fresh(blank({ events: [twoDays(false, true)] })); open(a); a.q('#tabA').click();
-    const bt = a.qa('#fBlocks .br .tsel'); expect(bt.map(b => b.value)).toEqual(['', 'flex']); change(a, bt[0], 'flex');
-    a.q('#tabQ').click(); expect([tsel(a, 0).value, tsel(a, 2).value]).toEqual(['flex', 'flex']);
-    save(a); expect(events(a)[0].slots.every(s => s.flex)).toBe(true);
+  it('a further time on a day has its own Timing list', () => {
+    const a = fresh(blank({ events: [twoDays()] })); open(a); a.qa('#fDays .dr')[0].querySelector('.addt').click();
+    change(a, a.q('#fDays .dr.dx .tsel'), 'flex'); save(a); expect(events(a)[0].slots.map(s => [s.day, s.start, !!s.flex])).toEqual([[0, 600, false], [0, 660, true], [2, 600, false]]);
   });
   it('dragging a flexible event keeps the mark on every repetition', async () => {
     const a = fresh(blank({ events: [twoDays(true, false)] })); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 0, min: 690 });
@@ -710,10 +708,9 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     change(a, tsel(a, 0), 'edge'); change(a, mg(a, 0)[0], '30'); row(a, 0).querySelector('.cpy').click(); expect(tsel(a, 2).value).toBe('edge'); expect(mg(a, 2).map(x => x.value)).toEqual(['30', '15']);
     a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[30, 15], [30, 15]]);
   });
-  it('opening an event with flexible start/end shows it on its day; Advanced mode keeps it', () => {
+  it('opening an event with flexible start/end shows it on its day, and saving keeps it', () => {
     const a = fresh(blank({ people, events: [work()] })); open(a);
     expect(tsel(a, 0).value).toBe('edge'); expect(mg(a, 0).map(x => x.value)).toEqual(['30', '15']);
-    a.q('#tabA').click(); const b = a.q('#fBlocks .br'); expect(b.querySelector('.tsel').value).toBe('edge'); expect([...b.querySelectorAll('.dsub select')].map(x => x.value)).toEqual(['30', '15']);
     a.q('#fOk').click(); expect(events(a)[0].slots[0]).toMatchObject({ fs: 30, fe: 15 });
   });
   it('the two kinds of flexible time exclude each other on one repetition', () => {

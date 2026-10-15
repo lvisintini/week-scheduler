@@ -46,43 +46,46 @@ describe('R-REP-01 An event can repeat on chosen days with its own times and peo
   });
 });
 
-describe('R-REP-02 Quick and Advanced repetition modes', () => {
-  const advancedDialog = () => { const a = three(); a.ev('openDlg(S.events[0])'); a.q('#tabA').click(); return a; };
-  it('the dialog opens in Quick mode with the Mon–Sun rows', () => {
-    const a = three(); a.ev('openDlg(S.events[0])'); expect(a.q('#tabQ').classList.contains('on')).toBe(true); expect(a.q('#paneQ').style.display).not.toBe('none'); expect(a.q('#paneA').style.display).toBe('none'); expect(rows(a)).toHaveLength(7);
+describe('R-REP-02 One day table: each day can hold several times, without modes', () => {
+  const dlg = () => { const a = three(); a.ev('openDlg(S.events[0])'); return a; };   // Mon, Wed, Fri 10:00–11:00
+  const lines = a => a.qa('#fDays .dr');   // day rows and the further-time lines, in order
+  const days = a => a.qa('#fDays .dr:not(.dx)');   // the seven day rows only
+  const times = el => [...el.querySelectorAll('select')].slice(0, 2).map(x => x.value);
+  it('the dialog shows the Mon–Sun rows directly; there are no Quick/Advanced tabs any more', () => {
+    const a = dlg(); expect(rows(a).filter(r => !r.classList.contains('dx'))).toHaveLength(7); expect(a.q('#dlg .tabs')).toBeNull(); expect(a.q('#tabA')).toBeNull(); expect(a.q('#fBlocks')).toBeNull();
   });
-  it('switching to Advanced turns the ticked days into blocks with day, start, end and person', () => {
-    const a = advancedDialog(); expect(a.qa('#fBlocks .br')).toHaveLength(3); expect(a.qa('#fBlocks .br').map(b => b.querySelector('select').value)).toEqual(['0', '2', '4']);
-    expect(a.q('#paneA').style.display).not.toBe('none'); expect(a.q('#paneQ').style.display).toBe('none');
+  it('+ adds another time on that day, starting where its last time ends, for an hour, performed by the owner', () => {
+    const a = dlg(); days(a)[4].querySelector('.addt').click(); const x = lines(a)[5];
+    expect(x.classList.contains('dx')).toBe(true); expect(times(x)).toEqual(['660', '720']); expect(x.querySelectorAll('select')[2].value).toBe('@o'); expect(x.querySelector('.addt')).toBeNull();
+    expect(days(a)[4].querySelector('.addt').title).toBe('Add another time on Friday');
   });
-  it('"+ Add block" adds a one-hour block after the last one', () => {
-    const a = advancedDialog(); a.q('#fAddBlock').click(); const b = a.qa('#fBlocks .br').at(-1).querySelectorAll('select');
-    expect([b[0].value, b[1].value, b[2].value]).toEqual(['4', '660', '720']);
+  it('two times on a day are saved as two repetitions of that day, in time order', () => {
+    const a = dlg(); days(a)[0].querySelector('.addt').click(); const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '480'; x[0].onchange(); x[1].value = '540'; x[1].onchange();
+    save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 480, 540], [0, 600, 660], [2, 600, 660], [4, 600, 660]]);
   });
-  it('a second block on the same day is allowed in Advanced mode and saved', () => {
-    const a = advancedDialog(); a.q('#fAddBlock').click(); save(a);
-    expect(slots(a).filter(s => s.day === 4)).toHaveLength(2);
+  it('✕ removes a further time; a day\'s first time has no ✕ (untick the day instead)', () => {
+    const a = dlg(); days(a)[2].querySelector('.addt').click(); expect(days(a)[2].querySelector('.bx')).toBeNull();
+    a.q('#fDays .dr.dx .bx').click(); expect(a.q('#fDays .dr.dx')).toBeNull(); save(a); expect(slots(a)).toHaveLength(3);
   });
-  it('once a day has two blocks the Quick tab is disabled and says why', () => {
-    const a = advancedDialog(); a.q('#fAddBlock').click();
-    expect(a.q('#tabQ').disabled).toBe(true); expect(a.q('#tabQ').title).toContain("Quick mode can't show several blocks on the same day");
+  it('an event with two times on one day opens with both lines, in time order', () => {
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 840, 900), slot(0, 540, 600)] })] })); a.ev('openDlg(S.events[0])');
+    expect(times(days(a)[0])).toEqual(['540', '600']); expect(times(a.q('#fDays .dr.dx'))).toEqual(['840', '900']); expect(lines(a)[1].classList.contains('dx')).toBe(true);
   });
-  it('removing the extra block makes the Quick tab available again', () => {
-    const a = advancedDialog(); a.q('#fAddBlock').click(); a.qa('#fBlocks .br').at(-1).querySelector('.bx').click(); expect(a.q('#tabQ').disabled).toBe(false);
+  it('a time added late at night starts with the day\'s last time instead of after it', () => {
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 1380, 1440)] })] })); a.ev('openDlg(S.events[0])'); days(a)[0].querySelector('.addt').click();
+    expect(times(a.q('#fDays .dr.dx'))).toEqual(['1380', '1440']);
   });
-  it('the last remaining block cannot be removed', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(S.events[0])'); a.q('#tabA').click(); expect(a.q('#fBlocks .bx').disabled).toBe(true);
+  it('unticking a day greys out all its lines and drops them on save; ticking it again brings its further times back', () => {
+    const a = dlg(); days(a)[4].querySelector('.addt').click(); const cb = days(a)[4].querySelector('input'); cb.checked = false; cb.onchange();
+    const x = a.q('#fDays .dr.dx'); expect(x.classList.contains('off')).toBe(true); expect(x.querySelector('select').disabled).toBe(true);
+    cb.checked = true; cb.onchange(); expect(a.q('#fDays .dr.dx').classList.contains('off')).toBe(false); cb.checked = false; cb.onchange();
+    save(a); expect(slots(a).map(s => s.day)).toEqual([0, 2]);
   });
-  it('an event that already has two blocks on one day opens directly in Advanced mode', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 540, 600), slot(0, 840, 900)] })] })); a.ev('openDlg(S.events[0])');
-    expect(a.q('#tabA').classList.contains('on')).toBe(true); expect(a.qa('#fBlocks .br')).toHaveLength(2); expect(a.q('#tabQ').disabled).toBe(true);
-  });
-  it('going back from Advanced to Quick restores the day rows', () => {
-    const a = advancedDialog(); a.q('#tabQ').click(); expect(rows(a).map(r => r.querySelector('input').checked)).toEqual([true, false, true, false, true, false, false]);
-  });
-  it('blocks can be edited and are saved in day-and-time order', () => {
-    const a = advancedDialog(); const b = a.qa('#fBlocks .br')[0].querySelectorAll('select'); b[0].value = '5'; b[0].dispatchEvent(new a.w.Event('change')); save(a);
-    expect(slots(a).map(s => s.day)).toEqual([2, 4, 5]);
+  it('the copy button of a day makes every other ticked day like it, adding or removing their further times', () => {
+    const a = dlg(); days(a)[0].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click();
+    const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '900'; x[0].onchange(); x[1].value = '960'; x[1].onchange();   // Monday 10:00–11:00 and 15:00–16:00
+    days(a)[0].querySelector('.cpy').click(); expect(a.qa('#fDays .dr.dx')).toHaveLength(3); save(a);
+    expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 600, 660], [0, 900, 960], [2, 600, 660], [2, 900, 960], [4, 600, 660], [4, 900, 960]]);
   });
   it('end times at or before the start are disabled in the end list', () => {
     const a = fresh(blank()); a.toolbar('add').click(); const end = a.qa('#fDays .dr')[0].querySelectorAll('select')[1]; const disabled = [...end.options].filter(o => o.disabled).map(o => +o.value);
@@ -115,9 +118,9 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { days: { 0: {}, 1: {} } });
     expect(a.q('#fWarn').textContent).toBe(''); expect(rows(a).every(r => r.querySelector('.wn').style.visibility !== 'visible')).toBe(true);
   });
-  it('in Advanced mode two overlapping blocks of the same day are flagged', () => {
+  it('two overlapping times on the same day are both flagged', () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])');
-    expect(a.qa('#fBlocks .br .wn').map(w => w.style.visibility)).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
+    expect(a.qa('#fDays .dr').slice(0, 2).map(r => r.querySelector('.wn').style.visibility)).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
   });
   it('an event with overlapping repetitions can still be saved', () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])'); save(a);
@@ -191,7 +194,7 @@ describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift cha
     const a = fresh(blank({ events: [ev1({ slots: [slot(0), slot(1)] })] })); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 1, min: 750 }, { shift: true });
     expect(slots(a)[0].day).toBe(0); expect(slots(a)[0].start).toBe(720);
   });
-  it('an Advanced event (already having two blocks on a day) may place a repetition on a day that has one', async () => {
+  it('an event that already has two times on a day may place a repetition on a day that has one', async () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 540, 600), slot(0, 840, 900), slot(1)] })] }));
     await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 570 }, { col: 1, min: 750 }, { shift: true });
     expect(slots(a).filter(s => s.day === 1)).toHaveLength(2);
