@@ -196,6 +196,23 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
+test.describe('R-GRID-12 Live view in a real browser', () => {
+  test('the Now pill shows today across the window with the now line a third of the way down; a wheel scroll pauses it', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await page.locator('#now').click();   // late enough to need scrolling, early enough not to hit the bottom
+    await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('.day')).toHaveAttribute('data-d', '2'); await expect(page.locator('#now')).toHaveText('Live');
+    const [wrap, hd, line] = [await boxOf(page.locator('#wrap')), await boxOf(page.locator('.dh').first()), await boxOf(page.locator('.now'))];
+    const third = hd.y + hd.height + (wrap.y + wrap.height - hd.y - hd.height) / 3; expect(Math.abs(line.y - third)).toBeLessThan(10);
+    await page.mouse.move(wrap.x + wrap.width / 2, wrap.y + wrap.height / 2); await page.mouse.wheel(0, 300); await expect(page.locator('#now')).toHaveText('Back to now');
+    await page.locator('#now').click(); await expect(page.locator('#now')).toHaveText('Live'); expect(Math.abs((await boxOf(page.locator('.now'))).y - third)).toBeLessThan(10);
+  });
+  test('it survives a reload, and the Now pill never overlaps the "N hidden" pill', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 15, 0), prefs: { hideWeekend: true } }); await seed(page, blank({ events: [ev({ slots: [slot(5, 600, 660)] })] }));
+    await expect(page.locator('#hid')).toBeVisible(); const [n, h] = [await boxOf(page.locator('#now')), await boxOf(page.locator('#hid'))];
+    expect(n.x + n.width <= h.x || h.x + h.width <= n.x).toBe(true);
+    await page.locator('#now').click(); await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#now')).toHaveText('Live');
+  });
+});
+
 test.describe('R-EVT-19 An event marked "In the background" as drawn by a real browser', () => {
   test('it is a strip at the right edge of the day, and the person\'s own box beside it keeps almost the full width', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' })], events: [

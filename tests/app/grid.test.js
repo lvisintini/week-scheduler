@@ -228,6 +228,66 @@ describe('R-GRID-10 Layer order inside a day column', () => {
   });
 });
 
+describe('R-GRID-12 Live view: today\'s day view following the current time', () => {
+  const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
+  const pill = a => a.q('#now');
+  const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}})})()`);
+  const scrollBy = (a, y) => a.ev(`(()=>{const w=document.getElementById('wrap');w.scrollTop=${y};w.dispatchEvent(new Event('scroll'))})()`);
+  it('the Now pill jumps from the week to today\'s day view and starts following', () => {
+    const a = fresh(); at(a, 2, 10, 0); expect(pill(a).textContent).toBe('Now'); expect(pill(a).getAttribute('aria-pressed')).toBe('false');
+    pill(a).click(); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['2']); expect(pill(a).textContent).toBe('Live');
+    expect(pill(a).getAttribute('aria-pressed')).toBe('true'); expect(pill(a).classList.contains('on')).toBe(true);
+  });
+  it('from another focused day it also jumps to today', () => {
+    const a = fresh(); at(a, 2, 10, 0); a.ev('setFocus(5)'); pill(a).click(); expect(a.ev('focusD')).toBe(2);
+  });
+  it('it keeps the now line a third of the way down the visible grid, or shows the top before the visible hours', () => {
+    const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); pill(a).click(); expect(a.ev('wrap.scrollTop')).toBe((600 - 300) / 60 * 48 - 600 / 3);
+    at(a, 2, 13, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe((780 - 300) / 60 * 48 - 600 / 3);
+    at(a, 2, 4, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(0);
+  });
+  it('the now line is drawn while live even when "Show now line" is switched off', () => {
+    const a = fresh(); at(a, 2, 10, 0); a.ev('nowOn=false;render()'); expect(a.qa('.now')).toHaveLength(0); pill(a).click(); expect(a.qa('.now')).toHaveLength(1);
+  });
+  it('scrolling by hand pauses it until "Back to now", which scrolls back and follows again', () => {
+    const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); pill(a).click(); scrollBy(a, 900);
+    expect(pill(a).textContent).toBe('Back to now'); expect(pill(a).getAttribute('aria-pressed')).toBe('false');
+    at(a, 2, 13, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(900);
+    pill(a).click(); expect(pill(a).textContent).toBe('Live'); expect(a.ev('wrap.scrollTop')).toBe((780 - 300) / 60 * 48 - 600 / 3);
+  });
+  it('a scroll that live view made itself never pauses it', () => {
+    const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); pill(a).click(); a.ev("document.getElementById('wrap').dispatchEvent(new Event('scroll'))"); expect(pill(a).textContent).toBe('Live');
+  });
+  it('it never scrolls while a dialog is open or a pointer is held down (a drag)', () => {
+    const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); pill(a).click(); const y = a.ev('wrap.scrollTop');
+    a.ev('openSettings()'); at(a, 2, 13, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(y); a.ev("document.getElementById('xDlg').close()");
+    a.ev("document.dispatchEvent(new Event('pointerdown'))"); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(y);
+    a.ev("document.dispatchEvent(new Event('pointerup'))"); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBeGreaterThan(y);
+  });
+  it('at midnight it moves on to the next day, also onto a hidden weekend day', () => {
+    const a = fresh(); at(a, 2, 23, 59); pill(a).click(); at(a, 3, 0, 0); a.ev('liveTick()'); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['3']);
+    const b = fresh(); b.ev('prefs.hideWeekend=true;render()'); at(b, 4, 23, 59); pill(b).click(); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
+  });
+  it('Week and Esc end live view and bring the week back; the arrows end it and stay on the day view', () => {
+    const a = fresh(); at(a, 2, 10, 0); pill(a).click(); a.q('.dh .wk').click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(pill(a).textContent).toBe('Now');
+    pill(a).click(); a.key('Escape'); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);
+    pill(a).click(); a.q('.dh .nxt').click(); expect(a.ev('live')).toBe(false); expect(a.ev('focusD')).toBe(3);
+  });
+  it('clicking the pill while following stops following and stays on today\'s day view', () => {
+    const a = fresh(); at(a, 2, 10, 0); pill(a).click(); pill(a).click(); expect(a.ev('live')).toBe(false); expect(a.ev('focusD')).toBe(2); expect(pill(a).textContent).toBe('Now');
+  });
+  it('this browser remembers it: a reload opens straight into today\'s live view', () => {
+    const a = fresh(); pill(a).click(); expect(JSON.parse(a.storage()[PREFS_KEY]).live).toBe(true);
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ live: true }) } }); expect(b.ev('live')).toBe(true); expect(b.ev('focusD')).toBe(b.ev('(new Date().getDay()+6)%7')); expect(b.qa('.day')).toHaveLength(1);
+    b.q('.dh .wk').click(); expect(JSON.parse(b.storage()[PREFS_KEY]).live).toBe(false);
+    expect(openApp().ev('live')).toBe(false);
+  });
+  it('the pill and its tooltips are translated, and it is never printed', () => {
+    const a = fresh(); a.ev("setLang('es')"); expect(pill(a).textContent).toBe('Ahora'); expect(pill(a).title).toMatch(/^Vista en directo/);
+    pill(a).click(); expect(pill(a).textContent).toBe('En directo'); expect(a.q('#pills').parentElement.tagName).toBe('BODY');
+  });
+});
+
 describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes back', () => {
   const two = () => blank({ events: [ev1({ id: 'a', title: 'Tue thing', slots: [{ day: 1, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', title: 'Wed thing', slots: [{ day: 2, start: 600, end: 660, person: '' }] })] });
   const hdr = (a, d) => a.q(`.dh[data-d="${d}"]`);
