@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, pt, boxOf, person } from './helpers.js';
+import { openApp, seed, blank, ev, slot, slots, pt, boxOf, person } from './helpers.js';
 
 const rhythmData = (extra = {}) => blank({
   events: [ev({ id: 'a', title: 'Morning', slots: [slot(0, 600, 720)] })],
@@ -196,20 +196,38 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
-test.describe('R-GRID-12 Live view in a real browser', () => {
-  test('the Now pill shows today across the window with the now line a third of the way down; a wheel scroll pauses it', async ({ page }) => {
-    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await page.locator('#now').click();   // late enough to need scrolling, early enough not to hit the bottom
-    await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('.day')).toHaveAttribute('data-d', '2'); await expect(page.locator('#now')).toHaveText('Live');
-    const [wrap, hd, line] = [await boxOf(page.locator('#wrap')), await boxOf(page.locator('.dh').first()), await boxOf(page.locator('.now'))];
-    const third = hd.y + hd.height + (wrap.y + wrap.height - hd.y - hd.height) / 3; expect(Math.abs(line.y - third)).toBeLessThan(10);
-    await page.mouse.move(wrap.x + wrap.width / 2, wrap.y + wrap.height / 2); await page.mouse.wheel(0, 300); await expect(page.locator('#now')).toHaveText('Back to now');
-    await page.locator('#now').click(); await expect(page.locator('#now')).toHaveText('Live'); expect(Math.abs((await boxOf(page.locator('.now'))).y - third)).toBeLessThan(10);
+test.describe('R-GRID-12 Live View in a real browser', () => {
+  const busy = () => blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
+    ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),
+    ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(2, 480, 720, 'O')] }), ev({ id: 'sat', title: 'Hidden', slots: [slot(5, 600, 660)] })] });
+  test('the cards sit in a strip right of the day, level with the now line, overlapping neither each other nor any event', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.locator('#lvB').click();
+    await expect(page.locator('.lvcard')).toHaveCount(3); const day = await boxOf(page.locator('.day')), col = await boxOf(page.locator('.lvcol'));
+    expect(col.x).toBeGreaterThanOrEqual(day.x + day.width - 1);
+    const cs = await Promise.all((await page.locator('.lvcard').all()).map(boxOf)), bs = await Promise.all((await page.locator('.ev, .bgs').all()).map(boxOf));
+    const hit = (p, q) => p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
+    cs.forEach((c, i) => { cs.slice(i + 1).forEach(d => expect(hit(c, d)).toBe(false)); bs.forEach(e => expect(hit(c, e)).toBe(false)); });
+    const line = await boxOf(page.locator('.now')); expect(cs[0].y).toBeLessThan(line.y); expect(cs[2].y + cs[2].height).toBeGreaterThan(line.y);
   });
-  test('it survives a reload, and the Now pill never overlaps the "N hidden" pill', async ({ page }) => {
-    await openApp(page, { clock: new Date(2026, 9, 14, 15, 0), prefs: { hideWeekend: true } }); await seed(page, blank({ events: [ev({ slots: [slot(5, 600, 660)] })] }));
-    await expect(page.locator('#hid')).toBeVisible(); const [n, h] = [await boxOf(page.locator('#now')), await boxOf(page.locator('#hid'))];
-    expect(n.x + n.width <= h.x || h.x + h.width <= n.x).toBe(true);
-    await page.locator('#now').click(); await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#now')).toHaveText('Live');
+  test('the now line stays a third of the way down; a wheel scroll pauses it and the sidebar Now button returns', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await page.locator('#lvB').click(); await expect(page.locator('#lvB')).toHaveText('Stop Live View');
+    const [wrap, hd] = [await boxOf(page.locator('#wrap')), await boxOf(page.locator('.dh').first())], third = hd.y + hd.height + (wrap.y + wrap.height - hd.y - hd.height) / 3;
+    expect(Math.abs((await boxOf(page.locator('.now'))).y - third)).toBeLessThan(10); await expect(page.locator('#lvC')).toBeHidden();
+    await page.mouse.move(wrap.x + wrap.width / 3, wrap.y + wrap.height / 2); await page.mouse.wheel(0, 300); await expect(page.locator('#lvC')).toBeVisible();
+    await page.locator('#lvC').click(); await expect(page.locator('#lvC')).toBeHidden(); expect(Math.abs((await boxOf(page.locator('.now'))).y - third)).toBeLessThan(10);
+  });
+  test('clicking or dragging an event, or clicking the day header, does nothing while live', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.locator('#lvB').click();
+    const b = await boxOf(page.locator('.ev', { hasText: 'School' })); await page.mouse.click(b.x + 20, b.y + 20); await expect(page.locator('#dlg')).toBeHidden();
+    await page.mouse.move(b.x + 20, b.y + 20); await page.mouse.down(); await page.mouse.move(b.x + 20, b.y + 120, { steps: 5 }); await page.mouse.up();
+    expect((await slots(page, 0))[0].start).toBe(540); const h = await boxOf(page.locator('.dh').nth(1)); await page.mouse.click(h.x + h.width / 2, h.y + h.height / 2); await expect(page.locator('#agDlg')).toBeHidden();
+  });
+  test('the Live View Mode pill pulses, the N hidden pill stays away, a reload stays live and the pill leaves it', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0), prefs: { hideWeekend: true } }); await seed(page, busy()); await expect(page.locator('#hid')).toBeVisible();
+    await page.locator('#lvB').click(); await expect(page.locator('#lvPill')).toHaveText('Live View Mode'); await expect(page.locator('#hid')).toBeHidden();
+    expect(await page.locator('#lvPill i').evaluate(e => getComputedStyle(e).animationName)).toBe('lvp');
+    await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#lvPill')).toBeVisible();
+    await page.locator('#lvPill').click(); await expect(page.locator('.day')).toHaveCount(5); await expect(page.locator('#lvPill')).toBeHidden();
   });
 });
 

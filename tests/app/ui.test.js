@@ -41,7 +41,7 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
   it('the Help button opens a "How to use" dialog with nineteen tips, among them focusing on a day, nested activities, background events and live view', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(19); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/live view/);
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(19); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
   });
 });
 

@@ -15,7 +15,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser â€
 - **People** list that works like schedules (toggle to show/hide their events; drag to reorder, which sets the lane order)
 - Drag to create, move (across days) and resize events
 - Day agenda (click a day header) with print support; printable weekly schedule
-- Optional "now" line on today's column, and a **live view** (the *Now* button): today on its own, following the current time â€” handy on a tablet on the wall
+- Optional "now" line on today's column, and a **Live View** (sidebar) for a screen everyone can see, such as a tablet on the wall: today on its own, read-only and in larger text, following the current time with cards for what is happening now
 - Spanish / English interface (follows browser language, switchable in the sidebar)
 - Undo/redo, locked schedules, 12h/24h clock, weekend toggle, collapsible and resizable sidebar
 - Save/load to browser memory or JSON file, auto-load, unsaved-changes warning
@@ -38,10 +38,10 @@ The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test                    # 1,182 fast tests (jsdom), about a minute
+npm test                    # 1,189 fast tests (jsdom), about a minute
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
-npm run test:e2e            # 164 real-browser tests (Chromium + a phone profile), under a minute
+npm run test:e2e            # 166 real-browser tests (Chromium + a phone profile), under a minute
 npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```
