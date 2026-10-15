@@ -241,8 +241,9 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     ev1({ id: 'gy', title: 'Gym', slots: [{ day: 2, start: 660, end: 720, person: 'B' }] }),
     ev1({ id: 'lu', title: 'Lunch', slots: [{ day: 2, start: 750, end: 810, person: 'O' }, { day: 3, start: 750, end: 810, person: 'O' }] }),
   ] });
-  const cards = a => a.qa('.lvl .lvb .lvs .pt1').map(t => t.textContent);   // bubbles left to right, sections in start order
-  const bubbles = a => a.qa('.lvl .lvb').map(b => [...b.querySelectorAll('.lvs .pt1')].map(t => t.textContent));
+  const bubbles = a => a.qa('.lvl .lvb:not(.out)').map(b => [...b.querySelectorAll('.lvs .pt1')].map(t => t.textContent));   // open bubbles, sections in start order
+  const boxOf = (a, title) => a.qa('.day .ev, .day .bgs').find(b => b._it.e.title === title);
+  const tap = (a, target, x, min) => { const y = a.y(min); ['pointerdown', 'pointerup', 'click'].forEach(t => target.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: y, bubbles: true, cancelable: true }))); };   // live: the one day column spans x 0..100
   it('the sidebar has a Live View button with a camera icon under the toolbar; the Now button is hidden', () => {
     const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.classList.contains('tbar')).toBe(true);
     expect(now(a).style.display).toBe('none'); expect(pill(a).style.display).toBe('none');
@@ -259,44 +260,47 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     const a = fresh(); at(a, 2, 10, 0); start(a); const h = a.q('.dh:not(.c):not(.lvh)');
     expect(h.textContent).toBe('Wednesday'); expect(h.querySelectorAll('button, .ic')).toHaveLength(0); h.click(); expect(a.q('#agDlg').open).toBeFalsy();
   });
-  it('the grid takes no pointer input while live (only scrolling): the day columns and headers ignore the pointer', () => {
-    const a = fresh(); start(a);
-    const rule = [...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || '').includes('#grid.lv .dw')); expect(rule.style.getPropertyValue('pointer-events')).toBe('none');
-  });
   it('the text of the compact view is larger while live, and only then', () => {
     const a = fresh(); const r = sel => [...a.d.styleSheets[0].cssRules].find(x => x.selectorText === sel);
     expect(r('#grid.lv .ev').style.getPropertyValue('font-size')).toBe('15px'); expect(r('#grid.lv .times span').style.getPropertyValue('font-size')).toBe('13px');
   });
-  it('a speech bubble floats over the day for everything the now line is over (strips included), without the how-to lines', () => {
-    const a = fresh(day()); at(a, 2, 11, 30); start(a);
-    expect(bubbles(a)).toEqual([['School'], ['Gym'], ['Screen-free time']]); expect(a.q('.lvl').parentElement.classList.contains('day')).toBe(true);
-    expect(a.q('.lvl').textContent).toContain('Room 4'); expect(a.q('.lvl').textContent).not.toMatch(/Schedules|Dragging/); expect(a.q('.lvl').getAttribute('aria-live')).toBe('polite');
+  it('nothing pops up by itself: a tap on a box fades in a bubble whose arrow points at the tap', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); expect(a.qa('.lvb')).toHaveLength(0);
+    tap(a, boxOf(a, 'School'), 20, 690); expect(bubbles(a)).toEqual([['School']]); const b = a.q('.lvb');
+    expect(b.classList.contains('in')).toBe(true); expect(+b.dataset.ax).toBe(20); expect(b.parentElement.classList.contains('lvl')).toBe(true); expect(b.parentElement.parentElement.classList.contains('day')).toBe(true);
+    expect(b.textContent).toContain('Room 4'); expect(b.textContent).not.toMatch(/Schedules|Dragging/); expect(a.q('.lvl').getAttribute('aria-live')).toBe('polite');
   });
-  it('each arrow points into its own box where nothing else is drawn: side-by-side lanes and the strip gutter', () => {
-    const a = fresh(day()); at(a, 2, 11, 30); start(a); const ax = a.qa('.lvb').map(b => +b.dataset.ax);   // the jsdom column is 100 px wide, gutter 16 px
-    expect(ax[0]).toBeGreaterThan(3); expect(ax[0]).toBeLessThan(40); expect(ax[1]).toBeGreaterThan(42); expect(ax[1]).toBeLessThan(81); expect(ax[2]).toBeGreaterThanOrEqual(86);
+  it('a tap where boxes overlap opens one bubble with a section each; strips and nested boxes open their own', () => {
+    const a = fresh(day()); at(a, 2, 12, 45); start(a); tap(a, boxOf(a, 'Lunch'), 20, 765); expect(bubbles(a)).toEqual([['School', 'Lunch']]);
+    tap(a, boxOf(a, 'Screen-free time'), 95, 600); expect(bubbles(a)).toEqual([['School', 'Lunch'], ['Screen-free time']]);
+    const b = fresh(blank({ people: kids, events: [ev1({ id: 'r', title: 'School run', slots: [{ day: 2, start: 630, end: 720, person: 'O' }] }), ev1({ id: 'm', title: 'Collect milk', nest: true, slots: [{ day: 2, start: 645, end: 690, person: 'O' }] })] }));
+    at(b, 2, 11, 0); start(b); tap(b, boxOf(b, 'Collect milk'), 50, 660); expect(bubbles(b)).toEqual([['Collect milk']]); expect(b.q('.lvb').textContent).toContain('During: School run');
   });
-  it('occurrences drawn on top of each other share one bubble, a section each in start order', () => {
-    const a = fresh(day()); at(a, 2, 12, 45); start(a); expect(bubbles(a)).toEqual([['School', 'Lunch']]);
-    const b = fresh(blank({ people: kids, events: [ev1({ id: 'x', title: 'Work O', slots: [{ day: 2, start: 540, end: 900, person: 'O' }] }), ev1({ id: 'y', title: 'Work B', slots: [{ day: 2, start: 540, end: 900, person: 'B' }] }),
-      ev1({ id: 'z', title: 'Fire drill', slots: [{ day: 2, start: 600, end: 720, person: '' }] })] })); at(b, 2, 10, 30); start(b);
-    expect(bubbles(b)).toEqual([['Work O', 'Work B', 'Fire drill']]);   // nobody responsible: it spans both lanes, so it can only be pointed at where they overlap
+  it('several bubbles can be open; a tap on a bubble closes it, a tap on empty space closes them all', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); tap(a, boxOf(a, 'School'), 20, 690); tap(a, boxOf(a, 'Gym'), 60, 690); expect(bubbles(a)).toEqual([['School'], ['Gym']]);
+    tap(a, a.q('.lvb'), 20, 700); expect(bubbles(a)).toEqual([['Gym']]); expect(a.ev('lvOpen.length')).toBe(1);
+    tap(a, boxOf(a, 'School'), 20, 690); tap(a, a.q('.day'), 20, 1200); expect(bubbles(a)).toEqual([]); expect(a.ev('lvOpen.length')).toBe(0);
   });
-  it('a nested activity and the activity it is done during share a bubble', () => {
-    const a = fresh(blank({ people: kids, events: [ev1({ id: 'r', title: 'School run', slots: [{ day: 2, start: 630, end: 720, person: 'O' }] }), ev1({ id: 'm', title: 'Collect milk', nest: true, slots: [{ day: 2, start: 645, end: 690, person: 'O' }] })] }));
-    at(a, 2, 11, 0); start(a); expect(bubbles(a)).toEqual([['School run', 'Collect milk']]);
+  it('each bubble fades away a minute after it opened', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); a.ev('window.__to=[];const st=setTimeout;setTimeout=(f,d)=>{__to.push([f,d]);return st(()=>{},0)}');
+    tap(a, boxOf(a, 'School'), 20, 690); const [f, d] = a.ev('__to.find(x=>x[1]===60000)'); expect(d).toBe(60000); f(); expect(bubbles(a)).toEqual([]); expect(a.q('.lvb').classList.contains('out')).toBe(true);
   });
-  it('with nothing at the now line there is no bubble at all', () => {
-    const a = fresh(day()); at(a, 2, 20, 0); start(a); expect(a.qa('.lvb')).toHaveLength(0); expect(a.q('.lvl')).toBeNull();
+  it('open bubbles survive redraws (another person hidden) and all close when Live View ends', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); tap(a, boxOf(a, 'School'), 20, 690); a.ev('S.people[1].visible=false;render()');
+    expect(bubbles(a)).toEqual([['School']]); expect(a.q('.lvb').classList.contains('in')).toBe(false); expect(a.ev('live')).toBe(true);
+    btn(a).click(); expect(a.qa('.lvb')).toHaveLength(0); expect(a.ev('lvOpen.length')).toBe(0);
   });
-  it('the cards follow the line on each tick, and the people filter applies to them', () => {
-    const a = fresh(day()); at(a, 2, 11, 30); start(a); at(a, 2, 12, 45); a.ev('liveTick()'); expect(cards(a)).toEqual(['School', 'Lunch']);
-    at(a, 2, 16, 0); a.ev('liveTick()'); expect(cards(a)).toEqual([]);
-    const b = fresh(blank({ ...day(), people: [kids[0], { ...kids[1], visible: false }] })); at(b, 2, 11, 30); start(b); expect(cards(b)).toEqual(['School', 'Screen-free time']);
+  it('taps never edit while live: no dialog, no drag, no new event, no hover card, no resize handles', async () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); const box = boxOf(a, 'School');
+    tap(a, box, 20, 690); expect(a.q('#dlg').open).toBeFalsy();
+    const ev = (t, x, m, tg = box) => tg.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: a.y(m), bubbles: true, cancelable: true }));
+    ev('pointerdown', 20, 690); ev('pointermove', 20, 780); ev('pointerup', 20, 780); expect(a.ev('S.events[0].slots[0].start')).toBe(540);
+    tap(a, a.q('.day'), 20, 1200); expect(a.q('#dlg').open).toBeFalsy(); expect(a.qa('.rz').every(r => a.w.getComputedStyle(r).display === 'none')).toBe(true);
+    expect([...a.d.styleSheets[0].cssRules].some(r => (r.selectorText || '').includes('#grid.lv .dh') && r.style.getPropertyValue('pointer-events') === 'none')).toBe(true);
   });
-  it('live card titles and descriptions are escaped, never markup', () => {
+  it('bubble titles and descriptions are escaped, never markup', () => {
     const a = fresh(blank({ events: [ev1({ title: '<img src=x onerror=alert(1)>', desc: '<b>x</b>', slots: [{ day: 2, start: 540, end: 660, person: '' }] })] })); at(a, 2, 10, 0); start(a);
-    expect(a.q('.lvl img')).toBeNull(); expect(a.q('.lvl b')).toBeNull(); expect(a.q('.lvl').textContent).toContain('<b>x</b>');
+    tap(a, a.q('.day .ev'), 50, 600); expect(a.q('.lvl img')).toBeNull(); expect(a.q('.lvl b')).toBeNull(); expect(a.q('.lvl').textContent).toContain('<b>x</b>');
   });
   it('it keeps the now line a third of the way down the visible grid, or shows the top before the visible hours', () => {
     const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); start(a); expect(a.ev('wrap.scrollTop')).toBe((600 - 300) / 60 * 48 - 600 / 3);
@@ -331,9 +335,6 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     const a = fresh(); at(a, 2, 10, 0); start(a); pill(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(btn(a).textContent).toBe('Live View');
     start(a); btn(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
     start(a); a.ev('openSettings()'); a.key('Escape'); expect(a.ev('live')).toBe(true); a.ev("document.getElementById('xDlg').close()"); a.key('Escape'); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);
-  });
-  it('the sidebar still works while live, and the grid stays live after changes', () => {
-    const a = fresh(day()); at(a, 2, 11, 30); start(a); a.ev("S.people[1].visible=false;render()"); expect(a.ev('live')).toBe(true); expect(cards(a)).toEqual(['School', 'Screen-free time']);
   });
   it('this browser remembers it: a reload opens straight into today\'s Live View', () => {
     const a = fresh(); start(a); expect(JSON.parse(a.storage()[PREFS_KEY]).live).toBe(true);

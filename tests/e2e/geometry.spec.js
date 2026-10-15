@@ -201,24 +201,27 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),
     ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(2, 480, 720, 'O')] }), ev({ id: 'sat', title: 'Hidden', slots: [slot(5, 600, 660)] })] });
   const hit = (p, q) => p.x < q.x + q.width - 0.5 && q.x < p.x + p.width - 0.5 && p.y < q.y + q.height - 0.5 && q.y < p.y + p.height - 0.5;
-  test('speech bubbles float inside the day, never overlap each other, never cross the now line, and point at their boxes from the line', async ({ page }) => {
-    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); });
-    await expect(page.locator('.lvb')).toHaveCount(3); const day = await boxOf(page.locator('.day')), line = await boxOf(page.locator('.now'));
-    const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf));
-    bs.forEach((r, i) => {
-      expect(r.x).toBeGreaterThanOrEqual(day.x - 1); expect(r.x + r.width).toBeLessThanOrEqual(day.x + day.width + 1);
-      expect(r.y > line.y || r.y + r.height < line.y).toBe(true); bs.slice(i + 1).forEach(q => expect(hit(r, q)).toBe(false));
-    });
-    // each arrow tip: on the now line, inside the box (or strip) the bubble describes
-    const tips = await page.evaluate(() => [...document.querySelectorAll('.lvb')].map(b => { const c = b.closest('.day').getBoundingClientRect(), t = b.querySelector('.pt1').textContent.trim();
-      const tgt = [...document.querySelectorAll('.day .ev, .day .bgs')].find(x => x._it.e.title === t).getBoundingClientRect(); return { x: c.left + +b.dataset.ax, l: tgt.left, r: tgt.right }; }));
-    tips.forEach(t => { expect(t.x).toBeGreaterThanOrEqual(t.l); expect(t.x).toBeLessThanOrEqual(t.r); });
+  const live = async page => { await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); }); };
+  const clickAt = async (page, title, fy = 0.5, fx = 0.5) => { const b = await boxOf(page.locator('.day .ev, .day .bgs', { hasText: title }).first()); const p = { x: b.x + b.width * fx, y: b.y + Math.min(b.height - 4, Math.max(30, b.height * fy)) }; await page.mouse.click(p.x, p.y); return p; };
+  test('nothing pops up by itself; clicking a box fades in a bubble pointing at the click, inside the day and clear of the click row', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await live(page); await expect(page.locator('.lvb')).toHaveCount(0);
+    const p = await clickAt(page, 'School'); await expect(page.locator('.lvb')).toHaveCount(1); await expect(page.locator('.lvb')).toHaveClass(/\bin\b/);
+    expect(await page.locator('.lvb').evaluate(e => getComputedStyle(e).animationName)).toBe('lvin');
+    const [day, r] = [await boxOf(page.locator('.day')), await boxOf(page.locator('.lvb'))], ax = await page.locator('.lvb').evaluate(e => +e.dataset.ax);
+    expect(Math.abs(day.x + ax - p.x)).toBeLessThan(7);   // at the click, or up to 6 px from it near the column edges expect(r.y > p.y || r.y + r.height < p.y).toBe(true);
+    expect(r.x).toBeGreaterThanOrEqual(day.x - 1); expect(r.x + r.width).toBeLessThanOrEqual(day.x + day.width + 1);
   });
-  test('no bubble covers the title or the people line of a box, even when boxes start right below the line', async ({ page }) => {
+  test('several open bubbles never overlap; clicking empty space fades them all out', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await live(page);
+    await clickAt(page, 'School', 0.5, 0.7); await clickAt(page, 'School', 0.5, 0.3); await clickAt(page, 'Gym'); await clickAt(page, 'Screen-free time', 0.3); await expect(page.locator('.lvb')).toHaveCount(4);   // two taps on one row of one box want the same spot (a bubble never covers the tapped row)
+    const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf)); bs.forEach((r, i) => bs.slice(i + 1).forEach(q => expect(hit(r, q)).toBe(false)));
+    const [day, wrap] = [await boxOf(page.locator('.day')), await boxOf(page.locator('#wrap'))]; await page.mouse.click(day.x + 40, wrap.y + wrap.height - 40); await expect(page.locator('.lvb')).toHaveCount(0);   // empty space in the evening
+  });
+  test('no bubble covers the title or the people line of a box, even when boxes start right below the click', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
       ev({ id: 'a', title: 'School', slots: [slot(2, 480, 900, 'O')] }), ev({ id: 'b', title: 'Work', color: '#8e4ec6', slots: [slot(2, 480, 1020, 'B')] }),
       ev({ id: 'c', title: 'Lunch', color: '#e8912d', slots: [slot(2, 675, 720, 'O')] }), ev({ id: 'd', title: 'Meeting', color: '#12a5b5', slots: [slot(2, 675, 720, 'B')] })] }));
-    await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); }); await expect(page.locator('.lvb')).toHaveCount(2);
+    await live(page); await clickAt(page, 'School', 0.25); await clickAt(page, 'Work', 0.25); await expect(page.locator('.lvb')).toHaveCount(2);
     const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf)), rows = await Promise.all((await page.locator('.ev .r1, .ev .r2').all()).map(boxOf));
     bs.forEach(r => rows.forEach(q => expect(hit(r, q)).toBe(false)));
   });
