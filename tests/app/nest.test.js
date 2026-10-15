@@ -41,8 +41,8 @@ describe('R-NST-01 An activity marked "can be done during other activities" nest
   it('never nested without a responsible person, inside another marked activity, or inside a background strip', () => {
     expect(nested(fresh(blank({ people, events: [run(), milk({ slots: [{ day: 0, start: 495, end: 510, person: '' }] })] })))).toEqual([]);
     expect(nested(fresh(blank({ people, events: [run({ nest: true }), milk()] })))).toEqual([]);
-    const c = fresh(blank({ people, events: [ev1({ id: 'cl', title: 'Cleaning', slots: [{ day: 0, start: 480, end: 600, person: 'X' }] }), milk({ slots: [{ day: 0, start: 495, end: 510, person: 'X' }] })] }));
-    expect(nested(c)).toEqual([]); expect(c.qa('.bgs')).toHaveLength(2);
+    const c = fresh(blank({ people, events: [ev1({ id: 'cl', title: 'Cleaning', bg: true, slots: [{ day: 0, start: 480, end: 600, person: 'X' }] }), milk({ slots: [{ day: 0, start: 495, end: 510, person: 'X' }] })] }));
+    expect(nested(c)).toEqual([]); expect(c.qa('.bgs')).toHaveLength(1); expect(c.qa('.ev')).toHaveLength(1);
   });
   it('a host in a hidden schedule does not count: the activity is drawn on its own', () => {
     const a = fresh(blank({ people, schedules: [sched(), sched({ id: 's2', name: 'S2', visible: false })], events: [run({ schedules: ['s2'] }), milk()] }));

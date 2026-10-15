@@ -70,7 +70,8 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
       '.schedules[].opacity', '.schedules[].visible', '.types', '.types[].color', '.types[].icon', '.types[].id', '.types[].name', '.types[].soft', '.version'],
   };
   SHAPES[2] = [...SHAPES[1], '.events[].nest'].sort();   // 2: nested activities (R-NST-01)
-  SHAPES[3] = [...SHAPES[2], '.events[].bg'].sort();   // 3: doesn't keep anyone busy (R-EVT-19)
+  SHAPES[3] = [...SHAPES[2], '.events[].bg'].sort();   // 3: in the background (R-EVT-19)
+  SHAPES[4] = SHAPES[3];   // 4: same keys; strips come only from event.bg (MIG[3])
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));
@@ -115,6 +116,26 @@ describe('R-DATA-08 Upgrading old data: version-by-version steps before validati
   });
   it.each([[0], [-3], [1.5], ['one']])('a file with the impossible version %s is refused as not valid', async v => {
     const b = openApp(); await openFile(b, JSON.stringify(workspace({ version: v }))); expect(b.log.alerts[0]).toContain('not a valid'); expect(b.dlgOpen()).toBe(false);
+  });
+});
+
+describe('R-DATA-08 R-EVT-19 Upgrading to version 4 keeps former external strips as strips', () => {
+  const a = openApp();
+  const up = (events, people = [{ id: 'X', name: 'Cleaner', external: true }, { id: 'A', name: 'Ann' }]) => JSON.parse(a.ev(`JSON.stringify(MIG[3](${JSON.stringify({ people, events })}).events.map(e=>!!e.bg))`));
+  const e = (o = {}) => ({ id: 'e', title: 'Cleaning', involved: [], slots: [{ day: 0, start: 600, end: 660, person: 'X' }], ...o });
+  it('an event led by external people in every repetition, with nobody involved or only people on call, gets the mark', () => {
+    expect(up([e(), e({ involved: ['A'], oncall: true }), e({ slots: [{ day: 0, start: 600, end: 660, person: 'X' }, { day: 2, start: 600, end: 660, person: 'X' }] })])).toEqual([true, true, true]);
+  });
+  it('normally involved people, a repetition led by one of us or by nobody, or no external people at all: no mark', () => {
+    expect(up([e({ involved: ['A'] }), e({ slots: [{ day: 0, start: 600, end: 660, person: 'X' }, { day: 2, start: 600, end: 660, person: 'A' }] }), e({ slots: [{ day: 0, start: 600, end: 660, person: '' }] })])).toEqual([false, false, false]);
+    expect(up([e()], [{ id: 'X', name: 'Cleaner' }])).toEqual([false]);
+  });
+  it('an event already marked keeps its mark', () => {
+    expect(up([e({ involved: ['A'], bg: true })])).toEqual([true]);
+  });
+  it.each(versions.filter(v => v < 4))('the external-led cleaning in the version %i sample loads as a strip', async v => {
+    const b = openApp(); await openFile(b, read(v, 'workspace.json')); importNew(b);
+    expect(loaded(b).events.find(x => x.id === 'e-clean').bg).toBe(true); expect(b.qa('.bgs').length).toBeGreaterThan(0);
   });
 });
 

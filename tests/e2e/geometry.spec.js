@@ -196,7 +196,7 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
-test.describe('R-EVT-19 An event marked "doesn\'t keep anyone busy" as drawn by a real browser', () => {
+test.describe('R-EVT-19 An event marked "In the background" as drawn by a real browser', () => {
   test('it is a strip at the right edge of the day, and the person\'s own box beside it keeps almost the full width', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' })], events: [
       ev({ id: 'hw', title: 'Homework', slots: [slot(0, 1080, 1140, 'O')] }), ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(0, 1080, 1200, 'O')] })] }));
@@ -210,7 +210,7 @@ test.describe('R-EVT-19 An event marked "doesn\'t keep anyone busy" as drawn by 
 test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
   test.beforeEach(async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'X', name: 'Cleaner', external: true })], events: [
-      ev({ id: 'w', title: 'Work', slots: [slot(0, 540, 1020, 'A')] }), ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [slot(0, 600, 780, 'X')] })] }));
+      ev({ id: 'w', title: 'Work', slots: [slot(0, 540, 1020, 'A')] }), ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', bg: true, slots: [slot(0, 600, 780, 'X')] })] }));
   });
   test('the strip is 14 px wide, flush with the right edge of the day, and the box beside it stops before the gutter', async ({ page }) => {
     const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), w = await boxOf(page.locator('.ev', { hasText: 'Work' }));
@@ -230,7 +230,7 @@ test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
     expect(top[0]).toMatch(/\bev\b|\br1\b|\bt\b/); expect(top[1]).not.toContain('bgb');
   });
   test('only the lip is interactive: a real press-and-drag on the band area beside the box creates a new event', async ({ page }) => {
-    await seed(page, blank({ people: [person({ id: 'X', name: 'Cleaner', external: true })], events: [ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [slot(0, 600, 780, 'X')] })] }));
+    await seed(page, blank({ people: [person({ id: 'X', name: 'Cleaner', external: true })], events: [ev({ id: 'c', title: 'Cleaning', color: '#12a5b5', bg: true, slots: [slot(0, 600, 780, 'X')] })] }));
     const bb = await boxOf(page.locator('.bgb')); await page.mouse.move(bb.x + 20, bb.y + 10); await page.mouse.down(); await page.mouse.move(bb.x + 20, bb.y + 60, { steps: 4 }); await page.mouse.up();
     await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue('');
   });

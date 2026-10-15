@@ -766,20 +766,22 @@ describe('R-EVT-16 Involved people only on call: available, not busy', () => {
   });
 });
 
-describe('R-EVT-17 Background activities of external people are slim strips that never clash', () => {
+describe('R-EVT-17 Background activities are slim strips that never clash', () => {
   const ppl = [...people, person({ id: 'X', name: 'Cleaner', color: '#12a5b5', external: true })];
-  const clean = (o = {}) => ev1({ id: 'c', title: 'Cleaning', color: '#12a5b5', slots: [{ day: 0, start: 600, end: 780, person: 'X' }], ...o });
+  const clean = (o = {}) => ev1({ id: 'c', title: 'Cleaning', color: '#12a5b5', bg: true, slots: [{ day: 0, start: 600, end: 780, person: 'X' }], ...o });
   const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A' }], ...o });
   const col0 = a => a.q('.day[data-d="0"]');
   const at = (a, x, m) => a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return piecesAt(0,${m},true,fxAt(c,${x})).map(i=>i.e.id)})()`);
-  it('an activity led by an external person without involved people is a strip on the right, not a box', () => {
+  it('an activity marked "In the background" is a strip on the right, not a box', () => {
     const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs');
     expect(a.qa('.ev')).toHaveLength(0); expect(st.dataset.strip).toBe('0/1'); expect(st.style.right).toBe('0px'); expect(st.style.top).toBe(`${(600 - 300) / 60 * 48}px`);
-    expect(cssRule(a, '.bgs').style.getPropertyValue('width')).toBe('14px'); expect(st.getAttribute('aria-label')).toBe('Cleaning, 10:00–13:00, By: Cleaner (external)');
+    expect(cssRule(a, '.bgs').style.getPropertyValue('width')).toBe('14px'); expect(st.getAttribute('aria-label')).toBe('Cleaning, 10:00–13:00, By: Cleaner (external), In the background');
   });
-  it('with involved people on call it is still a strip; with normally involved people it is a normal box with the usual rules', () => {
-    expect(fresh(blank({ people: ppl, events: [clean({ involved: ['A'], oncall: true })] })).qa('.bgs')).toHaveLength(1);
-    const a = fresh(blank({ people: ppl, events: [clean({ involved: ['A'] }), work()] })); expect(a.qa('.bgs')).toHaveLength(0); expect(a.qa('.ev')).toHaveLength(2); expect(a.qa('.ov').length).toBeGreaterThan(0);
+  it('an external person\'s activity without the mark is an ordinary box with the usual rules, with or without people on call', () => {
+    const a = fresh(blank({ people: ppl, events: [clean({ bg: undefined }), work()] })); expect(a.qa('.bgs')).toHaveLength(0); expect(a.qa('.ev')).toHaveLength(2);
+    expect(fresh(blank({ people: ppl, events: [clean({ bg: undefined, involved: ['A'], oncall: true })] })).qa('.bgs')).toHaveLength(0);
+    const b = fresh(blank({ people: ppl, events: [clean({ bg: undefined, involved: ['A'] }), work()] })); expect(b.qa('.ev')).toHaveLength(2); expect(b.qa('.ov').length).toBeGreaterThan(0);
+    expect(fresh(blank({ people: ppl, events: [clean({ involved: ['A'] }), work()] })).qa('.bgs')).toHaveLength(1);   // marked: a strip even with normally involved people
   });
   it('a column with strips reserves a gutter for them; other columns do not', () => {
     const a = fresh(blank({ people: ppl, events: [clean(), work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }, { day: 1, start: 540, end: 1020, person: 'A' }] })] }));
@@ -863,7 +865,7 @@ describe('R-EVT-17 Background activities of external people are slim strips that
   });
 });
 
-describe('R-EVT-19 Events marked "doesn\'t keep anyone busy" are background strips', () => {
+describe('R-EVT-19 Events marked "In the background" are background strips', () => {
   const kids = [...people, person({ id: 'O', name: 'Olivia', color: '#d6409f' })];
   const screen = (o = {}) => ev1({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [{ day: 0, start: 1080, end: 1200, person: 'O' }], ...o });
   const homework = (o = {}) => ev1({ id: 'hw', title: 'Homework', slots: [{ day: 0, start: 1080, end: 1140, person: 'O' }], ...o });
@@ -886,11 +888,11 @@ describe('R-EVT-19 Events marked "doesn\'t keep anyone busy" are background stri
   });
   it('labels: "By:" only with a responsible person, "(external)" only for external people, "With:" unless on call, plus the note', () => {
     const a = fresh(blank({ people: kids, events: [screen({ involved: ['A'] })] }));
-    expect(a.q('.bgs').getAttribute('aria-label')).toBe("Screen-free time, 18:00–20:00, By: Olivia, With: Ann, Doesn't keep anyone busy");
+    expect(a.q('.bgs').getAttribute('aria-label')).toBe('Screen-free time, 18:00–20:00, By: Olivia, With: Ann, In the background');
     const b = fresh(blank({ people: kids, events: [screen({ slots: [{ day: 0, start: 1080, end: 1200, person: '' }] })] }));
-    expect(b.q('.bgs').getAttribute('aria-label')).toBe("Screen-free time, 18:00–20:00, Doesn't keep anyone busy");
-    expect(b.ev('peekHTML(piecesAt(0,1100,true))')).toContain('Doesn&#39;t keep anyone busy'); b.ev('openAgenda(0)'); expect(b.q('#agBody').textContent).toContain("Doesn't keep anyone busy");
-    b.ev("setLang('es')"); expect(b.q('.bgs').getAttribute('aria-label')).toContain('No ocupa a nadie');
+    expect(b.q('.bgs').getAttribute('aria-label')).toBe('Screen-free time, 18:00–20:00, In the background');
+    expect(b.ev('peekHTML(piecesAt(0,1100,true))')).toContain('In the background'); b.ev('openAgenda(0)'); expect(b.q('#agBody').textContent).toContain('In the background');
+    b.ev("setLang('es')"); expect(b.q('.bgs').getAttribute('aria-label')).toContain('En segundo plano');
   });
   it('the statistics leave it out entirely, also as involved time', () => {
     const a = fresh(blank({ people: kids, events: [screen({ involved: ['A'] }), homework()] }));
@@ -902,7 +904,7 @@ describe('R-EVT-19 Events marked "doesn\'t keep anyone busy" are background stri
   });
   it('the dialog checkbox saves and loads the mark, and turns the nesting option off while ticked', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(S.events[0])'); const cb = a.q('#fBg');
-    expect(cb.closest('label').textContent).toBe("Doesn't keep anyone busy (drawn in the background)"); expect(cb.closest('label').title).toMatch(/^For things that apply over a stretch of time/);
+    expect(cb.closest('label').textContent).toBe("In the background (doesn't keep the household busy)"); expect(cb.closest('label').title).toMatch(/^For things that happen in the background.*the cleaner/);
     expect(a.q('#fNest').disabled).toBe(false); cb.checked = true; cb.onchange(); expect(a.q('#fNest').disabled).toBe(true);
     a.q('#fOk').click(); expect(a.ev('S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
     a.ev('openDlg(S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
@@ -910,7 +912,7 @@ describe('R-EVT-19 Events marked "doesn\'t keep anyone busy" are background stri
   });
   it('the checkbox and its explanation are translated', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(S.events[0])');
-    expect(a.q('#fBg').closest('label').textContent).toBe('No ocupa a nadie (se dibuja en segundo plano)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para cosas que se aplican/);
+    expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no ocupa a los de casa)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para lo que ocurre en segundo plano.*tira/);
   });
   it('import accepts the mark only when it is exactly true', () => {
     const d = fresh().ev('parseData({schedules:[],events:[{id:"x",schedules:[],bg:true,slots:[{day:0,start:0,end:60}]},{id:"y",schedules:[],bg:1,slots:[{day:0,start:0,end:60}]}]})');
