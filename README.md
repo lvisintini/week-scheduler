@@ -8,6 +8,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 - Events with title, description, responsible person, involved people, colour
 - Events repeat on chosen days, with per-day times and per-day responsible person
 - Give each event an **activity type** (Sleep, Meal, Work/School, Focus time, Chore, Free time…; your own list with built-in icons) shown as an icon on the event; *Free time* has a soft look. Mark any event or single repetition as **flexible time** (dashed border: it happens around those times but may take less), or give it a **flexible start/end** (e.g. work 9:00–17:00 that may start up to 30 minutes late and finish 15 minutes early: the fixed part is a normal box, the flexible parts dashed extensions that never count as a clash). Mark someone from outside the household (a cleaner, a gardener) as an **external person**: what they do alone is drawn as a slim strip at the edge of the day that never clashes with anything and stays out of the statistics; involved people can be marked as **only on call**
+- **Extras** on a single occurrence: small tasks or reminders such as *Bring milk* on Monday's school drop-off, added from the box's extras button, dragged to another occurrence (Ctrl/Alt copies) and listed in the hover card and the printed day agenda as a checklist (a slim background strip with extras shows a ⚠ so they aren't missed)
 - Overlapping events that share a person (or where either has no responsible person) render as diagonal stripes of the overlapping colours; events at the same time that share nobody sit side by side, and an event that concerns several of them spans their lanes
 - **Statistics** per person or for everyone: how the week is spent by activity type (168-hour bar, day bars, table), double-booked and unplanned time; copy as a table, download CSV or print
 - **People** list that works like schedules (toggle to show/hide their events; drag to reorder, which sets the lane order)
@@ -27,7 +28,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
-A saved file or link holds one workspace (`version: 1`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.
+A saved file or link holds one workspace (`version: 2`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.
 
 Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
 
@@ -36,10 +37,10 @@ The app is one static file and needs no build; the tests are dev-only.
 
 ```
 npm install
-npm test                    # 951 fast tests (jsdom), about 40 seconds
+npm test                    # 1,166 fast tests (jsdom), about a minute
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
-npm run test:e2e            # 139 real-browser tests (Chromium + a phone profile), about 4 minutes
+npm run test:e2e            # 161 real-browser tests (Chromium + a phone profile), about 4 minutes
 npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```

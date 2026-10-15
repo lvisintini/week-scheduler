@@ -60,7 +60,7 @@ test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', 
   test('a wrong password asks again; cancelling loads nothing; in both cases the address bar ends up clean', async ({ page, browser }) => {
     const link = await makeLink(page); const { ctx, page: other } = await visitor(browser); await other.goto(link);
     await other.locator('#xDlg input[type=password]').fill('wrong wrong wrong'); await dialogButton(other, 'Open').click(); await expect(other.locator('#xDlg')).toContainText('Wrong password');
-    await dialogButton(other, 'Cancel').click(); expect(other.url()).toBe(BASE + '/'); expect((await data(other)).events).toHaveLength(0); await ctx.close();
+    await dialogButton(other, 'Cancel').click(); await expect(other).toHaveURL(BASE + '/'); expect((await data(other)).events).toHaveLength(0); await ctx.close();
   });
   test('after the right password the data is removed from the address bar and from history', async ({ page, browser }) => {
     const link = await makeLink(page); const { ctx, page: other } = await visitor(browser); await other.goto(link); await other.locator('#xDlg input[type=password]').fill(PASSWORD); await dialogButton(other, 'Open').click();
@@ -158,10 +158,10 @@ test.describe('R-DATA-08 Sample files of every published format open in a real b
   for (const v of versions) {
     const read = f => fs.readFileSync(FIX + v + '/' + f, 'utf8');
     test(`the ${v} link (encrypted outside the browser) opens with its password in Chromium`, async ({ browser }) => {
-      const { household, FIXTURE_PASSWORD } = await import('../fixtures/household.js');
+      const { householdAt, FIXTURE_PASSWORD } = await import('../fixtures/household.js');
       const link = read('link.txt').trim(), { ctx, page } = await visitor(browser); await page.goto(BASE + '/' + link.slice(link.indexOf('#')));
       await page.locator('#xDlg input[type=password]').fill(FIXTURE_PASSWORD); await dialogButton(page, 'Open').click();
-      await expect(page.locator('#toast')).toHaveText('Shared schedule loaded'); expect(await data(page)).toMatchObject(household); await ctx.close();
+      await expect(page.locator('#toast')).toHaveText('Shared schedule loaded'); expect(await data(page)).toMatchObject(householdAt(+v.slice(1))); await ctx.close();
     });
     test(`the ${v} browser memory loads after a real page load with both workspaces`, async ({ page }) => {
       await openApp(page, { storage: { 'weekly-schedules-workspaces': read('store.json') } });

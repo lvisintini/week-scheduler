@@ -211,3 +211,42 @@ test.describe('R-GRID-11 Focusing on one day with a real mouse and keyboard', ()
     await expect(btn).toBeFocused(); await expect(btn).toHaveCSS('opacity', '1'); await page.keyboard.press('Enter'); await expect(page.locator('.day')).toHaveAttribute('data-d', '4');
   });
 });
+
+test.describe('R-XTR-03 Extras with a real mouse: add them in the list, drag them to another box', () => {
+  const two = () => blank({ events: [ev({ slots: [{ ...slot(0, 600, 720), extras: ['Bring milk'] }] }), ev({ id: 'e2', title: 'Other', color: '#2fa66a', slots: [slot(2, 600, 720)] })] });
+  const xs = (page, e) => page.evaluate(n => S.events[n].slots[0].extras || [], e);
+  const dragGrip = async (page, to, keys = []) => {
+    const g = await page.locator('.xpop .xg').first().boundingBox(), b = await pt(page, to.col, to.min);
+    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 8 });
+    for (const k of keys) await page.keyboard.down(k);
+    await page.mouse.up(); for (const k of keys) await page.keyboard.up(k);
+  };
+  test('the "+" appears when hovering a box; it opens the list, where Enter adds an extra', async ({ page }) => {
+    await seed(page, two()); const add = page.locator('.day[data-d="2"] .ev .xb.add');
+    await expect(add).toHaveCSS('opacity', '0'); const p = await pt(page, 2, 650); await page.mouse.move(p.x, p.y); await expect(add).toHaveCSS('opacity', '1');
+    await add.click(); await expect(page.locator('.xpop')).toBeVisible(); await expect(page.locator('.xpop .xadd')).toBeFocused();
+    await page.keyboard.type('Sports kit'); await page.keyboard.press('Enter');
+    expect(await xs(page, 1)).toEqual(['Sports kit']); await expect(page.locator('.day[data-d="2"] .ev .xb em')).toHaveText('1');
+  });
+  test('dragging an extra by its grip onto another box moves it there', async ({ page }) => {
+    await seed(page, two()); await page.locator('.day[data-d="0"] .ev .xb').click(); await dragGrip(page, { col: 2, min: 660 });
+    expect(await xs(page, 0)).toEqual([]); expect(await xs(page, 1)).toEqual(['Bring milk']); await expect(page.locator('#toast')).toContainText('Moved "Bring milk"');
+  });
+  test('holding Ctrl at the drop copies the extra instead of moving it', async ({ page }) => {
+    await seed(page, two()); await page.locator('.day[data-d="0"] .ev .xb').click(); await dragGrip(page, { col: 2, min: 660 }, ['Control']);
+    expect(await xs(page, 0)).toEqual(['Bring milk']); expect(await xs(page, 1)).toEqual(['Bring milk']);
+  });
+  test('clicking the extras button neither moves the box nor opens the event dialog', async ({ page }) => {
+    await seed(page, two()); await page.locator('.day[data-d="0"] .ev .xb').click(); await page.waitForTimeout(300);
+    await expect(page.locator('#dlg')).toBeHidden(); expect((await page.evaluate(() => S.events[0].slots[0].start))).toBe(600);
+  });
+});
+
+test.describe('R-XTR-06 The ⚠ of a background strip with extras, in a real browser', () => {
+  test('the ⚠ sits inside the top of the strip and the title text starts below it', async ({ page }) => {
+    await seed(page, blank({ people: [person({ id: 'X', name: 'Cleaner', external: true })], events: [ev({ title: 'Cleaning', slots: [{ ...slot(1, 600, 780, 'X'), extras: ['Leave the key'] }] })] }));
+    const s = await page.locator('.bgs').boundingBox(), w = await page.locator('.bgs .xwn').boundingBox(), t = await page.locator('.bgs span').evaluate(el => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().top; });
+    expect(w.x).toBeGreaterThanOrEqual(s.x); expect(w.x + w.width).toBeLessThanOrEqual(s.x + s.width + 0.5);
+    expect(w.y).toBeGreaterThanOrEqual(s.y); expect(w.y + w.height).toBeLessThanOrEqual(s.y + 16); expect(t).toBeGreaterThanOrEqual(w.y + w.height);
+  });
+});

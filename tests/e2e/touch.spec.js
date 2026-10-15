@@ -57,3 +57,21 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     expect(r.doc).toBeLessThanOrEqual(1); expect(r.body).toBe('hidden');
   });
 });
+
+test.describe('R-XTR-03 Extras on a phone', () => {
+  const two = () => blank({ events: [ev({ slots: [{ ...slot(0, 600, 720), extras: ['Bring milk'] }] }), ev({ id: 'e2', title: 'Other', color: '#2fa66a', slots: [slot(1, 600, 720)] })] });
+  test('the "+" is always visible on touch screens and a tap opens the extras list', async ({ page }) => {
+    await seed(page, two()); const add = page.locator('.day[data-d="1"] .ev .xb.add'); await expect(add).toHaveCSS('opacity', '0.85');
+    const b = await add.boundingBox(); await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+    await expect(page.locator('.xpop')).toBeVisible(); await expect(page.locator('#dlg')).toBeHidden();
+  });
+  test('dragging an extra by its grip with a finger moves it to another box without scrolling', async ({ page }) => {
+    await seed(page, two()); const x = await page.locator('.day[data-d="0"] .ev .xb').boundingBox(); await page.touchscreen.tap(x.x + x.width / 2, x.y + x.height / 2);
+    const g = await page.locator('.xpop .xg').first().boundingBox(), a = { x: g.x + g.width / 2, y: g.y + g.height / 2 }, b = await pt(page, 1, 660);
+    const top = await page.evaluate(() => document.getElementById('wrap').scrollTop);
+    const pts = [a]; for (let i = 1; i <= 10; i++) pts.push({ x: a.x + (b.x - a.x) * i / 10, y: a.y + (b.y - a.y) * i / 10 });
+    await touch(page, pts);
+    expect(await page.evaluate(() => [S.events[0].slots[0].extras, S.events[1].slots[0].extras])).toEqual([undefined, ['Bring milk']]);
+    expect(await page.evaluate(() => document.getElementById('wrap').scrollTop)).toBe(top);
+  });
+});
