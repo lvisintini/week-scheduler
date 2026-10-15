@@ -60,7 +60,7 @@ test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', 
   test('a wrong password asks again; cancelling loads nothing; in both cases the address bar ends up clean', async ({ page, browser }) => {
     const link = await makeLink(page); const { ctx, page: other } = await visitor(browser); await other.goto(link);
     await other.locator('#xDlg input[type=password]').fill('wrong wrong wrong'); await dialogButton(other, 'Open').click(); await expect(other.locator('#xDlg')).toContainText('Wrong password');
-    await dialogButton(other, 'Cancel').click(); expect(other.url()).toBe(BASE + '/'); expect((await data(other)).events).toHaveLength(0); await ctx.close();
+    await dialogButton(other, 'Cancel').click(); await expect(other).toHaveURL(BASE + '/'); expect((await data(other)).events).toHaveLength(0); await ctx.close();
   });
   test('after the right password the data is removed from the address bar and from history', async ({ page, browser }) => {
     const link = await makeLink(page); const { ctx, page: other } = await visitor(browser); await other.goto(link); await other.locator('#xDlg input[type=password]').fill(PASSWORD); await dialogButton(other, 'Open').click();
