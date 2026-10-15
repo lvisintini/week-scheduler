@@ -196,6 +196,17 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
+test.describe('R-EVT-19 An event marked "doesn\'t keep anyone busy" as drawn by a real browser', () => {
+  test('it is a strip at the right edge of the day, and the person\'s own box beside it keeps almost the full width', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' })], events: [
+      ev({ id: 'hw', title: 'Homework', slots: [slot(0, 1080, 1140, 'O')] }), ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(0, 1080, 1200, 'O')] })] }));
+    await page.evaluate(() => { document.getElementById('wrap').scrollTop = 12 * HH; });
+    const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), hw = await boxOf(page.locator('.ev', { hasText: 'Homework' }));
+    expect(Math.round(st.width)).toBe(14); expect(Math.abs((col.x + col.width) - (st.x + st.width))).toBeLessThan(1.5);
+    expect(hw.x + hw.width).toBeLessThanOrEqual(st.x - 1); expect(hw.width).toBeGreaterThan(col.width - 6 - 16 - 2); await expect(page.locator('.ov')).toHaveCount(0);
+  });
+});
+
 test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
   test.beforeEach(async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'X', name: 'Cleaner', external: true })], events: [

@@ -35,6 +35,8 @@ export const household = {
       slots: [{ day: 6, start: 1320, end: 1800, person: 'p-luis' }] },
     { id: 'e-milk', title: 'Collect milk', desc: '', color: '#e8912d', nest: true, schedules: ['s-home'], involved: [],
       slots: [{ day: 0, start: 495, end: 510, person: 'p-luis' }, { day: 5, start: 540, end: 555, person: 'p-luis' }] },
+    { id: 'e-screen', title: 'Screen-free time', desc: '', color: '#607d8b', bg: true, schedules: ['s-home'], involved: [],
+      slots: [{ day: 0, start: 1080, end: 1200, person: 'p-lucia' }] },
     { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
       slots: [{ day: 5, start: 600, end: 720, person: '' }, { day: 5, start: 900, end: 960, person: '' }] },
   ],
@@ -57,6 +59,7 @@ export const grandparents = {
 // (the sample files of older versions are compared with this). Add an entry whenever FMT goes up.
 const ADDED = {
   2: h => ({ ...h, events: h.events.filter(e => !e.nest) }),   // event.nest, nested activities (R-NST-01)
+  3: h => ({ ...h, events: h.events.filter(e => !e.bg) }),   // event.bg, doesn't keep anyone busy (R-EVT-19)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

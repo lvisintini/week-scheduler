@@ -862,3 +862,58 @@ describe('R-EVT-17 Background activities of external people are slim strips that
     expect(h).toContain('Cleaning'); expect(h).toContain('By: Cleaner'); expect(h).toContain('10:00–13:00');
   });
 });
+
+describe('R-EVT-19 Events marked "doesn\'t keep anyone busy" are background strips', () => {
+  const kids = [...people, person({ id: 'O', name: 'Olivia', color: '#d6409f' })];
+  const screen = (o = {}) => ev1({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [{ day: 0, start: 1080, end: 1200, person: 'O' }], ...o });
+  const homework = (o = {}) => ev1({ id: 'hw', title: 'Homework', slots: [{ day: 0, start: 1080, end: 1140, person: 'O' }], ...o });
+  const col0 = a => a.q('.day[data-d="0"]');
+  it('a marked event led by one of our people is a strip at the right edge, not a box', () => {
+    const a = fresh(blank({ people: kids, events: [screen()] })); expect(a.qa('.ev')).toHaveLength(0); expect(a.qa('.bgs')).toHaveLength(1);
+    expect(a.q('.bgs').style.right).toBe('0px'); expect(col0(a).style.getPropertyValue('--gut')).toBe('16px');
+  });
+  it('it never clashes with the person\'s own activities: no stripes, no lanes', () => {
+    const a = fresh(blank({ people: kids, events: [screen(), homework()] })); expect(a.qa('.ov')).toHaveLength(0); expect(a.q('.ev').dataset.lane).toBeUndefined();
+    const b = fresh(blank({ people: kids, events: [screen({ bg: undefined }), homework()] })); expect(b.qa('.ov').length).toBeGreaterThan(0);
+  });
+  it('for the whole family (nobody responsible) or with involved people it is still a strip', () => {
+    expect(fresh(blank({ people: kids, events: [screen({ slots: [{ day: 0, start: 1080, end: 1200, person: '' }] })] })).qa('.bgs')).toHaveLength(1);
+    expect(fresh(blank({ people: kids, events: [screen({ involved: ['A', 'B'] })] })).qa('.bgs')).toHaveLength(1);
+  });
+  it('the people filter applies as for any event', () => {
+    const a = fresh(blank({ people: [people[0], { ...kids[3], visible: false }], events: [screen()] })); expect(a.qa('.bgs')).toHaveLength(0);
+    const b = fresh(blank({ people: [{ ...people[0], visible: false }], events: [screen({ slots: [{ day: 0, start: 1080, end: 1200, person: '' }] })] })); expect(b.qa('.bgs')).toHaveLength(1);
+  });
+  it('labels: "By:" only with a responsible person, "(external)" only for external people, "With:" unless on call, plus the note', () => {
+    const a = fresh(blank({ people: kids, events: [screen({ involved: ['A'] })] }));
+    expect(a.q('.bgs').getAttribute('aria-label')).toBe("Screen-free time, 18:00–20:00, By: Olivia, With: Ann, Doesn't keep anyone busy");
+    const b = fresh(blank({ people: kids, events: [screen({ slots: [{ day: 0, start: 1080, end: 1200, person: '' }] })] }));
+    expect(b.q('.bgs').getAttribute('aria-label')).toBe("Screen-free time, 18:00–20:00, Doesn't keep anyone busy");
+    expect(b.ev('peekHTML(piecesAt(0,1100,true))')).toContain('Doesn&#39;t keep anyone busy'); b.ev('openAgenda(0)'); expect(b.q('#agBody').textContent).toContain("Doesn't keep anyone busy");
+    b.ev("setLang('es')"); expect(b.q('.bgs').getAttribute('aria-label')).toContain('No ocupa a nadie');
+  });
+  it('the statistics leave it out entirely, also as involved time', () => {
+    const a = fresh(blank({ people: kids, events: [screen({ involved: ['A'] }), homework()] }));
+    expect(a.ev('personStats("O",true).planned')).toBe(60); expect(a.ev('personStats("A",true).planned')).toBe(0);
+  });
+  it('it never nests and is never a host of nested activities', () => {
+    const a = fresh(blank({ people: kids, events: [screen({ nest: true }), homework(), ev1({ id: 'm', title: 'Tidy', nest: true, slots: [{ day: 0, start: 1150, end: 1165, person: 'O' }] })] }));
+    expect(a.qa('.ev.nest')).toHaveLength(0); expect(a.qa('.bgs')).toHaveLength(1);
+  });
+  it('the dialog checkbox saves and loads the mark, and turns the nesting option off while ticked', () => {
+    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(S.events[0])'); const cb = a.q('#fBg');
+    expect(cb.closest('label').textContent).toBe("Doesn't keep anyone busy (drawn in the background)"); expect(cb.closest('label').title).toMatch(/^For things that apply over a stretch of time/);
+    expect(a.q('#fNest').disabled).toBe(false); cb.checked = true; cb.onchange(); expect(a.q('#fNest').disabled).toBe(true);
+    a.q('#fOk').click(); expect(a.ev('S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
+    a.ev('openDlg(S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
+    a.q('#fBg').checked = false; a.q('#fBg').onchange(); a.q('#fOk').click(); expect(a.ev('"bg" in S.events[0]')).toBe(false);
+  });
+  it('the checkbox and its explanation are translated', () => {
+    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(S.events[0])');
+    expect(a.q('#fBg').closest('label').textContent).toBe('No ocupa a nadie (se dibuja en segundo plano)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para cosas que se aplican/);
+  });
+  it('import accepts the mark only when it is exactly true', () => {
+    const d = fresh().ev('parseData({schedules:[],events:[{id:"x",schedules:[],bg:true,slots:[{day:0,start:0,end:60}]},{id:"y",schedules:[],bg:1,slots:[{day:0,start:0,end:60}]}]})');
+    expect(d.events.map(e => e.bg)).toEqual([true, undefined]);
+  });
+});

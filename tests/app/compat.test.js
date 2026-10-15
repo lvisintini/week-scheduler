@@ -70,6 +70,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
       '.schedules[].opacity', '.schedules[].visible', '.types', '.types[].color', '.types[].icon', '.types[].id', '.types[].name', '.types[].soft', '.version'],
   };
   SHAPES[2] = [...SHAPES[1], '.events[].nest'].sort();   // 2: nested activities (R-NST-01)
+  SHAPES[3] = [...SHAPES[2], '.events[].bg'].sort();   // 3: doesn't keep anyone busy (R-EVT-19)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));
