@@ -158,6 +158,15 @@ Threat model: a static, client-only app (no server, accounts, network calls or t
 - **[P]** **Legibility of overlapping labels:** text of a lower box shows through a higher one where events clash. Tried and rejected by the user: option A (every box its own layer, stripes inside the topmost box, labels on solid chips; was R-EVT-14, number retired) and option B (cascade: later clashing boxes indented). To be revisited **[U]**.
 - **[P]** Align the end-time select labels with the compact notation (drop "Day after next": `00:00` end of start day, `00:15 (Next day)` … `23:45 (Next day)`, `00:00 (Next day)`).
 - **[P]** A touch equivalent of right-click Copy (long-press is now move/create); phases in day agendas; lip text shrinking for very short phases; real-device testing of the touch gestures (only the logic was verified in jsdom, never on a phone).
+- **[P]** **Revisit the weekly statistics** (R-STAT-01…04) **[U]**.
+- **[P]** **Revisit plans longer than one week** (modes, formats, data models; today the two-week rota is the *Show only this one* workaround, R-SCH-03) **[U]**.
+- **[P]** **Add-on tasks** **[U]**: small tasks attached to another activity (e.g. bringing the milk for school when doing the school drop-off).
+- **[P]** **Non-obstructive tasks** **[U]**: things that apply over a stretch of time without keeping anyone busy (e.g. screen-free time for Olivia / the family).
+- **[P]** **Live view** **[U]**: a toggle that makes the grid follow the now line (R-GRID-04).
+- **[P]** **Revisit the zoom controls** (R-GRID-07) **[U]**.
+- **[P]** **Revisit the event dialog's *Who* and *When* settings** (R-UI-07) **[U]**: the user finds it confusing that the timing and the responsible person look like event settings but are really per repetition (`slot.person`, `slot.flex/fs/fe`; the *By* list and *Timing* control only set every repetition). Idea to discuss: separate a **leader of the event** from who is **on duty for each occurrence**.
+- **[P]** **Per-repetition timing popover** (`tmPop`, R-EVT-15) **[U]**: looks a bit off; make it wider so the *May start up to … late, and finish up to … early* text fits in two lines instead of three.
+- **[P]** **Replace the flexible-timing icon** (the small dashed box `.fxbox` on the per-repetition toggle `.fxt`) **[U]**: the user doesn't like it.
 
 ## 13. Code map (everything is in `index.html`)
 - State `S` (data) + `prefs` (view). `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar (skipped while dragging an opacity slider via `skipSide`).
