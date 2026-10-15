@@ -28,7 +28,7 @@ export const household = {
         { day: 2, start: 540, end: 1020, person: 'p-ann' },
       ] },
     { id: 'e-school', title: 'School run', desc: 'Bring the lunch box', color: '#3b6df0', schedules: ['s-home', 's-school'], involved: ['p-lucia'],
-      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis', extras: ['Bring milk', 'Sports kit'] }, { day: 2, start: 480, end: 510, person: 'p-ann' }] },
+      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis' }, { day: 2, start: 480, end: 510, person: 'p-ann' }] },
     { id: 'e-clean', title: 'Cleaning', desc: '', color: '#a1662f', oncall: true, schedules: ['s-home'], involved: ['p-ann'],
       slots: [{ day: 3, start: 600, end: 780, person: 'p-marta' }] },
     { id: 'e-night', title: 'Night shift', desc: 'Hospital, ward 3', color: '#8e4ec6', schedules: ['s-weekb'], involved: [],
@@ -56,10 +56,3 @@ export const prefsSample = {
   w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fillW: false, fit: true,
   side: false, sideFix: true, secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
 };
-
-// What each format version added to the household above; taking it away again gives the household as version v stored it
-// (the sample files of older versions are compared with this). Add an entry whenever FMT goes up.
-const ADDED = {
-  2: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ extras, ...sl }) => sl) })) }),   // extras on an occurrence
-};
-export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);

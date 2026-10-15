@@ -40,8 +40,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with seventeen tips, among them focusing on a day and extras', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(17); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Extras are small tasks/);
+  it('the Help button opens a "How to use" dialog with sixteen tips, one of them about focusing on a day', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(16); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/);
   });
 });
 

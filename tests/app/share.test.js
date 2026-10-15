@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { openApp, setData, blank, sched, ev1, person, workspace, WS_KEY, PASSWORD, html } from '../helpers/app.js';
-const FMT = +html.match(/const FMT=(\d+);/)[1];   // the current data format version
 
 const rich = () => blank({ people: [person({ id: 'A', name: 'Granny Rose' })], schedules: [sched({ id: 's1', name: 'Care' })], events: [ev1({ title: 'Doctor visit', desc: 'door code 4711', involved: ['A'], slots: [{ day: 1, start: 600, end: 660, person: 'A' }] })] });
 const fresh = (o = {}) => { const a = openApp(o); setData(a, rich()); a.ev('cw().name="Granny care"'); return a; };
@@ -225,7 +224,7 @@ describe('R-SHARE-07 Unencrypted JSON files, only when chosen, with a clear warn
   it('the unencrypted file is readable JSON with everything in it, named weekly-schedules-<date>.json, and needs no password', async () => {
     const a = fresh(); await choosePlain(a); setPw(a, ''); a.click('Save file'); await waitFor(() => a.w.__file);
     const w = JSON.parse(a.w.__file); expect(a.w.__download).toMatch(/^weekly-schedules-\d{4}-\d{2}-\d{2}\.json$/);
-    expect(w).toMatchObject({ version: FMT, name: 'Granny care' }); expect(w.people[0].name).toBe('Granny Rose'); expect(w.events[0].desc).toBe('door code 4711');
+    expect(w).toMatchObject({ version: 1, name: 'Granny care' }); expect(w.people[0].name).toBe('Granny Rose'); expect(w.events[0].desc).toBe('door code 4711');
   });
   it('an unencrypted file counts as a backup of the workspace (it is no longer marked as unsaved)', async () => {
     const a = fresh(); expect(a.ev('isDirty()')).toBe(true); await makePlain(a); expect(a.ev('isDirty()')).toBe(false);

@@ -38,12 +38,12 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
     const a = openApp();
     const hostile = workspace({
       name: payload, schedules: [{ id: 's1', name: payload, color: '#3b6df0', opacity: 1, locked: false, visible: true }], people: [{ id: 'p1', name: payload, color: '#f00000', visible: true }], types: [{ id: 't1', name: payload, color: '#3b6df0', icon: payload }],
-      events: [{ id: 'e1', title: payload, desc: payload, color: '#3b6df0', type: 't1', schedules: ['s1'], involved: ['p1'], slots: [{ day: 0, start: 600, end: 720, person: 'p1', extras: [payload] }, { day: 0, start: 660, end: 780, person: 'p1' }] }],
+      events: [{ id: 'e1', title: payload, desc: payload, color: '#3b6df0', type: 't1', schedules: ['s1'], involved: ['p1'], slots: [{ day: 0, start: 600, end: 720, person: 'p1' }, { day: 0, start: 660, end: 780, person: 'p1' }] }],
       rhythms: [{ id: 'r1', name: payload, visible: true }], phases: [{ id: 'ph1', title: payload, desc: payload, color: '#3b6df0', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }, { day: 1, start: 720, end: 780 }] }],
     });
     a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(hostile)});S=w.data;cw().data=w.data;cw().name=w.name;render()})()`);
     const bits = [
-      'xPop(S.events[0],0)', 'xPut(S.events[0],S.events[0].slots[0],S.events[0].slots[0].extras[0],S.events[0],S.events[0].slots[1],true)', 'openAgenda(0)', 'openRhythmAgenda(S.rhythms[0])', 'openDlg(S.events[0])', 'closeDlgs&&closeDlgs()', 'openCopy(S.events[0])', 'openTransfer("schedule",S.schedules[0])', 'openSettings()',
+      'openAgenda(0)', 'openRhythmAgenda(S.rhythms[0])', 'openDlg(S.events[0])', 'closeDlgs&&closeDlgs()', 'openCopy(S.events[0])', 'openTransfer("schedule",S.schedules[0])', 'openSettings()',
       'printSchedule()', 'printDay(0)', 'openStats("p1")', 'stP="*";openStats()', 'editMode="phases";render();openDlg(S.phases[0])', 'editMode="events";render()',
     ];
     for (const b of bits) { try { a.ev(b); } catch { /* a missing helper is fine; escaping is what matters */ } }
