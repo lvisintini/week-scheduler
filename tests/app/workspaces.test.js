@@ -20,7 +20,7 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
   });
   it('"New workspace…" asks for a name, creates a fresh default workspace and switches to it', () => {
-    const a = fresh(); openMenu(a); menuClick(a, 'New workspace'); expect(names(a)).toEqual(['Workspace', 'Second']); expect(a.ev('cw().name')).toBe('Second'); expect(a.ev('S.schedules[0].name')).toBe('Routine'); expect(a.ev('S.phases.length')).toBe(7); expect(a.ev('S.types.length')).toBe(8);
+    const a = fresh(); openMenu(a); menuClick(a, 'New workspace'); expect(names(a)).toEqual(['Workspace', 'Second']); expect(a.ev('cw().name')).toBe('Second'); expect(a.ev('S.schedules[0].name')).toBe('Routine'); expect(a.ev('S.phases.length')).toBe(7); expect(a.ev('S.types.length')).toBe(9);
   });
   it('a name that already exists is made unique with (2)', () => {
     const a = fresh({ promptAnswer: 'Workspace' }); a.ev('addWorkspace()'); expect(names(a)).toEqual(['Workspace', 'Workspace (2)']);

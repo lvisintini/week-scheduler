@@ -72,20 +72,21 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
 });
 
 describe('R-TYP-02 Default activity types and the built-in icon set', () => {
-  it('a new workspace has eight types: Sleep, Meal, Work/School, Focus time, Chore, Free time, Personal care and Travel', () => {
-    const a = openApp(); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Sleep', 'Meal', 'Work/School', 'Focus time', 'Chore', 'Free time', 'Personal care', 'Travel']);
+  it('a new workspace has nine types: Sleep, Meal, Work/School, Focus time, Chore, Free time, Social, Personal care and Travel', () => {
+    const a = openApp(); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Sleep', 'Meal', 'Work/School', 'Focus time', 'Chore', 'Free time', 'Social', 'Personal care', 'Travel']);
+    expect(a.ev("S.types.find(t=>t.name==='Social')")).toMatchObject({ icon: 'people', color: '#e5484d' }); expect(a.ev("'soft' in S.types.find(t=>t.name==='Social')")).toBe(false);
   });
   it('only Free time has the soft look; every default type has its own icon and a valid colour', () => {
     const a = openApp(); const t = a.ev('JSON.parse(JSON.stringify(S.types))');
-    expect(t.filter(x => x.soft).map(x => x.name)).toEqual(['Free time']); expect(new Set(t.map(x => x.icon)).size).toBe(8); t.forEach(x => expect(x.color).toMatch(/^#[0-9a-f]{6}$/));
+    expect(t.filter(x => x.soft).map(x => x.name)).toEqual(['Free time']); expect(new Set(t.map(x => x.icon)).size).toBe(9); t.forEach(x => expect(x.color).toMatch(/^#[0-9a-f]{6}$/));
     expect(t.find(x => x.name === 'Free time').icon).toBe('sun'); expect(t.find(x => x.name === 'Sleep').icon).toBe('moon');
   });
   it('in Spanish the default types are Spanish', () => {
-    const a = openApp({ languages: ['es'] }); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Dormir', 'Comida', 'Trabajo/Escuela', 'Concentración', 'Tarea doméstica', 'Tiempo libre', 'Cuidado personal', 'Desplazamiento']);
+    const a = openApp({ languages: ['es'] }); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Dormir', 'Comida', 'Trabajo/Escuela', 'Concentración', 'Tarea doméstica', 'Tiempo libre', 'Vida social', 'Cuidado personal', 'Desplazamiento']);
   });
   it('New workspace and Clear memory start with the default types', () => {
-    const a = openApp({ promptAnswer: 'Second' }); a.ev('addWorkspace()'); expect(a.ev('S.types.length')).toBe(8);
-    a.ev('S.types=[];clearMem()'); expect(a.ev('S.types.length')).toBe(8);
+    const a = openApp({ promptAnswer: 'Second' }); a.ev('addWorkspace()'); expect(a.ev('S.types.length')).toBe(9);
+    a.ev('S.types=[];clearMem()'); expect(a.ev('S.types.length')).toBe(9);
   });
   it('the icon set has about forty inline SVG icons, each with an English and a Spanish name', () => {
     const a = openApp(); const keys = a.ev('Object.keys(TICONS)'); expect(keys.length).toBeGreaterThanOrEqual(40);
