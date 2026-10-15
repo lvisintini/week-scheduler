@@ -206,10 +206,11 @@ describe('R-PPL-03 External people (someone from outside the household, e.g. a c
   it('the menu of an external person has no Statistics… entry', () => {
     const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); expect(menu(a)).toEqual(['Colour…', 'External (not one of us)', 'Delete']);
   });
-  it('in the event dialog external people can be chosen as responsible (marked) but are never offered as involved people', () => {
+  it('in the event dialog external people can perform a day (marked) but can never own the event or be offered as involved people', () => {
     const a = ppl(); a.ev('S.people[1].external=true;render();openDlg()');
-    expect([...a.q('#fP').options].map(o => o.textContent)).toEqual(['— none —', 'Ann', 'Cleaner (external)']); expect(a.qa('#fInv label').map(l => l.textContent)).toEqual(['Ann']);
-    a.ev("setLang('es')"); a.ev('openDlg()'); expect(a.q('#fP').options[2].textContent).toBe('Cleaner (externa)');
+    const perf = () => [...a.qa('#fDays .dr')[0].querySelectorAll('select')[2].options].map(o => o.textContent);
+    expect(perf()).toEqual(['Owner (nobody yet)', 'Nobody (concerns everyone)', 'Ann', 'Cleaner (external)']); expect([...a.q('#fOw').options].map(o => o.textContent)).toEqual(['— none —', 'Ann']);
+    expect(a.qa('#fInv label').map(l => l.textContent)).toEqual(['Ann']); a.ev("setLang('es')"); a.ev('openDlg()'); expect(perf()[3]).toBe('Cleaner (externa)');
   });
   it('with only external people the involved list shows the "no people" note instead of chips', () => {
     const a = fresh(blank({ people: [person({ id: 'C', name: 'Cleaner', external: true })] })); a.ev('openDlg()'); expect(a.qa('#fInv label')).toHaveLength(0); expect(a.q('#fInv').textContent).toBe(a.ev("L('noPeople')"));

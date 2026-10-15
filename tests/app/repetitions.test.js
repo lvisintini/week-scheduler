@@ -12,20 +12,21 @@ const toastButtons = a => [...a.q('#toast').querySelectorAll('button')].map(b =>
 const toastBtn = (a, t) => [...a.q('#toast').querySelectorAll('button')].find(b => b.textContent === t);
 
 describe('R-REP-01 An event can repeat on chosen days with its own times and people', () => {
-  it('ticking Monday, Wednesday and Friday creates three repetitions with the general times', () => {
+  it('ticking Wednesday and Friday after Monday gives them Monday\'s times (a new day copies the nearest ticked day above it)', () => {
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'Shift', days: { 0: {}, 2: {}, 4: {} } }); save(a);
     expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 540, 600], [2, 540, 600], [4, 540, 600]]);
   });
-  it('changing the general start/end moves every day that has not been changed by hand', () => {
-    const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { days: { 0: {}, 1: {} } });
-    fillDialog(a, { start: '840', end: '900' });
-    expect(rows(a).slice(0, 2).map(r => r.querySelectorAll('select')[0].value)).toEqual(['840', '840']);
-  });
-  it('a day with its own time keeps it when the general time changes later', () => {
-    const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'T', days: { 0: {}, 1: { start: '720', end: '780' } } }); fillDialog(a, { start: '840', end: '900' });
+  it('each day keeps its own times; changing one day never moves another', () => {
+    const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'T', days: { 0: {}, 1: { start: '720', end: '780' } } });
+    const s0 = rows(a)[0].querySelectorAll('select'); s0[0].value = '840'; s0[0].onchange(); s0[1].value = '900'; s0[1].onchange();
     save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 840, 900], [1, 720, 780]]);
   });
-  it('each repetition can have its own responsible person, defaulting to the general one', () => {
+  it('the copy button of a day gives every other ticked day its times', () => {
+    const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'T', days: { 0: { start: '840', end: '900' }, 1: { start: '720', end: '780' }, 3: {} } });
+    rows(a)[0].querySelector('.cpy').click(); save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 840, 900], [1, 840, 900], [3, 840, 900]]);
+    expect(a.toast()).toBe('Copied to the other days');
+  });
+  it('each repetition can have its own performer, defaulting to the owner', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); fillDialog(a, { title: 'T', person: 'A' }); fillDialog(a, { days: { 0: {}, 1: {}, 2: { person: 'B' } } });
     save(a); expect(slots(a).map(s => s.person)).toEqual(['A', 'A', 'B']);
   });
@@ -84,14 +85,14 @@ describe('R-REP-02 Quick and Advanced repetition modes', () => {
     expect(slots(a).map(s => s.day)).toEqual([2, 4, 5]);
   });
   it('end times at or before the start are disabled in the end list', () => {
-    const a = fresh(blank()); a.toolbar('add').click(); const end = a.q('#fE'); const disabled = [...end.options].filter(o => o.disabled).map(o => +o.value);
+    const a = fresh(blank()); a.toolbar('add').click(); const end = a.qa('#fDays .dr')[0].querySelectorAll('select')[1]; const disabled = [...end.options].filter(o => o.disabled).map(o => +o.value);
     expect(Math.max(...disabled)).toBe(540); expect(disabled.every(v => v <= 540)).toBe(true);
   });
 });
 
 describe('R-REP-03 The end-time list reaches the end of the next day', () => {
   it('lists 192 end times, from 00:15 to 00:00 (Day after next)', () => {
-    const a = fresh(blank()); a.toolbar('add').click(); const opts = [...a.q('#fE').options];
+    const a = fresh(blank()); a.toolbar('add').click(); const opts = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options];
     expect(opts.length).toBe(192); expect(opts[0].textContent).toBe('00:15'); expect(opts.at(-1).textContent).toBe('00:00 (Day after next)'); expect(opts.at(-1).value).toBe('2880');
   });
   it('an end of "01:30 (Next day)" saves an event that ends at minute 1530', () => {
@@ -100,7 +101,7 @@ describe('R-REP-03 The end-time list reaches the end of the next day', () => {
   });
   it('phases (which stay inside a day) only offer end times up to 00:00', () => {
     const a = fresh({ ...blank(), rhythms: [{ id: 'r', name: 'R', visible: true }] }); a.ev("editMode='phases';openDlg(null)");
-    const opts = [...a.q('#fE').options]; expect(opts.at(-1).textContent).toBe('00:00'); expect(opts).toHaveLength(96);
+    const opts = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options]; expect(opts.at(-1).textContent).toBe('00:00'); expect(opts).toHaveLength(96);
   });
 });
 

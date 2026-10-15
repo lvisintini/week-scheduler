@@ -27,8 +27,8 @@ export const household = {
         { day: 1, start: 540, end: 1020, person: 'p-ann', flex: true },
         { day: 2, start: 540, end: 1020, person: 'p-ann' },
       ] },
-    { id: 'e-school', title: 'School run', desc: 'Bring the lunch box', color: '#3b6df0', schedules: ['s-home', 's-school'], involved: ['p-lucia'],
-      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis' }, { day: 2, start: 480, end: 510, person: 'p-ann' }] },
+    { id: 'e-school', title: 'School run', desc: 'Bring the lunch box', color: '#3b6df0', owner: 'p-ann', schedules: ['s-home', 's-school'], involved: ['p-lucia'],
+      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis', inv: ['p-lucia', 'p-ann'] }, { day: 2, start: 480, end: 510, person: 'p-ann', fo: true }] },
     { id: 'e-clean', title: 'Cleaning', desc: '', color: '#a1662f', oncall: true, bg: true, schedules: ['s-home'], involved: ['p-ann'],
       slots: [{ day: 3, start: 600, end: 780, person: 'p-marta' }] },
     { id: 'e-night', title: 'Night shift', desc: 'Hospital, ward 3', color: '#8e4ec6', schedules: ['s-weekb'], involved: [],
@@ -60,7 +60,8 @@ export const grandparents = {
 const ADDED = {
   2: h => ({ ...h, events: h.events.filter(e => !e.nest) }),   // event.nest, nested activities (R-NST-01)
   3: h => ({ ...h, events: h.events.filter(e => e.id !== 'e-screen') }),   // event.bg, in the background (R-EVT-19)
-  4: h => ({ ...h, events: h.events.map(e => e.id === 'e-clean' ? (({ bg, ...r }) => r)(e) : e) }),   // strips only from bg: the external-led cleaning gets the mark
+  4: h => ({ ...h, events: h.events.map(e => e.id === 'e-clean' ? (({ bg, ...r }) => r)(e) : e) }),
+  5: h => ({ ...h, events: h.events.map(({ owner, ...e }) => ({ ...e, slots: e.slots.map(({ fo, inv, ...sl }) => sl) })) }),   // event owner, a day following the owner, a day's own With list (R-EVT-20/21)   // strips only from bg: the external-led cleaning gets the mark
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

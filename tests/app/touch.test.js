@@ -52,7 +52,7 @@ describe('R-TOUCH-01 Touch: scrolling stays native, long-press creates/moves/res
   });
   it('a long-press on empty space followed by a drag creates an event for that range', async () => {
     const a = fresh(blank()); await createDrag(a, { col: 2, min: 600 }, { col: 2, min: 690 }, { pointerType: 'touch', hold: 450 });
-    expect(a.d.getElementById('dlg').open).toBe(true); expect([a.q('#fS').value, a.q('#fE').value]).toEqual(['600', '690']);
+    expect(a.d.getElementById('dlg').open).toBe(true); expect([...a.qa('#fDays .dr')[2].querySelectorAll('select')].slice(0, 2).map(x => x.value)).toEqual(['600', '690']);
   });
   it('a long-press on an event followed by a drag moves it', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 1, min: 750 }, { pointerType: 'touch', hold: 450 });

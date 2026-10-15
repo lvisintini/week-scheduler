@@ -15,7 +15,7 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
   test('a long press on empty space and a drag creates an event for that time range', async ({ page }) => {
     await seed(page, blank()); const a = await pt(page, 0, 600), b = await pt(page, 0, 690);
     await touch(page, [a, { x: a.x, y: (a.y + b.y) / 2 }, b], { hold: 550 });
-    await expect(page.locator('#dlg')).toBeVisible(); expect(await page.inputValue('#fS')).toBe('600'); expect(await page.inputValue('#fE')).toBe('690');
+    await expect(page.locator('#dlg')).toBeVisible(); const r = page.locator('#fDays .dr:has(input:checked)').locator('select'); expect(await r.nth(0).inputValue()).toBe('600'); expect(await r.nth(1).inputValue()).toBe('690');
   });
   test('a long press on an event and a drag moves it to the neighbouring day', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const a = await pt(page, 0, 630), b = await pt(page, 1, 750);

@@ -318,14 +318,18 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT'));
     expect(lb.x + lb.width).toBeLessThan(f.x); expect(Math.abs((lb.y + lb.height / 2) - (f.y + f.height / 2))).toBeLessThan(4);
-    const hd = await boxOf(page.locator('#paneQ .dhd span').nth(1)), all = await boxOf(page.locator('#fS')), mon = await boxOf(page.locator('#fDays .dr').first().locator('select').first());
-    expect(Math.abs(all.x - mon.x)).toBeLessThan(1); expect(Math.abs(hd.x - mon.x)).toBeLessThan(1);
+    const col = async (sel, d) => boxOf(page.locator('#fDays .dr').nth(d).locator(sel).first());   // the columns line up: header, Monday and Wednesday
+    for (const [k, sel] of [[1, 'select'], [3, 'select:nth-of-type(3)'], [4, '.wbtn'], [5, '.tsel']]) {
+      const hd = await boxOf(page.locator('#paneQ .dhd span').nth(k)), mon = await col(sel, 0), wed = await col(sel, 2);
+      expect(Math.abs(hd.x - mon.x), `column ${k}`).toBeLessThan(1); expect(Math.abs(wed.x - mon.x), `column ${k}`).toBeLessThan(1);
+    }
   });
   test('on a phone the labels move above their fields and the dialog does not scroll sideways', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT')); expect(lb.y + lb.height).toBeLessThanOrEqual(f.y + 1);
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
-    const sel = await boxOf(page.locator('#fS')); expect(sel.width).toBeGreaterThanOrEqual(67);
+    const mon = page.locator('#fDays .dr').first(), sel = await boxOf(mon.locator('select').first()), wb = await boxOf(mon.locator('.wbtn')); expect(sel.width).toBeGreaterThanOrEqual(67);
+    expect(wb.y).toBeGreaterThan(sel.y + sel.height - 1);   // each day folds onto two lines: day, times, performer / With, timing, copy
   });
   test('clicking a person chip with the mouse ticks it and shows "only on call"; clicking again unticks it', async ({ page }) => {
     await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));

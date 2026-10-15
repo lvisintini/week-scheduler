@@ -86,11 +86,6 @@ aside.collapsed .help{display:none}
 .fflags label{font-weight:400}.fflags .ic{margin:0 4px 0 2px;vertical-align:-2px}.fflags .ic svg{width:14px;height:14px}
 .igrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:2px}.igrid button{padding:5px;display:flex;justify-content:center;color:var(--fg)}.igrid button.on{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.igrid svg{width:18px;height:18px}
 #fTyIc svg{width:16px;height:16px}
-.fxbox{display:inline-block;width:14px;height:11px;border:2px dashed currentColor;border-radius:3px;vertical-align:-1px;margin:0 4px 0 2px}
-.fxbox.e{border-style:dashed solid;border-left-style:solid;border-right-style:solid}.fxt .fxl{font-size:10px;margin-left:3px;font-variant-numeric:tabular-nums}
-#fEdge{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin-top:6px}#fEdge select{width:auto}
-.tmpop .oi{display:flex;gap:8px;align-items:center;width:100%;border:0;background:none;text-align:left;padding:5px 6px}.tmpop .oi.on{color:var(--acc);font-weight:600}.tmpop .tme{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;margin:4px 6px}.tmpop select{width:auto}.tmpop .oi svg{width:15px;height:15px;flex-shrink:0}.tmpop .oi .ic{width:15px}.tmpop{width:auto;min-width:220px;max-width:320px}.tmpop .oh{font-size:11px;color:var(--mut);padding:2px 6px 4px}
-.fxt{padding:2px 5px;color:var(--mut);line-height:1}.fxt .fxbox{margin:0}.fxt.on{color:var(--acc);border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}
 .ev .r1,.ev .r2{position:relative;z-index:3;text-shadow:0 1px 2px #0008;line-height:1.25}
 .ev .r1{display:flex;gap:8px;align-items:baseline}
 .ev .r1 .t{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -121,21 +116,28 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}#dlg .btns{border-top:1px solid var(--line);padding-top:14px}.btns .d{margin-right:auto}
 .swatch{width:100%;height:32px;border-radius:8px;padding:0}
 /* event dialog (R-UI-07): label column + sections; day rows and blocks share one column grid with their header */
-#dlg{width:min(620px,95vw)}
+#dlg{width:min(760px,96vw)}
 .fg{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px 10px;align-items:center}.fg>label{margin:0;font-size:13px}
 .fcell{display:flex;gap:8px;align-items:center;min-width:0}.fcell>select,.fcell>input{flex:1;min-width:0}.fcell .swatch{flex:0 0 44px;width:44px}.fcell>.ic:empty{display:none}
 .fsec{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.fsec::after{content:'';flex:1;border-top:1px solid var(--line)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{position:relative;display:inline-flex;align-items:center;gap:4px;margin:0;padding:3px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:13px;color:var(--fg);background:var(--bg)}
 .chips label .ic{margin:0}.chips input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}.chips label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--card))}
 .chips label:has(input:checked)::before{content:'✓';font-weight:700;color:var(--acc)}.chips label:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:1px}.chips:not(:has(label)){font-size:13px;color:var(--mut)}
-#fOcRow,#fNsRow{margin-top:6px}#fNsRow{display:flex;flex-direction:column;gap:4px;align-items:flex-start}#fNsRow label:has(input:disabled){opacity:.5}#fOcRow label,#fNsRow label{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}
-.tmseg{margin:0;flex-wrap:wrap}.tmseg button{flex:1 1 auto;font-size:13px;white-space:nowrap}#fTimMix{margin-top:4px}#fTimMix:empty{display:none}
+#fFit{display:flex;flex-direction:column;gap:4px;align-items:flex-start}#fFit label:has(input:disabled){opacity:.5}#fFit label{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}
+
 #paneQ,#paneA{display:grid;grid-template-columns:var(--dc);gap:6px;align-items:center;margin-top:8px}.dr,.br,.dhd,#fDays,#fBlocks{display:contents}
-#paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.5fr) auto 18px}#paneA{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.5fr) auto 18px auto}
-#dlg.ph #paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) 18px}#dlg.ph #paneA{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) 18px auto}
+#paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.5fr) auto 18px}#paneA{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.5fr) auto 18px auto}
+#dlg.ph #paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px}#dlg.ph #paneA{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px auto}
+.wbtn{font-size:12px;padding:5px 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.wbtn.def{color:var(--mut);font-style:italic}.cpy{padding:3px 7px;font-size:14px;line-height:1}.dr.off .wbtn,.dr.off .cpy{opacity:.4}
+.dsub{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mut);margin:-2px 0 4px}.dsub select{width:auto;font-size:12px;padding:4px 3px}
+.wpop{width:auto;min-width:220px;max-width:320px}.wpop .wdef{display:flex;gap:6px;align-items:center;margin:4px 2px 8px;font-size:13px;color:var(--fg)}.wpop .chips{margin:0}
 .dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child,.br>:first-child{grid-column-start:1}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
 .dr label{margin:0;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
-@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}}
+@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}#paneQ,#paneA{display:block}   /* each day folds onto two lines: its own small grid with named areas */
+ .dhd,.dr,.br{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 36px 18px;grid-template-areas:"d s e c n" "p p w w x" "t t t . ." "m m m m m";gap:4px 6px;align-items:center;margin-bottom:8px}.dr.off>select:nth-of-type(n+3),.dr.off>.wbtn{display:none}   /* an unticked day is one line */
+ .dhd>:nth-child(1),.dr>label,.br>.bd{grid-area:d}.dhd>:nth-child(2),.dr>select:nth-of-type(1),.br>select:nth-of-type(2){grid-area:s}.dhd>:nth-child(3),.dr>select:nth-of-type(2),.br>select:nth-of-type(3){grid-area:e}
+ .dhd>:nth-child(4),.dr>select:nth-of-type(3),.br>select:nth-of-type(4){grid-area:p}.dhd>:nth-child(5),.dr>.wbtn,.br>.wbtn{grid-area:w}.dhd>:nth-child(6),.dr>.tsel,.br>.tsel{grid-area:t}
+ .dr>.cpy,.br>.cpy{grid-area:c}.dr>.wn,.br>.wn{grid-area:n}.br>.bx{grid-area:x}.dr>.dsub,.br>.dsub{grid-area:m;margin:0}}
 .dr select,.br select{width:auto;min-width:0;font-size:12px;padding:5px 3px}.wn{flex:0 0 18px;color:#e8912d;visibility:hidden;display:flex}.wn svg{width:16px;height:16px}
 .tabs{display:flex;gap:4px;margin:14px 0 2px;border-bottom:1px solid var(--line)}.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:6px 12px;color:var(--mut)}.tabs button.on{color:var(--fg);border-bottom-color:var(--acc);font-weight:600}
 .br .bx{padding:0 6px;border:0;background:none;color:#d33;flex:0 0 auto}.br .bx:disabled{opacity:.25}
@@ -225,18 +227,17 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 </div>
 <div class="fsec ev-only"><span>Who</span></div>
 <div class="fg ev-only">
-<label for="fP">By</label><div class="fcell"><span id="fPic" class="ic"></span><select id="fP"></select></div>
-<label>With</label><div><div class="chips" id="fInv"></div><div class="fflags" id="fOcRow"><label title="They are only available (for example at hand to answer the cleaner's questions), not busy: the event never clashes with their other activities and does not count in their statistics."><input type="checkbox" id="fOnCall">Involved people are only on call</label></div></div>
+<label for="fOw" title="Who owns this task as a whole (Fair Play: conceive, plan, execute). The owner performs it by default; any day can have someone else stepping in, in the table below. Only people of the household can own a task.">Owner</label><div class="fcell"><span id="fOwIc" class="ic"></span><select id="fOw"></select></div>
+<label title="The people involved on every day, unless a day has its own list in the table below (its With button).">With</label><div><div class="chips" id="fInv"></div></div>
 </div>
 <div class="fsec"><span>When</span></div>
-<div class="fg ev-only">
-<label title="Fixed: the times are exact. Flexible start/end: the activity may start a bit late and/or finish a bit early (e.g. work 9:00–17:00, starting any time until 9:30); the fixed part is drawn as a normal box and the flexible parts as dashed extensions that never cause stripes. Flexible (around these times): the activity happens around these times but may take less time; drawn with a dashed border. Set here for every repetition; use the toggle on a day or block to set one repetition only.">Timing</label><div><div class="seg tmseg" id="fTim" role="group"></div><div class="note" id="fTimMix"></div><div id="fEdge"><span id="fFsL"></span><select id="fFs"></select><span id="fFeL"></span><select id="fFe"></select><span id="fFeL2"></span></div><div class="fflags" id="fNsRow"><label title="For small tasks done along the way, such as collecting the milk at the end of the school run. When it falls completely within other activities of its responsible person (one or several in a row), it is drawn as a small box inside them instead of as a conflict, its time counts for it in the statistics, and it moves along when you drag the activity it is in."><input type="checkbox" id="fNest">Can be done during the person's other activities</label><label title="For things that happen in the background without keeping the household busy: screen-free time for a child, or the cleaner at work. Drawn as a strip at the right edge of the day, never a conflict with anything, and left out of the statistics. Strips are never nested, so the option above is off while this is ticked."><input type="checkbox" id="fBg">In the background (doesn't keep the household busy)</label></div></div>
-</div>
 <div class="tabs"><button type="button" id="tabQ" class="on" title="Quick mode: tick the days and set the times. One block per day.">Quick</button><button type="button" id="tabA" title="Advanced mode: a list of blocks. Allows several blocks on the same day, but you can't go back to Quick mode once a day has more than one.">Advanced</button></div>
-<div id="paneQ"><div class="dhd"><span title="Tick the days this event repeats on. Each day can have its own times and responsible person; they follow the All days row until you change them.">Days</span><span>Start</span><span>End</span><span class="ev-only">Responsible</span></div>
-<div class="dr dall"><span class="dl">All days</span><select id="fS"></select><select id="fE"></select></div><div class="dsep"></div><div id="fDays"></div></div>
-<div id="paneA" style="display:none"><div class="dhd bhd"><span title="Each block has a day, start, end and responsible person; a day can have several.">Day</span><span>Start</span><span>End</span><span class="ev-only">Responsible</span></div><div id="fBlocks"></div><button type="button" id="fAddBlock">+ Add block</button></div>
+<div id="paneQ"><div class="dhd"><span title="Tick the days this event repeats on. Each day has its own times, the person who performs it, the people involved and its timing; a newly ticked day starts from the nearest ticked day.">Days</span><span>Start</span><span>End</span><span class="ev-only" title="Who performs it on that day: the owner (follows the owner if it changes), nobody (it concerns everyone), or someone stepping in.">Performed by</span><span class="ev-only" title="The people involved on that day: Default follows the list above; click to give the day its own list.">With</span><span class="ev-only" title="Fixed: the times are exact. Flexible start/end: may start a bit late and/or finish a bit early (the fixed part is a normal box, the flexible parts dashed extensions that never cause stripes). Flexible (around these times): happens around these times but may take less; drawn with a dashed border.">Timing</span></div>
+<div id="fDays"></div></div>
+<div id="paneA" style="display:none"><div class="dhd bhd"><span title="Each block has a day, start, end, performer, people involved and timing; a day can have several.">Day</span><span>Start</span><span>End</span><span class="ev-only">Performed by</span><span class="ev-only">With</span><span class="ev-only">Timing</span></div><div id="fBlocks"></div><button type="button" id="fAddBlock">+ Add block</button></div>
 <div class="warnline" id="fWarn"></div>
+<div class="fsec ev-only"><span title="Event-wide switches that change how this event interacts with the others.">How it fits in</span></div>
+<div class="fflags ev-only" id="fFit"><div id="fOcRow"><label title="They are only available (for example at hand to answer the cleaner's questions), not busy: the event never clashes with their other activities and does not count in their statistics."><input type="checkbox" id="fOnCall">Involved people are only on call</label></div><label title="For small tasks done along the way, such as collecting the milk at the end of the school run. When it falls completely within other activities of its responsible person (one or several in a row), it is drawn as a small box inside them instead of as a conflict, its time counts for it in the statistics, and it moves along when you drag the activity it is in."><input type="checkbox" id="fNest">Can be done during the person's other activities</label><label title="For things that happen in the background without keeping the household busy: screen-free time for a child, or the cleaner at work. Drawn as a strip at the right edge of the day, never a conflict with anything, and left out of the statistics. Strips are never nested, so the option above is off while this is ticked."><input type="checkbox" id="fBg">In the background (doesn't keep the household busy)</label></div>
 <div class="fsec"><span class="ev-only" title="At least one. Tick several to make the event appear in each one; editing it then updates all of them. For a two-week rota, tick both Week A and Week B for weekly events.">Schedules *</span><span class="ph-only" title="At least one. Tick several to make the phase appear in each rhythm. Use Copy… to copy it into another rhythm as an independent phase.">Rhythms *</span></div><div class="chips" id="fSch"></div>
 <div class="err" id="err"></div>
 <div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Days and save.">Delete</button><button type="button" id="fCopy" title="Copy this event to another schedule, choosing the colour of the copy.">Copy…</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
@@ -295,10 +296,10 @@ confRh:'Delete rhythm "{n}"?',confRhLost:' {k} phase(s) only in this rhythm will
 noRh:'Create a rhythm first (sidebar → Rhythms → +).',errRh:'Pick at least one rhythm.',cpDestR:'Destination rhythm',help12:'Rhythms colour parts of the day in the background. Switch to "Phases" in the sidebar to edit them; events cannot be touched meanwhile.',rhAgTip:'Agenda of this rhythm',
 dRh:'Normal rhythm',dMid:'Midnight',dEarly:'Early morning',dMorn:'Morning',dNoon:'Noon',dAft:'Afternoon',dEve:'Evening',dNight:'Night',
 tSleep:'Sleep',tMeal:'Meal',tWork:'Work/School',tFocus:'Focus time',tChore:'Chore',tFree:'Free time',tSocial:'Social',tCare:'Personal care',tTravel:'Travel',
-bgNote:'In the background',nestDur:'During: {t}',nestAlso:'Also during this:',tyH:'Activity types',stTitle:'Statistics',stMenu:'Statistics…',stTip:'Statistics: how each person spends the week, by activity type',stWho:'Person',stAll:'Everyone',stInv:'Include time as involved person',stInvTip:'When off, only occurrences the person is responsible for count.',stNoType:'No type',stNotPl:'Not planned',stPlanned:'Planned',stHours:'Hours',stPctW:'% of week',stPctP:'% of planned',stOver:'Overlapping: {h} in {n} place(s)',stFlex:'of which flexible: {h}',stNote:'Counts the visible schedules only (for a two-week rota, show one week at a time). Every hour of the week counts, including hidden early hours and a hidden weekend. Double-booked time counts once, split evenly between its activity types. Events without any people count for nobody.',stNoPpl:'Add people in the sidebar first.',stCopy:'Copy table',stCsv:'Download CSV',stPrint:'Print',stCopied:'Table copied: paste it into a spreadsheet.',stCopyFail:"Couldn't copy to the clipboard.",stCsvDone:'CSV file downloaded. It is not encrypted: it contains names and hours.',stNothing:'Nothing planned for {n} in the visible schedules.',stPerson:'Person',stFlexH:'Flexible hours',stOverH:'Overlapping hours',stDays:'Hours per day',help19:'For a screen everyone can see (a tablet on the wall), press "Live View" in the sidebar: today on its own, read-only and in larger text, following the current time; tap a box to see its details for a minute. Scrolling pauses it for a minute ("Now" returns at once); leave it with the "Live View Mode" button, "Stop Live View" or Esc. This browser remembers it.',help18:'Things that happen in the background without keeping the household busy (screen-free time for a child, the cleaner at work) can be marked "In the background" in the event dialog: they are drawn as a strip at the right edge of the day, never conflict with anything and are left out of the statistics.',help17:'Small tasks done along the way (collecting the milk at the end of the school run) can be marked "Can be done during the person\'s other activities" in the event dialog: inside such an activity they are drawn as a small box in it instead of as a conflict.',help16:'To look closely at one day, click the focus icon in its header: only that day is shown, as wide as the window. ◀ ▶ step to the other days; "Week" or Esc brings the whole week back.',help14:'Statistics (chart button, or ⋯ on a person) show how each person spends the week by activity type, and how much is double-booked or not planned.',help15:'Someone from outside (a cleaner, a gardener): add them to People and choose ⋯ → External (not one of us); they are folded away and left out of the statistics. Tick "In the background" on their activities to draw them as a slim strip on the right of the day, and "Involved people are only on call" for whoever is just available.',mExt:'External (not one of us)',rowS:'{d}: start',rowE:'{d}: end',rowP:'{d}: responsible person',blkD:'Block: day',blkS:'Block: start',blkE:'Block: end',blkP:'Block: responsible person',extGrp:'External',extHid:'{n} hidden',extGrpTip:'People from outside the household (cleaner, gardener, babysitter…). They are kept here, collapsed, because they rarely matter; their eyes still choose whether their activities are shown. Mark someone as external in their ⋯ menu.',extTip:'For someone from outside the household (a cleaner, a gardener, a babysitter): listed in the folded External group, left out of the statistics and never offered as an involved person. To draw their activities as a slim strip on the right of the day, tick "In the background" in the event dialog.',extSuf:'external',oncl:'On call:',tyLbl:'Activity type',tyTip:'What kind of activity each event is (Sleep, Meal, Work/School…). Each event has at most one type; its icon is shown on the event. The colour is used only for statistics; the event keeps its own colour.',addTyTip:'Add an activity type',pTy:'Activity type name?',tyNone:'(none)',mIcon:'Icon…',mSoft:'Soft look',softTip:'Events of this type are drawn as a light tint of their colour with a coloured edge, so they stand out from busy time (used for Free time by default).',mStatColor:'Colour for statistics…',iconTitle:'Choose an icon',iconTip:'Click to choose the icon',confTy:'Delete the activity type "{n}"?',confTyLost:' {k} event(s) will have no type.',
+ownl:'Owner:',perfOwn:'Owner ({n})',perfOwn0:'Owner (nobody yet)',perfNobody:'Nobody (concerns everyone)',wDef:'Default',wNone:'Nobody',wDefTip:'Default: the people involved in the event ({n}). Click to give this day its own list.',wOwnTip:'This day only: {n}. Click to change it or to go back to the default.',rowW:'{d}: with',rowT:'{d}: timing',wPopH:'{d}: with',wUseDef:'Use the event\'s list',cpyTip:'Copy this day to all the other days: times, who performs it, with whom and timing',cpyDone:'Copied to the other days',blkW:'Block',blkX:'Remove this block',bgNote:'In the background',nestDur:'During: {t}',nestAlso:'Also during this:',tyH:'Activity types',stTitle:'Statistics',stMenu:'Statistics…',stTip:'Statistics: how each person spends the week, by activity type',stWho:'Person',stAll:'Everyone',stInv:'Include time as involved person',stInvTip:'When off, only occurrences the person is responsible for count.',stNoType:'No type',stNotPl:'Not planned',stPlanned:'Planned',stHours:'Hours',stPctW:'% of week',stPctP:'% of planned',stOver:'Overlapping: {h} in {n} place(s)',stFlex:'of which flexible: {h}',stNote:'Counts the visible schedules only (for a two-week rota, show one week at a time). Every hour of the week counts, including hidden early hours and a hidden weekend. Double-booked time counts once, split evenly between its activity types. Events without any people count for nobody.',stNoPpl:'Add people in the sidebar first.',stCopy:'Copy table',stCsv:'Download CSV',stPrint:'Print',stCopied:'Table copied: paste it into a spreadsheet.',stCopyFail:"Couldn't copy to the clipboard.",stCsvDone:'CSV file downloaded. It is not encrypted: it contains names and hours.',stNothing:'Nothing planned for {n} in the visible schedules.',stPerson:'Person',stFlexH:'Flexible hours',stOverH:'Overlapping hours',stDays:'Hours per day',help19:'For a screen everyone can see (a tablet on the wall), press "Live View" in the sidebar: today on its own, read-only and in larger text, following the current time; tap a box to see its details for a minute. Scrolling pauses it for a minute ("Now" returns at once); leave it with the "Live View Mode" button, "Stop Live View" or Esc. This browser remembers it.',help18:'Things that happen in the background without keeping the household busy (screen-free time for a child, the cleaner at work) can be marked "In the background" in the event dialog: they are drawn as a strip at the right edge of the day, never conflict with anything and are left out of the statistics.',help17:'Small tasks done along the way (collecting the milk at the end of the school run) can be marked "Can be done during the person\'s other activities" in the event dialog: inside such an activity they are drawn as a small box in it instead of as a conflict.',help16:'To look closely at one day, click the focus icon in its header: only that day is shown, as wide as the window. ◀ ▶ step to the other days; "Week" or Esc brings the whole week back.',help14:'Statistics (chart button, or ⋯ on a person) show how each person spends the week by activity type, and how much is double-booked or not planned.',help15:'Someone from outside (a cleaner, a gardener): add them to People and choose ⋯ → External (not one of us); they are folded away and left out of the statistics. Tick "In the background" on their activities to draw them as a slim strip on the right of the day, and "Involved people are only on call" for whoever is just available.',mExt:'External (not one of us)',rowS:'{d}: start',rowE:'{d}: end',rowP:'{d}: performed by',blkD:'Block: day',blkS:'Block: start',blkE:'Block: end',extGrp:'External',extHid:'{n} hidden',extGrpTip:'People from outside the household (cleaner, gardener, babysitter…). They are kept here, collapsed, because they rarely matter; their eyes still choose whether their activities are shown. Mark someone as external in their ⋯ menu.',extTip:'For someone from outside the household (a cleaner, a gardener, a babysitter): listed in the folded External group, left out of the statistics and never offered as an involved person. To draw their activities as a slim strip on the right of the day, tick "In the background" in the event dialog.',extSuf:'external',oncl:'On call:',tyLbl:'Activity type',tyTip:'What kind of activity each event is (Sleep, Meal, Work/School…). Each event has at most one type; its icon is shown on the event. The colour is used only for statistics; the event keeps its own colour.',addTyTip:'Add an activity type',pTy:'Activity type name?',tyNone:'(none)',mIcon:'Icon…',mSoft:'Soft look',softTip:'Events of this type are drawn as a light tint of their colour with a coloured edge, so they stand out from busy time (used for Free time by default).',mStatColor:'Colour for statistics…',iconTitle:'Choose an icon',iconTip:'Click to choose the icon',confTy:'Delete the activity type "{n}"?',confTyLost:' {k} event(s) will have no type.',
 help13:'Activity types (sidebar) say what each event is: Sleep, Meal, Work/School… Pick one in the event dialog. Types with the soft look, like Free time, are drawn lighter.',
 
-setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',flexNote:'Flexible time (around these times)',tmLbl:'Timing',tmFsA:'Flexible start',tmFeA:'Flexible end',tmFixed:'Fixed',tmEdge:'Flexible start/end',tmFlex:'Flexible (around these times)',tmMix:'Mixed (set per day)',tmLate:'May start up to',tmLate2:'late, and finish up to',tmEarly:'early',tmRowTip:'Timing of this repetition only: fixed, flexible start/end, or flexible (around these times).',tmPopH:'Timing of this repetition',tmEdgeTip:'Flexible start/end: may start up to {a} late and finish up to {b} early.',fsNote:'Start between {a} and {b}',feNote:'Finish between {a} and {b}',errCore:'{d}: the flexible start and end must leave at least 15 minutes of fixed time.',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
+setTheme:'Theme',themeAuto:'System',themeLight:'Light',themeDark:'Dark',themeTip:'Light or dark colours. "System" follows your device setting. Kept in this browser only.',zoomH:'Zoom',zoomNote:'Changes the size of the grid only, not the text. Not used when printing.',zoomRow:'Row height',zoomCol:'Column width',zoomFill:'Fill the window width',zoomFillTip:'Columns are at least the width above and stretch to use any free space, so there is never an empty strip to the right of the week. When the week is wider than the window, scroll sideways. Turn it off to give each day exactly the width above.',zoomFit:'Fit to window',zoomFitTip:'Sizes the rows and columns to fill the window. The sliders are ignored while this is on. Turn it off to choose the sizes yourself and scroll when the week is larger than the window.',zoomReset:'Reset zoom',flexNote:'Flexible time (around these times)',tmFsA:'Flexible start',tmFeA:'Flexible end',tmFixed:'Fixed',tmEdge:'Flexible start/end',tmAround:'Around these times',tmLate:'May start up to',tmLate2:'late, and finish up to',tmEarly:'early',fsNote:'Start between {a} and {b}',feNote:'Finish between {a} and {b}',errCore:'{d}: the flexible start and end must leave at least 15 minutes of fixed time.',zoomResetTip:'Back to 48 px per hour, 110 px columns, fill the window width on, fit to window off.',zoomOffTip:'Turn off "Fit to window" to use this slider.',lockedNote:"Locked: can't be moved or edited.",
 toLink:'Shareable link',shareTitle:'Shareable link',shareBody:'Anyone who opens this link and knows the password gets a copy of this workspace. The data is encrypted on this device before it goes into the link, and is never sent to the web server that hosts the app.',shareLen:'{n} characters.',shareFile:'The app is open from a local file, so this link only works on this computer. Host the app (e.g. GitHub Pages) to share it with others.',shareLong:'This link is very long: some apps and servers may cut it. Consider exporting a JSON file instead.',shareCopy:'Copy link',shareCopied:'Copied ✓',shareFail:'Could not create the link.',
 linkBad:'The shared link is invalid or damaged.',newer:'This was made with a newer version of Weekly Schedules and can’t be opened by this one. Reload the page (or update your copy of the app) and try again.',memNewer:'The data saved in this browser was made with a newer version of Weekly Schedules. This version has not loaded it and will not write over it, so saving to browser memory is turned off. Reload the page to get the newer version (or use Clear memory in Settings to throw that data away).',memNewerSave:'Not saved: the data in browser memory was made with a newer version of Weekly Schedules and would be overwritten. Reload the page to get the newer version, or save to a JSON file instead.',linkLoaded:'Shared schedule loaded',
 wsDefault:'Workspace',wsImported:'Imported workspace',wsShared:'Shared workspace',wsMenuTip:'Switch workspace, or create, rename, duplicate or delete one',wsNew:'New workspace…',wsRename:'Rename current…',wsDup:'Duplicate current',wsDel:'Delete current…',pWs:'Workspace name?',wsCopySuffix:' (copy)',confWs:'Delete workspace "{n}" and all its data? Its saved copy in browser memory stays until you save all workspaces.',wsLast:"You can't delete the only workspace.",
@@ -361,10 +362,10 @@ confRh:'¿Eliminar el ritmo "{n}"?',confRhLost:' También se eliminarán {k} fra
 noRh:'Primero crea un ritmo (barra lateral → Ritmos → +).',errRh:'Elige al menos un ritmo.',cpDestR:'Ritmo de destino',help12:'Los ritmos colorean partes del día al fondo. Cambia a "Franjas" en la barra lateral para editarlas; mientras tanto no se pueden tocar los eventos.',rhAgTip:'Agenda de este ritmo',
 dRh:'Ritmo normal',dMid:'Madrugada',dEarly:'Primera hora',dMorn:'Mañana',dNoon:'Mediodía',dAft:'Tarde',dEve:'Atardecer',dNight:'Noche',
 tSleep:'Dormir',tMeal:'Comida',tWork:'Trabajo/Escuela',tFocus:'Concentración',tChore:'Tarea doméstica',tFree:'Tiempo libre',tSocial:'Vida social',tCare:'Cuidado personal',tTravel:'Desplazamiento',
-bgNote:'En segundo plano',nestDur:'Durante: {t}',nestAlso:'También durante esto:',tyH:'Tipos de actividad',stTitle:'Estadísticas',stMenu:'Estadísticas…',stTip:'Estadísticas: cómo pasa la semana cada persona, por tipo de actividad',stWho:'Persona',stAll:'Todos',stInv:'Incluir el tiempo como persona implicada',stInvTip:'Si está desactivado, solo cuentan las repeticiones de las que la persona es responsable.',stNoType:'Sin tipo',stNotPl:'Sin planificar',stPlanned:'Planificado',stHours:'Horas',stPctW:'% de la semana',stPctP:'% de lo planificado',stOver:'Superpuesto: {h} en {n} sitio(s)',stFlex:'de ello flexible: {h}',stNote:'Solo cuentan los horarios visibles (para una rotación de dos semanas, muestra una semana cada vez). Cuentan todas las horas de la semana, también las horas tempranas y el fin de semana ocultos. El tiempo con doble reserva cuenta una vez, repartido a partes iguales entre sus tipos de actividad. Los eventos sin personas no cuentan para nadie.',stNoPpl:'Primero añade personas en la barra lateral.',stCopy:'Copiar tabla',stCsv:'Descargar CSV',stPrint:'Imprimir',stCopied:'Tabla copiada: pégala en una hoja de cálculo.',stCopyFail:'No se pudo copiar al portapapeles.',stCsvDone:'Archivo CSV descargado. No está cifrado: contiene nombres y horas.',stNothing:'Nada planificado para {n} en los horarios visibles.',stPerson:'Persona',stFlexH:'Horas flexibles',stOverH:'Horas superpuestas',stDays:'Horas por día',help19:'Para una pantalla que todos pueden ver (una tableta en la pared), pulsa "Vista en directo" en la barra lateral: solo el día de hoy, sin poder editarlo y con letra más grande, siguiendo la hora actual; toca un recuadro para ver sus detalles durante un minuto. Desplazarte la pausa un minuto ("Ahora" vuelve al momento); sal con el botón "Modo vista en directo", "Detener vista en directo" o Esc. Este navegador la recuerda.',help18:'Lo que ocurre en segundo plano sin ocupar a los de casa (el tiempo sin pantallas de un niño, la limpiadora trabajando) se puede marcar como "En segundo plano" en el diálogo del evento: se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas.',help17:'Las tareas pequeñas que se hacen de paso (recoger la leche al final del viaje al colegio) se pueden marcar como "Se puede hacer durante otras actividades de la persona" en el diálogo del evento: dentro de una de esas actividades se dibujan como una cajita en ella en vez de como un conflicto.',help16:'Para mirar un día de cerca, haz clic en el icono de enfoque de su cabecera: solo se muestra ese día, tan ancho como la ventana. ◀ ▶ pasan a los otros días; "Semana" o Esc vuelven a mostrar toda la semana.',help14:'Las estadísticas (botón de gráfico, o ⋯ en una persona) muestran cómo pasa la semana cada persona por tipo de actividad, y cuánto tiempo tiene doble reserva o está sin planificar.',help15:'Alguien de fuera (una limpiadora, un jardinero): añádelo en Personas y elige ⋯ → Externa (no es de casa); queda plegado y no sale en las estadísticas. Marca "En segundo plano" en sus actividades para dibujarlas como una tira fina a la derecha del día, y "Las personas implicadas solo están de guardia" para quien solo está disponible.',mExt:'Externa (no es de casa)',rowS:'{d}: inicio',rowE:'{d}: fin',rowP:'{d}: persona responsable',blkD:'Bloque: día',blkS:'Bloque: inicio',blkE:'Bloque: fin',blkP:'Bloque: persona responsable',extGrp:'Externas',extHid:'{n} ocultas',extGrpTip:'Personas de fuera de casa (limpieza, jardinería, canguro…). Se guardan aquí, plegadas, porque rara vez importan; sus ojos siguen decidiendo si se muestran sus actividades. Marca a alguien como externa en su menú ⋯.',extTip:'Para alguien de fuera de casa (una limpiadora, un jardinero, una canguro): aparece en el grupo plegado Externas, no sale en las estadísticas y nunca se ofrece como persona implicada. Para dibujar sus actividades como una tira fina a la derecha del día, marca "En segundo plano" en el diálogo del evento.',extSuf:'externa',oncl:'De guardia:',tyLbl:'Tipo de actividad',tyTip:'Qué tipo de actividad es cada evento (Dormir, Comida, Trabajo/Escuela…). Cada evento tiene como mucho un tipo; su icono se muestra en el evento. El color solo se usa para las estadísticas; el evento conserva su propio color.',addTyTip:'Añadir un tipo de actividad',pTy:'¿Nombre del tipo de actividad?',tyNone:'(ninguno)',mIcon:'Icono…',mSoft:'Aspecto suave',softTip:'Los eventos de este tipo se dibujan con un tono claro de su color y un borde de color, para que se distingan del tiempo ocupado (se usa para Tiempo libre por defecto).',mStatColor:'Color para estadísticas…',iconTitle:'Elige un icono',iconTip:'Haz clic para elegir el icono',confTy:'¿Eliminar el tipo de actividad "{n}"?',confTyLost:' {k} evento(s) se quedarán sin tipo.',
+ownl:'Titular:',perfOwn:'Titular ({n})',perfOwn0:'Titular (aún nadie)',perfNobody:'Nadie (concierne a todos)',wDef:'Por defecto',wNone:'Nadie',wDefTip:'Por defecto: las personas implicadas en el evento ({n}). Haz clic para darle a este día su propia lista.',wOwnTip:'Solo este día: {n}. Haz clic para cambiarla o volver a la lista por defecto.',rowW:'{d}: con',rowT:'{d}: horas',wPopH:'{d}: con',wUseDef:'Usar la lista del evento',cpyTip:'Copiar este día a todos los demás días: horas, quién lo hace, con quién y horas flexibles',cpyDone:'Copiado a los demás días',blkW:'Bloque',blkX:'Quitar este bloque',bgNote:'En segundo plano',nestDur:'Durante: {t}',nestAlso:'También durante esto:',tyH:'Tipos de actividad',stTitle:'Estadísticas',stMenu:'Estadísticas…',stTip:'Estadísticas: cómo pasa la semana cada persona, por tipo de actividad',stWho:'Persona',stAll:'Todos',stInv:'Incluir el tiempo como persona implicada',stInvTip:'Si está desactivado, solo cuentan las repeticiones de las que la persona es responsable.',stNoType:'Sin tipo',stNotPl:'Sin planificar',stPlanned:'Planificado',stHours:'Horas',stPctW:'% de la semana',stPctP:'% de lo planificado',stOver:'Superpuesto: {h} en {n} sitio(s)',stFlex:'de ello flexible: {h}',stNote:'Solo cuentan los horarios visibles (para una rotación de dos semanas, muestra una semana cada vez). Cuentan todas las horas de la semana, también las horas tempranas y el fin de semana ocultos. El tiempo con doble reserva cuenta una vez, repartido a partes iguales entre sus tipos de actividad. Los eventos sin personas no cuentan para nadie.',stNoPpl:'Primero añade personas en la barra lateral.',stCopy:'Copiar tabla',stCsv:'Descargar CSV',stPrint:'Imprimir',stCopied:'Tabla copiada: pégala en una hoja de cálculo.',stCopyFail:'No se pudo copiar al portapapeles.',stCsvDone:'Archivo CSV descargado. No está cifrado: contiene nombres y horas.',stNothing:'Nada planificado para {n} en los horarios visibles.',stPerson:'Persona',stFlexH:'Horas flexibles',stOverH:'Horas superpuestas',stDays:'Horas por día',help19:'Para una pantalla que todos pueden ver (una tableta en la pared), pulsa "Vista en directo" en la barra lateral: solo el día de hoy, sin poder editarlo y con letra más grande, siguiendo la hora actual; toca un recuadro para ver sus detalles durante un minuto. Desplazarte la pausa un minuto ("Ahora" vuelve al momento); sal con el botón "Modo vista en directo", "Detener vista en directo" o Esc. Este navegador la recuerda.',help18:'Lo que ocurre en segundo plano sin ocupar a los de casa (el tiempo sin pantallas de un niño, la limpiadora trabajando) se puede marcar como "En segundo plano" en el diálogo del evento: se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas.',help17:'Las tareas pequeñas que se hacen de paso (recoger la leche al final del viaje al colegio) se pueden marcar como "Se puede hacer durante otras actividades de la persona" en el diálogo del evento: dentro de una de esas actividades se dibujan como una cajita en ella en vez de como un conflicto.',help16:'Para mirar un día de cerca, haz clic en el icono de enfoque de su cabecera: solo se muestra ese día, tan ancho como la ventana. ◀ ▶ pasan a los otros días; "Semana" o Esc vuelven a mostrar toda la semana.',help14:'Las estadísticas (botón de gráfico, o ⋯ en una persona) muestran cómo pasa la semana cada persona por tipo de actividad, y cuánto tiempo tiene doble reserva o está sin planificar.',help15:'Alguien de fuera (una limpiadora, un jardinero): añádelo en Personas y elige ⋯ → Externa (no es de casa); queda plegado y no sale en las estadísticas. Marca "En segundo plano" en sus actividades para dibujarlas como una tira fina a la derecha del día, y "Las personas implicadas solo están de guardia" para quien solo está disponible.',mExt:'Externa (no es de casa)',rowS:'{d}: inicio',rowE:'{d}: fin',rowP:'{d}: lo hace',blkD:'Bloque: día',blkS:'Bloque: inicio',blkE:'Bloque: fin',extGrp:'Externas',extHid:'{n} ocultas',extGrpTip:'Personas de fuera de casa (limpieza, jardinería, canguro…). Se guardan aquí, plegadas, porque rara vez importan; sus ojos siguen decidiendo si se muestran sus actividades. Marca a alguien como externa en su menú ⋯.',extTip:'Para alguien de fuera de casa (una limpiadora, un jardinero, una canguro): aparece en el grupo plegado Externas, no sale en las estadísticas y nunca se ofrece como persona implicada. Para dibujar sus actividades como una tira fina a la derecha del día, marca "En segundo plano" en el diálogo del evento.',extSuf:'externa',oncl:'De guardia:',tyLbl:'Tipo de actividad',tyTip:'Qué tipo de actividad es cada evento (Dormir, Comida, Trabajo/Escuela…). Cada evento tiene como mucho un tipo; su icono se muestra en el evento. El color solo se usa para las estadísticas; el evento conserva su propio color.',addTyTip:'Añadir un tipo de actividad',pTy:'¿Nombre del tipo de actividad?',tyNone:'(ninguno)',mIcon:'Icono…',mSoft:'Aspecto suave',softTip:'Los eventos de este tipo se dibujan con un tono claro de su color y un borde de color, para que se distingan del tiempo ocupado (se usa para Tiempo libre por defecto).',mStatColor:'Color para estadísticas…',iconTitle:'Elige un icono',iconTip:'Haz clic para elegir el icono',confTy:'¿Eliminar el tipo de actividad "{n}"?',confTyLost:' {k} evento(s) se quedarán sin tipo.',
 help13:'Los tipos de actividad (barra lateral) dicen qué es cada evento: Dormir, Comida, Trabajo/Escuela… Elige uno en el diálogo del evento. Los tipos con aspecto suave, como Tiempo libre, se dibujan más claros.',
 
-setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',flexNote:'Horario flexible (alrededor de estas horas)',tmLbl:'Horas',tmFsA:'Inicio flexible',tmFeA:'Fin flexible',tmFixed:'Fijas',tmEdge:'Inicio/fin flexible',tmFlex:'Flexibles (alrededor de estas horas)',tmMix:'Mixto (por día)',tmLate:'Puede empezar hasta',tmLate2:'tarde y terminar hasta',tmEarly:'antes',tmRowTip:'Horas solo de esta repetición: fijas, inicio/fin flexible o flexibles (alrededor de estas horas).',tmPopH:'Horas de esta repetición',tmEdgeTip:'Inicio/fin flexible: puede empezar hasta {a} tarde y terminar hasta {b} antes.',fsNote:'Empieza entre las {a} y las {b}',feNote:'Termina entre las {a} y las {b}',errCore:'{d}: el inicio y el fin flexibles deben dejar al menos 15 minutos de horas fijas.',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
+setTheme:'Tema',themeAuto:'Sistema',themeLight:'Claro',themeDark:'Oscuro',themeTip:'Colores claros u oscuros. "Sistema" sigue el ajuste de tu dispositivo. Se guarda solo en este navegador.',zoomH:'Zoom',zoomNote:'Cambia solo el tamaño de la cuadrícula, no el del texto. No se usa al imprimir.',zoomRow:'Altura de fila',zoomCol:'Ancho de columna',zoomFill:'Llenar el ancho de la ventana',zoomFillTip:'Las columnas miden al menos el ancho de arriba y se estiran para usar el espacio libre, así nunca queda una franja vacía a la derecha de la semana. Si la semana es más ancha que la ventana, desplázate hacia los lados. Desactívalo para dar a cada día exactamente el ancho de arriba.',zoomFit:'Ajustar a la ventana',zoomFitTip:'Ajusta filas y columnas para llenar la ventana. Los controles deslizantes se ignoran mientras esté activado. Desactívalo para elegir tú los tamaños y desplazarte cuando la semana no quepa en la ventana.',zoomReset:'Restablecer zoom',flexNote:'Horario flexible (alrededor de estas horas)',tmFsA:'Inicio flexible',tmFeA:'Fin flexible',tmFixed:'Fijas',tmEdge:'Inicio/fin flexible',tmAround:'Alrededor de estas horas',tmLate:'Puede empezar hasta',tmLate2:'tarde y terminar hasta',tmEarly:'antes',fsNote:'Empieza entre las {a} y las {b}',feNote:'Termina entre las {a} y las {b}',errCore:'{d}: el inicio y el fin flexibles deben dejar al menos 15 minutos de horas fijas.',zoomResetTip:'Vuelve a 48 px por hora, columnas de 110 px, llenar el ancho de la ventana activado y ajustar a la ventana desactivado.',zoomOffTip:'Desactiva "Ajustar a la ventana" para usar este control.',lockedNote:'Bloqueado: no se puede mover ni editar.',
 toLink:'Enlace para compartir',shareTitle:'Enlace para compartir',shareBody:'Quien abra este enlace y conozca la contraseña recibe una copia de este espacio de trabajo. Los datos se cifran en este dispositivo antes de ir al enlace y nunca se envían al servidor web que aloja la aplicación.',shareLen:'{n} caracteres.',shareFile:'La aplicación está abierta desde un archivo local, así que este enlace solo funciona en este ordenador. Aloja la aplicación (p. ej. en GitHub Pages) para compartirla con otras personas.',shareLong:'Este enlace es muy largo: algunas aplicaciones y servidores pueden cortarlo. Considera exportar un archivo JSON.',shareCopy:'Copiar enlace',shareCopied:'Copiado ✓',shareFail:'No se pudo crear el enlace.',
 linkBad:'El enlace compartido no es válido o está dañado.',newer:'Esto se hizo con una versión más nueva de Horarios semanales y esta no puede abrirlo. Recarga la página (o actualiza tu copia de la aplicación) e inténtalo de nuevo.',memNewer:'Los datos guardados en este navegador se hicieron con una versión más nueva de Horarios semanales. Esta versión no los ha cargado y no los sobrescribirá, así que guardar en la memoria del navegador está desactivado. Recarga la página para obtener la versión más nueva (o usa Borrar memoria en Ajustes para descartar esos datos).',memNewerSave:'No se ha guardado: los datos de la memoria del navegador se hicieron con una versión más nueva de Horarios semanales y se sobrescribirían. Recarga la página para obtener la versión más nueva o guarda en un archivo JSON.',linkLoaded:'Horario compartido cargado',
 wsDefault:'Espacio de trabajo',wsImported:'Espacio importado',wsShared:'Espacio compartido',wsMenuTip:'Cambiar de espacio de trabajo, o crear, renombrar, duplicar o eliminar uno',wsNew:'Nuevo espacio de trabajo…',wsRename:'Renombrar el actual…',wsDup:'Duplicar el actual',wsDel:'Eliminar el actual…',pWs:'¿Nombre del espacio de trabajo?',wsCopySuffix:' (copia)',confWs:'¿Eliminar el espacio de trabajo "{n}" y todos sus datos? Su copia guardada en la memoria del navegador permanece hasta que guardes todos los espacios.',wsLast:'No puedes eliminar el único espacio de trabajo.',
@@ -382,14 +383,14 @@ pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige un
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
-['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no ocupa a los de casa)'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar a los de casa: el tiempo sin pantallas de un niño o la limpiadora trabajando. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger la leche al final del viaje al colegio. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: la actividad puede empezar un poco tarde y/o terminar un poco antes (p. ej. trabajo 9:00–17:00, empezando como muy tarde a las 9:30); la parte fija se dibuja como una caja normal y las partes flexibles como extensiones discontinuas que nunca causan rayas. Flexibles (alrededor de estas horas): la actividad ocurre alrededor de estas horas pero puede durar menos; se dibuja con un borde discontinuo. Aquí se aplica a todas las repeticiones; usa el botón de un día o bloque para cambiar solo esa repetición.'],['Description','Descripción'],['By','Por'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Days','Días'],['Day','Día'],['All days','Todos los días'],['Responsible','Responsable'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
-['Tick the days this event','Marca los días en que se repite este evento. Cada día puede tener sus propias horas y persona responsable; siguen la fila Todos los días hasta que los cambies.'],
+['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no ocupa a los de casa)'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar a los de casa: el tiempo sin pantallas de un niño o la limpiadora trabajando. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger la leche al final del viaje al colegio. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: puede empezar un poco tarde y/o terminar un poco antes (la parte fija es un recuadro normal y las flexibles, prolongaciones discontinuas que nunca causan rayas). Flexibles (alrededor de estas horas): ocurre alrededor de estas horas pero puede durar menos; se dibuja con borde discontinuo.'],['Description','Descripción'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Days','Días'],['Day','Día'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
+['Tick the days this event','Marca los días en que se repite este evento. Cada día tiene sus propias horas, quién lo hace, las personas implicadas y sus horas flexibles; un día recién marcado empieza como el día marcado más cercano.'],['Owner','Titular'],['Who owns this task','Quién es titular de esta tarea en su conjunto (Fair Play: concebir, planificar, ejecutar). El titular la hace por defecto; cualquier día puede hacerla otra persona en su lugar, en la tabla de abajo. Solo las personas de casa pueden ser titulares.'],['The people involved on every','Las personas implicadas todos los días, salvo que un día tenga su propia lista en la tabla de abajo (su botón Con).'],['Performed by','Lo hace'],['Who performs it on that day','Quién lo hace ese día: el titular (lo sigue si cambia), nadie (concierne a todos) o alguien que lo sustituye.'],['The people involved on that day','Las personas implicadas ese día: Por defecto sigue la lista de arriba; haz clic para darle al día su propia lista.'],['How it fits in','Cómo encaja'],['Event-wide switches','Opciones de todo el evento que cambian cómo se relaciona con los demás.'],
 ['Schedules *','Horarios *'],
 ['At least one. Tick several to make the event','Al menos uno. Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos. En una rotación de dos semanas, marca Semana A y Semana B para los eventos semanales.'],
 ['Copy…','Copiar…'],['Copy this event to another','Copia este evento a otro horario eligiendo el color de la copia.'],
 ['Delete','Eliminar'],['Cancel','Cancelar'],['Save','Guardar'],
 ['Deletes the event including','Elimina el evento con todos sus días repetidos. Para quitar un solo día, desmárcalo en Días y guarda.'],
-['Quick','Rápido'],['Advanced','Avanzado'],['+ Add block','+ Añadir bloque'],['Each block has a day','Cada bloque tiene día, inicio, fin y persona responsable; un día puede tener varios.'],['Quick mode: tick','Modo rápido: marca los días y pon las horas. Un bloque por día.'],['Advanced mode: a list','Modo avanzado: una lista de bloques. Permite varios bloques el mismo día, pero no se puede volver al modo rápido cuando un día tiene más de uno.'],
+['Quick','Rápido'],['Advanced','Avanzado'],['+ Add block','+ Añadir bloque'],['Each block has a day','Cada bloque tiene día, inicio, fin, quién lo hace, personas implicadas y horas; un día puede tener varios.'],['Quick mode: tick','Modo rápido: marca los días y pon las horas. Un bloque por día.'],['Advanced mode: a list','Modo avanzado: una lista de bloques. Permite varios bloques el mismo día, pero no se puede volver al modo rápido cuando un día tiene más de uno.'],
 ['Rhythms *','Ritmos *'],['At least one. Tick several to make the phase','Al menos uno. Marca varios para que la franja aparezca en cada ritmo. Usa Copiar… para copiarla a otro ritmo como franja independiente.'],
 ['Close','Cerrar'],['Print agenda','Imprimir agenda']];
 const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
@@ -522,6 +523,7 @@ const WKEY='weekly-schedules-workspaces',PKEY='weekly-schedules-prefs';
 let S={schedules:[],events:[],people:[],types:[],rhythms:[],phases:[],phaseOpacity:.3};
 let selK=null,editMode='events',focusD=null;   // focusD: the one day shown in focus mode (R-GRID-11), null = the week; not saved
 const isAdv=sl=>new Set(sl.map(s=>s.day)).size<sl.length;
+const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
 let WS=[],curId=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
 const keyOf=d=>JSON.stringify({schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types,events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
 const dataKey=()=>keyOf(S);
@@ -549,7 +551,7 @@ function redo(){if(!redoSt.length)return;selK=null;undoSt.push(JSON.stringify(S)
 /* Data format (R-DATA-08): FMT is the version of a workspace record (files, links, each workspace in browser memory; the store wrapper
    carries the same number). Raise it on ANY change to what is stored, even an added field (an older app would drop it and then save),
    add MIG[FMT-1] and a folder of sample files under tests/fixtures/. Data newer than FMT is refused, never half-read (R-DATA-09). */
-const FMT=4;
+const FMT=5;
 const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON before parseData. Never delete one.
   1:j=>j,   // 2 added event.nest (R-NST-01); version-1 data has none
   2:j=>j,   // 3 added event.bg (R-EVT-19); version-2 data has none
@@ -558,6 +560,14 @@ const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON
     const arr=x=>Array.isArray(x)?x:[],ext=new Set(arr(j.people).filter(q=>q&&q.external===true).map(q=>String(q.id)));
     arr(j.events).forEach(e=>{if(!e||typeof e!=='object')return;const sl=arr(e.slots);
       if(sl.length&&sl.every(x=>x&&x.person!=null&&ext.has(String(x.person)))&&(!arr(e.involved).length||e.oncall===true))e.bg=true});
+    return j},
+  4:j=>{   // 5: event.owner, slot.fo (follows the owner), slot.inv (own involved list) (R-EVT-20/21). Guess an owner: the most frequent
+    // performer among our people (ties: the earliest repetition); the repetitions they perform follow the owner from now on
+    const arr=x=>Array.isArray(x)?x:[],ours=new Set(arr(j.people).filter(q=>q&&q.external!==true).map(q=>String(q.id)));
+    arr(j.events).forEach(e=>{if(!e||typeof e!=='object')return;const sl=arr(e.slots).filter(x=>x&&typeof x==='object'),n=new Map();
+      sl.forEach(x=>{const p=x.person!=null?String(x.person):'';if(ours.has(p))n.set(p,(n.get(p)||0)+1)});
+      let best=null;n.forEach((c,p)=>{if(!best||c>n.get(best))best=p});   // Map keeps first-seen order, so ties go to the earliest repetition
+      if(best){e.owner=best;sl.forEach(x=>{if(String(x.person)===best)x.fo=true})}});
     return j},
 };
 const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
@@ -575,16 +585,18 @@ function parseData(j,strict){
   const arr=x=>Array.isArray(x)?x:[],clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const lim=(x,n)=>{const a=arr(x);if(strict&&a.length>n)throw new Error('limit');return a};
   lim(j.schedules,LIM.schedules);lim(j.people,LIM.people);lim(j.types,LIM.types);lim(j.events,LIM.events);lim(j.rhythms,LIM.rhythms);lim(j.phases,LIM.phases);
-  const slot=(x,max,person)=>{const st=clamp(+x.start||0,0,1425),o={day:clamp(+x.day||0,0,6),start:st,end:Math.min(max,Math.max(st+SNAP,+x.end||0))};if(person){o.person=x.person!=null?String(x.person):'';if(x.flex===true)o.flex=true;else{const mg=v=>clamp(Math.round((+v||0)/SNAP)*SNAP,0,1440);o.fs=mg(x.fs);o.fe=mg(x.fe);fitMg(o)}}return o};
+  const slot=(x,max,person)=>{const st=clamp(+x.start||0,0,1425),o={day:clamp(+x.day||0,0,6),start:st,end:Math.min(max,Math.max(st+SNAP,+x.end||0))};if(person){o.person=x.person!=null?String(x.person):'';if(x.fo===true)o.fo=true;if(Array.isArray(x.inv))o.inv=[...new Set(x.inv.map(String))].slice(0,LIM.people);if(x.flex===true)o.flex=true;else{const mg=v=>clamp(Math.round((+v||0)/SNAP)*SNAP,0,1440);o.fs=mg(x.fs);o.fe=mg(x.fe);fitMg(o)}}return o};
   const item=v=>({id:String(v.id||uid()),title:String(v.title||'Untitled').slice(0,200),desc:String(v.desc||'').slice(0,5000),color:normHex(v.color)||PAL[0]});
   const types=arr(j.types).map((t,i)=>({id:String(t.id),name:String(t.name).slice(0,200),color:normHex(t.color)||PAL[i%PAL.length],icon:Object.hasOwn(TICONS,t.icon)?t.icon:'dot',...(t.soft===true?{soft:true}:{})})),tids=new Set(types.map(t=>t.id));
   const rhythms=arr(j.rhythms).map(s=>({id:String(s.id),name:String(s.name).slice(0,200),visible:!!s.visible}));
+  const pids=new Set(arr(j.people).map(q=>String(q.id)));
+  const own=ev=>{ev.slots.forEach(sl=>{if(sl.fo)sl.person=ev.owner||'';if(sl.inv&&sameSet(sl.inv,ev.involved))delete sl.inv});return ev};   // R-EVT-20/21
   {let seen=false;rhythms.forEach(s=>{if(s.visible&&seen)s.visible=false;if(s.visible)seen=true})}
   return {
     schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name).slice(0,200),color:normHex(s.color)||PAL[0],opacity:s.opacity==null?1:clamp(+s.opacity||1,.1,1),locked:!!s.locked,visible:s.visible!==false})),
     people:arr(j.people).map((q,i)=>({id:String(q.id),name:String(q.name).slice(0,200),color:normHex(q.color)||PAL[i%PAL.length],visible:q.visible!==false,...(q.external===true?{external:true}:{})})),
     types,
-    events:arr(j.events).map(v=>({...item(v),...(v.type!=null&&tids.has(String(v.type))?{type:String(v.type)}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),...(v.oncall===true?{oncall:true}:{}),...(v.nest===true?{nest:true}:{}),...(v.bg===true?{bg:true}:{}),slots:lim(v.slots,LIM.slots).map(x=>slot(x,MAXEND,true))})).filter(e=>e.slots.length),
+    events:arr(j.events).map(v=>({...item(v),...(v.type!=null&&tids.has(String(v.type))?{type:String(v.type)}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),...(v.owner!=null&&pids.has(String(v.owner))?{owner:String(v.owner)}:{}),...(v.oncall===true?{oncall:true}:{}),...(v.nest===true?{nest:true}:{}),...(v.bg===true?{bg:true}:{}),slots:lim(v.slots,LIM.slots).map(x=>slot(x,MAXEND,true))})).map(own).filter(e=>e.slots.length),
     rhythms,
     phases:arr(j.phases).map(v=>({...item(v),rhythms:arr(v.rhythms).map(String),slots:lim(v.slots,LIM.slots).map(x=>slot(x,1440,false))})).filter(p=>p.slots.length),
     phaseOpacity:j.phaseOpacity==null?.3:clamp(+j.phaseOpacity||.3,.05,1)
@@ -676,7 +688,7 @@ function insertInto(src){
   const tm=mapTypes(src.types,d);
   src.people.forEach(q=>{const id=uid();mp.p[q.id]=id;d.people.push({...q,id,name:uniqueName(q.name,d.people.map(x=>x.name))})});
   src.schedules.forEach(s=>{const id=uid();mp.s[s.id]=id;d.schedules.push({...s,id,name:uniqueName(s.name,d.schedules.map(x=>x.name)),visible:true})});
-  src.events.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=c.schedules.map(i=>mp.s[i]).filter(Boolean);c.involved=c.involved.map(i=>mp.p[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=mp.p[sl.person]||''});retype(c,tm);if(c.schedules.length)d.events.push(c)});
+  src.events.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=c.schedules.map(i=>mp.s[i]).filter(Boolean);c.involved=c.involved.map(i=>mp.p[i]).filter(Boolean);if(c.owner)c.owner=mp.p[c.owner];if(!c.owner)delete c.owner;c.slots.forEach(sl=>{sl.person=mp.p[sl.person]||'';if(sl.inv)sl.inv=sl.inv.map(i=>mp.p[i]).filter(Boolean)});retype(c,tm);if(c.schedules.length)d.events.push(c)});
   const had=d.rhythms.some(r=>r.visible);
   src.rhythms.forEach((r,i)=>{const id=uid();mp.r[r.id]=id;d.rhythms.push({...r,id,name:uniqueName(r.name,d.rhythms.map(x=>x.name)),visible:!had&&i===0})});
   src.phases.forEach(p=>{const c=JSON.parse(JSON.stringify(p));c.id=uid();c.rhythms=c.rhythms.map(i=>mp.r[i]).filter(Boolean);if(c.rhythms.length)d.phases.push(c)});
@@ -728,14 +740,14 @@ function doTransfer(kind,obj,tw,move){
   syncWs();const src=S,td=tw.data;
   if(kind==='schedule'){
     const evs=src.events.filter(e=>e.schedules.includes(obj.id)),ids=new Set();
-    evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));e.slots.forEach(s=>{if(s.person)ids.add(s.person)})});
+    evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));if(e.owner)ids.add(e.owner);e.slots.forEach(s=>{if(s.person)ids.add(s.person);(s.inv||[]).forEach(i=>ids.add(i))})});
     const pids=[...ids].filter(i=>src.people.some(q=>q.id===i));
     const run=map=>{
       pushUndoWs(tw);const pm={};
       Object.entries(map).forEach(([pid,v])=>{if(v==='__new__'){const q=src.people.find(x=>x.id===pid),nq={id:uid(),name:q.name,color:q.color,visible:true,...(q.external?{external:true}:{})};td.people.push(nq);pm[pid]=nq.id}else pm[pid]=v});
       const ns={...obj,id:uid(),name:uniqueName(obj.name,td.schedules.map(x=>x.name)),visible:true};td.schedules.push(ns);
       const tm=mapTypes(src.types.filter(t=>evs.some(e=>e.type===t.id)),td);
-      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);c.slots.forEach(sl=>{sl.person=sl.person?(pm[sl.person]||''):''});retype(c,tm);td.events.push(c)});
+      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);if(c.owner)c.owner=pm[c.owner];if(!c.owner)delete c.owner;c.slots.forEach(sl=>{sl.person=sl.fo?c.owner||'':sl.person?(pm[sl.person]||''):'';if(sl.inv)sl.inv=sl.inv.map(i=>pm[i]).filter(Boolean)});retype(c,tm);td.events.push(c)});
       if(move){pushUndoWs(cw());removeSchedule(S,obj)}
       render();toast(L(move?'trMoved':'trDone',{n:tw.name}));
     };
@@ -904,7 +916,7 @@ const vs=()=>prefs.showEarly?0:5;
 const pvis=id=>{const p=S.people.find(x=>x.id===id);return !!p&&p.visible};
 const pname=id=>(S.people.find(p=>p.id===id)||{}).name||'';
 // no responsible person -> always shown; otherwise shown if the responsible person or any involved person is visible
-const slotVisible=(e,s)=>!s.person||pvis(s.person)||e.involved.some(pvis);
+const slotVisible=(e,s)=>!s.person||pvis(s.person)||invOf(e,s).some(pvis);
 const vrhythm=()=>S.rhythms.find(s=>s.visible);
 const phVis=p=>{const v=vrhythm();return !!v&&p.rhythms.includes(v.id)};
 const eVis=e=>e.rhythms?phVis(e):visible(e);
@@ -939,7 +951,8 @@ function overlapSet(slots){
 /* side-by-side layout of one day column. Overlapping occurrences that may clash (same event, a shared person — responsible or
    involved — or no people at all) are bundled and drawn on top of each other with stripes; bundles that overlap in time but share
    nobody are placed next to each other in lanes, packed per group of overlapping bundles, ordered by the People list. */
-const pplOf=it=>[it.s.person,...(it.e.oncall?[]:it.e.involved)].filter(Boolean);   // people on call (R-EVT-16) are available, not busy: they never make it clash
+const invOf=(e,s)=>s&&s.inv||e.involved||[];   // the occurrence's involved people: its own list, else the event's default (R-EVT-21)
+const pplOf=it=>[it.s.person,...(it.e.oncall?[]:invOf(it.e,it.s))].filter(Boolean);   // people on call (R-EVT-16) are available, not busy: they never make it clash
 const isExt=id=>{const q=S.people.find(x=>x.id===id);return !!q&&!!q.external};
 const ourPeople=()=>S.people.filter(q=>!q.external);   // external people (R-PPL-03) are left out of the statistics
 const isBg=(e,s)=>!e.rhythms&&!!e.bg;   // background activity, drawn as a strip (R-EVT-17): marked "In the background" (R-EVT-19)
@@ -1178,7 +1191,7 @@ function personStats(pid,inv){
   const days=[...Array(7)].map(()=>[]),nk=new Set(days.flatMap((_,di)=>[...nestOfDay(di,false).keys()]));   // nested pieces (R-NST-04)
   S.events.filter(visible).forEach(e=>e.slots.forEach(s=>{
     if(e.bg)return;   // in the background: counts for nobody (R-EVT-19)
-    if(s.person!==pid&&!(inv&&!e.oncall&&e.involved.includes(pid)))return;   // on-call involvement is not busy time (R-EVT-16)
+    if(s.person!==pid&&!(inv&&!e.oncall&&invOf(e,s).includes(pid)))return;   // on-call involvement is not busy time (R-EVT-16)
     const t=e.type&&S.types.some(x=>x.id===e.type)?e.type:'';
     // flexible margins (R-EVT-15) count as planned and flexible time, but a core at the same time takes it
     piecesOf(s).forEach(q=>{const [c0,c1]=coreIn(s,q);if(c1<=c0){days[q.day].push({a:q.a,b:q.b,t,fx:true,mg:true});return}
@@ -1281,7 +1294,8 @@ function agendaHTML(di){
     if(q.p)bits.push(`<i>${esc(L('contFrom',{d:DAYS[s.day],t:fmt(s.start)}))}</i>`);
     const ty=tyOf(e);if(ty)bits.push(tyTag(ty));if(e.bg)bits.push(esc(L('bgNote')));if(s.flex)bits.push(esc(L('flexNote')));if(s.fs||s.fe)bits.push(esc(edgeNote(s)));
     if(s.person)bits.push(`<b>${esc(L('resp'))}</b> `+pTag(s.person));
-    const inv=e.involved.map(pTag).filter(Boolean);if(inv.length)bits.push(`<b>${esc(L(e.oncall?'oncl':'withl'))}</b> `+inv.join(', '));
+    const inv=invOf(e,s).map(pTag).filter(Boolean);if(inv.length)bits.push(`<b>${esc(L(e.oncall?'oncl':'withl'))}</b> `+inv.join(', '));
+    if(e.owner)bits.push(`<b>${esc(L('ownl'))}</b> `+pTag(e.owner));
     {const nh=nm.get(nkey(e,s,q.p));if(nh)bits.push(esc(L('nestDur',{t:nh.h.e.title})))}
     bits.push(`<b>${esc(L('schl'))}</b> `+e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', '));
     if(overlapSet(e.slots).has(s))bits.push('⚠ '+esc(L('ovTip')));
@@ -1510,7 +1524,7 @@ function printSchedule(){
 function delPerson(q){
   if(!confirm(L('confPer',{n:q.name})))return;hist();
   S.people=S.people.filter(x=>x!==q);
-  S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);e.slots.forEach(s=>{if(s.person===q.id)s.person=''})});
+  S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);if(e.owner===q.id)delete e.owner;e.slots.forEach(s=>{if(s.person===q.id)s.person='';if(s.inv)s.inv=s.inv.filter(i=>i!==q.id)})});
   render();
 }
 function delSchedule(s){
@@ -1608,9 +1622,9 @@ function render(){
       const tt=el('span','t',r1);tt.innerHTML=(s.person?pIc(s.person):'')+esc(e.title);
       const timeTxt=it.piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end);
       el('span','tm',r1).textContent=timeTxt;
-      const by=s.person?pname(s.person):'',invTags=e.involved.map(pTag).filter(Boolean),invNames=e.involved.map(pname).filter(Boolean);
+      const by=s.person?pname(s.person):'',invTags=invOf(e,s).map(pTag).filter(Boolean),invNames=invOf(e,s).map(pname).filter(Boolean);
       if(by||invTags.length){const r2=el('div','r2',d);if(by)el('span','by',r2).textContent=L('byl')+' '+by;if(invTags.length){const wi=el('span','wi',r2);wi.innerHTML=esc(L(e.oncall?'oncl':'withl'))+' '+invTags.join(', ')}}
-      const info=[e.title,timeTxt];if(by)info.push(L('byl')+' '+by);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));
+      const info=[e.title,timeTxt];if(by)info.push(L('byl')+' '+by);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));if(e.owner)info.push(L('ownl')+' '+pname(e.owner));
       if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));
       if(hst)info.push(L('nestDur',{t:hst.e.title}));if(e.desc)info.push(e.desc);if(warn)info.push('⚠ '+L('ovTip'));
       d.setAttribute('aria-label',info.join(', '));
@@ -1635,7 +1649,7 @@ function render(){
       col.insertBefore(bb,col.querySelector('.gl'));d._bb=bb;
       if(lk)d.classList.add('locked');if(selK&&e.id===selK.id&&selK.i===e.slots.indexOf(s))d.classList.add('sel');
       const info=[e.title,it.piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end),...(s.person?[L('byl')+' '+pname(s.person)+(isExt(s.person)?' ('+L('extSuf')+')':'')]:[])];
-      const invNames=e.involved.map(pname).filter(Boolean);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));if(e.bg)info.push(L('bgNote'));if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));
+      const invNames=invOf(e,s).map(pname).filter(Boolean);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));if(e.owner)info.push(L('ownl')+' '+pname(e.owner));if(e.bg)info.push(L('bgNote'));if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));
       d.setAttribute('aria-label',info.join(', '));
       const rz=(!it.cont||it.piece)&&!lk&&editMode==='events'?el('div','rz',col):null;
       if(rz){rz.style.cssText=`top:${px(it.end)}px;left:auto;right:${r0}px;width:${SW}px`;d._rz=rz}
@@ -1707,10 +1721,11 @@ let peekT=null,peekKey='';
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}
 function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card (R-GRID-12): no schedules, warnings or how-to lines
     const time=piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end);
-    const inv=e.involved.map(pTag).filter(Boolean),rows=[`<div class="pt1"><i style="background:${esc(e.color)}"></i>${s.person?pIc(s.person):''}${esc(e.title)}</div>`,`<div>${esc(time)}</div>`];
+    const inv=invOf(e,s).map(pTag).filter(Boolean),rows=[`<div class="pt1"><i style="background:${esc(e.color)}"></i>${s.person?pIc(s.person):''}${esc(e.title)}</div>`,`<div>${esc(time)}</div>`];
     const ty=tyOf(e);if(ty)rows.push(`<div>${tyTag(ty)}</div>`);if(e.bg)rows.push(`<div>${esc(L('bgNote'))}</div>`);if(s.flex)rows.push(`<div>${esc(L('flexNote'))}</div>`);if(s.fs||s.fe)rows.push(`<div>${esc(edgeNote(s))}</div>`);
     if(s.person)rows.push(`<div>${esc(L('byl'))} ${esc(pname(s.person))}</div>`);
     if(inv.length)rows.push(`<div>${esc(L(e.oncall?'oncl':'withl'))} ${inv.join(', ')}</div>`);
+    if(e.owner)rows.push(`<div>${esc(L('ownl'))} ${pTag(e.owner)}</div>`);
     {const k=nkey(e,s,piece||0),nh=nestMap.get(k),ins=[...nestMap.values()].filter(v=>v.h.e===e&&v.h.s===s&&v.h.piece===(piece||0));   // nested activities (R-NST-02)
      if(nh)rows.push(`<div>${esc(L('nestDur',{t:nh.h.e.title}))}</div>`);
      if(ins.length)rows.push(`<div>${esc(L('nestAlso'))} ${ins.map(v=>esc(v.x.e.title+' '+fmt(v.x.s.start)+'–'+fmtEnd(v.x.s.end))).join(', ')}</div>`)}
@@ -1847,84 +1862,96 @@ const pOpts=()=>[['',L('none')],...S.people.map(q=>[q.id,q.name+(q.external?' ('
 const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c};
 $('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
 let fmode='quick',blocks=[],curStl=[],curEtl=[],dkind='event';
-const rows=DAYS.map((n,i)=>{
-  const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
-  const s=el('select','',r),en=el('select','',r),ps=el('select','ev-only',r),fxb=fxBtn(r),wn=el('span','wn',r);wn.innerHTML=ICON_WARN;wn.title=L('ovRowTip');
-  const o={r,cb,s,en,ps,lt,wn,fxb,custom:false,pc:false};fxb.onclick=()=>tmPop(fxb,o);tmSet(o,'');
-  o.upd=()=>{r.classList.toggle('off',!cb.checked);s.disabled=en.disabled=ps.disabled=fxb.disabled=!cb.checked};
-  cb.onchange=()=>{if(cb.checked){if(!o.custom)sync(o);if(!o.pc)ps.value=$('fP').value;const c=tmCur();if(c)tmSet(o,c.tm,c.fs,c.fe)}o.upd();updWarn();updTimAll()};
-  s.onchange=()=>{o.custom=true;if(+en.value<=+s.value)en.value=Math.min(MAXEND,+s.value+60);updEnd(s,en);updWarn()};
-  en.onchange=()=>{o.custom=true;updWarn()};
-  ps.onchange=()=>{o.pc=true};
-  return o});
-/* timing per repetition (R-EVT-12, R-EVT-15): '' fixed, 'flex' = flexible (around these times) → slot.flex, 'edge' = flexible start/end → slot.fs/fe.
-   The event-level list sets every repetition and shows "Mixed" when they differ; the toggle on a day or block opens a popover for that repetition only. */
+/* the day table (R-UI-07): every row (a Quick day or an Advanced block) holds that repetition's own values — times, who performs it
+   (the event's owner by default, R-EVT-20), its own With list or the event's default (R-EVT-21) and its timing (R-EVT-12/15).
+   Nothing here is an event-level look-alike; the ⧉ button copies one row to all the others. */
 const MGS=[0,15,30,45,60,75,90,120,150,180,240];
-function fxBtn(parent){const b=el('button','fxt ev-only',parent);b.type='button';b.setAttribute('aria-pressed','false');return b}
-function tmSet(o,tm,fs,fe){o.tm=tm==='flex'||tm==='edge'?tm:'';o.fs=o.tm==='edge'?+fs||0:0;o.fe=o.tm==='edge'?+fe||0:0;tmBtn(o)}
-function tmBtn(o){const b=o.fxb,on=!!o.tm;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));
-  b.innerHTML=o.tm==='edge'?`<span class="fxbox e"></span><span class="fxl">+${o.fs}−${o.fe}</span>`:'<span class="fxbox"></span>';
-  const t=o.tm==='edge'?L('tmEdgeTip',{a:fmtMg(o.fs),b:fmtMg(o.fe)}):o.tm==='flex'?L('flexNote'):L('tmFixed');
-  b.title=b.__t=L('tmRowTip')+'\n'+t;b.setAttribute('aria-label',b.title)}
-const tmKey=o=>o.tm==='edge'?'edge|'+o.fs+'|'+o.fe:o.tm;
+const OWN='@o';   // "Performed by: Owner" (slot.fo)
+const ownName=()=>{const q=S.people.find(x=>x.id===$('fOw').value);return q?q.name:''};
+const ownLbl=()=>ownName()?L('perfOwn',{n:ownName()}):L('perfOwn0');
+const perfOpts=()=>[[OWN,ownLbl()],['',L('perfNobody')],...S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
+const defInv=()=>[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value);
+function rowCtl(o,r){   // performer, With, timing, copy and warning cells of a row
+  o.ps=el('select','ev-only',r);o.wb=el('button','wbtn ev-only',r);o.wb.type='button';o.wb.onclick=()=>wPop(o);
+  o.tsel=el('select','tsel ev-only',r);o.tsel.onchange=()=>{tmSet(o,o.tsel.value,15,15);updWarn()};
+  o.cp=el('button','cpy',r);o.cp.type='button';o.cp.textContent='⧉';o.cp.onclick=()=>copyRow(o);
+  o.wn=el('span','wn',r);o.wn.innerHTML=ICON_WARN;
+}
+function rowSub(o,r){   // the margins of flexible start/end, on a line of their own under the row
+  o.sub=el('div','dsub ev-only',r);o.subA=el('span','',o.sub);o.fsS=el('select','',o.sub);o.subB=el('span','',o.sub);o.feS=el('select','',o.sub);o.subC=el('span','',o.sub);
+  [o.fsS,o.feS].forEach(x=>{fillSel(x,MGS.map(m=>[m,fmtMg(m)]));x.onchange=()=>{tmSet(o,'edge',+o.fsS.value,+o.feS.value);updWarn()}});
+  rowTexts(o);tmSet(o,'');wSet(o,null);
+}
+function rowTexts(o,d){   // labels and tooltips (also after a language change)
+  fillSel(o.tsel,[['',L('tmFixed')],['edge',L('tmEdge')],['flex',L('tmAround')]]);o.tsel.value=o.tm||'';
+  o.subA.textContent=L('tmLate');o.subB.textContent=L('tmLate2');o.subC.textContent=L('tmEarly');o.fsS.setAttribute('aria-label',L('tmFsA'));o.feS.setAttribute('aria-label',L('tmFeA'));
+  o.cp.title=o.cp.__t=L('cpyTip');o.cp.setAttribute('aria-label',L('cpyTip'));o.wn.title=L('ovRowTip');
+  const n=d!=null?DAYS[d]:L('blkW');[[o.ps,'rowP'],[o.tsel,'rowT']].forEach(([x,k])=>x.setAttribute('aria-label',L(k,{d:n})));o.wbl=n;wSet(o,o.inv);
+}
+function tmSet(o,tm,fs,fe){o.tm=tm==='flex'||tm==='edge'?tm:'';o.fs=o.tm==='edge'?+fs||0:0;o.fe=o.tm==='edge'?+fe||0:0;o.tsel.value=o.tm;o.fsS.value=o.fs;o.feS.value=o.fe;
+  o.sub.style.display=o.tm==='edge'&&!o.tsel.disabled?'':'none'}
+function wSet(o,inv){   // inv: null = the event's default list, or the row's own list
+  o.inv=inv?[...inv]:null;const b=o.wb,nm=ids=>ids.map(pname).filter(Boolean).join(', ');
+  b.classList.toggle('def',!o.inv);b.textContent=o.inv?(nm(o.inv)||L('wNone')):L('wDef');
+  const t=o.inv?L('wOwnTip',{n:nm(o.inv)||L('wNone')}):L('wDefTip',{n:nm(defInv())||L('wNone')});b.title=b.__t=t;b.setAttribute('aria-label',L('rowW',{d:o.wbl||''})+': '+t);
+}
 const tmOf=sl=>sl.flex?{tm:'flex'}:sl.fs||sl.fe?{tm:'edge',fs:sl.fs||0,fe:sl.fe||0}:{tm:''};
-const sameTm=sl=>{const t=sl.map(tmOf);return t.length&&t.every(x=>tmKey(x)===tmKey(t[0]))?t[0]:{tm:''}};
 const tmSlot=o=>o&&o.tm==='flex'?{flex:true}:o&&o.tm==='edge'?{...(o.fs?{fs:o.fs}:{}),...(o.fe?{fe:o.fe}:{})}:{};
 const tmItems=()=>fmode==='quick'?rows.filter(o=>o.cb.checked):blocks;
-// the event-level choice is a segmented control (#fTim, its value in data-v: '' | 'edge' | 'flex' | 'mix'; mixed = no segment pressed)
-const timV=()=>$('fTim').dataset.v||'';
-function setTimV(v){const t=$('fTim');t.dataset.v=v;t.querySelectorAll('button').forEach(b=>{const on=b.dataset.tm===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
-  $('fTimMix').textContent=v==='mix'?L('tmMix'):'';$('fEdge').style.display=v==='edge'?'':'none'}
-const tmCur=()=>timV()==='mix'?null:{tm:timV(),fs:+$('fFs').value,fe:+$('fFe').value};   // what a newly ticked day or a new block gets
-function updTimAll(){
-  const it=tmItems(),mix=new Set(it.map(tmKey)).size>1,v=timV();
-  if(!mix&&it.length&&it[0].tm==='edge'){$('fFs').value=it[0].fs;$('fFe').value=it[0].fe}
-  setTimV(mix?'mix':it.length?it[0].tm:v==='mix'?'':v);
+function rowLoad(o,sl){   // a repetition's values into a row
+  o.s.value=sl.start;o.en.value=sl.end;updEnd(o.s,o.en);
+  o.ps.value=sl.fo?OWN:sl.person||'';if(o.ps.value!==(sl.fo?OWN:sl.person||''))o.ps.value='';
+  wSet(o,sl.inv||null);const t=tmOf(sl);tmSet(o,t.tm,t.fs,t.fe);
 }
-function tmAll(){const c=tmCur();if(!c)return;rows.forEach(o=>tmSet(o,c.tm,c.fs,c.fe));blocks.forEach(o=>tmSet(o,c.tm,c.fs,c.fe));updTimAll();updWarn()}
-function timPick(v){if(v==='edge'&&!+$('fFs').value&&!+$('fFe').value){$('fFs').value=15;$('fFe').value=15}setTimV(v);tmAll()}
-$('fFs').onchange=$('fFe').onchange=tmAll;
-function tmFill(){
-  const t=$('fTim');t.innerHTML='';t.setAttribute('aria-label',L('tmLbl'));
-  [['',L('tmFixed')],['edge',L('tmEdge')],['flex',L('tmFlex')]].forEach(([k,n])=>{const b=el('button','',t);b.type='button';b.dataset.tm=k;b.textContent=n;b.onclick=()=>timPick(k)});setTimV('');
-  [[$('fFs'),'tmFsA'],[$('fFe'),'tmFeA']].forEach(([x,k])=>{fillSel(x,MGS.map(m=>[m,fmtMg(m)]));x.value=15;x.setAttribute('aria-label',L(k))});
-  $('fFsL').textContent=L('tmLate');$('fFeL').textContent=L('tmLate2');$('fFeL2').textContent=L('tmEarly');
+function rowSlot(o){   // a row's values as a repetition
+  const fo=o.ps.value===OWN;
+  return {start:+o.s.value,end:+o.en.value,person:fo?$('fOw').value:o.ps.value,...(fo?{fo:true}:{}),...(o.inv&&!sameSet(o.inv,defInv())?{inv:[...o.inv]}:{}),...tmSlot(o)};
 }
-function tmPop(b,o){   // timing of one repetition
-  document.querySelectorAll('.tmpop').forEach(x=>x.remove());
-  const pop=el('div','cpop tmpop',b.closest('dialog')||document.body);
+function copyRow(o){   // ⧉: this row's times, performer, With and timing to every other ticked day / block
+  tmItems().forEach(x=>{if(x===o)return;x.s.value=o.s.value;x.en.value=o.en.value;updEnd(x.s,x.en);x.ps.value=o.ps.value;wSet(x,o.inv);tmSet(x,o.tm,o.fs,o.fe)});
+  updWarn();toast(L('cpyDone'));
+}
+function wPop(o){   // a row's own With list: "Use the event's list" or chips
+  document.querySelectorAll('.wpop').forEach(x=>x.remove());
+  const b=o.wb,pop=el('div','cpop wpop',b.closest('dialog')||document.body);
   const close=()=>{pop.remove();document.removeEventListener('pointerdown',out,true)},out=e=>{if(!pop.contains(e.target)&&e.target!==b)close()};
-  const changed=()=>{updTimAll();updWarn()};
   const draw=()=>{
-    pop.innerHTML='';el('div','oh',pop).textContent=L('tmPopH');
-    [['',L('tmFixed')],['edge',L('tmEdge')],['flex',L('tmFlex')]].forEach(([k,t])=>{
-      const i=el('button','oi'+(o.tm===k?' on':''),pop);i.type='button';i.setAttribute('aria-pressed',String(o.tm===k));i.dataset.tm=k;
-      i.innerHTML=(o.tm===k?ICON_CHECK:'<span class="ic"></span>')+`<span>${esc(t)}</span>`;
-      i.onclick=()=>{if(k==='edge'){if(o.tm!=='edge')tmSet(o,'edge',15,15);changed();draw()}else{tmSet(o,k);changed();close()}}});
-    if(o.tm==='edge'){
-      const r=el('div','tme',pop);r.append(L('tmLate'));const fs=el('select','',r);r.append(L('tmLate2'));const fe=el('select','',r);r.append(L('tmEarly'));
-      [[fs,o.fs,'tmFsA'],[fe,o.fe,'tmFeA']].forEach(([x,v,k])=>{fillSel(x,MGS.map(m=>[m,fmtMg(m)]));x.value=v;x.setAttribute('aria-label',L(k));x.onchange=()=>{tmSet(o,'edge',+fs.value,+fe.value);changed()}});
-    }
+    pop.innerHTML='';el('div','oh',pop).textContent=L('wPopH',{d:o.wbl||''});
+    const sw=el('label','wdef',pop),c=el('input','',sw);c.type='checkbox';c.checked=!o.inv;sw.append(L('wUseDef'));
+    c.onchange=()=>{wSet(o,c.checked?null:defInv());draw()};
+    const ch=el('div','chips',pop),list=o.inv||defInv();
+    if(!ourPeople().length)ch.textContent=L('noPeople');
+    ourPeople().forEach(q=>{const l=el('label','',ch),i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=list.includes(q.id);i.disabled=!o.inv;l.insertAdjacentHTML('beforeend',pTag(q.id));
+      i.onchange=()=>{wSet(o,[...ch.querySelectorAll('input:checked')].map(x=>x.value));updOc()}});
   };
   draw();
-  pop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}};
+  pop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();b.focus()}};
   const rc=b.getBoundingClientRect();
-  pop.style.left=Math.max(6,Math.min(rc.right-pop.offsetWidth,innerWidth-pop.offsetWidth-6))+'px';
-  pop.style.top=Math.max(6,Math.min(rc.bottom+4,innerHeight-pop.offsetHeight-6))+'px';
+  pop.style.left=Math.max(6,Math.min(rc.left,innerWidth-pop.offsetWidth-6))+'px';pop.style.top=Math.max(6,Math.min(rc.bottom+4,innerHeight-pop.offsetHeight-6))+'px';
   setTimeout(()=>document.addEventListener('pointerdown',out,true));
-  const f=pop.querySelector('.oi.on')||pop.querySelector('.oi');if(f)f.focus();
+  const f=pop.querySelector('input');if(f)f.focus();
+}
+const rows=DAYS.map((n,i)=>{
+  const r=el('div','dr',$('fDays')),l=el('label','',r),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
+  const s=el('select','',r),en=el('select','',r),o={r,cb,s,en,lt,i};rowCtl(o,r);rowSub(o,r);
+  o.upd=()=>{r.classList.toggle('off',!cb.checked);[s,en,o.ps,o.wb,o.tsel,o.cp].forEach(x=>x.disabled=!cb.checked);o.sub.style.display=cb.checked&&o.tm==='edge'?'':'none'};
+  cb.onchange=()=>{if(cb.checked)newDay(o);o.upd();updWarn();updOc()};
+  s.onchange=()=>{if(+en.value<=+s.value)en.value=Math.min(MAXEND,+s.value+60);updEnd(s,en);updWarn()};
+  en.onchange=updWarn;
+  return o});
+function newDay(o){   // a newly ticked day: the times of the nearest ticked day above it (else below), the owner, the default With, fixed
+  const t=[...rows.slice(0,o.i).reverse(),...rows.slice(o.i+1)].find(x=>x.cb.checked);
+  rowLoad(o,{start:t?+t.s.value:540,end:t?+t.en.value:600,fo:true});
 }
 function updTyIc(){const t=S.types.find(x=>x.id===$('fTy').value);$('fTyIc').innerHTML=t?tIcon(t.icon):'';$('fTyIc').style.color=t?t.color:''}
 $('fTy').onchange=updTyIc;
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
-function sync(o){o.s.value=$('fS').value;o.en.value=$('fE').value;updEnd(o.s,o.en)}
 function formSlots(){
-  const fx=tmSlot;
-  if(fmode==='quick'){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)a.push({day:i,start:+o.s.value,end:+o.en.value,person:o.ps.value,...fx(o)})});return a}
-  return blocks.map(o=>({day:+o.dsel.value,start:+o.s.value,end:+o.en.value,person:o.ps.value,...fx(o)}));
+  if(fmode==='quick'){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)a.push({day:i,...rowSlot(o)})});return a}
+  return blocks.map(o=>({day:+o.dsel.value,...rowSlot(o)}));
 }
 function updWarn(){
-  const items=fmode==='quick'?rows.map((o,i)=>o.cb.checked?{o,day:i,start:+o.s.value,end:+o.en.value,...tmSlot(o)}:null).filter(Boolean):blocks.map(o=>({o,day:+o.dsel.value,start:+o.s.value,end:+o.en.value,...tmSlot(o)}));
+  const items=tmItems().map(o=>({o,day:fmode==='quick'?o.i:+o.dsel.value,start:+o.s.value,end:+o.en.value,...tmSlot(o)}));
   rows.forEach(o=>o.wn.style.visibility='hidden');blocks.forEach(o=>o.wn.style.visibility='hidden');
   const set=overlapSet(items);items.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
   const n=[...new Set(items.filter(s=>set.has(s)).map(s=>DAYS[s.day]))];$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';
@@ -1935,13 +1962,13 @@ function updTabs(){
   const q=$('tabQ');if(q.__t===undefined)q.__t=q.title;q.title=dup?L('quickNo'):tr(q.__t);
   $('paneQ').style.display=fmode==='quick'?'':'none';$('paneA').style.display=fmode==='adv'?'':'none';
 }
-function refreshDlg(){updWarn();updTabs();blocks.forEach(o=>o.x.disabled=blocks.length<2);updTimAll()}
+function refreshDlg(){updWarn();updTabs();blocks.forEach(o=>o.x.disabled=blocks.length<2);updOc()}
 function addBlock(b){
   const r=el('div','br',$('fBlocks')),dsel=el('select','bd',r);fillSel(dsel,DAYS.map((n,i)=>[i,n.slice(0,3)]));
-  const s=el('select','',r),en=el('select','',r),ps=el('select','bp ev-only',r),fxb=fxBtn(r),wn=el('span','wn',r),x=el('button','bx',r);
-  fillSel(s,curStl);fillSel(en,curEtl);fillSel(ps,pOpts());[[dsel,'blkD'],[s,'blkS'],[en,'blkE'],[ps,'blkP']].forEach(([x,k])=>x.setAttribute('aria-label',L(k)));wn.innerHTML=ICON_WARN;wn.title=L('ovRowTip');x.type='button';x.textContent='✕';
-  dsel.value=b.day;s.value=b.start;en.value=b.end;ps.value=b.person||'';updEnd(s,en);
-  const o={r,dsel,s,en,ps,wn,x,fxb};blocks.push(o);const t=tmOf(b);tmSet(o,t.tm,t.fs,t.fe);fxb.onclick=()=>tmPop(fxb,o);
+  const s=el('select','',r),en=el('select','',r),o={r,dsel,s,en};fillSel(s,curStl);fillSel(en,curEtl);rowCtl(o,r);
+  const x=el('button','bx',r);x.type='button';x.textContent='✕';x.setAttribute('aria-label',L('blkX'));o.x=x;rowSub(o,r);
+  [[dsel,'blkD'],[s,'blkS'],[en,'blkE']].forEach(([x,k])=>x.setAttribute('aria-label',L(k)));
+  fillSel(o.ps,perfOpts());dsel.value=b.day;rowLoad(o,b);blocks.push(o);
   dsel.onchange=refreshDlg;en.onchange=refreshDlg;
   s.onchange=()=>{if(+en.value<=+s.value)en.value=Math.min(MAXEND,+s.value+60);updEnd(s,en);refreshDlg()};
   x.onclick=()=>{if(blocks.length<2)return;r.remove();blocks=blocks.filter(z=>z!==o);refreshDlg()};
@@ -1951,52 +1978,49 @@ function setMode(m){
   const sl=formSlots();
   if(m==='adv'){
     $('fBlocks').innerHTML='';blocks=[];
-    (sl.length?sl.slice().sort((a,b)=>a.day-b.day||a.start-b.start):[{day:0,start:+$('fS').value,end:+$('fE').value,person:$('fP').value,...tmSlot(tmCur())}]).forEach(addBlock);
+    (sl.length?sl.slice().sort((a,b)=>a.day-b.day||a.start-b.start):[{day:0,start:540,end:600,fo:true}]).forEach(addBlock);
   }else{
     if(isAdv(sl))return;
-    const g=sl[0]||{start:540,end:600,person:''};
-    $('fS').value=g.start;$('fE').value=g.end;updEnd($('fS'),$('fE'));$('fP').value=g.person||'';updPic();
-    rows.forEach((o,i)=>{const b=sl.find(x=>x.day===i);o.cb.checked=!!b;o.s.value=b?b.start:g.start;o.en.value=b?b.end:g.end;o.ps.value=b?b.person||'':g.person||'';{const t=b?tmOf(b):sameTm(sl);tmSet(o,t.tm,t.fs,t.fe)}
-      o.custom=!!b&&(b.start!==g.start||b.end!==g.end);o.pc=!!b&&(b.person||'')!==(g.person||'');updEnd(o.s,o.en);o.upd()});
+    rows.forEach((o,i)=>{const b=sl.find(x=>x.day===i);o.cb.checked=!!b;rowLoad(o,b||{start:540,end:600,fo:true});o.upd()});
   }
   fmode=m;refreshDlg();
 }
 $('tabQ').onclick=()=>setMode('quick');$('tabA').onclick=()=>setMode('adv');
 $('fAddBlock').onclick=()=>{
   const l=blocks[blocks.length-1],ld=l?{day:+l.dsel.value,start:+l.s.value,end:+l.en.value}:{day:0,start:540,end:600};
-  const st=ld.end<=1380?ld.end:ld.start;addBlock({day:ld.day,start:st,end:Math.min(MAXEND,st+60),person:$('fP').value,...tmSlot(tmCur())});refreshDlg();
+  const st=ld.end<=1380?ld.end:ld.start;addBlock({day:ld.day,start:st,end:Math.min(MAXEND,st+60),fo:true});refreshDlg();
 };
-$('fS').onchange=()=>{if(+$('fE').value<=+$('fS').value)$('fE').value=Math.min(MAXEND,+$('fS').value+60);updEnd($('fS'),$('fE'));rows.forEach(o=>{if(!o.custom)sync(o)});updWarn()};
-$('fE').onchange=()=>{rows.forEach(o=>{if(!o.custom)sync(o)});updWarn()};
-function updPic(){const q=S.people.find(x=>x.id===$('fP').value);$('fPic').innerHTML=q?ICON_USER:'';$('fPic').style.color=q?q.color:''}
-$('fP').onchange=()=>{updPic();rows.forEach(o=>{if(!o.pc)o.ps.value=$('fP').value})};
+function updOwn(){   // the owner's icon, and "Owner (name)" in every performer list
+  const q=S.people.find(x=>x.id===$('fOw').value);$('fOwIc').innerHTML=q?ICON_USER:'';$('fOwIc').style.color=q?q.color:'';
+  [...rows,...blocks].forEach(o=>{const op=o.ps.querySelector(`option[value="${OWN}"]`);if(op)op.textContent=ownLbl()});
+}
+$('fOw').onchange=updOwn;
 const updBg=()=>{$('fNest').disabled=$('fBg').checked};   // strips never nest (R-EVT-19)
 $('fBg').onchange=updBg;
-const updOc=()=>{$('fOcRow').style.display=$('fInv').querySelector('input:checked')?'':'none'};   // "only on call" matters only once someone is involved
-$('fInv').onchange=updOc;
+// "only on call" matters only while somebody is involved, by default or on some day
+const updOc=()=>{$('fOcRow').style.display=defInv().length||tmItems().some(o=>o.inv&&o.inv.length)?'':'none'};
+$('fInv').onchange=()=>{updOc();[...rows,...blocks].forEach(o=>wSet(o,o.inv))};
 function openDlg(e,def){
   const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
   if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
   dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
   cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
-  const slots=e?e.slots:[{day:0,start:540,end:600,person:'',...def}];
-  tmFill();curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
-  fillSel($('fS'),curStl);fillSel($('fE'),curEtl);
+  const slots=e?e.slots:[{day:0,start:540,end:600,person:'',fo:true,...def}];
+  curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
   $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
-  const g=slots[0];$('fS').value=g.start;$('fE').value=g.end;updEnd($('fS'),$('fE'));
-  fillSel($('fP'),pOpts());$('fP').value=g.person||'';updPic();
-  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,pOpts());o.cb.checked=!!sl;
-    o.s.value=sl?sl.start:g.start;o.en.value=sl?sl.end:g.end;o.ps.value=sl?sl.person||'':g.person||'';{const t=sl?tmOf(sl):e?sameTm(slots):{tm:''};tmSet(o,t.tm,t.fs,t.fe)}
-    o.custom=!!sl&&(sl.start!==g.start||sl.end!==g.end);o.pc=!!sl&&(sl.person||'')!==(g.person||'');updEnd(o.s,o.en);o.upd()});
-  $('fBlocks').innerHTML='';blocks=[];
-  if(isAdv(slots)){fmode='adv';slots.slice().sort((a,b)=>a.day-b.day||a.start-b.start).forEach(addBlock)}else fmode='quick';
+  // the owner: our people, plus a current owner who has since become external (kept, marked)
+  fillSel($('fOw'),[['',L('none')],...S.people.filter(q=>!q.external||q.id===d.owner).map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])]);$('fOw').value=d.owner||'';
   const iv=$('fInv');iv.innerHTML='';
   if(!ourPeople().length)iv.textContent=L('noPeople');   // external people are never offered as involved (R-PPL-03)
   ourPeople().forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
+  rows.forEach((o,i)=>{const sl=slots.find(x=>x.day===i);fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,perfOpts());o.cb.checked=!!sl;rowLoad(o,sl||{start:540,end:600,fo:true});o.upd()});
+  $('fBlocks').innerHTML='';blocks=[];
+  if(isAdv(slots)){fmode='adv';slots.slice().sort((a,b)=>a.day-b.day||a.start-b.start).forEach(addBlock)}else fmode='quick';
+  updOwn();
   const c=$('fSch');c.innerHTML='';
   (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});
-  $('fOnCall').checked=!!d.oncall;updOc();$('fNest').checked=!!d.nest;$('fBg').checked=!!d.bg;updBg();$('fC').setAttribute('aria-label',tr('Colour'));
+  $('fOnCall').checked=!!d.oncall;$('fNest').checked=!!d.nest;$('fBg').checked=!!d.bg;updBg();$('fC').setAttribute('aria-label',tr('Colour'));
   $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
@@ -2013,9 +2037,9 @@ $('fOk').onclick=()=>{
   if(thin)return $('err').textContent=L('errCore',{d:DAYS[thin.day]});
   if(!sch.length)return $('err').textContent=L(dkind==='phase'?'errRh':'errSch');
   const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,rhythms:sch,slots:slots.map(({day,start,end})=>({day,start,end}))}
-    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:{}),schedules:sch,slots,involved:[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value)};
+    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:{}),schedules:sch,slots,involved:defInv()};
   hist();
-  if(cur&&dkind==='event'){delete cur.type;delete cur.oncall;delete cur.nest;delete cur.bg}
+  if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.bg}
   if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
   $('dlg').close();render();
 };
@@ -2080,8 +2104,7 @@ document.addEventListener('keydown',e=>{
 });
 function setLang(l){
   lang=l;DAYS.splice(0,7,...DAYN[l]);document.documentElement.lang=l;document.title=L('appTitle');
-  rows.forEach((o,i)=>{o.lt.nodeValue=DAYS[i].slice(0,3);o.wn.title=L('ovRowTip');tmBtn(o);[[o.s,'rowS'],[o.en,'rowE'],[o.ps,'rowP']].forEach(([x,k])=>x.setAttribute('aria-label',L(k,{d:DAYS[i]})))});
-  $('fS').setAttribute('aria-label',L('rowS',{d:tr('All days')}));$('fE').setAttribute('aria-label',L('rowE',{d:tr('All days')}));
+  rows.forEach((o,i)=>{o.lt.nodeValue=DAYS[i].slice(0,3);rowTexts(o,i);[[o.s,'rowS'],[o.en,'rowE']].forEach(([x,k])=>x.setAttribute('aria-label',L(k,{d:DAYS[i]})))});blocks.forEach(o=>rowTexts(o));
   render();applyStatic();
 }
 applyPrefs();applyTheme();

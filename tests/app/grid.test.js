@@ -403,7 +403,7 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
   });
   it('a new event dragged out on the focused day lands on that day', async () => {
     const a = fresh(); focus(a, 3); await createDrag(a, { col: 0, min: 600 }, { col: 0, min: 660 }); fillDialog(a, { title: 'Focused' }); a.q('#fOk').click();
-    expect(a.ev('S.events[0].slots')).toEqual([{ day: 3, start: 600, end: 660, person: '' }]);
+    expect(a.ev('S.events[0].slots')).toEqual([{ day: 3, start: 600, end: 660, person: '', fo: true }]);   // performed by the owner (none yet)
   });
   it('the Print button prints the focused day view, and the whole week otherwise', () => {
     const a = fresh(two()); focus(a, 1); a.toolbar('print').click(); expect(a.w.__printed).toContain('<h1>Tuesday</h1>'); expect(a.w.__printed).toContain('Tue thing'); expect(a.w.__printed).not.toContain('Wed thing');

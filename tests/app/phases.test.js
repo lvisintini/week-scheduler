@@ -69,7 +69,7 @@ describe('R-PHS-03 Phase fields and the phase dialog', () => {
     expect(phaseList(a)[0].slots.filter(s => s.day === 4)).toHaveLength(2);
   });
   it('a phase never runs past the end of its day', () => {
-    const a = open(); a.ev('openDlg(null)'); expect(Math.max(...[...a.q('#fE').options].map(o => +o.value))).toBe(1440);
+    const a = open(); a.ev('openDlg(null)'); expect(Math.max(...[...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options].map(o => +o.value))).toBe(1440);
   });
   it('a phase can be deleted from its dialog and copied to another rhythm of this workspace', () => {
     const a = open({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })] }); a.ev('openDlg(S.phases[0])'); a.q('#fCopy').click();
@@ -153,7 +153,7 @@ describe('R-PHS-06 Events | Phases edit mode', () => {
     const a = phasesMode(); a.toolbar('add').click(); expect(a.q('#dlg').classList.contains('ph')).toBe(true);
   });
   it('dragging on empty space creates a phase for that time range', async () => {
-    const a = phasesMode(); await createDrag(a, { col: 5, min: 600 }, { col: 5, min: 690 }); expect(a.q('#dlg').classList.contains('ph')).toBe(true); expect([a.q('#fS').value, a.q('#fE').value]).toEqual(['600', '690']);
+    const a = phasesMode(); await createDrag(a, { col: 5, min: 600 }, { col: 5, min: 690 }); expect(a.q('#dlg').classList.contains('ph')).toBe(true); expect([...a.qa('#fDays .dr')[5].querySelectorAll('select')].slice(0, 2).map(x => x.value)).toEqual(['600', '690']);
   });
   it('dragging a phase moves all its repetitions together; Shift moves only one; a toast offers Only this day / Undo', async () => {
     const a = phasesMode(); await dragFrom(a, a.q('.dw[data-d="0"] .phx'), { col: 0, min: 750 }, { col: 0, min: 810 });

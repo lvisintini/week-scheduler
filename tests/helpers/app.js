@@ -140,19 +140,22 @@ export async function createDrag(app, from, to, opts = {}) {
 /** Fill the (already open) event dialog. days: { 0: {start,end,person}, 2: {...} } replaces the ticked Quick rows. */
 export function fillDialog(app, f = {}) {
   const set = (sel, v) => { app.q(sel).value = v; app.q(sel).dispatchEvent(new app.w.Event('change')); };
+  const fire = (el, v) => { el.value = v; el.dispatchEvent(new app.w.Event('change')); };
   if (f.title !== undefined) app.q('#fT').value = f.title;
   if (f.desc !== undefined) app.q('#fD').value = f.desc;
-  if (f.person !== undefined) set('#fP', f.person);
+  if (f.person !== undefined) set('#fOw', f.person);   // the owner: every day "Performed by: Owner" follows it (R-EVT-20)
   if (f.involved) app.qa('#fInv input').forEach(i => { i.checked = f.involved.includes(i.value); });
   if (f.schedules) app.qa('#fSch input').forEach(i => { i.checked = f.schedules.includes(i.value); });
-  if (f.start !== undefined) set('#fS', f.start);
-  if (f.end !== undefined) set('#fE', f.end);
   if (f.days) app.qa('#fDays .dr').forEach((row, i) => {
-    const cb = row.querySelector('input'), sel = row.querySelectorAll('select'), d = f.days[i];
+    const cb = row.querySelector('input'), sel = row.querySelectorAll('select'), d = f.days[i];   // selects: start, end, performed by, timing, margins
     cb.checked = !!d; cb.dispatchEvent(new app.w.Event('change'));
-    if (d && d.start !== undefined) { sel[0].value = d.start; sel[0].dispatchEvent(new app.w.Event('change')); }
-    if (d && d.end !== undefined) { sel[1].value = d.end; sel[1].dispatchEvent(new app.w.Event('change')); }
-    if (d && d.person !== undefined) { sel[2].value = d.person; sel[2].dispatchEvent(new app.w.Event('change')); }
+    if (d && d.start !== undefined) fire(sel[0], d.start);
+    if (d && d.end !== undefined) fire(sel[1], d.end);
+    if (d && d.person !== undefined) fire(sel[2], d.person);
   });
+  // there are no event-level times any more: start/end are set on every ticked day (Quick) or block (Advanced)
+  const tick = () => [...app.qa('#fDays .dr').filter(r => r.querySelector('input').checked), ...app.qa('#fBlocks .br')].filter(r => r.offsetParent !== undefined);
+  if (f.start !== undefined) tick().forEach(r => { const s = r.querySelectorAll('select'), k = r.classList.contains('br') ? 1 : 0; fire(s[k], f.start); });
+  if (f.end !== undefined) tick().forEach(r => { const s = r.querySelectorAll('select'), k = r.classList.contains('br') ? 2 : 1; fire(s[k], f.end); });
 }
 export const dlgOpen = app => app.d.getElementById('dlg').open;

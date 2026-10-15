@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => { await openApp(page); });
 test.describe('R-EVT-01 Creating, moving and resizing events with a real mouse', () => {
   test('dragging across empty space opens the new-event dialog with the snapped time range', async ({ page }) => {
     await seed(page, blank()); await drag(page, { col: 2, min: 607 }, { col: 2, min: 698 });
-    await expect(page.locator('#dlg')).toBeVisible(); expect(await page.inputValue('#fS')).toBe('600'); expect(await page.inputValue('#fE')).toBe('705');
+    await expect(page.locator('#dlg')).toBeVisible(); const r = page.locator('#fDays .dr').nth(2).locator('select'); expect(await r.nth(0).inputValue()).toBe('600'); expect(await r.nth(1).inputValue()).toBe('705');
   });
   test('the new event can be filled in and saved, and then appears in the dragged position', async ({ page }) => {
     await seed(page, blank()); await drag(page, { col: 1, min: 840 }, { col: 1, min: 930 });
