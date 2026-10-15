@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, PREFS_KEY } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, PREFS_KEY, createDrag, fillDialog } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const headers = a => a.qa('.dh:not(.c)').map(h => h.textContent);
@@ -225,5 +225,79 @@ describe('R-GRID-10 Layer order inside a day column', () => {
     const idx = n => kids.indexOf(n);
     expect(idx('phx')).toBeLessThan(idx('gl')); expect(idx('gl')).toBeLessThan(idx('ev')); expect(idx('ev')).toBeLessThan(idx('ov'));
     const z = sel => +[...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || "").replace(/\s*,\s*/g, ',') === sel).style.getPropertyValue('z-index'); expect(z('.ov')).toBeLessThan(z('.ev .r1,.ev .r2'));
+  });
+});
+
+describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes back', () => {
+  const two = () => blank({ events: [ev1({ id: 'a', title: 'Tue thing', slots: [{ day: 1, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', title: 'Wed thing', slots: [{ day: 2, start: 600, end: 660, person: '' }] })] });
+  const hdr = (a, d) => a.q(`.dh[data-d="${d}"]`);
+  const focus = (a, d) => hdr(a, d).querySelector('.foc').click();
+  const shown = a => a.qa('.day').map(c => +c.dataset.d);
+  const btn = (a, cls) => a.q('.dh.fo .' + cls);
+  it('every day header has a focus button whose tooltip names the day and explains how to get back', () => {
+    const a = fresh(); expect(a.qa('.dh:not(.c) .foc')).toHaveLength(7); expect(headers(a)[1]).toBe('Tuesday');
+    expect(hdr(a, 1).querySelector('.foc').title).toMatch(/^Show only Tuesday.*Week.*Esc/); expect(hdr(a, 1).querySelector('.foc').getAttribute('aria-label')).toMatch(/Show only Tuesday/);
+  });
+  it('clicking it shows only that day with its events, without opening the agenda', () => {
+    const a = fresh(two()); focus(a, 1); expect(shown(a)).toEqual([1]); expect(a.qa('.ev').map(e => e.getAttribute('aria-label').split(',')[0])).toEqual(['Tue thing']);
+    expect(a.q('#agDlg').open).toBeFalsy();
+  });
+  it('the focused header has previous / next buttons around the day name and a Week button; the name still opens the agenda', () => {
+    const a = fresh(); focus(a, 1); const h = hdr(a, 1); expect([...h.querySelectorAll('.dhb')].map(b => b.className.split(' ')[1])).toEqual(['prv', 'nxt', 'wk']);
+    expect(h.textContent).toBe('TuesdayWeek'); expect(btn(a, 'prv').title).toBe('Previous day'); expect(btn(a, 'wk').title).toBe('Show the whole week again (Esc)');
+    h.onclick(); expect(a.q('#agDlg').open).toBe(true); expect(a.q('#agBody').textContent).toContain('Tuesday');
+  });
+  it('next and previous step through the days and wrap around the week (Sunday → Monday, Monday → Sunday)', () => {
+    const a = fresh(); focus(a, 5); btn(a, 'nxt').click(); expect(shown(a)).toEqual([6]); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]);
+    btn(a, 'prv').click(); expect(shown(a)).toEqual([6]); btn(a, 'prv').click(); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
+  });
+  it('with the weekend hidden, stepping skips Saturday and Sunday (Friday → Monday)', () => {
+    const a = fresh(); a.ev('prefs.hideWeekend=true;render()'); focus(a, 4); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
+  });
+  it('the Week button brings all days back', () => {
+    const a = fresh(); focus(a, 3); btn(a, 'wk').click(); expect(shown(a)).toEqual([0, 1, 2, 3, 4, 5, 6]); expect(a.qa('.dh.fo')).toHaveLength(0);
+  });
+  it('Esc brings the week back; with an event selected it first clears the selection, and it does nothing while a dialog is open', () => {
+    const a = fresh(two()); focus(a, 1); a.ev("selK={id:'a',i:0};render()"); a.key('Escape'); expect(a.ev('selK')).toBeNull(); expect(shown(a)).toEqual([1]);
+    a.ev('openSettings()'); a.key('Escape'); expect(shown(a)).toEqual([1]); a.q('#xDlg').close();
+    a.key('Escape'); expect(shown(a)).toHaveLength(7);
+  });
+  it('the focused day fills the window width even when "Fill the window width" is off', () => {
+    const a = fresh(); a.ev('prefs.fillW=false;render()'); expect(a.q('#grid').style.gridTemplateColumns).not.toContain('1fr');
+    focus(a, 2); expect(a.q('#grid').style.gridTemplateColumns).toMatch(/^52px repeat\(1,\s*minmax\(.*1fr\)\)$/);
+  });
+  it('focus is view state: not remembered in the settings, not undoable and not an unsaved change', () => {
+    const a = fresh(); a.ev('savePrefs()'); focus(a, 2); a.ev('savePrefs()');
+    expect(Object.keys(JSON.parse(a.storage()[PREFS_KEY]))).not.toContain('focusD'); expect(a.ev('undoSt.length')).toBe(0); expect(a.ev('isDirty()')).toBe(false);
+  });
+  it('a reload shows the whole week again', () => {
+    const a = fresh(); focus(a, 2); const b = openApp({ storage: a.storage() }); expect(b.qa('.day')).toHaveLength(7);
+  });
+  it('the "N hidden" pill counts only the focused day\'s events in the hidden early hours', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'a', slots: [{ day: 1, start: 120, end: 180, person: '' }, { day: 2, start: 120, end: 180, person: '' }, { day: 2, start: 180, end: 240, person: '' }] })] }));
+    expect(a.q('#hid').textContent).toBe('3 hidden'); focus(a, 2); expect(a.q('#hid').textContent).toBe('2 hidden'); btn(a, 'nxt').click(); btn(a, 'nxt').click(); expect(a.q('#hid').style.display).toBe('none');
+  });
+  it('an event running past midnight shows its continuation on the focused next day', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'n', title: 'Night', slots: [{ day: 0, start: 1320, end: 1740, person: '' }] })] })); a.ev('prefs.showEarly=true;render()'); focus(a, 1);
+    expect(a.qa('.day .ev')).toHaveLength(1); expect(a.q('.day .ev').textContent).toContain('from Mon 22:00');
+  });
+  it('a new event dragged out on the focused day lands on that day', async () => {
+    const a = fresh(); focus(a, 3); await createDrag(a, { col: 0, min: 600 }, { col: 0, min: 660 }); fillDialog(a, { title: 'Focused' }); a.q('#fOk').click();
+    expect(a.ev('S.events[0].slots')).toEqual([{ day: 3, start: 600, end: 660, person: '' }]);
+  });
+  it('the Print button prints the focused day view, and the whole week otherwise', () => {
+    const a = fresh(two()); focus(a, 1); a.toolbar('print').click(); expect(a.w.__printed).toContain('<h1>Tuesday</h1>'); expect(a.w.__printed).toContain('Tue thing'); expect(a.w.__printed).not.toContain('Wed thing');
+    btn(a, 'wk').click(); a.toolbar('print').click(); expect(a.w.__printed).toContain('Wed thing');
+  });
+  it('the printout leaves out the focus buttons', () => {
+    expect(fresh().d.documentElement.outerHTML).toContain('#pr .dh .ic,#pr .dh .dhb{display:none}');
+  });
+  it('the now line appears only when the focused day is today', () => {
+    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); focus(a, 2); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(1);   // Wednesday
+    btn(a, 'nxt').click(); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(0);
+  });
+  it('the buttons and tooltips are translated into Spanish', () => {
+    const a = fresh(); a.ev("setLang('es')"); expect(hdr(a, 1).querySelector('.foc').title).toMatch(/^Mostrar solo el Martes.*Semana.*Esc/);
+    focus(a, 1); expect(btn(a, 'wk').textContent).toBe('Semana'); expect(btn(a, 'prv').title).toBe('Día anterior'); expect(btn(a, 'nxt').title).toBe('Día siguiente');
   });
 });

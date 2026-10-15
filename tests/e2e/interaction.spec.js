@@ -191,3 +191,23 @@ test.describe('R-EVT-01 Resizing an event whose bottom edge lies inside another 
     });
   }
 });
+
+test.describe('R-GRID-11 Focusing on one day with a real mouse and keyboard', () => {
+  test('the focus button appears when hovering a day header and shows that day across the whole grid width', async ({ page }) => {
+    await seed(page, three()); const btn = page.locator('.dh[data-d="2"] .foc');
+    await expect(btn).toHaveCSS('opacity', '0'); await page.locator('.dh[data-d="2"]').hover(); await expect(btn).toHaveCSS('opacity', '1'); await btn.click();
+    await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#agDlg')).not.toBeVisible();
+    const [day, wrap] = await Promise.all([page.locator('.day').boundingBox(), page.locator('#wrap').boundingBox()]);
+    expect(day.x + day.width).toBeGreaterThan(wrap.x + wrap.width - 30); await expect(page.locator('.day .ev')).toHaveCount(1);
+  });
+  test('the arrows step to the next day, and Esc brings the whole week back', async ({ page }) => {
+    await seed(page, three()); await page.locator('.dh[data-d="0"]').hover(); await page.locator('.dh[data-d="0"] .foc').click();
+    await page.locator('.dh.fo .nxt').click(); await expect(page.locator('.day')).toHaveAttribute('data-d', '1'); await expect(page.locator('.day .ev')).toHaveCount(0);
+    await page.locator('.dh.fo .nxt').click(); await expect(page.locator('.day .ev')).toHaveCount(1);
+    await page.keyboard.press('Escape'); await expect(page.locator('.day')).toHaveCount(7);
+  });
+  test('the focus button can be reached with the keyboard and becomes visible when focused', async ({ page }) => {
+    const btn = page.locator('.dh[data-d="4"] .foc'); await btn.focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
+    await expect(btn).toBeFocused(); await expect(btn).toHaveCSS('opacity', '1'); await page.keyboard.press('Enter'); await expect(page.locator('.day')).toHaveAttribute('data-d', '4');
+  });
+});
