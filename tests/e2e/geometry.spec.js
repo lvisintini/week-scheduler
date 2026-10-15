@@ -200,14 +200,27 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
   const busy = () => blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),
     ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(2, 480, 720, 'O')] }), ev({ id: 'sat', title: 'Hidden', slots: [slot(5, 600, 660)] })] });
-  test('the cards sit in a strip right of the day, level with the now line, overlapping neither each other nor any event', async ({ page }) => {
-    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.locator('#lvB').click();
-    await expect(page.locator('.lvcard')).toHaveCount(3); const day = await boxOf(page.locator('.day')), col = await boxOf(page.locator('.lvcol'));
-    expect(col.x).toBeGreaterThanOrEqual(day.x + day.width - 1);
-    const cs = await Promise.all((await page.locator('.lvcard').all()).map(boxOf)), bs = await Promise.all((await page.locator('.ev, .bgs').all()).map(boxOf));
-    const hit = (p, q) => p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
-    cs.forEach((c, i) => { cs.slice(i + 1).forEach(d => expect(hit(c, d)).toBe(false)); bs.forEach(e => expect(hit(c, e)).toBe(false)); });
-    const line = await boxOf(page.locator('.now')); expect(cs[0].y).toBeLessThan(line.y); expect(cs[2].y + cs[2].height).toBeGreaterThan(line.y);
+  const hit = (p, q) => p.x < q.x + q.width - 0.5 && q.x < p.x + p.width - 0.5 && p.y < q.y + q.height - 0.5 && q.y < p.y + p.height - 0.5;
+  test('speech bubbles float inside the day, never overlap each other, never cross the now line, and point at their boxes from the line', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); });
+    await expect(page.locator('.lvb')).toHaveCount(3); const day = await boxOf(page.locator('.day')), line = await boxOf(page.locator('.now'));
+    const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf));
+    bs.forEach((r, i) => {
+      expect(r.x).toBeGreaterThanOrEqual(day.x - 1); expect(r.x + r.width).toBeLessThanOrEqual(day.x + day.width + 1);
+      expect(r.y > line.y || r.y + r.height < line.y).toBe(true); bs.slice(i + 1).forEach(q => expect(hit(r, q)).toBe(false));
+    });
+    // each arrow tip: on the now line, inside the box (or strip) the bubble describes
+    const tips = await page.evaluate(() => [...document.querySelectorAll('.lvb')].map(b => { const c = b.closest('.day').getBoundingClientRect(), t = b.querySelector('.pt1').textContent.trim();
+      const tgt = [...document.querySelectorAll('.day .ev, .day .bgs')].find(x => x._it.e.title === t).getBoundingClientRect(); return { x: c.left + +b.dataset.ax, l: tgt.left, r: tgt.right }; }));
+    tips.forEach(t => { expect(t.x).toBeGreaterThanOrEqual(t.l); expect(t.x).toBeLessThanOrEqual(t.r); });
+  });
+  test('no bubble covers the title or the people line of a box, even when boxes start right below the line', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
+      ev({ id: 'a', title: 'School', slots: [slot(2, 480, 900, 'O')] }), ev({ id: 'b', title: 'Work', color: '#8e4ec6', slots: [slot(2, 480, 1020, 'B')] }),
+      ev({ id: 'c', title: 'Lunch', color: '#e8912d', slots: [slot(2, 675, 720, 'O')] }), ev({ id: 'd', title: 'Meeting', color: '#12a5b5', slots: [slot(2, 675, 720, 'B')] })] }));
+    await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); }); await expect(page.locator('.lvb')).toHaveCount(2);
+    const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf)), rows = await Promise.all((await page.locator('.ev .r1, .ev .r2').all()).map(boxOf));
+    bs.forEach(r => rows.forEach(q => expect(hit(r, q)).toBe(false)));
   });
   test('the now line stays a third of the way down; a wheel scroll pauses it and the sidebar Now button returns', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await page.locator('#lvB').click(); await expect(page.locator('#lvB')).toHaveText('Stop Live View');

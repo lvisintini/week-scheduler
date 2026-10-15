@@ -180,8 +180,11 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 @keyframes lvp{0%,100%{opacity:1;box-shadow:0 0 0 0 #e5342d88}50%{opacity:.45;box-shadow:0 0 0 7px #e5342d00}}@media (prefers-reduced-motion:reduce){#lvPill i{animation:none}}
 .lvrow{display:flex;gap:6px;margin:2px 0 6px}.lvrow button{display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px}.lvrow #lvB{flex:1}.lvrow svg{width:17px;height:17px}.lvrow #lvB.on{background:#e5342d;color:#fff;border-color:#e5342d}
 #grid.lv .dh,#grid.lv .dw{pointer-events:none}#grid.lv .dh{font-size:16px}#grid.lv .times span{font-size:13px}#grid.lv .ev{font-size:15px}#grid.lv .ev .r2{font-size:13px}#grid.lv .bgs span{font-size:12px}
-.lvcol{position:relative;border-left:1px solid var(--line)}.lvcard{position:absolute;left:14px;right:10px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:10px;padding:10px 12px;box-shadow:0 4px 16px #0003;font-size:14px;line-height:1.4}.lvcard .pt1{font-size:16px}
-.lvptr{position:absolute;left:0;width:0;height:0;border:7px solid transparent;border-left-color:#e5342d;transform:translateY(-50%)}
+.lvl{position:absolute;inset:0;pointer-events:none;z-index:7}.lvb{position:absolute;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px #0004;font-size:14px;line-height:1.4}
+.lvb .lvin{overflow:hidden;border-radius:9px}.lvb .lvs{padding:9px 12px;border-left:5px solid var(--c)}.lvb .lvs+.lvs{border-top:1px solid var(--line)}.lvb .pt1{font-size:16px}
+.lvb::before,.lvb::after{content:'';position:absolute;left:calc(var(--ax) - 9px);border:9px solid transparent}.lvb::after{left:calc(var(--ax) - 8px);border-width:8px}
+.lvb.b::before{top:-18px;border-bottom-color:var(--line)}.lvb.b::after{top:-15px;border-bottom-color:var(--card)}.lvb.t::before{bottom:-18px;border-top-color:var(--line)}.lvb.t::after{bottom:-15px;border-top-color:var(--card)}
+.lvstem{position:absolute;width:0;border-left:2px solid var(--line)}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10000}#toast.on{opacity:1}
 .wsbtn{display:flex;align-items:center;gap:6px;width:100%;margin-bottom:8px;padding:6px 8px;text-align:left}.wsbtn .wsn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.wsbtn .chev svg{width:14px;height:14px}
 .omenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}.mrow{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin:8px 0}#toast.act{pointer-events:auto}#toast button{margin-left:10px;padding:2px 10px;font-size:12px;background:#fff;color:#222;border-radius:12px;border:0}
@@ -1071,16 +1074,56 @@ function updLive(){
   b.innerHTML=(live?ICON_STOP:ICON_CAM)+'<span></span>';b.querySelector('span').textContent=L(live?'lvStop':'lvStart');b.title=L(live?'lvStopTip':'lvStartTip');b.__t=b.title;
   b.classList.toggle('on',live);b.setAttribute('aria-pressed',String(live));c.style.display=live&&livePaused?'':'none';
 }
-// the live cards: a larger hover card for every occurrence the now line is over, stacked level with the line, never over the events
+/* the live cards (R-GRID-12): speech bubbles over the day for every occurrence the now line is over. The arrow points where it is
+   unambiguous which box is meant; occurrences that can only be pointed at where they overlap share one bubble (a section each).
+   Bubbles go above or below the line where they cover the least text of the boxes and never each other, if possible. */
+const LV_EX=12,LV_AR=9;   // the smallest stretch of a box that is its own (px), and the arrow height
+function lvTargets(W,g,its){   // its: [{e,s,piece,x0,x1}] at the line → [{items,ax,p,q}]: the arrow may point anywhere in p…q (ax = its middle)
+  const n=its.length,own=its.map((it,i)=>{   // the widest part of the piece not covered by any other one
+    let segs=[[it.x0,it.x1]];its.forEach((o,j)=>{if(j===i)return;segs=segs.flatMap(([a,b])=>o.x1<=a||o.x0>=b?[[a,b]]:[[a,Math.max(a,o.x0)],[Math.min(b,o.x1),b]]).filter(([a,b])=>b-a>0)});
+    const w=segs.sort((x,y)=>(y[1]-y[0])-(x[1]-x[0]))[0];return w&&w[1]-w[0]>=LV_EX?w:null});
+  const ov=(x,y)=>x.x0<y.x1&&y.x0<x.x1,par=[...Array(n).keys()],f=i=>par[i]===i?i:(par[i]=f(par[i]));
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if((!own[i]||!own[j])&&ov(its[i],its[j]))par[f(i)]=f(j);   // something without a part of its own joins what it overlaps
+  const gs=new Map();its.forEach((it,i)=>{const r=f(i);if(!gs.has(r))gs.set(r,[]);gs.get(r).push(i)});
+  return [...gs.values()].map(ix=>{
+    if(ix.length===1&&own[ix[0]]){const [p,q]=own[ix[0]];return {items:[its[ix[0]]],ax:(p+q)/2,p,q}}
+    const m=ix.map(i=>its[i]),a=Math.max(...m.map(x=>x.x0)),b=Math.min(...m.map(x=>x.x1));   // the area they all share, else their union
+    const [p,q]=b>a?[a,b]:[Math.min(...m.map(x=>x.x0)),Math.max(...m.map(x=>x.x1))];
+    return {items:m.sort((x,y)=>x.s.start-y.s.start),ax:(p+q)/2,p,q};
+  });
+}
 function liveCards(){
-  const c=document.querySelector('#grid .lvcol');if(!c)return;c.innerHTML='';
-  const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;
-  const its=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===focusD&&q.a<=m&&m<q.b&&slotVisible(e,s)).map(q=>({e,s,piece:q.p,a:q.a})))).sort((x,y)=>x.a-y.a||x.s.start-y.s.start);
+  document.querySelectorAll('#grid .lvl').forEach(x=>x.remove());
+  const col=document.querySelector(`#grid .day[data-d="${focusD}"]`);if(!col)return;
+  const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
+  const cr=col.getBoundingClientRect(),W=cr.width,g=gutMap[focusD]||0,inner=W-6-g;
+  const its=S.events.filter(visible).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===focusD&&q.a<=m&&m<q.b).map(q=>({e,s,piece:q.p,v:laneMap.get(e.id+'|'+i+'|'+q.p)})))).filter(x=>x.v).map(x=>{
+    const v=x.v;let x0,x1;
+    if(v[0]==='s'){x1=W-v[1];x0=x1-14}
+    else{const nb=v[0]==='n',[l,l1,n]=nb?v.slice(1):v;x0=3+inner*l/n+(nb?NI:0);x1=3+inner*(l1+1)/n-(l1<n-1?2:0)}
+    return {...x,x0,x1}});
   if(!its.length)return;
-  const y=Math.max(0,(m-a)/60*HH),p=el('div','lvptr',c);p.style.top=y+'px';
-  const ks=its.map(it=>{const k=el('div','lvcard',c);k.style.setProperty('--c',it.e.color);k.innerHTML=peekRows(it,true);return k});
-  const hs=ks.map(k=>k.offsetHeight),G=8,tot=hs.reduce((x,h)=>x+h,0)+G*(hs.length-1);
-  let t=Math.max(4,Math.min(c.offsetHeight-tot-4,y-tot/2));ks.forEach((k,i)=>{k.style.top=t+'px';t+=hs[i]+G});   // centred on the line, kept inside the column
+  const L0=el('div','lvl',col);L0.setAttribute('aria-live','polite');L0.setAttribute('aria-label',L('lvCards'));
+  const y=(m-a)/60*HH,H=col.offsetHeight||parseFloat(col.style.height)||0,bw=Math.max(120,Math.min(300,W-8));
+  // the text of the boxes is what a bubble should not cover (half as bad over its own box, whose text it repeats)
+  const rel=r=>({x:r.left-cr.left,y:r.top-cr.top,w:r.width,h:r.height});
+  const info=[...col.querySelectorAll('.ev .r1,.ev .r2,.bgs span')].map(t=>({...rel(t.getBoundingClientRect()),it:t.closest('.ev,.bgs')._it})).filter(r=>r.w&&r.h);
+  const area=(p,q)=>Math.max(0,Math.min(p.x+p.w,q.x+q.w)-Math.max(p.x,q.x))*Math.max(0,Math.min(p.y+p.h,q.y+q.h)-Math.max(p.y,q.y));
+  const placed=[];
+  lvTargets(W,g,its).sort((p,q)=>p.ax-q.ax).forEach(gr=>{
+    const b=el('div','lvb',L0),inn=el('div','lvin',b);b.style.width=bw+'px';
+    gr.items.forEach(it=>{const sc=el('div','lvs',inn);sc.style.setProperty('--c',it.e.color);sc.innerHTML=peekRows(it,true)});
+    const h=b.offsetHeight,mine=new Set(gr.items.map(it=>it.s));let best=null;
+    for(let tier=0;tier<9;tier++)for(const side of ['b','t'])for(const af of [.5,16,bw-16]){
+      const ax0=af<1?bw*af:af,left=Math.max(0,Math.min(W-bw,gr.ax-ax0)),axT=Math.max(gr.p+2,Math.min(gr.q-2,left+ax0)),axb=axT-left;if(axb<12||axb>bw-10)continue;
+      const off=LV_AR+tier*24,top=side==='b'?y+off:y-off-h;if(top<2||top+h>H-2)continue;
+      const r={x:left,y:top,w:bw,h},sc=placed.reduce((t,p)=>t+area(r,p)*1000,0)+info.reduce((t,q)=>t+area(r,q)*(q.it&&mine.has(q.it.s)?.5:1),0)+tier*500+(side==='t'?40:0)+Math.abs(axb-bw/2)*.3;
+      if(!best||sc<best.sc)best={sc,r,side,axb,axT,tier};
+    }
+    if(!best){const top=Math.max(2,Math.min(H-h-2,y+LV_AR)),left=Math.max(0,Math.min(W-bw,gr.ax-bw/2));best={r:{x:left,y:top,w:bw,h},side:'b',axb:gr.ax-left,axT:gr.ax,tier:0}}   // no room: below, clamped
+    const {r,side,axb,axT,tier}=best;b.classList.add(side);b.style.left=r.x+'px';b.style.top=r.y+'px';b.style.setProperty('--ax',axb+'px');b.dataset.ax=axT;placed.push(r);
+    if(tier){const st=el('div','lvstem',L0),y0=side==='b'?y:r.y+h+LV_AR,y1=side==='b'?r.y-LV_AR:y;st.style.cssText=`left:${axT-1}px;top:${y0}px;height:${Math.max(0,y1-y0)}px`}
+  });
 }
 $('lvPill').onclick=()=>setLive(false);
 $('wrap').addEventListener('scroll',()=>{if(!live||Math.abs($('wrap').scrollTop-liveTop)<=2)return;if(!livePaused){livePaused=true;updLive()}clearTimeout(lvRet);lvRet=setTimeout(liveBack,LV_BACK)},{passive:true});
@@ -1494,7 +1537,7 @@ function render(){
   const colMin=printMode?110:fit?40:prefs.colW;
   const g=$('grid');g.innerHTML='';g.style.setProperty('--hh',HH+'px');g.classList.toggle('phmode',editMode==='phases');$('wrap').classList.toggle('phm',editMode==='phases');
   const a=vs(),hrs=24-a,days=focusD!=null?[focusD]:weekDays(),lvOn=live&&!printMode;g.classList.toggle('lv',lvOn);
-  const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');g.style.gridTemplateColumns=`52px repeat(${days.length},${printMode||fit||prefs.fillW||focusD!=null?`minmax(${colMin+lane}px,1fr)`:colMin+lane+'px'})`+(lvOn?' clamp(220px,36%,420px)':'');g.style.minWidth=(52+days.length*(colMin+lane)+(lvOn?220:0))+'px';
+  const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');g.style.gridTemplateColumns=`52px repeat(${days.length},${printMode||fit||prefs.fillW||focusD!=null?`minmax(${colMin+lane}px,1fr)`:colMin+lane+'px'})`;g.style.minWidth=(52+days.length*(colMin+lane))+'px';
   el('div','dh c',g);
   days.forEach((di,k)=>{const h=el('div','dh'+(di>4?' we':'')+(di>4&&k>0&&days[k-1]>4?' wj':'')+(focusD!=null?' fo':''),g);h.dataset.d=di;
     if(lvOn){h.textContent=DAYS[di];return}   // live view: only the day name, nothing to press (R-GRID-12)
@@ -1504,7 +1547,6 @@ function render(){
     h.insertAdjacentHTML('beforeend',`<span class="ic">${ICON_AGENDA}</span>`+esc(DAYS[di]));
     if(focusD==null)hb('foc',ICON_FOCUS,L('focusTip',{d:DAYS[di]}),()=>setFocus(di));
     else{hb('nxt',ICON_CR,L('focusNext'),()=>stepFocus(1));hb('wk',ICON_WEEK,L('focusWeekTip'),()=>setFocus(null)).append(L('focusWeek'))}});
-  if(lvOn)el('div','dh lvh',g);   // header cell of the live cards column
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
@@ -1626,7 +1668,6 @@ function render(){
       });
     });
   });
-  if(lvOn){const c=el('div','lvcol',g);c.style.height=hrs*HH+'px';c.setAttribute('aria-live','polite');c.setAttribute('aria-label',L('lvCards'))}
   fitList.forEach(fitBox);
   drawNow();
   const hi=hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
