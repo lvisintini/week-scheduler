@@ -449,3 +449,17 @@ test.describe('R-EVT-23 Fixed lanes in a real browser', () => {
     expect(geo[0]).toEqual([[0, 1]]); expect(geo[1]).toEqual([[0, 1], [2, 1]]);
   });
 });
+
+test.describe('R-UI-01 The sidebar top row in a real browser', () => {
+  for (const vp of [{ width: 1400, height: 500 }, { width: 393, height: 700 }]) {
+    test(`after scrolling the sidebar to the bottom (${vp.width}×${vp.height}) the collapse chevron, help and gear are still at the top`, async ({ page }) => {
+      await page.setViewportSize(vp); await openApp(page, { prefs: { collapsed: false } });
+      const top0 = await page.locator('#sbin .sbtop').evaluate(e => e.getBoundingClientRect().top);
+      await page.locator('#sbin').evaluate(e => { e.scrollTop = e.scrollHeight; }); expect(await page.locator('#sbin').evaluate(e => e.scrollTop)).toBeGreaterThan(200);
+      for (const b of await page.locator('#sbin .sbtop button').all()) await expect(b).toBeInViewport({ ratio: 1 });
+      const top1 = await page.locator('#sbin .sbtop').evaluate(e => e.getBoundingClientRect().top); expect(Math.abs(top1 - top0)).toBeLessThanOrEqual(12);
+      const cover = await page.locator('#sbin .sbtop button').last().evaluate(b => { const r = b.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === b || b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); });
+      expect(cover).toBe(true);   // drawn above the scrolled content, so a tap reaches it
+    });
+  }
+});
