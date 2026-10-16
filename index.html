@@ -64,6 +64,7 @@ aside.collapsed .help{display:none}
 .wrap::-webkit-scrollbar{width:14px;height:14px}.wrap::-webkit-scrollbar-track{background:var(--bg)}.wrap::-webkit-scrollbar-thumb{background:var(--mut);border-radius:8px;border:3px solid var(--bg)}.wrap::-webkit-scrollbar-corner{background:var(--bg)}
 .grid{display:grid}
 .dh{position:sticky;top:0;z-index:20;background-color:var(--card);background-image:linear-gradient(var(--line),var(--line));background-size:1px 100%;background-repeat:no-repeat;background-position:var(--lane,0px) 0;border-bottom:1px solid var(--line);padding:8px 8px 8px calc(8px + var(--lane,0px));text-align:center;font-weight:600;font-size:calc(14px * var(--ts,1))}
+.dh.nr{padding:8px 2px 8px calc(2px + var(--lane,0px));white-space:nowrap;overflow:hidden}
 .dh.we{background-image:linear-gradient(var(--line),var(--line)),linear-gradient(var(--weh),var(--weh));background-size:1px 100%,calc(100% - var(--lane,0px)) 100%;background-position:var(--lane,0px) 0,var(--lane,0px) 0}
 .dh.we.wj{background-size:1px 100%,100% 100%;background-position:var(--lane,0px) 0,0 0}
 .dh.c{background-image:none;padding-left:8px;left:0;z-index:30}
@@ -255,6 +256,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <div id="pr"></div><div id="toast"></div><div id="peek"></div>
 <script>
 const DAYN={en:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],es:['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']};
+const DAY2={en:['Mo','Tu','We','Th','Fr','Sa','Su'],es:['Lu','Ma','Mi','Ju','Vi','Sá','Do']};   // headers of narrow week columns (R-GRID-06)
 let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en';
 const DAYS=[...DAYN[lang]];
 const D={en:{
@@ -1606,13 +1608,16 @@ function render(){
   document.documentElement.style.setProperty('--ts',ts);g.style.setProperty('--ts',ts);g.classList.toggle('lv',lvOn);g.classList.toggle('fo',focusD!=null);
   // Fit height: the visible hours fill the window under the day header, whose height follows the text size. Measured before the grid
   // is emptied (layout of an empty grid would reset the scroll position), on the previous header with the new text size; no layout → the slider
-  const wh=fitH?$('wrap').clientHeight:0,dhH=wh&&g.querySelector('.dh')?.offsetHeight||38;
+  const wh=fitH?$('wrap').clientHeight:0,dhH=wh&&g.querySelector('.dh')?.offsetHeight||38,ww=$('wrap').clientWidth;   // ww: for narrow week headers
   HH=printMode?48:wh?Math.max(14,Math.min(200,Math.floor((wh-dhH)/hrs))):prefs.rowH;
   g.innerHTML='';g.style.setProperty('--hh',HH+'px');g.classList.toggle('phmode',editMode==='phases');$('wrap').classList.toggle('phm',editMode==='phases');
   const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');const tw=Math.round(52*ts);g.style.gridTemplateColumns=`${tw}px repeat(${days.length},${printMode||fitW||focusD!=null?`minmax(${colMin+lane}px,1fr)`:colMin+lane+'px'})`;g.style.minWidth=(tw+days.length*(colMin+lane))+'px';   // the time column grows with the text size
   el('div','dh c',g);
-  days.forEach((di,k)=>{const h=el('div','dh'+(di>4?' we':'')+(di>4&&k>0&&days[k-1]>4?' wj':'')+(focusD!=null?' fo':''),g);h.dataset.d=di;
+  // narrow week columns (under 70 px, e.g. a phone): a short name and no buttons; a tap opens that day, whose header has the agenda (R-GRID-06)
+  const nar=focusD==null&&!printMode&&(fitW?(ww?(ww-tw)/days.length-lane:1e9):colMin)<70;
+  days.forEach((di,k)=>{const h=el('div','dh'+(di>4?' we':'')+(di>4&&k>0&&days[k-1]>4?' wj':'')+(focusD!=null?' fo':'')+(nar&&!lvOn?' nr':''),g);h.dataset.d=di;
     if(lvOn){h.textContent=DAYS[di];return}   // live view: only the day name, nothing to press (R-GRID-12)
+    if(nar){h.textContent=DAY2[lang][di];h.title=L('focusTip',{d:DAYS[di]});h.setAttribute('aria-label',DAYS[di]);h.onclick=()=>setFocus(di);return}
     h.title=L('agendaTip');h.onclick=()=>openAgenda(di);
     const hb=(cls,icon,tip,fn)=>{const b=el('button','dhb '+cls,h);b.type='button';b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=ev=>{ev.stopPropagation();fn()};return b};
     if(focusD!=null)hb('prv',ICON_CL,L('focusPrev'),()=>stepFocus(-1));

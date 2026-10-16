@@ -78,6 +78,12 @@ test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
     const top = await page.evaluate(() => document.getElementById('wrap').scrollTop); await swipe(page, { x: 200, y: 600 }, 0, -300);
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top); expect(await d()).toBe((t + 6) % 7);
   });
+  test('the phone week shows short day names that fit their columns; tapping one opens that day', async ({ page }) => {
+    await page.evaluate(() => { prefs.fitW = true; setFocus(null); });
+    const hs = page.locator('.dh.nr'); await expect(hs).toHaveCount(7); await expect(hs.first()).toHaveText('Mo');
+    for (const h of await hs.all()) expect(await h.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);   // nothing cut off or overlapping
+    await hs.nth(3).tap(); await expect(page.locator('.dh.fo')).toContainText('Thursday');
+  });
   test('the app opens on today\'s day view, filling the width; Week brings the seven days back', async ({ page }) => {
     const name = await page.evaluate(() => DAYS[today()]); await expect(page.locator('.dh.fo')).toContainText(name); await expect(page.locator('.day')).toHaveCount(1);
     await page.locator('.dh.fo .wk').tap(); await expect(page.locator('.day')).toHaveCount(7);

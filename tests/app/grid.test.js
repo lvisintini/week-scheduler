@@ -112,6 +112,18 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () =
 });
 
 describe('R-GRID-06 Grid basics: hour lines, snapping, header agenda icon', () => {
+  const narrow = (o = {}) => { const a = fresh(null, o); a.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:393});prefs.fitW=true;render()"); return a; };
+  it('narrow week columns (a phone) get short day names without the agenda and focus buttons; a tap opens that day', () => {
+    const a = narrow(); const hs = a.qa('.dh:not(.c)');
+    expect(hs.map(h => h.textContent)).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']); expect(hs.every(h => h.classList.contains('nr'))).toBe(true);
+    expect(a.qa('.dh .dhb, .dh .ic')).toHaveLength(0); expect(hs[2].getAttribute('aria-label')).toBe('Wednesday');
+    hs[2].click(); expect(a.ev('focusD')).toBe(2); expect(a.q('#agDlg').open).toBeFalsy(); expect(a.q('.dh.fo .ic')).not.toBeNull();   // the day view has the agenda
+  });
+  it('in Spanish the short names are Lu Ma Mi Ju Vi Sá Do; wide columns keep the full names and their buttons', () => {
+    expect(narrow({ languages: ['es'] }).qa('.dh:not(.c)').map(h => h.textContent)).toEqual(['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']);
+    const w = fresh(); w.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:1400});prefs.fitW=true;render()");
+    expect(w.q('.dh:not(.c)').textContent).toBe('Monday'); expect(w.qa('.dh .foc')).toHaveLength(7);
+  });
   it('has 48 px per hour by default', () => { expect(fresh().ev('HH')).toBe(48); expect(fresh().q('#grid').style.getPropertyValue('--hh')).toBe('48px'); });
   it('draws hour lines in an overlay above the phase backgrounds in every column', () => {
     expect(fresh().qa('.day > .gl')).toHaveLength(7);
