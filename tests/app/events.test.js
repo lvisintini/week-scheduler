@@ -126,8 +126,8 @@ describe('R-EVT-03 What an event box shows', () => {
   it('without anyone involved or responsible there is no second row at all', () => {
     expect(fresh(blank({ events: [ev1()] })).q('.ev .r2')).toBeNull();
   });
-  it('person icons inside event boxes are small (10 px) so they match the text', () => {
-    const a = full(); expect(cssRule(a, '.ev .ic svg').style.getPropertyValue('width')).toBe('10px');
+  it('person icons inside event boxes are small (10 px at 100 % text) so they match the text', () => {
+    const a = full(); expect(cssRule(a, '.ev .ic svg').style.getPropertyValue('width')).toBe('calc(10px * var(--ts,1))');
   });
   it('an event that continues overnight labels its second piece "from Fri 22:00 · until 02:00"', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 4, start: 1320, end: 1560, person: '' }] })] })); a.ev('prefs.showEarly=true;render()');
@@ -149,9 +149,9 @@ describe('R-EVT-04 Status icons at the top right of the box', () => {
   it('a locked event shows a lock icon', () => {
     expect(fresh(blank({ schedules: [sched({ locked: true })], events: [ev1()] })).qa('.ev .flags > *')).toHaveLength(1);
   });
-  it('the title keeps clear of the icons (padding grows with the number of icons)', () => {
+  it('the title keeps clear of the icons (padding grows with the number of icons and with the text size)', () => {
     const a = fresh(blank({ schedules: [sched({ locked: true })], events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '' }, { day: 1, start: 600, end: 660, person: '' }] })] }));
-    expect(a.q('.ev .r1').style.paddingRight).toBe('32px');
+    expect(a.q('.ev .r1').style.paddingRight).toBe('calc(32px * var(--ts,1))');
   });
 });
 

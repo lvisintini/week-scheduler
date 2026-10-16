@@ -25,7 +25,7 @@ test.describe('R-SEC-04 A full tour of the app talks to nobody', () => {
     expect(w.consoleErrors).toEqual([]); expect(await violations(page)).toEqual([]);
   });
   test('only the two documented browser-storage keys are written; no cookies, databases, caches or service workers exist', async ({ page }) => {
-    await openApp(page); await seed(page, rich()); await page.evaluate(() => { saveMem('all'); prefs.theme = 'dark'; savePrefs(); });
+    await openApp(page, { defaults: true }); await seed(page, rich()); await page.evaluate(() => { saveMem('all'); prefs.theme = 'dark'; savePrefs(); });
     const r = await page.evaluate(async () => ({ keys: Object.keys(localStorage).sort(), session: Object.keys(sessionStorage), cookie: document.cookie, dbs: (await indexedDB.databases()).length, caches: (await caches.keys()).length, workers: (await navigator.serviceWorker.getRegistrations()).length }));
     expect(r).toEqual({ keys: ['weekly-schedules-prefs', 'weekly-schedules-workspaces'], session: [], cookie: '', dbs: 0, caches: 0, workers: 0 });
   });

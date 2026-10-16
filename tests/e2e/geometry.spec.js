@@ -77,34 +77,47 @@ test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
 test.describe('R-GRID-07 Zoom in a real browser', () => {
   test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, blank({ events: [ev()] })); });
   const hourGap = page => page.evaluate(() => { const l = document.querySelectorAll('.times span'); return l[2].getBoundingClientRect().top - l[1].getBoundingClientRect().top; });
-  test('the distance between hour labels equals the row height setting', async ({ page }) => {
+  const fs = page => page.evaluate(() => [document.querySelector('.ev .t'), document.querySelector('.times span'), document.querySelector('.dh:not(.c)')].map(e => parseFloat(getComputedStyle(e).fontSize)));
+  const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth, over: w.scrollHeight - w.clientHeight, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
+  test('with "Fit height" off the distance between hour labels equals the row height setting', async ({ page }) => {
     expect(await hourGap(page)).toBeCloseTo(48, 0); await page.evaluate(() => { prefs.rowH = 96; render(); }); expect(await hourGap(page)).toBeCloseTo(96, 0);
   });
-  test('zooming changes box sizes but never the text size', async ({ page }) => {
-    const fs = () => page.evaluate(() => [getComputedStyle(document.querySelector('.ev .t')).fontSize, getComputedStyle(document.querySelector('.times span')).fontSize, getComputedStyle(document.querySelector('.dh:not(.c)')).fontSize]);
-    const before = await fs(); await page.evaluate(() => { prefs.rowH = 120; prefs.colW = 250; render(); }); expect(await fs()).toEqual(before);
+  test('the row height and column width change box sizes but never the text size', async ({ page }) => {
+    const before = await fs(page); await page.evaluate(() => { prefs.rowH = 120; prefs.colW = 250; render(); }); expect(await fs(page)).toEqual(before);
   });
-  const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
-  test('by default the columns fill the window width (no empty strip), and a large column width still scrolls sideways', async ({ page }) => {
+  test('the text size slider scales box text, hour labels and day names by its percentage', async ({ page }) => {
+    const before = await fs(page); expect(before).toEqual([12, 11, 14]);
+    await page.evaluate(() => { const i = [...document.querySelectorAll('#sbin .zrow input')].find(x => x.getAttribute('aria-label') === 'Text size'); i.value = 150; i.dispatchEvent(new Event('input')); });
+    expect(await fs(page)).toEqual([18, 16.5, 21]);
+  });
+  test('with "Fit width" off the column width is exact all the way down to 70 px, and up to 1000 px scrolls sideways', async ({ page }) => {
     await page.evaluate(() => { prefs.colW = 70; prefs.collapsed = true; applyPrefs(); render(); });
-    let r = await m(page); expect(r.day).toBeGreaterThan(100); expect(r.scroll).toBeLessThanOrEqual(0); expect(Math.abs(r.empty)).toBeLessThan(20);
-    await page.evaluate(() => { prefs.colW = 600; render(); });
-    r = await m(page); expect(r.day).toBeCloseTo(600, 0); expect(r.scroll).toBeGreaterThan(0);
+    let r = await m(page); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.empty).toBeGreaterThan(100);
+    await page.evaluate(() => { prefs.colW = 1000; render(); });
+    r = await m(page); expect(r.day).toBeCloseTo(1000, 0); expect(r.scroll).toBeGreaterThan(0);
   });
-  test('with "Fill the window width" off the column width is exact: wide weeks scroll sideways, narrow ones are not stretched', async ({ page }) => {
-    await page.evaluate(() => { prefs.fillW = false; prefs.colW = 260; prefs.collapsed = true; applyPrefs(); render(); });
-    let r = await m(page); expect(r.day).toBeCloseTo(260, 0); expect(r.scroll).toBeGreaterThan(0);
-    await page.evaluate(() => { prefs.colW = 70; render(); });
-    r = await m(page); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.empty).toBeGreaterThan(100);
+});
+
+test.describe('R-GRID-07 Zoom defaults in a real browser', () => {
+  test.beforeEach(async ({ page }) => { await openApp(page, { defaults: true }); await seed(page, blank({ events: [ev()] })); });
+  const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { scroll: w.scrollWidth - w.clientWidth, over: w.scrollHeight - w.clientHeight, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
+  test('by default the week fills the window exactly: no scrolling either way and no empty strip on the right', async ({ page }) => {
+    const r = await m(page); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.over).toBeLessThanOrEqual(1); expect(Math.abs(r.empty)).toBeLessThan(20);
   });
-  test('"Fit to window" makes the whole day fit without vertical scrolling', async ({ page }) => {
-    await page.evaluate(() => { prefs.fit = true; render(); });
-    const r = await page.evaluate(() => { const w = document.getElementById('wrap'); return { over: w.scrollHeight - w.clientHeight, hh: HH }; }); expect(r.over).toBeLessThanOrEqual(1); expect(r.hh).toBeGreaterThan(24);
+  test('"Fit height" still fits the whole day at 160 % text, because the taller day header is measured', async ({ page }) => {
+    await page.evaluate(() => { prefs.txt = 160; render(); }); const r = await m(page); expect(r.over).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.clientHeight - document.querySelector('.dh').offsetHeight - HH * 19; })).toBeLessThan(19);
   });
-  test('"Fit to window" adapts when the browser window is resized', async ({ page }) => {
-    await page.evaluate(() => { prefs.fit = true; render(); }); const big = await page.evaluate(() => HH);
+  test('"Fit height" adapts when the browser window is resized', async ({ page }) => {
+    const big = await page.evaluate(() => HH);
     await page.setViewportSize({ width: 1400, height: 560 }); await expect.poll(() => page.evaluate(() => HH)).toBeLessThan(big);
-    const over = await page.evaluate(() => { const w = document.getElementById('wrap'); return w.scrollHeight - w.clientHeight; }); expect(over).toBeLessThanOrEqual(1);
+    expect((await m(page)).over).toBeLessThanOrEqual(1);
+  });
+  test('unticking "Fit width" keeps the fitted column width, so the grid does not jump', async ({ page }) => {
+    const w0 = await page.evaluate(() => document.querySelector('.day').getBoundingClientRect().width);
+    await page.locator('#sbin .zck', { hasText: 'Fit width' }).locator('input').uncheck();
+    const w1 = await page.evaluate(() => document.querySelector('.day').getBoundingClientRect().width); expect(Math.abs(w1 - w0)).toBeLessThan(1.5);
+    await expect(page.locator('#sbin .zrow input[aria-label="Column width"]')).toBeEnabled();
   });
 });
 

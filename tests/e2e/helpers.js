@@ -7,8 +7,11 @@ export const person = (o = {}) => ({ id: 'p1', name: 'Ann', color: '#f00000', vi
 export const blank = (o = {}) => ({ schedules: [sched()], people: [], events: [], rhythms: [], phases: [], phaseOpacity: 0.3, ...o });
 export const slot = (day, start, end, person = '') => ({ day, start, end, person });
 
-/** Opens the app with empty browser storage (optionally with prefs / a fixed clock) and waits until it is drawn. */
-export async function openApp(page, { prefs, clock, storage } = {}) {
+/** Opens the app with empty browser storage (optionally with prefs / a fixed clock) and waits until it is drawn.
+ *  Both Fit boxes start off (48 px per hour, 110 px columns, so geometry is predictable and the grid scrolls);
+ *  pass `defaults: true` to get the app's own zoom defaults (both on, R-GRID-07). */
+export async function openApp(page, { prefs, clock, storage, defaults = false } = {}) {
+  if (!defaults) prefs = { fitW: false, fitH: false, ...prefs };
   if (clock) await page.clock.setFixedTime(clock);
   if (prefs || storage) await page.addInitScript(({ p, st }) => {
     if (sessionStorage.getItem('seeded')) return;   // seed only on the first load, so reloads keep what the app saved

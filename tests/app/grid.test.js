@@ -127,76 +127,112 @@ describe('R-GRID-06 Grid basics: hour lines, snapping, header agenda icon', () =
   });
 });
 
-describe('R-GRID-07 Zoom changes the grid scale, never the text', () => {
-  it('a taller row height makes events and hour labels proportionally taller / further apart', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=96;render()');
+describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the grid text size', () => {
+  const sec = a => a.qa('#sbin .sec').at(-1);
+  const box = (a, label) => a.qa('#sbin .zck').find(l => l.textContent === label).querySelector('input');
+  const slider = (a, label) => a.qa('#sbin .zrow input').find(i => i.getAttribute('aria-label') === label);
+  const tick = (a, label, on) => { const c = box(a, label); c.checked = on; c.dispatchEvent(new a.w.Event('change')); };
+  const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY));
+  const wrapH = (a, h) => Object.defineProperty(a.q('#wrap'), 'clientHeight', { configurable: true, get: () => h });
+  it('by default both Fit boxes are ticked, their two sliders are disabled and the text size slider is enabled', () => {
+    const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
+    expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);
+  });
+  it('the Zoom section lists Fit width + Column width, Fit height + Row height, then Text size and Reset, each slider under its box', () => {
+    const a = fresh(); const s = sec(a); expect(s.querySelector('.shbtn span').textContent).toBe('Zoom');
+    expect([...s.querySelectorAll('.zck, .zrow > span:first-child, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
+      .toEqual(['Fit width', 'Column width', 'Fit height', 'Row height', '—', 'Text size', 'Reset zoom']);
+    expect([...s.querySelectorAll('.zrow')].map(r => r.classList.contains('zsub'))).toEqual([true, true, false]);
+    expect(box(a, 'Fit width').parentElement.title).toMatch(/sideways/); expect(box(a, 'Fit height').parentElement.title).toMatch(/height of the window/);
+    s.querySelector('.shbtn').click(); expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(stored(a).secZoom).toBe(true);
+  });
+  it('with "Fit width" on the columns share the window width with a 40 px minimum, whatever the slider says', () => {
+    const a = fresh(blank()); a.ev('prefs.colW=600;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(40px,1fr))');
+  });
+  it('with "Fit width" off the slider sets the exact width of the columns, so nothing is stretched', () => {
+    const a = fresh(blank()); a.ev('prefs.fitW=false;prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+    a.ev('prefs.colW=70;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,70px)');
+  });
+  it('a disabled slider shows the size the fit produced, and its tooltip says how to choose the size yourself', () => {
+    const a = fresh(blank()); wrapH(a, 738); a.ev('render()');   // the fake day columns are 100 px wide
+    const c = slider(a, 'Column width'), r = slider(a, 'Row height');
+    expect([c.value, c.nextElementSibling.textContent]).toEqual(['100', '100 px']); expect(r.nextElementSibling.textContent).toBe(`${Math.floor((738 - 38) / 19)} px/h`);
+    expect(c.title).toContain('Untick "Fit width"'); expect(r.title).toContain('Untick "Fit height"');
+  });
+  it('unticking "Fit width" keeps the fitted column width, enables the slider and is remembered per browser', () => {
+    const a = fresh(blank()); tick(a, 'Fit width', false);
+    expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,100px)'); expect(slider(a, 'Column width').disabled).toBe(false);
+    expect([stored(a).fitW, stored(a).colW]).toEqual([false, 100]); expect(openApp({ storage: a.storage() }).ev('prefs.fitW')).toBe(false);
+  });
+  it('"Fit height" sizes the rows so the visible hours fill the window under the measured day header', () => {
+    const a = fresh(); wrapH(a, 738); a.ev('render()'); expect(a.ev('HH')).toBe(Math.floor((738 - 38) / 19));   // no layout: the usual 38 px header
+    Object.defineProperty(a.w.HTMLElement.prototype, 'offsetHeight', { configurable: true, get() { return this.classList.contains('dh') ? 60 : 0; } });
+    a.ev('render()'); expect(a.ev('HH')).toBe(Math.floor((738 - 60) / 19));
+  });
+  it('unticking "Fit height" keeps the fitted row height, so the grid does not jump', () => {
+    const a = fresh(); wrapH(a, 738); a.ev('render()'); const hh = a.ev('HH'); tick(a, 'Fit height', false);
+    expect([a.ev('HH'), stored(a).rowH, stored(a).fitH]).toEqual([hh, hh, false]); expect(slider(a, 'Row height').disabled).toBe(false);
+  });
+  it('without a laid-out window (height 0) "Fit height" falls back to the row height slider', () => {
+    const a = fresh(); a.ev('prefs.rowH=72;render()'); expect(a.ev('HH')).toBe(72);
+  });
+  it('with "Fit height" off a taller row height makes events and hour labels proportionally taller / further apart', () => {
+    const a = fresh(blank({ events: [ev1()] })); wrapH(a, 738); a.ev('prefs.fitH=false;prefs.rowH=96;render()');
     expect(a.ev('HH')).toBe(96); expect(parseFloat(a.q('.ev').style.height)).toBeCloseTo(95, 0); expect(a.qa('.times span')[1].style.top).toBe('96px');
   });
-  it('by default ("Fill the window width" on) columns are at least the slider width and stretch to fill the free space', () => {
-    const a = fresh(blank()); expect(a.ev('prefs.fillW')).toBe(true); a.ev('prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(200px,1fr))');
+  it('the sliders offer 70–1000 px per column, 24–120 px per hour and 80–160 % text', () => {
+    const a = fresh(); expect(['Column width', 'Row height', 'Text size'].map(l => { const i = slider(a, l); return [i.min, i.max]; }))
+      .toEqual([['70', '1000'], ['24', '120'], ['80', '160']]);
   });
-  it('with "Fill the window width" off the slider sets the exact width of the columns, so nothing is stretched', () => {
-    const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+  it('moving an enabled slider applies at once and is remembered per browser', () => {
+    const a = fresh(); tick(a, 'Fit height', false); const r = slider(a, 'Row height'); r.value = 72; r.oninput();
+    expect(a.ev('HH')).toBe(72); expect(stored(a).rowH).toBe(72); expect(openApp({ storage: a.storage() }).ev('HH')).toBe(72);
   });
-  it('the "Fill the window width" checkbox applies at once, is remembered per browser and is disabled by "Fit to window"', () => {
-    const a = fresh(blank()); const box = () => a.qa('#sbin .zck').find(l => l.textContent.includes('Fill the window width')).querySelector('input');
-    expect(box().checked).toBe(true); box().checked = false; box().dispatchEvent(new a.w.Event('change'));
-    expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,110px)'); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).fillW).toBe(false);
-    a.ev('prefs.fit=true;render()'); expect(box().disabled).toBe(true);
+  it('the text size slider scales the grid text through --ts, widens the time column to match and is remembered per browser', () => {
+    const a = fresh(blank()); const t = slider(a, 'Text size'); expect(t.nextElementSibling.textContent).toBe('100 %'); t.value = 150; t.oninput();
+    expect(a.d.documentElement.style.getPropertyValue('--ts')).toBe('1.5'); expect(a.q('#grid').style.getPropertyValue('--ts')).toBe('1.5');
+    expect(t.nextElementSibling.textContent).toBe('150 %'); expect(stored(a).txt).toBe(150);
+    expect(a.q('#grid').style.gridTemplateColumns).toBe('78px repeat(7,minmax(40px,1fr))'); expect(a.q('#grid').style.minWidth).toBe(`${78 + 7 * 40}px`);
   });
-  it('the zoom controls live in a collapsible Zoom section at the bottom of the sidebar, with labelled sliders', () => {
-    const a = fresh(); const sec = a.qa('#sbin .sec').at(-1); expect(sec.querySelector('.shbtn span').textContent).toBe('Zoom');
-    expect(sec.querySelector('.shbtn em')).toBeNull(); expect(sec.querySelector('.sech .eye')).toBeNull();
-    expect([...sec.querySelectorAll('.zrow input')].map(i => i.getAttribute('aria-label'))).toEqual(['Row height', 'Column width']);
-    expect([...sec.querySelectorAll('.zck')].map(l => l.textContent)).toEqual(['Fill the window width', 'Fit to window']);
-    expect(sec.querySelector('.zck').title).toMatch(/stretch/); sec.querySelector('.shbtn').click();
-    expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).secZoom).toBe(true);
+  it('box text, hour labels, day names, phase labels, box icons and hover cards follow the text size; lips and strip titles do not', () => {
+    const a = fresh(); const fs = s => cssRule(a, s).style.getPropertyValue('font-size');
+    ['.ev', '.times span', '.phx .pl', '#peek', '.pk .pt1', '.lvb'].forEach(s => expect(fs(s)).toMatch(/var\(--ts,1\)/));
+    expect(cssRule(a, '.dh').style.getPropertyValue('font-size')).toBe('calc(14px * var(--ts,1))'); expect(cssRule(a, '.ev .flags svg').style.getPropertyValue('width')).toMatch(/var\(--ts/);
+    expect(fs('.lip')).toBe('10px'); expect(fs('.bgs span')).toBe('10px');
+  });
+  it('"Reset zoom" ticks both Fit boxes again and restores 48 px per hour, 110 px columns and 100 % text', () => {
+    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fitW=false;prefs.fitH=false;prefs.txt=140;render()'); a.q('#sbin .zreset').click();
+    expect(a.ev('[prefs.rowH,prefs.colW,prefs.fitW,prefs.fitH,prefs.txt]')).toEqual([48, 110, true, true, 100]);
+  });
+  it('out-of-range stored zoom values are corrected on start (too large → maximum, too small → minimum, unusable → default)', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 5000, colW: -1, txt: 500 }) } });
+    expect(a.ev('[prefs.rowH,prefs.colW,prefs.txt]')).toEqual([120, 70, 160]);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colW: 9999, txt: 10 }) } }).ev('[prefs.colW,prefs.txt]')).toEqual([1000, 80]);
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 'x', colW: 0, txt: 'big' }) } });
+    expect(b.ev('[prefs.rowH,prefs.colW,prefs.txt]')).toEqual([48, 110, 100]);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ txt: 93 }) } }).ev('prefs.txt')).toBe(90);
+  });
+  it('the retired settings "fit" and "fillW" of earlier versions are ignored: both Fit boxes start ticked', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ fit: false, fillW: false }) } }); expect(a.ev('[prefs.fitW,prefs.fitH]')).toEqual([true, true]);
+  });
+  it('a visible rhythm adds its 18 px label lane to every column', () => {
+    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(58px,1fr))');
   });
   it('the Settings dialog has nothing about zoom any more', () => {
     const a = fresh(); a.ev('openSettings()'); expect(a.qa('#xDlg .zrow, #xDlg .zck, #xDlg input[type=range]')).toHaveLength(0);
-    expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit to window|Fill the window|Reset zoom/);
+    expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit height|Text size|Reset zoom/);   // "Fit width" is named in the side-by-side explanation
   });
   it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
-    const a = fresh(blank()); a.ev('prefs.fillW=false;prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
-  });
-  it('the sliders offer 24–120 px per hour and 70–600 px per column (enough to fill a very wide screen)', () => {
-    const a = fresh(); const r = a.qa('#sbin .zrow input');
-    expect([r[0].min, r[0].max]).toEqual(['24', '120']); expect([r[1].min, r[1].max]).toEqual(['70', '600']);
-  });
-  it('moving a slider applies at once and is remembered per browser', () => {
-    const a = fresh(); const r = a.q('#sbin .zrow input'); r.value = 72; r.oninput();
-    expect(a.ev('HH')).toBe(72); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).rowH).toBe(72);
-    expect(openApp({ storage: a.storage() }).ev('HH')).toBe(72);
-  });
-  it('"Fit to window" sizes the rows so the visible hours fill the window height', () => {
-    const a = fresh(); Object.defineProperty(a.q('#wrap'), 'clientHeight', { get: () => 738 });
-    a.ev('prefs.fit=true;render()'); expect(a.ev('HH')).toBe(Math.floor((738 - 38) / 19));
-  });
-  it('with "Fit to window" the columns share the width (small minimum) and the sliders are disabled', () => {
-    const a = fresh(blank()); a.ev('prefs.fit=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toContain('minmax(40px');
-    expect(a.qa('#sbin .zrow input').every(i => i.disabled)).toBe(true); expect(a.q('#sbin .zrow input').title).toContain('Fit to window');
-  });
-  it('"Reset zoom" restores 48 px per hour, 110 px columns, fill-the-width on and fit off', () => {
-    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fillW=false;prefs.fit=true;render()'); a.q('#sbin .zreset').click();
-    expect([a.ev('prefs.rowH'), a.ev('prefs.colW'), a.ev('prefs.fillW'), a.ev('prefs.fit')]).toEqual([48, 110, true, false]);
-  });
-  it('out-of-range stored zoom values are corrected on start (too large → maximum, too small → minimum, unusable → default)', () => {
-    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 5000, colW: -1 }) } });
-    expect(a.ev('prefs.rowH')).toBe(120); expect(a.ev('prefs.colW')).toBe(70);
-    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colW: 9999 }) } }).ev('prefs.colW')).toBe(600);
-    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 'x', colW: 0 }) } });
-    expect(b.ev('prefs.rowH')).toBe(48); expect(b.ev('prefs.colW')).toBe(110);
-  });
-  it('a visible rhythm adds its 18 px label lane to every column', () => {
-    const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(128px,1fr))');
-  });
-  it('the text size is not touched by zoom (no font size is set on the grid)', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=120;render()');
-    expect(a.q('.ev').style.fontSize).toBe(''); expect(a.q('#grid').style.fontSize).toBe('');
+    const a = fresh(blank()); a.ev('prefs.fitW=false;prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
   });
   it('printing ignores zoom: the printed grid uses the default scale and the screen scale is restored afterwards', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=96;render()'); a.ev('printSchedule()');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.fitH=false;prefs.rowH=96;render()'); a.ev('printSchedule()');
     expect(a.q('#pr .ev').style.height).toBe(`${48 - 1}px`); expect(a.ev('HH')).toBe(96); expect(a.q('#grid').style.getPropertyValue('--hh')).toBe('96px');
+  });
+  it('printing ignores the text size: the printed grid is at 100 % and the screen text size comes back afterwards', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.txt=150;render()'); a.ev('printSchedule()');
+    expect(a.q('#pr .grid').style.getPropertyValue('--ts')).toBe('1'); expect(a.q('#grid').style.getPropertyValue('--ts')).toBe('1.5');
+    expect(a.d.documentElement.style.getPropertyValue('--ts')).toBe('1.5');
   });
 });
 
@@ -232,7 +268,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
   const btn = a => a.q('#lvB'), now = a => a.q('#lvC'), pill = a => a.q('#lvPill');
   const start = a => btn(a).click();
-  const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}})})()`);
+  const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}});prefs.fitH=false})()`);   // a fixed 48 px/h, so the scroll positions are easy to check
   const scrollBy = (a, y) => a.ev(`(()=>{const w=document.getElementById('wrap');w.scrollTop=${y};w.dispatchEvent(new Event('scroll'))})()`);
   const kids = [{ id: 'O', name: 'Olivia', color: '#d6409f', visible: true }, { id: 'B', name: 'Bob', color: '#2fa66a', visible: true }];
   const day = () => blank({ people: kids, events: [
@@ -262,7 +298,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   });
   it('the text of the compact view is larger while live, and only then', () => {
     const a = fresh(); const r = sel => [...a.d.styleSheets[0].cssRules].find(x => x.selectorText === sel);
-    expect(r('#grid.lv .ev').style.getPropertyValue('font-size')).toBe('15px'); expect(r('#grid.lv .times span').style.getPropertyValue('font-size')).toBe('13px');
+    expect(r('#grid.lv .ev').style.getPropertyValue('font-size')).toBe('calc(15px * var(--ts,1))'); expect(r('#grid.lv .times span').style.getPropertyValue('font-size')).toBe('calc(13px * var(--ts,1))');
   });
   it('nothing pops up by itself: a tap on a box fades in a bubble whose arrow points at the tap', () => {
     const a = fresh(day()); at(a, 2, 11, 30); start(a); expect(a.qa('.lvb')).toHaveLength(0);
@@ -382,8 +418,8 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
     a.ev('openSettings()'); a.key('Escape'); expect(shown(a)).toEqual([1]); a.q('#xDlg').close();
     a.key('Escape'); expect(shown(a)).toHaveLength(7);
   });
-  it('the focused day fills the window width even when "Fill the window width" is off', () => {
-    const a = fresh(); a.ev('prefs.fillW=false;render()'); expect(a.q('#grid').style.gridTemplateColumns).not.toContain('1fr');
+  it('the focused day fills the window width even when "Fit width" is off', () => {
+    const a = fresh(); a.ev('prefs.fitW=false;render()'); expect(a.q('#grid').style.gridTemplateColumns).not.toContain('1fr');
     focus(a, 2); expect(a.q('#grid').style.gridTemplateColumns).toMatch(/^52px repeat\(1,\s*minmax\(.*1fr\)\)$/);
   });
   it('focus is view state: not remembered in the settings, not undoable and not an unsaved change', () => {
