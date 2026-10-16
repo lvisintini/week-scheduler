@@ -67,3 +67,15 @@ test.describe('R-GRID-12 Live View on a phone', () => {
     await expect(page.locator('.lvb')).toHaveCount(1); expect(await page.evaluate(() => lvOpen.length)).toBe(1);
   });
 });
+
+test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
+  test('it starts closed even when it was left open; opened, it lies over the full-width grid and a tap beside it closes it', async ({ page }) => {
+    await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('weekly-schedules-prefs')); p.collapsed = false; localStorage.setItem('weekly-schedules-prefs', JSON.stringify(p)); });
+    await page.reload(); await expect(page.locator('#sb')).toHaveClass(/collapsed/);   // left open, yet closed after the reload
+    const vw = page.viewportSize().width; await page.locator('#sbin .xpand').tap();
+    const sb = await page.locator('#sb').boundingBox(), wrap = await page.locator('#wrap').boundingBox();
+    expect(sb.x).toBe(0); expect(sb.width).toBeGreaterThan(200); expect(wrap.width).toBeGreaterThan(vw - 5);   // over the grid, not beside it
+    await expect(page.locator('#sbBack')).toBeVisible(); await page.touchscreen.tap(vw - 15, 400);
+    await expect(page.locator('#sb')).toHaveClass(/collapsed/); await expect(page.locator('#sbBack')).toBeHidden();
+  });
+});

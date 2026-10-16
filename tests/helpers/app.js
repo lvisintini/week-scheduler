@@ -14,9 +14,10 @@ export const WS_KEY = 'weekly-schedules-workspaces';
 export const PREFS_KEY = 'weekly-schedules-prefs';
 export const PASSWORD = 'k7Qm9-xTa2L-wdR4n-Hy6Be-Zc8Vp';   // a valid (>= 20 characters) test password
 
-/** Opens the app. Options: url, storage (localStorage seed), languages, promptAnswer, confirmAnswer, compression, crypto. */
+/** Opens the app. Options: url, storage (localStorage seed), languages, promptAnswer, confirmAnswer, compression, crypto,
+ *  phone (matchMedia reports a window narrower than 600 px). */
 export function openApp(opts = {}) {
-  const { url = 'https://app.test/', storage = {}, languages = ['en-US'], promptAnswer = 'x', confirmAnswer = true, compression = true, crypto = true } = opts;
+  const { url = 'https://app.test/', storage = {}, languages = ['en-US'], promptAnswer = 'x', confirmAnswer = true, compression = true, crypto = true, phone = false } = opts;
   const log = { errors: [], alerts: [], prompts: [], confirms: [] };
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => log.errors.push(String(e.message)));
@@ -38,6 +39,7 @@ export function openApp(opts = {}) {
       w.URL.revokeObjectURL = () => {};
       w.HTMLAnchorElement.prototype.click = function () { w.__download = this.download; };
       Object.defineProperty(w.navigator, 'clipboard', { value: { writeText: async t => { w.__clip = t; } }, configurable: true });
+      w.matchMedia = q => ({ matches: phone && /max-width:\s*600px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
       Object.entries(storage).forEach(([k, v]) => w.localStorage.setItem(k, v));
       // fake geometry: day column i occupies x in [100i, 100i+100), top = 0
       w.Element.prototype.getBoundingClientRect = function () {

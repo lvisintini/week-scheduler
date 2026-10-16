@@ -457,12 +457,13 @@ test.describe('R-UI-01 The sidebar top row in a real browser', () => {
     expect(c).toBeLessThan(l); expect(l).toBeLessThan(g); expect(g).toBeGreaterThan(h * 0.8); await expect(page.locator('#sbin .help')).toBeHidden();
   });
   test('on a phone-sized window the top-row buttons are at least 44 px, finger-sized', async ({ page }) => {
-    await page.setViewportSize({ width: 393, height: 700 }); await openApp(page, { prefs: { collapsed: false } });
+    await page.setViewportSize({ width: 393, height: 700 }); await openApp(page, { prefs: { collapsed: false } }); await page.locator('#sbin .xpand').click();
     for (const b of await page.locator('#sbin .sbtop .eye:visible').all()) { const r = await b.boundingBox(); expect(r.width).toBeGreaterThanOrEqual(44); expect(r.height).toBeGreaterThanOrEqual(44); }
   });
   for (const vp of [{ width: 1400, height: 500 }, { width: 393, height: 700 }]) {
     test(`after scrolling the sidebar to the bottom (${vp.width}×${vp.height}) the collapse chevron, help and gear are still at the top`, async ({ page }) => {
       await page.setViewportSize(vp); await openApp(page, { prefs: { collapsed: false } });
+      if (await page.locator('#sb.collapsed').count()) await page.locator('#sbin .xpand').click();   // a phone starts with the drawer closed (R-UI-13)
       const top0 = await page.locator('#sbin .sbtop').evaluate(e => e.getBoundingClientRect().top);
       await page.locator('#sbin').evaluate(e => { e.scrollTop = e.scrollHeight; }); expect(await page.locator('#sbin').evaluate(e => e.scrollTop)).toBeGreaterThan(200);
       for (const b of await page.locator('#sbin .sbtop button').all()) await expect(b).toBeInViewport({ ratio: 1 });

@@ -350,3 +350,19 @@ describe('R-UI-12 Opening a repeating event from the grid jumps to the clicked r
     b.ev('overlapMenu(10,10,itemsAt(2,630,0.5))'); b.qa('.omenu .oi').find(x => x.textContent.startsWith('Swim')).click(); expect(pulsed(b)).toEqual([3]);
   });
 });
+
+describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
+  const saved = prefs => ({ [PREFS_KEY]: JSON.stringify(prefs) });
+  it('a phone-sized window starts with the sidebar closed even when it was left open', () => {
+    const a = openApp({ phone: true, storage: saved({ collapsed: false }) }); expect(a.q('#sb').classList.contains('collapsed')).toBe(true);
+    const d = openApp({ storage: saved({ collapsed: false }) }); expect(d.q('#sb').classList.contains('collapsed')).toBe(false);   // a desktop window keeps what was saved
+  });
+  it('opened on a phone, a tap on the dimmed backdrop closes it again', () => {
+    const a = openApp({ phone: true }); a.q('.sbtop .xpand').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(false);
+    a.q('#sbBack').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(true); expect(a.q('.sbtop .xpand').title).toBe('Expand sidebar');
+  });
+  it('the phone stylesheet lays the open sidebar over the grid, above a backdrop, and hides the resize edge', () => {
+    const css = openApp().q('style').textContent;
+    expect(css).toContain('@media (max-width:600px){aside:not(.collapsed){position:fixed;'); expect(css).toContain('aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;'); expect(css).toContain('aside .rs{display:none}');
+  });
+});

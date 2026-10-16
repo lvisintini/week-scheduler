@@ -24,6 +24,8 @@ aside.collapsed .rs,aside.collapsed .sbbody,aside.collapsed .lang,aside.collapse
 aside.collapsed #sbin{padding:12px 8px}aside.collapsed .sbtop{justify-content:flex-start;flex-direction:column;flex:1;margin-bottom:0}
 .lvr{display:none}aside.collapsed .lvr{display:inline-flex;order:2}aside.collapsed .sbtop .xpand{order:1}aside.collapsed .gear{order:3;margin-top:auto}   /* rail: open, Live View, and the gear far from the chevron */
 .lvr.on{background:#e5342d;color:#fff;border-color:#e5342d}
+#sbBack{display:none}
+@media (max-width:600px){aside:not(.collapsed){position:fixed;left:0;top:0;bottom:0;z-index:60;width:min(90vw,var(--sbw,290px));box-shadow:0 0 24px #0006}aside .rs{display:none}aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;z-index:55;background:#0007}}   /* phone: the open sidebar is a drawer over the grid (R-UI-13) */
 @media (max-width:600px){.sbtop{gap:10px}.sbtop .eye{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}}   /* finger-sized, apart */
 .sbtop{display:flex;align-items:center;gap:8px;margin-bottom:12px;position:sticky;top:-12px;z-index:4;background:var(--card);padding-top:12px;margin-top:-12px}
 .fav{width:22px;height:22px}.ttl{font-weight:700;font-size:15px;flex:1;min-width:0}
@@ -222,7 +224,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
  #pr .dh{position:static;cursor:default}#pr .dh .ic,#pr .dh .dhb{display:none}
 }
 </style><style id="pgStyle"></style></head><body>
-<main><aside id="sb"><div class="rs" id="rs"></div><div id="sbin"></div></aside>
+<main><aside id="sb"><div class="rs" id="rs"></div><div id="sbin"></div></aside><div id="sbBack"></div>
 <div class="wrap" id="wrap" tabindex="0" role="region" aria-label="Week grid"><div class="grid" id="grid"></div></div></main>
 <div id="pills"><button id="lvPill" type="button" style="display:none"><i></i><span></span></button><button id="hid" style="display:none"></button></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
@@ -912,6 +914,7 @@ prefs.rowH=Math.min(120,Math.max(24,+prefs.rowH||48));prefs.colW=Math.min(1000,M
 prefs.hlNoType=prefs.hlNoType===true;prefs.lanesFix=prefs.lanesFix===true;if(prefs.colBy!=='t'&&prefs.colBy!=='p')prefs.colBy='';   // Tools (R-UI-11)
 const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(prefs))}catch(e){}};
 function applyTheme(){const h=document.documentElement;if(prefs.theme==='light'||prefs.theme==='dark')h.dataset.theme=prefs.theme;else delete h.dataset.theme}
+const phone=()=>!!(window.matchMedia&&matchMedia('(max-width:600px)').matches);   // a phone-sized window (R-UI-13)
 function applyPrefs(){$('sb').style.setProperty('--sbw',prefs.w+'px');$('sb').classList.toggle('collapsed',!!prefs.collapsed)}
 function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
   (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
@@ -2210,6 +2213,8 @@ function setLang(l){
   rows.forEach((o,i)=>{o.lt.nodeValue=DAYS[i].slice(0,3);rowTexts(o,o);o.more.forEach((x,k)=>rowTexts(x,o,k))});
   render();applyStatic();
 }
+if(phone())prefs.collapsed=true;   // a phone starts with the drawer closed, whatever was saved (R-UI-13)
+$('sbBack').onclick=()=>{prefs.collapsed=true;savePrefs();applyPrefs();renderSide()};
 applyPrefs();applyTheme();
 if(window.ResizeObserver){let rt;new ResizeObserver(()=>{if(!prefs.fitW&&!prefs.fitH)return;clearTimeout(rt);rt=setTimeout(zoomRender,80)}).observe($('wrap'))}
 loadStore();
