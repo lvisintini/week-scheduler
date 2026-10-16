@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep, pointer } from '../helpers/app.js';
+import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep, pointer, PREFS_KEY } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
@@ -351,17 +351,15 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
     const a = pair({}, {}, { people: [people[0], { ...people[1], visible: false }, people[2]] });
     expect(box(a, 'B')).toBeUndefined(); expect(lane(box(a, 'A'))).toBeNull();
   });
-  it('turning the setting off brings back the overlapping view with stripes, and it is remembered per browser', () => {
-    const a = pair(); expect(a.ev('prefs.side')).toBe(true);
-    a.ev('openSettings()'); const cb = a.qa('#xDlg .sopt').find(l => l.textContent.includes('Show parallel events side by side')).querySelector('input');
-    expect(cb.checked).toBe(true); cb.checked = false; cb.dispatchEvent(new a.w.Event('change'));
-    expect(lane(box(a, 'A'))).toBeNull(); expect(a.qa('.ov')).toHaveLength(1);
-    expect(JSON.parse(a.storage()['weekly-schedules-prefs']).side).toBe(false);
+  it('side by side cannot be turned off: Settings has no such option, and an old stored "side: false" is ignored', () => {
+    const a = pair(); a.ev('openSettings()'); expect(a.qa('#xDlg .sopt').map(l => l.textContent).join('|')).not.toMatch(/side by side|order of the People list/);
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ side: false, sideFix: true }) } }); setData(b, a.ev('JSON.parse(JSON.stringify(S))'));
+    expect(lane(box(b, 'A'))).toBe(0); expect(lane(box(b, 'B'))).toBe(0.5); expect(b.qa('.ov')).toHaveLength(0);
   });
-  it('the settings tooltip explains the rule and the column-width workaround in both languages', () => {
+  it('the help explains the rule and the column-width workaround in both languages', () => {
     const a = pair();
-    expect(a.ev("L('sideTip')")).toMatch(/share a person.*stripes.*column width/s);
-    a.ev("setLang('es')"); expect(a.ev("L('sideTip')")).toMatch(/comparten una persona.*rayas.*ancho de columna/s);
+    expect(a.ev("L('help6')")).toMatch(/a shared person.*stripes.*side by side.*column width/s);
+    a.ev("setLang('es')"); expect(a.ev("L('help6')")).toMatch(/persona en común.*rayas.*uno al lado del otro.*ancho de columna/s);
   });
   it('a click on the left half opens the left event directly instead of the chooser; the right half opens the other', () => {
     for (const [x, title] of [[25, 'A'], [75, 'B']]) {
@@ -405,10 +403,6 @@ describe('R-EVT-13 An occurrence that clashes with several parallel ones spans t
     const a = fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['B'] })] }));
     expect(lanes(a, 'A', 'B', 'C', 'X')).toEqual(['0/3', '1/3', '2/3', '0-1/3']);
   });
-  it('with "Keep lanes in the order of the People list" the order is fixed, and what cannot span is merged into one lane with stripes', () => {
-    const a = fresh(blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['C'] })] }));
-    a.ev('prefs.sideFix=true;render()'); expect(lanes(a, 'A', 'C', 'X', 'B')).toEqual(['0/2', '0/2', '0/2', '1/2']); expect(a.qa('.day[data-d="0"] .ov').length).toBeGreaterThan(0);
-  });
   it('a layout that no lane order can satisfy falls back to merging everything involved into stripes', () => {
     const a = fresh(blank({ people: P4, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('d', 'D', 'D', 600, 720),
       at('x', 'X', 'A', 660, 780, { involved: ['C'] }), at('y', 'Y', 'B', 660, 780, { involved: ['D'] }), at('z', 'Z', 'A', 660, 780, { involved: ['D'] })] }));
@@ -418,13 +412,10 @@ describe('R-EVT-13 An occurrence that clashes with several parallel ones spans t
     const a = abx(); const ids = fx => a.ev(`piecesAt(0,690,true,${fx}).map(x=>x.e.id).sort()`);
     expect(ids(0.25)).toEqual(['a', 'x']); expect(ids(0.75)).toEqual(['b', 'x']); expect(a.ev('piecesAt(0,750,true,0.75).map(x=>x.e.id)')).toEqual(['x']);
   });
-  it('the setting sits under "Show parallel events side by side", is off by default, is disabled while that is off and is remembered per browser', () => {
-    const a = abx(); expect(a.ev('prefs.sideFix')).toBe(false); a.ev('openSettings()');
-    const row = t => a.qa('#xDlg .sopt').find(l => l.textContent.includes(t)), fix = row('Keep lanes in the order of the People list');
-    expect(fix.classList.contains('sub')).toBe(true); expect(row('Show parallel events side by side').nextElementSibling).toBe(fix);
-    const side = row('Show parallel events side by side').querySelector('input'); side.checked = false; side.dispatchEvent(new a.w.Event('change')); expect(fix.querySelector('input').disabled).toBe(true);
-    side.checked = true; side.dispatchEvent(new a.w.Event('change')); fix.querySelector('input').checked = true; fix.querySelector('input').dispatchEvent(new a.w.Event('change'));
-    expect(JSON.parse(a.storage()['weekly-schedules-prefs']).sideFix).toBe(true);
+  it('an old stored "Keep lanes in the order of the People list" is ignored: lanes are still reordered when that is needed', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ sideFix: true }) } });
+    setData(a, blank({ people, events: [at('a', 'A', 'A', 600, 720), at('b', 'B', 'B', 600, 720), at('c', 'C', 'C', 600, 720), at('x', 'X', 'A', 660, 780, { involved: ['C'] })] }));
+    expect(lanes(a, 'A', 'C', 'B', 'X')).toEqual(['0/3', '1/3', '2/3', '0-1/3']);
   });
   it('many overlapping events without people are still drawn quickly as one striped lane', () => {
     const a = fresh(blank({ events: Array.from({ length: 300 }, (_, i) => at('e' + i, 'E' + i, '', 600 + (i % 8) * 15, 720)) })); const t0 = Date.now(); a.ev('render()');
@@ -470,13 +461,6 @@ describe('R-EVT-18 An occurrence also fills the lanes of its people when nothing
       ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
       at('l', 'Lunch', 'I', 720, 780, { involved: ['L'] }), at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Cy work', 'C', 540, 1020)] }));
     expect(workLanes(a)).toEqual(['0/3', '0/3']); expect(lanes(a, 'Ioanna work', 'Cy work', 'Lunch')).toEqual(['1/3', '2/3', '0-1/3']);
-  });
-  it('with "Keep lanes in the order of the People list" the order is kept and the occurrence stays in the lane it clashes in', () => {
-    const P3 = [person({ id: 'L', name: 'Luis', color: '#3f51b5' }), person({ id: 'C', name: 'Cy', color: '#2fa66a' }), person({ id: 'I', name: 'Ioanna', color: '#d6409f' })];
-    const a = fresh(blank({ people: P3, events: [
-      ev1({ id: 'w', title: 'Work', slots: [{ day: 1, start: 540, end: 720, person: 'L' }, { day: 1, start: 780, end: 1020, person: 'L' }] }),
-      at('l', 'Lunch', 'I', 720, 780, { involved: ['L'] }), at('i', 'Ioanna work', 'I', 600, 960), at('c', 'Cy work', 'C', 540, 1020)] }));
-    a.ev('prefs.sideFix=true;render()'); expect(lanes(a, 'Cy work', 'Ioanna work', 'Lunch')).toEqual(['1/3', '2/3', '2/3']);
   });
 });
 

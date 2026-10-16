@@ -71,11 +71,13 @@ export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v
 /** Settings that differ from every default (of the current app). */
 export const prefsSample = {
   w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fitW: false, fitH: false, txt: 120,
-  side: false, sideFix: true, secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
+  secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
   hlNoType: true, colBy: 't', secTools: true,
 };
 // Settings added to the sample after folder v<n> was written (they are back at their defaults in that folder and every older one).
 const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools']]];   // Tools (R-UI-11)
+// Settings retired after folder v<n> was written: that folder and every older one still hold them (no longer read, but kept in prefs).
+const PREFS_RETIRED = [[8, { side: false, sideFix: true }]];   // side by side can no longer be turned off (R-EVT-10/13)
 
 // Settings have no version of their own; the settings sample of folder v<N> is the one current when that folder was written.
 // Folders up to 5 were written before the zoom controls became Fit width / Fit height / Text size (R-GRID-07): they hold the
@@ -83,6 +85,7 @@ const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools']]];   // Tools (R-UI-1
 export const prefsAt = v => {
   const later = PREFS_AFTER.filter(([n]) => v <= n).flatMap(([, ks]) => ks);
   const p = Object.fromEntries(Object.entries(prefsSample).filter(([k]) => !later.includes(k)));
+  PREFS_RETIRED.filter(([n]) => v <= n).forEach(([, kv]) => Object.assign(p, kv));
   if (v >= 6) return p;
   const rest = Object.fromEntries(Object.entries(p).filter(([k]) => !['fitW', 'fitH', 'txt'].includes(k)));
   return { ...rest, fillW: false, fit: true };
