@@ -284,6 +284,18 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   const bubbles = a => a.qa('.lvl .lvb:not(.out)').map(b => [...b.querySelectorAll('.lvs .pt1')].map(t => t.textContent));   // open bubbles, sections in start order
   const boxOf = (a, title) => a.qa('.day .ev, .day .bgs').find(b => b._it.e.title === title);
   const tap = (a, target, x, min) => { const y = a.y(min); ['pointerdown', 'pointerup', 'click'].forEach(t => target.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: y, bubbles: true, cancelable: true }))); };   // live: the one day column spans x 0..100
+  it('the collapsed rail has its own Live View button: one tap starts it, it turns red with a stop icon, a second tap stops it', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); a.q('.sbtop .xpand').click(); const r = () => a.q('#lvR');
+    expect(a.q('#sb').classList.contains('collapsed')).toBe(true); expect(r().title).not.toBe(''); expect(r().getAttribute('aria-label')).toBe('Live View'); expect(r().classList.contains('on')).toBe(false);
+    r().click(); expect(a.ev('live')).toBe(true); expect(r().classList.contains('on')).toBe(true); expect(r().getAttribute('aria-pressed')).toBe('true'); expect(r().getAttribute('aria-label')).toBe('Stop Live View');
+    r().click(); expect(a.ev('live')).toBe(false); expect(r().classList.contains('on')).toBe(false);
+  });
+  it('on the rail the chevron comes first, then Live View, and the gear sits at the bottom, away from the chevron', () => {
+    const a = fresh(), st = sel => cssRule(a, sel).style;
+    expect(st('aside.collapsed .sbtop .xpand').getPropertyValue('order')).toBe('1'); expect(st('aside.collapsed .lvr').getPropertyValue('order')).toBe('2');
+    expect(st('aside.collapsed .gear').getPropertyValue('order')).toBe('3'); expect(st('aside.collapsed .gear').getPropertyValue('margin-top')).toBe('auto');
+    expect(st('.lvr').getPropertyValue('display')).toBe('none');   // only on the rail: the open sidebar has the Live View row in Tools
+  });
   it('the sidebar has a Live View button with a camera icon at the top of the Tools section; the Now button is hidden', () => {
     const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.querySelector('.shbtn span').textContent).toBe('Tools');
     expect(now(a).style.display).toBe('none'); expect(pill(a).style.display).toBe('none');

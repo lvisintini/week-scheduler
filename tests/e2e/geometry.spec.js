@@ -451,6 +451,15 @@ test.describe('R-EVT-23 Fixed lanes in a real browser', () => {
 });
 
 test.describe('R-UI-01 The sidebar top row in a real browser', () => {
+  test('the collapsed rail shows the chevron at the top, Live View under it and the gear at the bottom', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: true } }); const y = async s => (await page.locator(s).boundingBox()).y, h = page.viewportSize().height;
+    const [c, l, g] = [await y('#sbin .xpand'), await y('#lvR'), await y('#sbin .gear')];
+    expect(c).toBeLessThan(l); expect(l).toBeLessThan(g); expect(g).toBeGreaterThan(h * 0.8); await expect(page.locator('#sbin .help')).toBeHidden();
+  });
+  test('on a phone-sized window the top-row buttons are at least 44 px, finger-sized', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 700 }); await openApp(page, { prefs: { collapsed: false } });
+    for (const b of await page.locator('#sbin .sbtop .eye:visible').all()) { const r = await b.boundingBox(); expect(r.width).toBeGreaterThanOrEqual(44); expect(r.height).toBeGreaterThanOrEqual(44); }
+  });
   for (const vp of [{ width: 1400, height: 500 }, { width: 393, height: 700 }]) {
     test(`after scrolling the sidebar to the bottom (${vp.width}×${vp.height}) the collapse chevron, help and gear are still at the top`, async ({ page }) => {
       await page.setViewportSize(vp); await openApp(page, { prefs: { collapsed: false } });

@@ -23,8 +23,8 @@ describe('R-UI-01 Everything lives in a collapsible, resizable sidebar', () => {
 });
 
 describe('R-UI-02 Sidebar layout, top to bottom', () => {
-  it('top row: favicon, title, help, settings and collapse', () => {
-    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar']);
+  it('top row: favicon, title, help, settings and collapse (plus the rail\'s Live View button, shown only when collapsed)', () => {
+    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.className.includes('lvr') ? ':lvr' : c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar', 'button:lvr']);
     expect(top.querySelector('.ttl').textContent).toBe('Weekly Schedules');
   });
   it('a bullet appears after the title while anything is unsaved', () => {

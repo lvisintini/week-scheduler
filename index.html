@@ -21,7 +21,10 @@ aside.collapsed{width:46px}
 #sbin>*{flex-shrink:0}
 .rs{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:40}.rs:hover{background:var(--acc);opacity:.35}
 aside.collapsed .rs,aside.collapsed .sbbody,aside.collapsed .lang,aside.collapsed .ttl,aside.collapsed .fav{display:none}
-aside.collapsed #sbin{padding:12px 8px}aside.collapsed .sbtop{justify-content:center;flex-direction:column}
+aside.collapsed #sbin{padding:12px 8px}aside.collapsed .sbtop{justify-content:flex-start;flex-direction:column;flex:1;margin-bottom:0}
+.lvr{display:none}aside.collapsed .lvr{display:inline-flex;order:2}aside.collapsed .sbtop .xpand{order:1}aside.collapsed .gear{order:3;margin-top:auto}   /* rail: open, Live View, and the gear far from the chevron */
+.lvr.on{background:#e5342d;color:#fff;border-color:#e5342d}
+@media (max-width:600px){.sbtop{gap:10px}.sbtop .eye{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}}   /* finger-sized, apart */
 .sbtop{display:flex;align-items:center;gap:8px;margin-bottom:12px;position:sticky;top:-12px;z-index:4;background:var(--card);padding-top:12px;margin-top:-12px}
 .fav{width:22px;height:22px}.ttl{font-weight:700;font-size:15px;flex:1;min-width:0}
 aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 8px}
@@ -1119,6 +1122,7 @@ function liveBack(){clearTimeout(lvRet);if(!live)return;livePaused=false;liveScr
 function liveTick(){if(!live||liveBusy())return;if(focusD!==today()){lvCloseAll(true);focusD=today();render();return}if(!livePaused)liveScroll()}   // midnight: on to the next day
 function updLive(){
   const pl=$('lvPill');pl.style.display=live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
+  {const r=$('lvR');if(r){r.innerHTML=live?ICON_STOP:ICON_CAM;r.title=L(live?'lvStopTip':'lvStartTip');r.setAttribute('aria-label',L(live?'lvStop':'lvStart'));r.classList.toggle('on',live);r.setAttribute('aria-pressed',String(live))}}
   const b=$('lvB'),c=$('lvC');if(!b)return;
   b.innerHTML=(live?ICON_STOP:ICON_CAM)+'<span></span>';b.querySelector('span').textContent=L(live?'lvStop':'lvStart');b.title=L(live?'lvStopTip':'lvStartTip');b.__t=b.title;
   b.classList.toggle('on',live);b.setAttribute('aria-pressed',String(live));c.style.display=live&&livePaused?'':'none';
@@ -1455,8 +1459,9 @@ function renderSide(){
   const ttl=el('span','ttl',top);ttl.textContent=L('appTitle')+(anyDirty()?' •':'');if(anyDirty())ttl.title=L('unsaved');
   const hb=el('button','eye help',top);hb.innerHTML=ICON_HELP;hb.title=L('helpTip');hb.onclick=openHelp;
   const gb=el('button','eye gear',top);gb.innerHTML=ICON_GEAR;gb.title=L('settings');gb.onclick=openSettings;
-  const cl=el('button','eye',top);cl.innerHTML=prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(prefs.collapsed?'expandTip':'collapseTip');
+  const cl=el('button','eye xpand',top);cl.innerHTML=prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(prefs.collapsed?'expandTip':'collapseTip');
   cl.onclick=()=>{prefs.collapsed=!prefs.collapsed;savePrefs();applyPrefs();renderSide()};
+  {const lb=el('button','eye lvr',top);lb.id='lvR';lb.type='button';lb.onclick=()=>setLive(!live);updLive()}   // Live View one tap away on the collapsed rail (R-GRID-12)
   const body=el('div','sbbody',sb);
   const wb=el('button','wsbtn',body);wb.innerHTML=`<span class="ic">${ICON_WS}</span><span class="wsn"></span><span class="chev">${ICON_CD}</span>`;
   wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip');wb.onclick=()=>wsMenu(wb);
