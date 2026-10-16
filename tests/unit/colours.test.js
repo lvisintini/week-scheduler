@@ -64,3 +64,15 @@ describe('R-PHS-04 Lip text colour contrasts with the lip background', () => {
   });
   it('an invalid colour falls back safely instead of throwing', () => { expect(ev('ink("nonsense")')).toBe('#fff'); });
 });
+
+describe('R-GRID-06 Hour labels and other muted text are readable (WCAG AA, 4.5:1)', () => {
+  const ratio = (x, y) => { const L = c => app.ev(`lum(${JSON.stringify(c)})`); const [a, b] = [L(x), L(y)].sort((p, q) => q - p); return (a + 0.05) / (b + 0.05); };
+  const css = () => [...app.qa('style')].map(s => s.textContent).join('');
+  const theme = re => Object.fromEntries([...css().match(re)[1].matchAll(/--(\w+):(#[0-9a-f]{3,6})\b/g)].map(m => [m[1], app.ev(`normHex(${JSON.stringify(m[2])})`)]));
+  it('in the light theme the muted grey of the hour labels has at least 4.5:1 on the page and card backgrounds', () => {
+    const t = theme(/:root\{color-scheme:light;([^}]*)\}/); expect(ratio(t.mut, t.bg)).toBeGreaterThanOrEqual(4.5); expect(ratio(t.mut, t.card)).toBeGreaterThanOrEqual(4.5);
+  });
+  it('in the dark theme the muted grey has at least 4.5:1 on the page and card backgrounds', () => {
+    const t = theme(/:root\[data-theme="dark"\]\{([^}]*)\}/); expect(ratio(t.mut, t.bg)).toBeGreaterThanOrEqual(4.5); expect(ratio(t.mut, t.card)).toBeGreaterThanOrEqual(4.5);
+  });
+});

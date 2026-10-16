@@ -15,9 +15,9 @@ const ratchet = (found, known) => {
 };
 
 test.describe('R-UI-03 Automated accessibility scan (ratchet against the known issues)', () => {
-  test('the main screen shows no accessibility violation beyond the known ones: low-contrast hour labels, a scroll area that cannot take keyboard focus', async ({ page }) => {
+  test('the main screen shows no accessibility violation beyond the known one: a scroll area that cannot take keyboard focus', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup' })] }));
-    ratchet(await scan(page), { 'color-contrast': 19, 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
   });
   test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
