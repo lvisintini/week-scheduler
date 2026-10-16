@@ -71,6 +71,22 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
   });
 });
 
+describe('R-SEC-02 Names typed in the sidebar are trimmed and capped at 200 characters, like imported ones', () => {
+  const rename = (a, field, v) => { field.value = v; field.onchange(); };
+  const data = () => blank({ schedules: [sched({ id: 's1', name: 'Home' })], people: [{ id: 'p1', name: 'Ann', color: '#e5484d', visible: true }], rhythms: [{ id: 'r1', name: 'Normal', visible: true }] });
+  const fields = a => ({ ppl: a.q('input[aria-label="Name of the person"]'), rh: a.q('input[aria-label="Name of the rhythm"]') });
+  it('a schedule, a person and a rhythm renamed with 300 characters keep only the first 200', () => {
+    const a = openApp(); setData(a, data()); const long = 'x'.repeat(300);
+    rename(a, a.q('input[aria-label="Name of the schedule"]'), long); rename(a, fields(a).ppl, long); rename(a, fields(a).rh, long);
+    expect(a.ev('[S.schedules[0].name.length, S.people[0].name.length, S.rhythms[0].name.length]')).toEqual([200, 200, 200]);
+  });
+  it('spaces around a typed name are removed, and a name of only spaces keeps the old name', () => {
+    const a = openApp(); setData(a, data());
+    rename(a, a.q('input[aria-label="Name of the schedule"]'), '  Work  '); rename(a, fields(a).ppl, '   '); rename(a, fields(a).rh, ' Holiday ');
+    expect(a.ev('[S.schedules[0].name, S.people[0].name, S.rhythms[0].name]')).toEqual(['Work', 'Ann', 'Holiday']);
+  });
+});
+
 describe('R-SEC-03 Imports are limited so hostile files cannot hang the browser (see also the data validation tests)', () => {
   it('the limits are 100 schedules, 500 people, 100 activity types, 5,000 events, 100 rhythms, 2,000 phases and 200 repetitions each', () => {
     expect(openApp().ev('JSON.stringify(LIM)')).toMatch(/100[\s\S]*500[\s\S]*100[\s\S]*5000[\s\S]*100[\s\S]*2000[\s\S]*200/);
