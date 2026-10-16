@@ -116,7 +116,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}#dlg .btns{border-top:1px solid var(--line);padding-top:14px}.btns .d{margin-right:auto}
 .swatch{width:100%;height:32px;border-radius:8px;padding:0}
 /* event dialog (R-UI-07): label column + sections; day rows and their further-time lines share one column grid with their header */
-#dlg{width:min(760px,96vw)}
+#dlg{width:min(760px,96vw)}#dlg.moved{margin:0;right:auto;bottom:auto}.dgrip{display:flex;justify-content:center;width:calc(100% + 36px);margin:-16px -18px 2px;height:18px;padding:3px 0;border:0;border-radius:14px 14px 0 0;background:none;color:var(--mut);cursor:move;touch-action:none}.dgrip svg{width:30px;height:15px}.dgrip:hover,.dgrip:focus-visible{color:var(--fg);background:color-mix(in srgb,var(--fg) 6%,transparent)}
 .fg{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px 10px;align-items:center}.fg>label{margin:0;font-size:13px}
 .fcell{display:flex;gap:8px;align-items:center;min-width:0}.fcell>select,.fcell>input{flex:1;min-width:0}.fcell .swatch{flex:0 0 44px;width:44px}.fcell>.ic:empty{display:none}
 .fsec{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.fsec::after{content:'';flex:1;border-top:1px solid var(--line)}
@@ -222,7 +222,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <div class="wrap" id="wrap"><div class="grid" id="grid"></div></div></main>
 <div id="pills"><button id="lvPill" type="button" style="display:none"><i></i><span></span></button><button id="hid" style="display:none"></button></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
-<dialog id="dlg"><form method="dialog" id="f" onsubmit="return false">
+<dialog id="dlg"><button type="button" class="dgrip" id="dGrip" title="Drag to move this window and see what is behind it (the arrow keys move it too). It opens in the middle again next time."><svg viewBox="0 0 24 12" fill="currentColor"><circle cx="6" cy="3" r="1.6"/><circle cx="12" cy="3" r="1.6"/><circle cx="18" cy="3" r="1.6"/><circle cx="6" cy="9" r="1.6"/><circle cx="12" cy="9" r="1.6"/><circle cx="18" cy="9" r="1.6"/></svg></button><form method="dialog" id="f" onsubmit="return false">
 <div class="fg">
 <label for="fT">Title *</label><div class="fcell"><input type="text" id="fT"><button type="button" class="swatch" id="fC" title="Colour"></button></div>
 <label for="fD">Description</label><textarea id="fD" rows="2"></textarea>
@@ -384,7 +384,7 @@ pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige un
 agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina'}};
 const ES=[
-['The colour of this time on the grid','Color de esta hora en la cuadrícula: el del evento (por defecto), el de la persona que lo hace (sigue a quien lo hace), el del tipo de actividad del evento (sigue al tipo) o uno propio. ⧉ lo copia a los demás días.'],
+['Drag to move this window','Arrastra para mover esta ventana y ver lo que hay detrás (también se mueve con las flechas). La próxima vez se abre de nuevo en el centro.'],['The colour of this time on the grid','Color de esta hora en la cuadrícula: el del evento (por defecto), el de la persona que lo hace (sigue a quien lo hace), el del tipo de actividad del evento (sigue al tipo) o uno propio. ⧉ lo copia a los demás días.'],
 ['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no ocupa a los de casa)'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar a los de casa: el tiempo sin pantallas de un niño o la limpiadora trabajando. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger la leche al final del viaje al colegio. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: puede empezar un poco tarde y/o terminar un poco antes (la parte fija es un recuadro normal y las flexibles, prolongaciones discontinuas que nunca causan rayas). Flexibles (alrededor de estas horas): ocurre alrededor de estas horas pero puede durar menos; se dibuja con borde discontinuo.'],['Description','Descripción'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Days','Días'],['Day','Día'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
 ['Tick the days this event','Marca los días en que se repite este evento. Cada día tiene sus propias horas, quién lo hace, las personas implicadas y sus horas flexibles; un día recién marcado empieza como el día marcado más cercano. + añade otra hora ese día; ⧉ hace que todos los demás días marcados sean como este.'],['Owner','Titular'],['Who owns this task','Quién es titular de esta tarea en su conjunto (Fair Play: concebir, planificar, ejecutar). El titular la hace por defecto; cualquier día puede hacerla otra persona en su lugar, en la tabla de abajo. Solo las personas de casa pueden ser titulares.'],['The people involved on every','Las personas implicadas todos los días, salvo que un día tenga su propia lista en la tabla de abajo (su botón Con).'],['Performed by','Lo hace'],['Who performs it on that day','Quién lo hace ese día: el titular (lo sigue si cambia), nadie (concierne a todos) o alguien que lo sustituye.'],['The people involved on that day','Las personas implicadas ese día: Por defecto sigue la lista de arriba; haz clic para darle al día su propia lista.'],['How it fits in','Cómo encaja'],['Event-wide switches','Opciones de todo el evento que cambian cómo se relaciona con los demás.'],
 ['Schedules *','Horarios *'],
@@ -2026,6 +2026,18 @@ $('fBg').onchange=updBg;
 // "only on call" matters only while somebody is involved, by default or on some day
 const updOc=()=>{$('fOcRow').style.display=defInv().length||tmItems().some(o=>o.inv&&o.inv.length)?'':'none'};
 $('fInv').onchange=()=>{rows.flatMap(o=>[o,...o.more]).forEach(o=>wSet(o,o.inv));refreshDlg()};
+// R-UI-10: the event/phase dialog can be dragged aside (by its grip bar or an empty part of it) to look at the grid behind it. It is placed
+// with left/top, not a transform, so the fixed-position menus inside it keep their viewport coordinates; it opens in the middle every time.
+function dlgPlace(x,y){const d=$('dlg');if(x==null){d.classList.remove('moved');d.style.left=d.style.top='';return}
+  const r=d.getBoundingClientRect(),w=r.width||0,k=120;   // at least 120 px of it (and the grip bar's height) stay in the window
+  d.classList.add('moved');d.style.left=Math.round(Math.max(k-w,Math.min(innerWidth-k,x)))+'px';d.style.top=Math.round(Math.max(0,Math.min(innerHeight-40,y)))+'px'}
+const DLG_NODRAG='input,select,textarea,label,a,button:not(.dgrip),.chips,#paneQ,.omenu,.cpop,.wpop';
+$('dlg').addEventListener('pointerdown',ev=>{const d=$('dlg');if(ev.button||ev.target.closest(DLG_NODRAG))return;
+  ev.preventDefault();const r=d.getBoundingClientRect(),ox=ev.clientX-r.left,oy=ev.clientY-r.top,g=ev.target.closest('.dgrip');if(g)g.focus();
+  const mv=e=>dlgPlace(e.clientX-ox,e.clientY-oy),up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up)};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
+$('dGrip').onkeydown=ev=>{const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v)return;ev.preventDefault();
+  const r=$('dlg').getBoundingClientRect();dlgPlace(r.left+v[0],r.top+v[1])};
 function openDlg(e,def){
   const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
   if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
@@ -2049,7 +2061,7 @@ function openDlg(e,def){
   $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
-  $('dlg').showModal();$('fT').focus();
+  dlgPlace(null);$('dlg').showModal();$('fT').focus();
 }
 $('fOk').onclick=()=>{
   const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);

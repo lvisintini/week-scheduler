@@ -381,3 +381,20 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     await page.locator('#fInv label', { hasText: 'Bob' }).click(); expect(await page.locator('#fInv input[value="B"]').isChecked()).toBe(false);
   });
 });
+
+test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () => {
+  const box = () => blank({ events: [ev({ id: 'a', title: 'Behind', slots: [slot(2, 600, 720), slot(3, 600, 720)] })] });
+  const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  test('dragging the grip bar moves the dialog off a box it was hiding; menus inside it still open at their button', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { fitW: true } }); await seed(page, box());
+    await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - vs()) * HH - 100; openDlg(S.events[0]); });
+    const ev0 = await boxOf(page.locator('.day[data-d="2"] .ev')), d0 = await boxOf(page.locator('#dlg'));
+    expect(overlaps(ev0, d0)).toBe(true);
+    const g = await boxOf(page.locator('#dGrip')), dx = ev0.x + ev0.width + 10 - d0.x;
+    await page.mouse.move(g.x + 40, g.y + g.height / 2); await page.mouse.down(); await page.mouse.move(g.x + 40 + dx, g.y + g.height / 2 + 30, { steps: 8 }); await page.mouse.up();
+    const d1 = await boxOf(page.locator('#dlg')); expect(Math.round(d1.x - d0.x)).toBe(Math.round(dx)); expect(Math.round(d1.y - d0.y)).toBe(30);
+    expect(overlaps(ev0, d1)).toBe(false); await expect(page.locator('#dlg')).toHaveAttribute('open', '');
+    const sw = page.locator('#fDays .dr').nth(2).locator('.cbtn'); await sw.click(); const s = await boxOf(sw), m = await boxOf(page.locator('.cmenu'));
+    expect(Math.abs(m.y - (s.y + s.height + 4))).toBeLessThan(2);
+  });
+});

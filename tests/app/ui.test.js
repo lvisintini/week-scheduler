@@ -236,3 +236,40 @@ describe('R-UI-09 Icons', () => {
     const a = fresh(); expect(a.q('link[rel=icon]').href).toMatch(/^data:image\/svg\+xml/); expect(a.q('.sbtop img.fav').src).toBe(a.q('link[rel=icon]').href);
   });
 });
+
+describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid behind it', () => {
+  // jsdom has no layout: give the dialog a rectangle that follows its left/top once it has been moved (centred at 132,100 on a 1024×768 window)
+  const open = (data = blank({ events: [ev1()] })) => {
+    const a = fresh(data), dl = a.q('#dlg');
+    dl.getBoundingClientRect = () => { const l = dl.classList.contains('moved') ? parseFloat(dl.style.left) : 132, t = dl.classList.contains('moved') ? parseFloat(dl.style.top) : 100;
+      return { left: l, top: t, width: 760, height: 500, right: l + 760, bottom: t + 500, x: l, y: t }; };
+    a.ev('openDlg(S.events[0])'); return a;
+  };
+  const press = (a, target, x, y) => target.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true }));
+  const drag = (a, target, [x0, y0], [x1, y1]) => { press(a, target, x0, y0); pointer(a, 'pointermove', { x: x1, y: y1 }); pointer(a, 'pointerup', { x: x1, y: y1 }); };
+  const pos = a => [a.q('#dlg').style.left, a.q('#dlg').style.top];
+  it('the dialog has a grip bar at the top whose tooltip explains dragging, the arrow keys and the reset', () => {
+    const a = open(), g = a.q('#dlg > .dgrip'); expect(g).not.toBeNull(); expect(g.type).toBe('button');
+    expect(g.title).toMatch(/^Drag to move this window and see what is behind it/); expect(g.title).toContain('arrow keys'); expect(a.q('#dlg').firstElementChild).toBe(g);
+  });
+  it('dragging the grip bar moves the dialog by the distance dragged', () => {
+    const a = open(); drag(a, a.q('#dGrip'), [500, 108], [800, 208]); expect(pos(a)).toEqual(['432px', '200px']);
+  });
+  it('dragging an empty part of the dialog moves it too, but pressing a field, a button or the day table does not', () => {
+    const a = open(); drag(a, a.q('#dlg'), [140, 300], [40, 350]); expect(pos(a)).toEqual(['32px', '150px']);
+    for (const sel of ['#fT', '#fD', '#fTy', '#dlg .btns button', '#paneQ']) { drag(a, a.q(sel), [300, 300], [600, 500]); expect(pos(a), sel).toEqual(['32px', '150px']); }
+  });
+  it('the dialog stays reachable: at least 120 px of it and its grip bar remain inside the window', () => {
+    const a = open(); drag(a, a.q('#dGrip'), [500, 108], [-3000, -3000]); expect(pos(a)).toEqual([`${120 - 760}px`, '0px']);
+    drag(a, a.q('#dGrip'), [-300, 5], [9000, 9000]); expect(pos(a)).toEqual([`${1024 - 120}px`, `${768 - 40}px`]);
+  });
+  it('the arrow keys on the focused grip move the dialog 20 px per press', () => {
+    const a = open(), g = a.q('#dGrip'), k = key => g.onkeydown({ key, preventDefault() {} });
+    k('ArrowRight'); k('ArrowRight'); k('ArrowDown'); expect(pos(a)).toEqual(['172px', '120px']); k('ArrowLeft'); k('ArrowUp'); expect(pos(a)).toEqual(['152px', '100px']);
+  });
+  it('every time the dialog opens (event or phase) it is back in the middle of the window', () => {
+    const a = open(blank({ events: [ev1()], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'ph', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660 }] }] }));
+    drag(a, a.q('#dGrip'), [500, 108], [800, 208]); a.q('#dlg').close(); a.ev('openDlg(S.phases[0])');
+    expect(a.q('#dlg').classList.contains('moved')).toBe(false); expect(pos(a)).toEqual(['', '']);
+  });
+});
