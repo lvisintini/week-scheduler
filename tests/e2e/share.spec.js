@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { openApp, seed, data, blank, ev, slot, sched, person, toolbar, dialogButton, PASSWORD } from './helpers.js';
+import { openApp, seed, data, blank, ev, slot, sched, person, toolbar, dialogButton, allowClipboard, readClipboard, PASSWORD } from './helpers.js';
 
 const rich = () => blank({ people: [person({ id: 'A', name: 'Granny Rose' })], schedules: [sched({ id: 's1', name: 'Care' })], events: [ev({ title: 'Doctor visit', desc: 'door code 4711', involved: ['A'], slots: [slot(1, 600, 660, 'A')] })] });
 const BASE = 'http://localhost:4173';
@@ -76,10 +76,10 @@ test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', 
   test('pasting a link into an already open page (hash change) asks for the password too', async ({ page, browser }) => {
     const link = await makeLink(page); const { ctx, page: other } = await visitor(browser); await openApp(other); await other.evaluate(h => { location.hash = h; }, link.slice(link.indexOf('#'))); await expect(other.locator('#xDlg h3')).toHaveText('Password needed'); await ctx.close();
   });
-  test('"Copy link" and "Copy password" really put the text on the clipboard', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }); const link = await makeLink(page);
-    await dialogButton(page, 'Copy link').click(); expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
-    await dialogButton(page, 'Copy password').click(); expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(PASSWORD);
+  test('"Copy link" and "Copy password" really put the text on the clipboard', async ({ page, context, browserName }) => {
+    await allowClipboard(context, browserName, BASE); const link = await makeLink(page);
+    await dialogButton(page, 'Copy link').click(); expect(await readClipboard(page, browserName)).toBe(link);
+    await dialogButton(page, 'Copy password').click(); expect(await readClipboard(page, browserName)).toBe(PASSWORD);
   });
 });
 
@@ -146,9 +146,9 @@ test.describe('R-STAT-04 Statistics exports in a real browser', () => {
     expect(dl.suggestedFilename()).toMatch(/^weekly-schedules-stats-\d{4}-\d{2}-\d{2}\.csv$/);
     const text = fs.readFileSync(await dl.path(), 'utf8'); expect(text.charCodeAt(0)).toBe(0xfeff); expect(text).toContain('Granny Rose,No type,1.00');
   });
-  test('"Copy table" really puts the table on the clipboard', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']); await dialogButton(page, 'Copy table').click();
-    await expect(page.locator('#xDlg .ststat')).toContainText('Table copied'); expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Granny Rose\tNo type\t1.00');
+  test('"Copy table" really puts the table on the clipboard', async ({ page, context, browserName }) => {
+    await allowClipboard(context, browserName); await dialogButton(page, 'Copy table').click();
+    await expect(page.locator('#xDlg .ststat')).toContainText('Table copied'); expect(await readClipboard(page, browserName)).toContain('Granny Rose\tNo type\t1.00');
   });
 });
 

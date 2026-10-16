@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, person, toolbar, dialogButton, PASSWORD } from './helpers.js';
+import { openApp, seed, blank, ev, slot, person, toolbar, dialogButton, allowClipboard, PASSWORD } from './helpers.js';
 
 const BASE = 'http://localhost:4173';
 /** Records every network request and every Content-Security-Policy violation the page produces. */
@@ -13,8 +13,8 @@ const violations = page => page.evaluate(() => window.__csp);
 const rich = () => blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ title: 'Tour', desc: 'x', involved: ['A'], slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'A')] })], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r'], slots: [slot(0, 720, 780)].map(({ day, start, end }) => ({ day, start, end })) }] });
 
 test.describe('R-SEC-04 A full tour of the app talks to nobody', () => {
-  test('creating, saving, sharing, downloading, importing and printing make no request except loading the page itself', async ({ page, context }) => {
-    const w = await watch(page); await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }); await openApp(page); await seed(page, rich()); await page.evaluate(() => { window.print = () => {}; });
+  test('creating, saving, sharing, downloading, importing and printing make no request except loading the page itself', async ({ page, context, browserName }) => {
+    const w = await watch(page); await allowClipboard(context, browserName, BASE); await openApp(page); await seed(page, rich()); await page.evaluate(() => { window.print = () => {}; });
     await toolbar(page, 'add').click(); await page.fill('#fT', 'Created in tour'); await page.click('#fOk');
     await page.locator('.dh:not(.c)').first().click(); await page.locator('#agPrint').click(); await page.locator('#agClose').click();
     await toolbar(page, 'print').click(); await page.locator('.sbtop .gear').click(); await dialogButton(page, 'Close').click(); await page.locator('.sbtop .help').click(); await dialogButton(page, 'Close').click();

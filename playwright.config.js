@@ -15,7 +15,9 @@ const projects = [
   { name: 'mobile-chromium', testMatch: /touch\.spec\.js/, use: { ...devices['Pixel 5'], launchOptions, colorScheme: 'light', locale: 'en-US' } },
 ];
 if (process.env.ALL_BROWSERS) {
-  projects.push({ name: 'firefox', testIgnore: /touch\.spec\.js|print\.spec\.js/, use: { ...devices['Desktop Firefox'], viewport: desktop.viewport, locale: 'en-US' } });
+  // Firefox has no clipboard permissions to grant; these prefs let the tests read the clipboard.
+  const firefoxUserPrefs = { 'dom.events.asyncClipboard.readText': true, 'dom.events.testing.asyncClipboard': true };
+  projects.push({ name: 'firefox', testIgnore: /touch\.spec\.js|print\.spec\.js/, use: { ...devices['Desktop Firefox'], viewport: desktop.viewport, locale: 'en-US', launchOptions: { firefoxUserPrefs } } });
   projects.push({ name: 'webkit', testIgnore: /touch\.spec\.js|print\.spec\.js/, use: { ...devices['Desktop Safari'], viewport: desktop.viewport, locale: 'en-US' } });
 }
 

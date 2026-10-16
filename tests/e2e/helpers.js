@@ -36,6 +36,20 @@ export async function pt(page, col, min) {
   }, [col, min]);
 }
 
+/** Lets the page read and write the real clipboard. Only Chromium knows these permissions; Firefox is allowed by prefs in
+ *  playwright.config.js, and WebKit lets a page write the clipboard after a click without a grant. */
+export const allowClipboard = (context, browserName, origin) =>
+  browserName === 'chromium' ? context.grantPermissions(['clipboard-read', 'clipboard-write'], origin ? { origin } : {}) : Promise.resolve();
+
+/** The text on the real clipboard. WebKit never lets a script read it, so there it is pasted into a scratch text area
+ *  (inside the open dialog, if any: the rest of the page is inert behind a modal dialog). */
+export async function readClipboard(page, browserName) {
+  if (browserName !== 'webkit') return page.evaluate(() => navigator.clipboard.readText());
+  await page.evaluate(() => { const t = document.createElement('textarea'); t.id = 'clipTest'; (document.querySelector('dialog[open]') || document.body).append(t); t.focus(); });
+  await page.keyboard.press('ControlOrMeta+V');
+  const text = await page.inputValue('#clipTest'); await page.evaluate(() => document.getElementById('clipTest').remove()); return text;
+}
+
 /** Real mouse drag between two (column, minute) positions. */
 export async function drag(page, from, to, { shift = false, steps = 6, release = true } = {}) {
   const a = await pt(page, from.col, from.min), b = await pt(page, to.col, to.min);
