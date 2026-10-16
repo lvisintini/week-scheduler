@@ -71,6 +71,13 @@ test.describe('R-GRID-12 Live View on a phone', () => {
 });
 
 test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
+  test('in the day view a sideways swipe shows the next or previous day, while an up-and-down swipe still scrolls', async ({ page }) => {
+    const t = await page.evaluate(() => today()), d = () => page.evaluate(() => focusD);
+    await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(d).toBe((t + 1) % 7);
+    await swipe(page, { x: 150, y: 450 }, 160, 0); await swipe(page, { x: 150, y: 450 }, 160, 0); await expect.poll(d).toBe((t + 6) % 7);
+    const top = await page.evaluate(() => document.getElementById('wrap').scrollTop); await swipe(page, { x: 200, y: 600 }, 0, -300);
+    await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top); expect(await d()).toBe((t + 6) % 7);
+  });
   test('the app opens on today\'s day view, filling the width; Week brings the seven days back', async ({ page }) => {
     const name = await page.evaluate(() => DAYS[today()]); await expect(page.locator('.dh.fo')).toContainText(name); await expect(page.locator('.day')).toHaveCount(1);
     await page.locator('.dh.fo .wk').tap(); await expect(page.locator('.day')).toHaveCount(7);

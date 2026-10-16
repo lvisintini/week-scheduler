@@ -66,3 +66,25 @@ describe('R-TOUCH-01 Touch: scrolling stays native, long-press creates/moves/res
     const a = fresh(blank({ events: [ev1()] })); a.qa('.day')[0].onpointermove({ pointerType: 'touch', buttons: 0, clientX: a.x(0), clientY: a.y(630) }); await sleep(420); expect(a.q('#peek').style.display).not.toBe('block');
   });
 });
+
+describe('R-UI-13 Swiping sideways in the day view changes the day', () => {
+  const down = (a, x, y, type = 'touch') => { const e = new a.w.MouseEvent('pointerdown', { clientX: x, clientY: y, bubbles: true }); Object.defineProperty(e, 'pointerType', { value: type }); a.q('#grid .day').dispatchEvent(e); };
+  const swipe = (a, x, y, dx, dy, type = 'touch') => { down(a, x, y, type); pointer(a, 'pointermove', { x: x + dx / 2, y: y + dy / 2, pointerType: type }); pointer(a, 'pointerup', { x: x + dx, y: y + dy, pointerType: type }); };
+  const at = d => { const a = openApp(); a.ev(`setFocus(${d})`); return a; };
+  it('a swipe to the left shows the next day, a swipe to the right the previous one (Sunday wraps to Monday)', () => {
+    const a = at(2); swipe(a, 500, 300, -120, 10); expect(a.ev('focusD')).toBe(3); swipe(a, 500, 300, 120, -10); swipe(a, 500, 300, 120, 0); expect(a.ev('focusD')).toBe(1);
+    const s = at(6); swipe(s, 500, 300, -120, 0); expect(s.ev('focusD')).toBe(0);
+  });
+  it('short, mostly vertical, mouse and edge swipes change nothing, and nor does the week view', () => {
+    const a = at(2); swipe(a, 500, 300, -50, 0); swipe(a, 500, 300, -100, 60); swipe(a, 500, 300, -120, 0, 'mouse'); swipe(a, 10, 300, 120, 0); swipe(a, 1015, 300, -120, 0);
+    expect(a.ev('focusD')).toBe(2);
+    const w = openApp(); swipe(w, 500, 300, -120, 0); expect(w.ev('focusD')).toBeNull();
+  });
+  it('a finger that held still for the long-press time is moving an event, not swiping', async () => {
+    const a = at(2); down(a, 500, 300); await sleep(450); pointer(a, 'pointermove', { x: 440, y: 300, pointerType: 'touch' }); pointer(a, 'pointerup', { x: 380, y: 300, pointerType: 'touch' }); expect(a.ev('focusD')).toBe(2);
+  });
+  it('the day view lets the browser scroll only up and down, so sideways moves reach the app', () => {
+    const a = at(2); expect(a.q('#grid').classList.contains('fo')).toBe(true); expect(a.q('style').textContent).toContain('#grid.fo .day,#grid.fo .lane{touch-action:pan-y}');
+    a.ev('setFocus(null)'); expect(a.q('#grid').classList.contains('fo')).toBe(false);
+  });
+});

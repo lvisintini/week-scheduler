@@ -75,7 +75,7 @@ aside.collapsed .help{display:none}
 .dh:not(.c){cursor:pointer}.dh:not(.c):hover{text-decoration:underline}.dh .ic{color:var(--mut)}
 .times{position:sticky;left:0;z-index:15;background:var(--bg);box-shadow:1px 0 0 var(--line)}.times span{position:absolute;right:6px;transform:translateY(-50%);font-size:calc(11px * var(--ts,1));color:var(--mut);white-space:nowrap}
 .day{position:relative;border-left:1px solid var(--line);user-select:none;touch-action:pan-x pan-y;-webkit-touch-callout:none}
-.lane{touch-action:pan-x pan-y}
+.lane{touch-action:pan-x pan-y}#grid.fo .day,#grid.fo .lane{touch-action:pan-y}   /* the day view never scrolls sideways: a sideways swipe changes the day (R-UI-13) */
 .gl{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--hh) - 1px),var(--line) calc(var(--hh) - 1px) var(--hh))}
 .ev{position:absolute;left:3px;right:calc(3px + var(--gut,0px));border-radius:8px;padding:4px 7px;color:#fff;overflow:hidden;cursor:grab;font-size:calc(12px * var(--ts,1));box-shadow:0 1px 3px #0003;border:1px solid #0002}
 .ev.locked{pointer-events:none;cursor:default}
@@ -1603,7 +1603,7 @@ function render(){
   const fitW=!printMode&&prefs.fitW,fitH=!printMode&&prefs.fitH,ts=printMode?1:prefs.txt/100;
   const colMin=printMode?110:fitW?40:prefs.colW;
   const g=$('grid'),a=vs(),hrs=24-a,days=focusD!=null?[focusD]:weekDays(),lvOn=live&&!printMode;
-  document.documentElement.style.setProperty('--ts',ts);g.style.setProperty('--ts',ts);g.classList.toggle('lv',lvOn);
+  document.documentElement.style.setProperty('--ts',ts);g.style.setProperty('--ts',ts);g.classList.toggle('lv',lvOn);g.classList.toggle('fo',focusD!=null);
   // Fit height: the visible hours fill the window under the day header, whose height follows the text size. Measured before the grid
   // is emptied (layout of an empty grid would reset the scroll position), on the previous header with the new text size; no layout → the slider
   const wh=fitH?$('wrap').clientHeight:0,dhH=wh&&g.querySelector('.dh')?.offsetHeight||38;
@@ -1778,6 +1778,15 @@ function press(ev,onStart,onTap){
   const up=p=>{off();if(onTap)onTap(p)};
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',off);
 }
+// swipe between days in the day view on a touch screen (R-UI-13): a quick sideways swipe (moving within the long-press time,
+// more than 60 px and over twice as far sideways as up or down), not starting at a screen edge (the browser's back gesture)
+{let sw=null;
+ document.addEventListener('pointerdown',e=>{sw=null;if(e.pointerType!=='touch'||focusD==null||live||!(e.target.closest&&e.target.closest('#grid')))return;
+   if(e.clientX<24||e.clientX>innerWidth-24)return;sw={x:e.clientX,y:e.clientY,t:Date.now(),go:false}},true);
+ document.addEventListener('pointermove',e=>{if(!sw||sw.go!==false)return;if(Math.hypot(e.clientX-sw.x,e.clientY-sw.y)>8)sw.go=Date.now()-sw.t<400?true:null},true);   // null: a long press took it
+ document.addEventListener('pointercancel',()=>{sw=null},true);
+ document.addEventListener('pointerup',e=>{const w=sw;sw=null;if(!w||!w.go||focusD==null||live)return;const dx=e.clientX-w.x,dy=e.clientY-w.y;
+   if(Math.abs(dx)>60&&Math.abs(dx)>2*Math.abs(dy))stepFocus(dx<0?1:-1)},true)}
 function tapOpen(p,owner){
   const col=colAt(p.clientX),di=+col.dataset.d,items=itemsAt(di,minAt(col,p.clientY),fxAt(col,p.clientX));
   if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,(items.find(i=>i.e===owner)||{}).s);
