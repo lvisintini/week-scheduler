@@ -36,10 +36,10 @@ test.describe('R-EVT-01 Creating, moving and resizing events with a real mouse',
   });
   test('dragging the bottom handle into the next day extends an event past midnight', async ({ page }) => {
     await seed(page, blank({ events: [ev({ slots: [slot(5, 1320, 1440)] })] })); await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollHeight; });
-    await drag(page, { col: 5, min: 1436 }, { col: 6, min: 120 });
-    expect((await slots(page))[0].end).toBe(1560);
-    await expect(page.locator('.day[data-d="6"] .ev')).toHaveCount(0);   // the continuation lies in the hidden early hours…
-    await page.evaluate(() => { prefs.showEarly = true; render(); }); await expect(page.locator('.day[data-d="6"] .ev')).toHaveCount(1);   // …and appears when they are shown
+    const to = await pt(page, 6, 420); expect(to.y).toBeGreaterThan(0);   // a visible spot (a target in the hidden early hours would be off-screen, which only Chromium accepts)
+    await drag(page, { col: 5, min: 1436 }, { col: 6, min: 420 });
+    expect((await slots(page))[0].end).toBe(1860);
+    await expect(page.locator('.day[data-d="6"] .ev')).toHaveCount(1);   // the continuation on Sunday morning
   });
   test('an event that was created by drag can be undone with Ctrl+Z and redone with Ctrl+Y', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); await drag(page, { col: 0, min: 630 }, { col: 2, min: 630 });
