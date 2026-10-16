@@ -780,7 +780,7 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
   });
   it('the swatch menu offers the event colour, the performer colour (named) and another colour, with the current one ticked', () => {
     const a = twoDays(); open(a); sw(a, 0).click();
-    expect(menu(a)).toEqual(['Event colour', "Performer's colour (Ann)", 'Other colour…']); expect(a.q('.cmenu .oi.on').textContent).toBe('Event colour');
+    expect(menu(a)).toEqual(['Event colour', "Performer's colour (Ann)", 'Activity type colour (no type, so the event colour)', 'Other colour…']); expect(a.q('.cmenu .oi.on').textContent).toBe('Event colour');
     expect(a.q('.cmenu').parentElement.id).toBe('dlg');   // inside the modal dialog, so it can be clicked
   });
   it('choosing the performer colour saves it as following the performer; choosing the event colour again removes it', () => {
@@ -804,11 +804,32 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
     a.qa('#fDays .dr')[0].querySelector('.addt').click(); save(a);
     expect(events(a)[0].slots.map(s => s.col)).toEqual(['#ff8800', undefined, '#ff8800']);
   });
-  it('the saved data keeps only "p" or a #rrggbb colour, and phases never get one', () => {
+  it('the saved data keeps only "p", "t" or a #rrggbb colour, and phases never get one', () => {
     const a = fresh(); const parse = j => JSON.parse(a.ev(`JSON.stringify(parseData(${JSON.stringify(j)}))`));
-    const d = parse(blank({ events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', col: 'p' }, { day: 1, start: 600, end: 660, person: '', col: '#ABCDEF' }, { day: 2, start: 600, end: 660, person: '', col: 'red' }] })],
+    const d = parse(blank({ events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', col: 'p' }, { day: 1, start: 600, end: 660, person: '', col: '#ABCDEF' }, { day: 2, start: 600, end: 660, person: '', col: 'red' }, { day: 3, start: 600, end: 660, person: '', col: 't' }] })],
       rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'ph', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660, col: '#ff8800' }] }] }));
-    expect(d.events[0].slots.map(s => s.col)).toEqual(['p', '#abcdef', undefined]); expect('col' in d.phases[0].slots[0]).toBe(false);
+    expect(d.events[0].slots.map(s => s.col)).toEqual(['p', '#abcdef', undefined, 't']); expect('col' in d.phases[0].slots[0]).toBe(false);
+  });
+  const typed = (s0 = {}, o = {}) => fresh(blank({ people, types: [{ id: 'tw', name: 'Work', color: '#aa5500', icon: 'work' }, { id: 'ts', name: 'Sleep', color: '#0055aa', icon: 'moon' }],
+    events: [ev1({ id: 'e', title: 'Job', color: '#3b6df0', type: 'tw', slots: [{ day: 0, start: 600, end: 660, person: 'A', col: 't', ...s0 }, { day: 1, start: 600, end: 660, person: 'A' }], ...o })] }));
+  it('"activity type colour" draws the repetition in its type colour and follows a recoloured type; the other days keep the event colour', () => {
+    const a = typed(); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#aa5500', '#3b6df0']);
+    a.ev("S.types[0].color='#00aa55';render()"); expect(boxC(a, 0)).toBe('#00aa55');
+    a.ev("S.events[0].type='ts';render()"); expect(boxC(a, 0)).toBe('#0055aa');
+  });
+  it('"activity type colour" on an event without a type (or whose type was deleted) falls back to the event colour', () => {
+    const a = typed({}, { type: undefined }); expect(boxC(a, 0)).toBe('#3b6df0');
+    const b = typed(); b.ev("delType(S.types[0])"); expect(boxC(b, 0)).toBe('#3b6df0'); expect(b.ev('S.events[0].slots[0].col')).toBe('t');
+  });
+  it('the dialog offers the type colour by name, its swatch shows the type icon, and it follows a new type chosen in the dialog', () => {
+    const a = typed(); open(a); expect(sw(a, 0).getAttribute('aria-label')).toBe('Monday: colour: Activity type colour (Work)');
+    expect(sw(a, 0).style.background).toBe('rgb(170, 85, 0)'); expect(sw(a, 0).querySelector('svg')).not.toBeNull();
+    change(a, a.q('#fTy'), 'ts'); expect(sw(a, 0).style.background).toBe('rgb(0, 85, 170)'); expect(sw(a, 0).getAttribute('aria-label')).toContain('(Sleep)');
+    sw(a, 1).click(); expect(menu(a)).toContain('Activity type colour (Sleep)');
+  });
+  it('choosing the type colour saves "t", and ⧉ copies it to the other days', () => {
+    const a = typed({ col: undefined }); open(a); pick(a, 0, 'Activity type'); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); save(a);
+    expect(events(a)[0].slots.map(s => s.col)).toEqual(['t', 't']);
   });
 });
 

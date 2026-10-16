@@ -38,7 +38,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     a.toolbar('undo').click(); expect(data(a).types[1].icon).toBe('meal');
   });
   it('the row menu offers the statistics colour, the icon, the soft look and delete', () => {
-    const a = fresh(blank({ types: types() })); expect(menu(a, 0)).toEqual(['Colour for statistics…', 'Icon…', 'Soft look', 'Delete']);
+    const a = fresh(blank({ types: types() })); expect(menu(a, 0)).toEqual(['Colour…', 'Icon…', 'Soft look', 'Delete']);
   });
   it('the soft-look item is ticked for soft types and toggles the look of their events', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm' })] })); menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).toBeNull();
@@ -67,7 +67,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
   it('the section, its tooltip and its menu are translated', () => {
     const a = fresh(blank({ types: types() }), { languages: ['es'] });
     expect(tySec(a).querySelector('.shbtn span').textContent).toBe('Tipos de actividad'); expect(tySec(a).querySelector('.tip').title).toContain('estadísticas');
-    expect(menu(a, 0)).toEqual(['Color para estadísticas…', 'Icono…', 'Aspecto suave', 'Eliminar']);
+    expect(menu(a, 0)).toEqual(['Color…', 'Icono…', 'Aspecto suave', 'Eliminar']);
   });
 });
 

@@ -74,6 +74,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[4] = SHAPES[3];   // 4: same keys; strips come only from event.bg (MIG[3])
   SHAPES[5] = [...SHAPES[4], '.events[].owner', '.events[].slots[].fo', '.events[].slots[].inv'].sort();   // 5: owner, follows the owner, a day's own With list (R-EVT-20/21)
   SHAPES[6] = [...SHAPES[5], '.events[].slots[].col'].sort();   // 6: a repetition's own colour (R-EVT-22)
+  SHAPES[7] = SHAPES[6];   // 7: same keys; slot.col may also be 't', the activity type's colour (R-EVT-22)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));

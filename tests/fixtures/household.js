@@ -24,7 +24,7 @@ export const household = {
     { id: 'e-work', title: 'Work', desc: '', color: '#2fa66a', type: 't-work', schedules: ['s-home'], involved: [],
       slots: [
         { day: 0, start: 540, end: 1020, person: 'p-ann', fs: 30, fe: 15 },
-        { day: 1, start: 540, end: 1020, person: 'p-ann', flex: true },
+        { day: 1, start: 540, end: 1020, person: 'p-ann', flex: true, col: 't' },
         { day: 2, start: 540, end: 1020, person: 'p-ann', col: 'p' },
       ] },
     { id: 'e-school', title: 'School run', desc: 'Bring the lunch box', color: '#3b6df0', owner: 'p-ann', schedules: ['s-home', 's-school'], involved: ['p-lucia'],
@@ -63,6 +63,7 @@ const ADDED = {
   4: h => ({ ...h, events: h.events.map(e => e.id === 'e-clean' ? (({ bg, ...r }) => r)(e) : e) }),   // strips only from bg: the external-led cleaning gets the mark
   5: h => ({ ...h, events: h.events.map(({ owner, ...e }) => ({ ...e, slots: e.slots.map(({ fo, inv, ...sl }) => sl) })) }),   // event owner, a day following the owner, a day's own With list (R-EVT-20/21)
   6: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => sl) })) }),   // a repetition's own colour (R-EVT-22)
+  7: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => col === undefined || col === 't' ? sl : { ...sl, col }) })) }),   // the activity type's colour (R-EVT-22)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 
