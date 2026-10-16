@@ -15,9 +15,9 @@ const ratchet = (found, known) => {
 };
 
 test.describe('R-UI-03 Automated accessibility scan (ratchet against the known issues)', () => {
-  test('the main screen shows no accessibility violation beyond the known ones: low-contrast hour labels, unlabeled rename fields, a scroll area that cannot take keyboard focus', async ({ page }) => {
+  test('the main screen shows no accessibility violation beyond the known ones: low-contrast hour labels, a scroll area that cannot take keyboard focus', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup' })] }));
-    ratchet(await scan(page), { 'color-contrast': 19, label: 2, 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), { 'color-contrast': 19, 'scrollable-region-focusable': 1 });
   });
   test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
@@ -45,7 +45,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
   });
   test('the dark theme shows no accessibility violation beyond the known ones: contrast of the selected switch button', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
-    ratchet(await scan(page), { 'color-contrast': 1, label: 1, 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), { 'color-contrast': 1, 'scrollable-region-focusable': 1 });
   });
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
     await openApp(page); const r = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, main: document.querySelectorAll('main').length }));

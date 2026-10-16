@@ -18,6 +18,10 @@ describe('R-SCH-01 Schedules overlay the same calendar and are shown or hidden w
     expect(eye(row)).not.toBeNull(); expect(row.querySelector('.pick svg')).not.toBeNull(); expect(row.querySelector('.pick').style.color).toMatch(/#e5484d|rgb\(229, 72, 77\)/);
     expect(row.querySelector('input[type=text]').value).toBe('Work'); expect(moreBtn(row)).not.toBe(eye(row));
   });
+  it('the name field of a schedule row is named for screen readers, in English and Spanish', () => {
+    expect(schedRows(two())[1].querySelector('input[type=text]').getAttribute('aria-label')).toBe('Name of the schedule');
+    const es = fresh(blank(), { languages: ['es'] }); expect(schedRows(es)[0].querySelector('input[type=text]').getAttribute('aria-label')).toBe('Nombre del horario');
+  });
   it('two visible schedules are overlaid: the events of both are drawn', () => {
     expect(titles(two())).toEqual(['Only home', 'Only work', 'Shared']);
   });
@@ -133,6 +137,9 @@ describe('R-PPL-01 The People list works like the schedule list', () => {
   const withPeople = () => fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })], events: [ev1({ title: 'Led by Ann', slots: [{ day: 0, start: 600, end: 660, person: 'A' }] }), ev1({ id: 'e2', title: 'Led by Bob', slots: [{ day: 1, start: 600, end: 660, person: 'B' }] })] }));
   it('each person row has an eye, a user icon in their colour, a name field and a ⋯ menu', () => {
     const row = peopleRows(withPeople())[1]; expect(eye(row)).not.toBeNull(); expect(row.querySelector('.pick').style.color).toMatch(/#2fa66a|rgb\(47, 166, 106\)/); expect(row.querySelector('input[type=text]').value).toBe('Bob');
+  });
+  it('the name field of a person row is named for screen readers (Name of the person)', () => {
+    expect(peopleRows(withPeople())[1].querySelector('input[type=text]').getAttribute('aria-label')).toBe('Name of the person');
   });
   it('hiding a person with the eye hides the events they lead (viewing the others\' calendars)', () => {
     const a = withPeople(); eye(peopleRows(a)[0]).click(); expect(titles(a)).toEqual(['Led by Bob']);

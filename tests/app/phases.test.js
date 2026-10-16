@@ -24,6 +24,9 @@ describe('R-PHS-01 Rhythms and phases in the interface', () => {
   it('a rhythm has a name; a phase belongs to one or more rhythms (stored as ids)', () => {
     const a = fresh(data({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })], phases: [phase({ rhythms: ['r1', 'r2'] })] })); expect(phaseList(a)[0].rhythms).toEqual(['r1', 'r2']);
   });
+  it('the name field of a rhythm row is named for screen readers (Name of the rhythm)', () => {
+    const f = sections(fresh(data()))[3].querySelector('.sch input[type=text]'); expect(f.value).toBe('Normal'); expect(f.getAttribute('aria-label')).toBe('Name of the rhythm');
+  });
 });
 
 describe('R-PHS-02 One rhythm shown at a time and one opacity control for all', () => {
