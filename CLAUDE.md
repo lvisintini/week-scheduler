@@ -12,6 +12,7 @@ This file is the **flattened, current description of what the app must do and wh
 
 ## 1. Product
 A single static `index.html` (HTML + CSS + vanilla JS, no libraries, no network requests) that must work when opened from disk or GitHub Pages. A weekly planner organised in **workspaces** (several independent named data sets in one browser), each with overlayable **schedules**, **events** with repetitions, **people**, and background **rhythms** made of **phases** (named parts of the day). English/Spanish UI. Repo files: `index.html`, `README.md`, `CLAUDE.md`.
+- **[U]** **Phones are for checking a schedule, not for building one:** a complex week with people is too much to edit on a small screen, and nobody is expected to. On a phone the app is made pleasant to *look at* (and Live View, R-GRID-12, is the main use); editing stays possible but is not designed for.
 
 ## 2. Calendar grid
 - **R-GRID-01** **[U]** Columns Monday→Sunday, left to right. Days are **not** attached to dates (it's a repeating week).
@@ -175,7 +176,7 @@ Threat model: a static, client-only app (no server, accounts, network calls or t
 - **[P]** (Done: workspaces, import dialog, transfers.) Possible follow-ups: copy/move individual *events* and *people* between workspaces; a workspace-name line in printouts; exporting only selected items.
 - **[P]** **Legibility of overlapping labels:** text of a lower box shows through a higher one where events clash. Tried and rejected by the user: option A (every box its own layer, stripes inside the topmost box, labels on solid chips; was R-EVT-14, number retired) and option B (cascade: later clashing boxes indented). To be revisited **[U]**.
 - **[P]** Align the end-time select labels with the compact notation (drop "Day after next": `00:00` end of start day, `00:15 (Next day)` … `23:45 (Next day)`, `00:00 (Next day)`).
-- **[P]** A touch equivalent of right-click Copy (long-press is now move/create); phases in day agendas; lip text shrinking for very short phases; real-device testing of the touch gestures (only the logic was verified in jsdom and Chromium's emulation, never on a phone; checklist: `tests/manual/touch.md`).
+- **[P]** A touch equivalent of right-click Copy (long-press is now move/create); phases in day agendas; lip text shrinking for very short phases; real-device testing of the touch gestures on **iOS Safari** (`tests/manual/touch.md`; Android Chrome passed every step).
 - **[P]** **Revisit the weekly statistics** (R-STAT-01…04) **[U]**.
 - **[P]** **Revisit plans longer than one week** (modes, formats, data models; today the two-week rota is the *Show only this one* workaround, R-SCH-03) **[U]**.
 - **[P]** **Count cards per owner** (Fair Play): statistics of how many events / hours each person owns, next to the hours they perform (R-EVT-20).
@@ -224,7 +225,7 @@ Threat model: a static, client-only app (no server, accounts, network calls or t
 **Bugs found by the suite and fixed (keep the tests)**
 1. Saving with one workspace left did not drop deleted workspaces from browser memory (they came back after reload): `saveTo` now saves "all" when only one workspace exists.
 2. Right-click on an event, phase or lip also started a drag/opened the edit dialog, hiding the copy menu: the pointer-down handlers ignore non-primary buttons.
-3. A touch long-press drag of an existing event stalled after the first move (the redraw removes the touched element, so touch events no longer reached `document` and the browser started scrolling): `press()` captures the pointer on `body` and attaches a non-passive `touchmove` blocker to the touched element itself. Verified in Chromium touch emulation only — **try it on a real phone (Android Chrome and iOS Safari): `tests/manual/touch.md`, step 5.**
+3. A touch long-press drag of an existing event stalled after the first move (the redraw removes the touched element, so touch events no longer reached `document` and the browser started scrolling): `press()` captures the pointer on `body` and attaches a non-passive `touchmove` blocker to the touched element itself. Verified in Chromium touch emulation and **on a real Android phone (Chrome)**, `tests/manual/touch.md` step 5; iOS Safari not tried yet.
 4. Lip text colour is chosen by WCAG relative luminance (`lum`/`ink`), not HSL lightness (white text on yellow was ~1.6:1). `ink()` picks **pure black or white**, whichever contrasts more, so lip and strip text is always at least 4.58:1 (with the former dark `#1d2330`, mid tones such as the default rhythm's red *Evening* lip stayed near 4:1 whichever was chosen).
 5. Clicking an existing phase in Phases mode did nothing when the workspace had people: `openDlg` read `involved` of the phase (phases have none) and crashed. Found by the user; the earlier tests used data without people.
 6. A resize handle could be covered by an overlapping box: always for phases listed after the one being resized, and for events when the lower event's schedule opacity was below 100 % (opacity makes the box its own layer). Handles are now separate elements in the day column above every box (`.rz`, `box._rz`, `z-index:6`). Found by the user.
@@ -235,5 +236,5 @@ Threat model: a static, client-only app (no server, accounts, network calls or t
 - Minor: a decompression bomb is reported as "not a valid save file" (the `'big'` branch of `askPassword` is never reached because `inflate` throws `'too big'`); a link with an empty payload asks for a password before saying it is invalid.
 
 ## 15. Next steps (update as you go)
-1. Run `tests/manual/touch.md` on real phones (Android Chrome, iOS Safari) and record the result here.
+1. Run `tests/manual/touch.md` on an iPhone (Safari) and record the result here (Android Chrome passed all 19 steps).
 2. Parked items: see §12.
