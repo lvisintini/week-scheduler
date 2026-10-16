@@ -116,7 +116,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}#dlg .btns{border-top:1px solid var(--line);padding-top:14px}.btns .d{margin-right:auto}
 .swatch{width:100%;height:32px;border-radius:8px;padding:0}
 /* event dialog (R-UI-07): label column + sections; day rows and their further-time lines share one column grid with their header */
-#dlg{width:min(760px,96vw)}#dlg.moved{margin:0;right:auto;bottom:auto}.dgrip{display:flex;justify-content:center;width:calc(100% + 36px);margin:-16px -18px 2px;height:18px;padding:3px 0;border:0;border-radius:14px 14px 0 0;background:none;color:var(--mut);cursor:move;touch-action:none}.dgrip svg{width:30px;height:15px}.dgrip:hover,.dgrip:focus-visible{color:var(--fg);background:color-mix(in srgb,var(--fg) 6%,transparent)}
+#dlg{width:min(760px,96vw)}.dr.pulse>*{animation:rpulse 1.4s ease-out}@keyframes rpulse{0%,35%{background-color:color-mix(in srgb,var(--acc) 30%,var(--card));box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 30%,transparent)}}@media (prefers-reduced-motion:reduce){.dr.pulse>*{animation:none;background-color:color-mix(in srgb,var(--acc) 22%,var(--card))}}#dlg.moved{margin:0;right:auto;bottom:auto}.dgrip{display:flex;justify-content:center;width:calc(100% + 36px);margin:-16px -18px 2px;height:18px;padding:3px 0;border:0;border-radius:14px 14px 0 0;background:none;color:var(--mut);cursor:move;touch-action:none}.dgrip svg{width:30px;height:15px}.dgrip:hover,.dgrip:focus-visible{color:var(--fg);background:color-mix(in srgb,var(--fg) 6%,transparent)}
 .fg{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px 10px;align-items:center}.fg>label{margin:0;font-size:13px}
 .fcell{display:flex;gap:8px;align-items:center;min-width:0}.fcell>select,.fcell>input{flex:1;min-width:0}.fcell .swatch{flex:0 0 44px;width:44px}.fcell>.ic:empty{display:none}
 .fsec{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.fsec::after{content:'';flex:1;border-top:1px solid var(--line)}
@@ -1747,7 +1747,7 @@ function press(ev,onStart,onTap){
 }
 function tapOpen(p,owner){
   const col=colAt(p.clientX),di=+col.dataset.d,items=itemsAt(di,minAt(col,p.clientY),fxAt(col,p.clientX));
-  if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);
+  if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,(items.find(i=>i.e===owner)||{}).s);
 }
 /* event box: render only the rows that fit completely, mark clipped content */
 function fitBox(d){
@@ -1817,7 +1817,7 @@ function grab(ev,it,mode){
     const off=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)};
     const mv=p=>{if(Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;off();
       overlapMenu(p.clientX,p.clientY,cands,(e,it)=>{selK={id:e.id,i:it.i};render();toast(L('selHint',{t:e.title+' · '+DAYS[it.s.day].slice(0,3)+' '+fmt(it.s.start)+'–'+fmtEnd(it.s.end)}))},L(mode==='resize'?'pickResize':'pickMove'),false)};
-    const up=p=>{off();const items=itemsAt(cDay,m,fx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e)};
+    const up=p=>{off();const items=itemsAt(cDay,m,fx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e,null,items[0].s)};
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
   }
   startDrag(ev,it,mode);
@@ -1861,7 +1861,7 @@ function startDrag(ev,it,mode){
   };
   const up=p=>{
     document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
-    if(!moved){const items=itemsAt(cDay,cMin,cFx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);return}
+    if(!moved){const items=itemsAt(cDay,cMin,cFx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,it.s);return}
     const changed=JSON.stringify(S)!==before;if(changed)pushUndo(before);render();
     if(!changed)return;
     const warn=overlapSet(owner).size>ovB,mark=undoSt.length,fin={...final};
@@ -1877,7 +1877,7 @@ function startDrag(ev,it,mode){
   };
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
-function overlapMenu(x,y,items,onPick=openDlg,title=L('ovTitle'),group=true){
+function overlapMenu(x,y,items,onPick=(e,it)=>openDlg(e,null,it.s),title=L('ovTitle'),group=true){
   if(group){const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
   document.querySelectorAll('.omenu').forEach(m=>m.remove());
   const m=el('div','omenu',document.body);el('div','oh',m).textContent=title;
@@ -2058,7 +2058,17 @@ $('dlg').addEventListener('pointerdown',ev=>{const d=$('dlg');if(ev.button||ev.t
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
 $('dGrip').onkeydown=ev=>{const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v)return;ev.preventDefault();
   const r=$('dlg').getBoundingClientRect();dlgPlace(r.left+v[0],r.top+v[1])};
-function openDlg(e,def){
+// R-UI-12: opening a repeating event (or phase) from the grid brings the clicked repetition's line into view, centred in the day table only
+// when it is not fully visible below the sticky header, and makes it pulse once
+function dlgJump(s){
+  const ln=rows.flatMap(o=>[o,...o.more]).find(l=>l.src===s);if(!ln)return;
+  const p=$('paneQ'),rs=[...ln.r.children].map(c=>c.getBoundingClientRect()).filter(r=>r.height);
+  if(rs.length){const dh=p.querySelector('.dhd'),hd=getComputedStyle(dh).display==='contents'?dh.firstElementChild:dh,pr=p.getBoundingClientRect(),
+    top=Math.min(...rs.map(r=>r.top)),bot=Math.max(...rs.map(r=>r.bottom)),v0=pr.top+hd.getBoundingClientRect().height,v1=pr.top+p.clientHeight;
+    if(top<v0-1||bot>v1+1)p.scrollTop+=(top+bot)/2-(v0+v1)/2}
+  const r=ln.r;r.classList.remove('pulse');void r.offsetWidth;r.classList.add('pulse');clearTimeout(r._pt);r._pt=setTimeout(()=>r.classList.remove('pulse'),1600);
+}
+function openDlg(e,def,src){   // src: the repetition that was clicked, to jump to in the day table (R-UI-12)
   const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
   if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
   dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
@@ -2072,7 +2082,7 @@ function openDlg(e,def){
   if(!ourPeople().length)iv.textContent=L('noPeople');   // external people are never offered as involved (R-PPL-03)
   ourPeople().forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   rows.forEach((o,i)=>{o.more.forEach(x=>x.r.remove());o.more=[];const sl=slots.filter(x=>x.day===i).sort((a,b)=>a.start-b.start);
-    fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,perfOpts());o.cb.checked=!!sl.length;rowLoad(o,sl[0]||{start:540,end:600,fo:true});sl.slice(1).forEach(x=>addTime(o,x));o.upd()});
+    fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,perfOpts());o.cb.checked=!!sl.length;rowLoad(o,sl[0]||{start:540,end:600,fo:true});o.src=sl[0]||null;sl.slice(1).forEach(x=>{addTime(o,x).src=x});o.upd()});
   updOwn();
   const c=$('fSch');c.innerHTML='';
   (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
@@ -2081,7 +2091,7 @@ function openDlg(e,def){
   $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
-  dlgPlace(null);$('dlg').showModal();$('fT').focus();
+  dlgPlace(null);$('dlg').showModal();$('fT').focus();if(e&&src&&e.slots.length>1)dlgJump(src);
 }
 $('fOk').onclick=()=>{
   const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);

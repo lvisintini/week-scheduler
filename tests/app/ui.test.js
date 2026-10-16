@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, pointer, PREFS_KEY } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const sections = a => a.qa('#sbin .sec');
@@ -325,5 +325,28 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   it('the section and its switches are translated', () => {
     const a = fresh(week(), { languages: ['es'] });
     const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona']);
+  });
+});
+
+describe('R-UI-12 Opening a repeating event from the grid jumps to the clicked repetition in the day table', () => {
+  // Monday has two times (10:00 and 14:00), Wednesday one; the 14:00 line is a further-time line under Monday
+  const rep = (o = {}) => blank({ events: [ev1({ id: 'r', title: 'Swim', slots: [{ day: 0, start: 600, end: 660, person: '' }, { day: 0, start: 840, end: 900, person: '' }, { day: 2, start: 600, end: 660, person: '' }], ...o })] });
+  const pulsed = a => a.qa('#fDays .dr.pulse').map(r => [...a.qa('#fDays .dr')].indexOf(r));
+  const boxAt = (a, d, min) => a.qa(`.day[data-d="${d}"] .ev`).find(b => b._it.s.start === min);
+  const click = (a, d, min) => dragFrom(a, boxAt(a, d, min), { col: d, min: min + 15 }, { col: d, min: min + 15 }, { move: false });
+  it('clicking a repetition on the grid opens the dialog with that day\'s line pulsing', async () => {
+    const a = fresh(rep()); await click(a, 2, 600); expect(a.q('#dlg').open).toBe(true); expect(pulsed(a)).toEqual([3]);   // lines: Mon, Mon 14:00, Tue, Wed…
+  });
+  it('a further time on the same day is found too: its own line pulses, not the day\'s first line', async () => {
+    const a = fresh(rep()); await click(a, 0, 840); expect(pulsed(a)).toEqual([1]); expect(a.qa('#fDays .dr')[1].classList.contains('dx')).toBe(true);
+  });
+  it('the pulse is removed again after a moment, so it can play the next time', async () => {
+    const a = fresh(rep()); await click(a, 2, 600); await new Promise(r => setTimeout(r, 1700)); expect(pulsed(a)).toEqual([]);
+  });
+  it('an event with a single repetition, the + button and the chooser\'s own pick behave as before (no pulse) or pulse the picked one', async () => {
+    const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 620 }, { col: 0, min: 620 }, { move: false }); expect(pulsed(a)).toEqual([]);
+    a.q('#dlg').close(); a.toolbar('add').click(); expect(pulsed(a)).toEqual([]);
+    const b = fresh(blank({ events: [ev1({ id: 'x', title: 'Other', slots: [{ day: 2, start: 600, end: 660, person: '' }] }), ...rep().events] }));
+    b.ev('overlapMenu(10,10,itemsAt(2,630,0.5))'); b.qa('.omenu .oi').find(x => x.textContent.startsWith('Swim')).click(); expect(pulsed(b)).toEqual([3]);
   });
 });

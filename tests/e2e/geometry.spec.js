@@ -409,3 +409,19 @@ test.describe('R-UI-11 The Tools highlight in a real browser', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' }); expect((await look(page)).sort()).toEqual([['loose', 'solid', 'none'], ['typed', 'none', 'none']]);
   });
 });
+
+test.describe('R-UI-12 The day table scrolls to the clicked repetition, in a real browser', () => {
+  const many = () => blank({ events: [ev({ id: 'm', title: 'Many', slots: Array.from({ length: 14 }, (_, i) => slot(0, 360 + i * 60, 405 + i * 60)) })] });
+  const geo = page => page.evaluate(() => {
+    const p = document.getElementById('paneQ'), pr = p.getBoundingClientRect(), hd = p.querySelector('.dhd>span').getBoundingClientRect().height;
+    const ln = document.querySelector('#fDays .dr.pulse'), rs = ln ? [...ln.children].map(c => c.getBoundingClientRect()).filter(r => r.height) : [];
+    return { scroll: p.scrollTop, mid: rs.length ? (Math.min(...rs.map(r => r.top)) + Math.max(...rs.map(r => r.bottom))) / 2 : null, v0: pr.top + hd, v1: pr.top + p.clientHeight };
+  });
+  const clickTime = async (page, i) => { const b = page.locator('.day[data-d="0"] .ev').nth(i); await b.scrollIntoViewIfNeeded(); const r = await b.boundingBox(); await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2); };
+  test('a time far down the list is scrolled to the middle of the table and pulses; one already in view does not scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { showEarly: true } }); await seed(page, many());
+    await clickTime(page, 12); await expect(page.locator('#dlg')).toHaveAttribute('open', ''); let g = await geo(page);
+    expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.mid - (g.v0 + g.v1) / 2)).toBeLessThan(4);
+    await page.keyboard.press('Escape'); await page.evaluate(() => { document.getElementById('wrap').scrollTop = 0; }); await clickTime(page, 1); g = await geo(page); expect(g.scroll).toBe(0); expect(g.mid).toBeGreaterThan(g.v0); expect(g.mid).toBeLessThan(g.v1);
+  });
+});
