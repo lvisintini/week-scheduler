@@ -331,9 +331,21 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
     expect(lane(box(a, 'A', 0))).toBe(0); expect(a.qa('.day[data-d="0"] .ov')).toHaveLength(0);
     expect(lane(box(a, 'A', 1))).toBeNull(); expect(a.qa('.day[data-d="1"] .ov')).toHaveLength(1);
   });
-  it('overlapping repetitions of the same event stay on top of each other even with different people', () => {
+  it('overlapping repetitions of one event performed by people who share nobody go side by side, without stripes or ⚠', () => {
     const a = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'B' }] })] }));
+    expect(a.qa('.day[data-d="0"] .ev').map(lane).sort()).toEqual([0, 0.5]); expect(a.qa('.ov')).toHaveLength(0);
+    expect(a.qa('.ev').some(b => b.getAttribute('aria-label').includes('⚠'))).toBe(false);
+  });
+  it('overlapping repetitions of one event that share a person (here the default With) still clash: on top, striped, with ⚠', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', involved: ['C'], slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'B' }] })] }));
     expect(a.qa('.day[data-d="0"] .ev').map(lane)).toEqual([null, null]); expect(a.qa('.ov')).toHaveLength(1);
+    expect(a.qa('.ev').every(b => b.getAttribute('aria-label').includes('⚠'))).toBe(true);
+  });
+  it('overlapping repetitions of one event clash when one has no responsible person, but not through people only on call', () => {
+    const lone = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: '' }] })] }));
+    expect(lone.qa('.ov')).toHaveLength(1);
+    const oc = fresh(blank({ people, events: [ev1({ id: 'a', title: 'A', involved: ['C'], oncall: true, slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'B' }] })] }));
+    expect(oc.qa('.ov')).toHaveLength(0); expect(oc.qa('.day[data-d="0"] .ev').map(lane).sort()).toEqual([0, 0.5]);
   });
   it('only visible occurrences take a lane: hiding a person gives the other event the full width', () => {
     const a = pair({}, {}, { people: [people[0], { ...people[1], visible: false }, people[2]] });
@@ -653,7 +665,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     const a = fresh(blank({ people, events: [work(), pickup('B', 960)] })); expect(a.q('.mg.b').dataset.lane).toBe('0/2'); expect(a.q('.mg.t').dataset.lane).toBe('0/2');
   });
   it('repetitions that overlap only in their margins are not warned about', () => {
-    const a = fresh(); const set = (s1, s2) => a.ev(`overlapSet(${JSON.stringify([s1, s2])}).size`);
+    const a = fresh(); const set = (s1, s2) => a.ev(`overlapSet({},${JSON.stringify([s1, s2])}).size`);
     expect(set({ day: 0, start: 600, end: 690, fe: 30 }, { day: 0, start: 660, end: 720 })).toBe(0); expect(set({ day: 0, start: 600, end: 690 }, { day: 0, start: 660, end: 720 })).toBe(2);
     expect(set({ day: 6, start: 1380, end: 1500, fe: 60 }, { day: 0, start: 0, end: 60, fs: 30 })).toBe(0);
   });

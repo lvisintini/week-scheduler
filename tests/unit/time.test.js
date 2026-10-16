@@ -58,7 +58,7 @@ describe('R-REP-03 Events can run past midnight, Sunday wraps into Monday', () =
 });
 
 describe('R-REP-05 Overlapping repetitions of the same event are detected', () => {
-  const overlaps = slots => ev(`overlapSet(${JSON.stringify(slots)}).size`);
+  const overlaps = slots => ev(`overlapSet({},${JSON.stringify(slots)}).size`);
   it('two blocks on the same day that share time overlap', () => {
     expect(overlaps([{ day: 0, start: 600, end: 720 }, { day: 0, start: 660, end: 780 }])).toBe(2);
   });

@@ -940,17 +940,21 @@ const coreIn=(s,q)=>{const o=q.p*1440,[c0,c1]=coreOf(s);return [Math.max(q.a,c0-
 const fmtMg=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'');
 const edgeNote=s=>[s.fs&&L('fsNote',{a:fmtEnd(s.start),b:fmtEnd(s.start+s.fs)}),s.fe&&L('feNote',{a:fmtEnd(s.end-s.fe),b:fmtEnd(s.end)})].filter(Boolean).join(' · ');
 const ivs=s=>{const [c0,c1]=coreOf(s),a=s.day*1440+c0,b=s.day*1440+c1;return b>W?[[a,W],[0,b-W]]:[[a,b]]};
-function overlapSet(slots){
+// repetitions of one event whose cores overlap and that clash by the people rule (R-REP-05, R-EVT-10): repetitions performed by
+// different people who share nobody are parallel, not a problem; phases have no people, so theirs always clash
+function overlapSet(e,slots=e.slots){
   const out=new Set();
   for(let i=0;i<slots.length;i++)for(let j=i+1;j<slots.length;j++)
-    if(ivs(slots[i]).some(([a,b])=>ivs(slots[j]).some(([c,d])=>a<d&&c<b))){out.add(slots[i]);out.add(slots[j])}
+    if(ivs(slots[i]).some(([a,b])=>ivs(slots[j]).some(([c,d])=>a<d&&c<b))&&clash({e,s:slots[i]},{e,s:slots[j]})){out.add(slots[i]);out.add(slots[j])}
   return out;
 }
-/* side-by-side layout of one day column. Overlapping occurrences that may clash (same event, a shared person — responsible or
-   involved — or no people at all) are bundled and drawn on top of each other with stripes; bundles that overlap in time but share
+/* side-by-side layout of one day column. Overlapping occurrences that may clash (a shared person — responsible or
+   involved — or either without a responsible person; repetitions of one event follow the same rule) are bundled and drawn on top of each other with stripes; bundles that overlap in time but share
    nobody are placed next to each other in lanes, packed per group of overlapping bundles, ordered by the People list. */
 const invOf=(e,s)=>s&&s.inv||e.involved||[];   // the occurrence's involved people: its own list, else the event's default (R-EVT-21)
 const pplOf=it=>[it.s.person,...(it.e.oncall?[]:invOf(it.e,it.s))].filter(Boolean);   // people on call (R-EVT-16) are available, not busy: they never make it clash
+// two occurrences clash (R-EVT-10) when either has no responsible person (it concerns everyone) or they share a person; being the same event does not count
+const clash=(x,y)=>!x.s.person||!y.s.person||(p=>pplOf(y).some(q=>p.includes(q)))(pplOf(x));
 const isExt=id=>{const q=S.people.find(x=>x.id===id);return !!q&&!!q.external};
 const ourPeople=()=>S.people.filter(q=>!q.external);   // external people (R-PPL-03) are left out of the statistics
 const isBg=(e,s)=>!e.rhythms&&!!e.bg;   // background activity, drawn as a strip (R-EVT-17): marked "In the background" (R-EVT-19)
@@ -974,13 +978,13 @@ const nkey=(e,s,p)=>e.id+'|'+e.slots.indexOf(s)+'|'+p;
 const dayPieces=(di,vis)=>S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&(!vis||slotVisible(e,s))&&!isBg(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,start:q.a,end:q.b,c0,c1}})));
 const nestOfDay=(di,vis)=>new Map([...nestPick(dayPieces(di,vis))].map(([x,h])=>[nkey(x.e,x.s,x.piece),{x,h}]));
 function laneLayout(its){
-  // R-EVT-10: occurrences that clash (shared person, same event, or either without a responsible person) overlap with stripes;
+  // R-EVT-10: occurrences that clash (shared person, or either without a responsible person) overlap with stripes;
   // the rest go side by side. Each occurrence gets a range of lanes [l..l1]: parallel ones never share a lane, clashing ones share
   // at least one, so an occurrence that clashes with several parallel ones spans their lanes. Impossible cases fall back to merging.
   const n=its.length,ppl=its.map(pplOf),O=[],C=[];
   const ov=(x,y)=>x.start<x.end&&y.start<y.end&&x.start<y.end&&y.start<x.end;   // an empty range (a piece that is all flexible margin) overlaps nothing
   for(let i=0;i<n;i++){O[i]=[];C[i]=[]}
-  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const o=ov(its[i],its[j]),c=o&&(!prefs.side||its[i].e===its[j].e||!its[i].s.person||!its[j].s.person||ppl[i].some(p=>ppl[j].includes(p)));O[i][j]=O[j][i]=o;C[i][j]=C[j][i]=c}
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const o=ov(its[i],its[j]),c=o&&(!prefs.side||!its[i].s.person||!its[j].s.person||ppl[i].some(p=>ppl[j].includes(p)));O[i][j]=O[j][i]=o;C[i][j]=C[j][i]=c}
   const uf=(ids,edge)=>{const par=new Map(ids.map(i=>[i,i])),f=i=>par.get(i)===i?i:(par.set(i,f(par.get(i))),par.get(i));
     ids.forEach((i,a)=>ids.slice(a+1).forEach(j=>{if(edge(i,j))par.set(f(i),f(j))}));const m=new Map();ids.forEach(i=>{const r=f(i);if(!m.has(r))m.set(r,[]);m.get(r).push(i)});return [...m.values()]};
   const pOrd=[...ourPeople(),...S.people.filter(q=>q.external)],pIdx=id=>{const k=pOrd.findIndex(p=>p.id===id);return k<0?1e9:k};   // the order shown in the sidebar (external people last, R-PPL-04)
@@ -1296,7 +1300,7 @@ function agendaHTML(di){
     if(e.owner)bits.push(`<b>${esc(L('ownl'))}</b> `+pTag(e.owner));
     {const nh=nm.get(nkey(e,s,q.p));if(nh)bits.push(esc(L('nestDur',{t:nh.h.e.title})))}
     bits.push(`<b>${esc(L('schl'))}</b> `+e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', '));
-    if(overlapSet(e.slots).has(s))bits.push('⚠ '+esc(L('ovTip')));
+    if(overlapSet(e).has(s))bits.push('⚠ '+esc(L('ovTip')));
     const tt=q.p?`${fmt(0)}–${fmt(q.b)}`:`${fmt(s.start)}–${fmtEnd(s.end)}`;
     h+=`<div class="ai" style="border-left-color:${esc(e.color)}"><div class="at">${tt}</div><div class="ab"><div class="atl">${esc(e.title)}</div><div class="am">${bits.join(' &nbsp;·&nbsp; ')}</div>${e.desc?`<div class="ad">${esc(e.desc)}</div>`:''}</div></div>`;
   });
@@ -1561,7 +1565,7 @@ function render(){
     else{hb('nxt',ICON_CR,L('focusNext'),()=>stepFocus(1));hb('wk',ICON_WEEK,L('focusWeekTip'),()=>setFocus(null)).append(L('focusWeek'))}});
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*HH+'px';if(h===a)s.style.transform='translateY(2px)'}
-  const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e.slots));return ovCache.get(e)};
+  const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e));return ovCache.get(e)};
   const vsel=vrhythm(),fitList=[];laneMap=new Map();gutMap={};nestMap=new Map();
   const lanePos=(x,v)=>{if(v.n<2)return;const l1=v.l1??v.l;x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + (100% - 6px - var(--gut,0px)) * ${v.l/v.n})`;x.style.right='auto';x.style.width=`calc((100% - 6px - var(--gut,0px)) * ${(l1-v.l+1)/v.n} - ${l1<v.n-1?2:0}px)`};
   // a nested box (R-NST-02) sits inside its host's lanes, indented on the left by NI px (also in a single-lane column)
@@ -1738,7 +1742,7 @@ function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card
     if(e.desc)rows.push(`<div style="white-space:pre-wrap;margin-top:4px">${esc(e.desc)}</div>`);
     if(lv)return rows.join('');
     rows.push(`<div class="mut" style="margin-top:4px">${esc(L('schl'))} ${e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', ')}</div>`);
-    if(overlapSet(e.slots).has(s))rows.push(`<div>⚠ ${esc(L('ovTip'))}</div>`);
+    if(overlapSet(e).has(s))rows.push(`<div>⚠ ${esc(L('ovTip'))}</div>`);
     if(isLocked(e))rows.push(`<div><span class="ic">${ICON_LOCK}</span>${esc(L('lockedNote'))}</div>`);
     if(e.slots.length>1)rows.push(`<div class="how">${esc(L('repTip'))}</div>`);
     return rows.join('');
@@ -1804,7 +1808,7 @@ function startDrag(ev,it,mode){
   const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
   const col=colAt(ev.clientX),cDay=+col.dataset.d,cMin=minAt(col,ev.clientY),cFx=fxAt(col,ev.clientX),off=cMin+1440*pc-e.start,dur=e.end-e.start;
   const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
-  const ovB=overlapSet(orig).size,carry=mode==='move'&&!owner.rhythms?nestCarry(owner):[];
+  const ovB=overlapSet(owner,orig).size,carry=mode==='move'&&!owner.rhythms?nestCarry(owner):[];
   let moved=false,single=false,final=null;const x0=ev.clientX,y0=ev.clientY;
   const mv=p=>{
     if(!moved&&Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;moved=true;single=p.shiftKey;
@@ -1829,7 +1833,7 @@ function startDrag(ev,it,mode){
     if(!moved){const items=itemsAt(cDay,cMin,cFx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner);return}
     const changed=JSON.stringify(S)!==before;if(changed)pushUndo(before);render();
     if(!changed)return;
-    const warn=overlapSet(owner.slots).size>ovB,mark=undoSt.length,fin={...final};
+    const warn=overlapSet(owner).size>ovB,mark=undoSt.length,fin={...final};
     const undoBtn={label:L('undo'),fn:()=>{if(undoSt.length===mark)undo()}};
     if(multi&&!single){
       toast(L('rpApplied',{n:orig.length})+(warn?' · ⚠ '+L('rpWarn'):''),[
@@ -1884,7 +1888,7 @@ const defInv=()=>[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value
 function rowCtl(o,r,day){   // the cells of one time: start, end, performer, With, timing, then ⧉ and + (a day's first time) or ✕ (a further time), ⚠
   o.s=el('select','',r);o.en=el('select','',r);
   o.s.onchange=()=>{if(+o.en.value<=+o.s.value)o.en.value=Math.min(MAXEND,+o.s.value+60);updEnd(o.s,o.en);updWarn()};o.en.onchange=updWarn;
-  o.ps=el('select','ev-only',r);o.wb=el('button','wbtn ev-only',r);o.wb.type='button';o.wb.onclick=()=>wPop(o);
+  o.ps=el('select','ev-only',r);o.ps.onchange=updWarn;o.wb=el('button','wbtn ev-only',r);o.wb.type='button';o.wb.onclick=()=>wPop(o);
   o.tsel=el('select','tsel ev-only',r);o.tsel.onchange=()=>{tmSet(o,o.tsel.value,15,15);updWarn()};
   if(o===day){o.cp=el('button','cpy',r);o.cp.type='button';o.cp.textContent='⧉';o.cp.onclick=()=>copyDay(o);o.ad=el('button','addt',r);o.ad.type='button';o.ad.textContent='+';o.ad.onclick=()=>{addTime(o);updWarn()}}
   else{el('span','cpx',r);o.x=el('button','bx',r);o.x.type='button';o.x.textContent='✕';o.x.onclick=()=>{o.r.remove();day.more=day.more.filter(z=>z!==o);day.more.forEach((z,k)=>rowTexts(z,day,k));updWarn();updOc()}}
@@ -1934,11 +1938,11 @@ function wPop(o){   // a row's own With list: "Use the event's list" or chips
   const draw=()=>{
     pop.innerHTML='';el('div','oh',pop).textContent=L('wPopH',{d:o.wbl||''});
     const sw=el('label','wdef',pop),c=el('input','',sw);c.type='checkbox';c.checked=!o.inv;sw.append(L('wUseDef'));
-    c.onchange=()=>{wSet(o,c.checked?null:defInv());draw()};
+    c.onchange=()=>{wSet(o,c.checked?null:defInv());draw();updWarn()};
     const ch=el('div','chips',pop),list=o.inv||defInv();
     if(!ourPeople().length)ch.textContent=L('noPeople');
     ourPeople().forEach(q=>{const l=el('label','',ch),i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=list.includes(q.id);i.disabled=!o.inv;l.insertAdjacentHTML('beforeend',pTag(q.id));
-      i.onchange=()=>{wSet(o,[...ch.querySelectorAll('input:checked')].map(x=>x.value));updOc()}});
+      i.onchange=()=>{wSet(o,[...ch.querySelectorAll('input:checked')].map(x=>x.value));refreshDlg()}});
   };
   draw();
   pop.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();b.focus()}};
@@ -1969,9 +1973,10 @@ $('fTy').onchange=updTyIc;
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
 function formSlots(){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)[o,...o.more].forEach(x=>a.push({day:i,...rowSlot(x)}))});return a}
 function updWarn(){
-  const items=rows.filter(o=>o.cb.checked).flatMap(o=>[o,...o.more].map(x=>({o:x,day:o.i,start:+x.s.value,end:+x.en.value,...tmSlot(x)})));
+  const ev=dkind==='event',items=rows.filter(o=>o.cb.checked).flatMap(o=>[o,...o.more].map(x=>({o:x,day:o.i,...(ev?rowSlot(x):{start:+x.s.value,end:+x.en.value,person:''})})));
   rows.forEach(o=>[o,...o.more].forEach(x=>x.wn.style.visibility='hidden'));
-  const set=overlapSet(items);items.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
+  const set=overlapSet({oncall:ev&&$('fOnCall').checked,involved:ev?defInv():[]},items);   // as it would be saved: performers and With lists count (R-REP-05)
+  items.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
   const n=[...new Set(items.filter(s=>set.has(s)).map(s=>DAYS[s.day]))];$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';
 }
 function refreshDlg(){updWarn();updOc()}
@@ -1979,12 +1984,12 @@ function updOwn(){   // the owner's icon, and "Owner (name)" in every performer 
   const q=S.people.find(x=>x.id===$('fOw').value);$('fOwIc').innerHTML=q?ICON_USER:'';$('fOwIc').style.color=q?q.color:'';
   rows.flatMap(o=>[o,...o.more]).forEach(o=>{const op=o.ps.querySelector(`option[value="${OWN}"]`);if(op)op.textContent=ownLbl()});
 }
-$('fOw').onchange=updOwn;
+$('fOw').onchange=()=>{updOwn();updWarn()};$('fOnCall').onchange=updWarn;
 const updBg=()=>{$('fNest').disabled=$('fBg').checked};   // strips never nest (R-EVT-19)
 $('fBg').onchange=updBg;
 // "only on call" matters only while somebody is involved, by default or on some day
 const updOc=()=>{$('fOcRow').style.display=defInv().length||tmItems().some(o=>o.inv&&o.inv.length)?'':'none'};
-$('fInv').onchange=()=>{updOc();rows.flatMap(o=>[o,...o.more]).forEach(o=>wSet(o,o.inv))};
+$('fInv').onchange=()=>{rows.flatMap(o=>[o,...o.more]).forEach(o=>wSet(o,o.inv));refreshDlg()};
 function openDlg(e,def){
   const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
   if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}

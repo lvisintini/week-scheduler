@@ -122,6 +122,24 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])');
     expect(a.qa('#fDays .dr').slice(0, 2).map(r => r.querySelector('.wn').style.visibility)).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
   });
+  it('overlapping times performed by people who share nobody are not flagged; making them share a person flags both at once', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(S.events[0])');
+    const wn = () => rows(a).slice(0, 2).map(r => r.querySelector('.wn').style.visibility);
+    expect(wn()).toEqual(['hidden', 'hidden']); expect(a.q('#fWarn').textContent).toBe('');
+    const ps = rows(a)[1].querySelectorAll('select')[2]; ps.value = 'A'; ps.dispatchEvent(new a.w.Event('change'));
+    expect(wn()).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
+  });
+  it('the dialog warning follows the default With list and "only on call"', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(S.events[0])');
+    const chip = a.q('#fInv input[value="A"]'); chip.checked = true; a.q('#fInv').dispatchEvent(new a.w.Event('change', { bubbles: true }));
+    expect(a.q('#fWarn').textContent).toContain('Monday');   // Ann performs one and is involved in the other
+    const oc = a.q('#fOnCall'); oc.checked = true; oc.dispatchEvent(new a.w.Event('change')); expect(a.q('#fWarn').textContent).toBe('');
+  });
+  it('a drag that makes repetitions of different people overlap gives no warning toast', async () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 660, 'A'), slot(0, 780, 840, 'B')] })] }));
+    const box = a.qa('.day[data-d="0"] .ev')[1]; await dragFrom(a, box, { col: 0, min: 790 }, { col: 0, min: 640 }, { shift: true });
+    expect(slots(a)[1].start).toBe(630); expect(a.toast()).not.toContain('overlap');
+  });
   it('an event with overlapping repetitions can still be saved', () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])'); save(a);
     expect(dlgOpen(a)).toBe(false); expect(slots(a)).toHaveLength(2);
