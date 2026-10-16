@@ -169,7 +169,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 #peek{position:fixed;z-index:9000;display:none;pointer-events:none;max-width:320px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:0 8px 28px #0005;font-size:calc(12px * var(--ts,1));line-height:1.35}
 #peek hr{border:0;border-top:1px solid var(--line);margin:8px 0}.pk .pt1{display:flex;align-items:center;gap:6px;font-weight:600;font-size:calc(13px * var(--ts,1))}.pk i{width:10px;height:10px;border-radius:3px;flex-shrink:0}.pk .mut{color:var(--mut)}.pk .how{margin-top:8px;color:var(--mut)}
 .zrow{display:grid;grid-template-columns:1fr auto;grid-template-areas:'l v' 's s';gap:0 6px;align-items:center;margin:2px 0 6px;font-size:12px}.zrow>span:first-child{grid-area:l}.zrow .zv{grid-area:v;color:var(--mut);white-space:nowrap}.zrow input{grid-area:s;width:100%;margin:2px 0 0;accent-color:var(--acc)}
-.zck{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:12px;color:var(--fg);cursor:pointer}.zck input{margin:0;accent-color:var(--acc)}.zreset{display:block;margin:6px 0 0 auto;font-size:12px;padding:3px 10px}.zrow.zsub{margin-left:22px}.zrow:has(input:disabled){color:var(--mut)}.zrow input:disabled{opacity:.5}.zsep{border-top:1px solid var(--line);margin:8px 0 6px}
+.zck{display:flex;gap:8px;align-items:center;margin:5px 0;font-size:12px;color:var(--fg);cursor:pointer}.zck input{appearance:none;-webkit-appearance:none;flex:0 0 30px;width:30px;height:18px;margin:0;border-radius:9px;background:var(--mut);position:relative;cursor:pointer;transition:background-color .15s}.zck input::before{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #0006;transition:transform .15s}.zck input:checked{background:var(--acc)}.zck input:checked::before{transform:translateX(12px)}.zck input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}.zck input:disabled{opacity:.45;cursor:default}@media(prefers-reduced-motion:reduce){.zck input,.zck input::before{transition:none}}   /* sliding switches (Zoom, Tools) */.zreset{display:block;margin:6px 0 0 auto;font-size:12px;padding:3px 10px}.zrow.zsub{margin-left:22px}.zrow:has(input:disabled){color:var(--mut)}.zrow input:disabled{opacity:.5}.zsep{border-top:1px solid var(--line);margin:8px 0 6px}
 .ev.sel{z-index:1;box-shadow:0 0 0 2px var(--acc),0 1px 3px #0003}.ev.nest,.ev.nest.sel,.mg.nest{z-index:5}.ev.nest:not(.sel){box-shadow:0 0 0 1.5px var(--card),0 1px 3px #0003}.warnline{color:#c97a00;font-size:12px;margin-top:4px}.dr.off select{opacity:.4}
 .err{color:#d33;font-size:12px;min-height:16px;margin-top:6px}
 .cpop{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;width:240px;box-shadow:0 8px 28px #0005}
@@ -1546,7 +1546,7 @@ function renderSide(){
   if(!prefs.secTools){
     {const r=el('div','lvrow',s6),b=el('button','',r),c=el('button','',r);b.id='lvB';b.type='button';b.onclick=()=>setLive(!live);   // live view (R-GRID-12)
      c.id='lvC';c.type='button';c.innerHTML=ICON_NOW+'<span></span>';c.querySelector('span').textContent=L('lvNow');c.title=L('lvNowTip');c.onclick=liveBack;updLive()}
-    const tck=(label,tip,get,set)=>{const l=el('label','zck',s6),c=el('input','',l);c.type='checkbox';c.checked=get();el('span','',l).textContent=L(label);l.title=L(tip);
+    const tck=(label,tip,get,set)=>{const l=el('label','zck',s6),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=get();el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{set(c.checked);savePrefs();render()};return c};
     tck('hlNoTy','hlNoTyTip',()=>prefs.hlNoType,v=>{prefs.hlNoType=v});
     tck('colByT','colByTTip',()=>prefs.colBy==='t',v=>{prefs.colBy=v?'t':''});   // the two colour modes exclude each other
@@ -1561,7 +1561,7 @@ function renderSide(){
     const zsl=(label,key,min,max,step,unit,off,cls)=>{const r=el('div','zrow'+(cls?' '+cls:''),s4);el('span','',r).textContent=L(label);
       const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=prefs[key];i.dataset.z=key;i.disabled=!!off&&prefs[off];i.setAttribute('aria-label',L(label));i.title=L(i.disabled?(off==='fitW'?'zoomOffW':'zoomOffH'):key==='txt'?'zoomTxtTip':label);
       const v=el('span','zv',r);v.textContent=prefs[key]+unit;i.oninput=()=>{prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()}};
-    const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.checked=prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
+    const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{if(!c.checked)prefs[size]=fitted(size);prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};   // unticking keeps the fitted size, so nothing jumps
     ck('zoomFitW','zoomFitWTip','fitW','colW');zsl('zoomCol','colW',70,1000,10,' px','fitW','zsub');
     ck('zoomFitH','zoomFitHTip','fitH','rowH');zsl('zoomRow','rowH',24,120,4,' px/h','fitH','zsub');

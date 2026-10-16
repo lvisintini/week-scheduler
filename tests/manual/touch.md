@@ -11,7 +11,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 ## Steps
 | # | Do this | Expected | Android | iPhone |
 |---|---|---|---|---|
-| 1 | Swipe up, down and sideways on the grid | The grid scrolls. The day headers and the time column stay in place. Nothing is created or moved | | |
+| 1 | Swipe up and down on the grid; tap **Week**, then swipe sideways too | The grid scrolls. The day headers and the time column stay in place. Nothing is created or moved (in the day view a sideways swipe changes the day instead, step 21) | | |
 | 2 | Tap *Work* | Its dialog opens (R-TOUCH-01) | | |
 | 3 | Tap *Gym* on Tuesday | The dialog opens, and Tuesday's line in the day table pulses once (R-UI-12) | | |
 | 4 | Press and hold an empty spot for about half a second, then drag down | A short vibration (Android only). A new event follows your finger, and the dialog opens when you let go | | |
@@ -21,7 +21,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 8 | Make two events overlap (drag one onto the other), then tap the overlap | A small list asks which event you mean (R-SEL-01) | | |
 | 9 | Press and hold on the overlap and drag | A list asks which one to move, and nothing moves yet. Pick one: it gets an outline, and the next long-press drag moves it (R-SEL-02) | | |
 | 10 | Tap a day name in the header | The day's agenda opens | | |
-| 11 | Tap the viewfinder icon at the right of a day header | Only that day is shown, filling the width. ◀ ▶ step through the days, and **Week** brings the week back (R-GRID-11) | | |
+| 11 | In the week, tap a short day name (*Mo*, *Tu*…) | Only that day is shown, filling the width. ◀ ▶ step through the days, and **Week** brings the week back (R-GRID-11) | | |
 | 12 | Open an event, then drag the dialog by the dotted bar at its top | The dialog moves, and the grid behind it stays dimmed. Reopening puts it back in the middle (R-UI-10) | | |
 | 13 | In the People section, drag a person by the six dots at the start of the row | The person moves in the list (R-PPL-02) | | |
 | 14 | Open the sidebar's **Tools** section and tap **Live View** | Today's day is shown read-only, with the now line a third of the way down (R-GRID-12) | | |
@@ -30,6 +30,12 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 17 | Tap the red **Live View Mode** pill | Back to the week | | |
 | 18 | Rotate the phone | The grid refits, and nothing is lost | | |
 | 19 | Long-press an event the way you would right-click it | No browser menu appears; the long press starts a move as in step 5. Copy is only in the event dialog's **Copy…** button (R-TOUCH-01, known) | | |
+| 20 | Reload the page | It opens on **today's day view** with the sidebar closed, even if you left it open (R-UI-13) | | |
+| 21 | In the day view, swipe left, then right | The next day, then back. A swipe from the very edge of the screen is left to the browser | | |
+| 22 | Tap **Week**, then tap a short day name (*Mo*, *Tu*…) | That day's view opens (R-GRID-06) | | |
+| 23 | Tap **›** on the rail, scroll the sidebar to the bottom, then tap beside it | The top row with › stays visible while scrolling; the tap beside the sidebar closes it (R-UI-01, R-UI-13) | | |
+| 24 | Tap the camera on the rail | Live View starts. Tap one box several times: still one bubble, which follows your tap (R-GRID-12) | | |
+| 25 | Open **Tools** and **Zoom** in the sidebar and flip their switches | Sliding toggles that react to a tap on the switch or its label | | |
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says

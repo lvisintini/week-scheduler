@@ -413,6 +413,16 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
 });
 
 test.describe('R-UI-11 The Tools highlight in a real browser', () => {
+  test('the switches slide: the knob moves right when on, a tap on the label or Space toggles it, and the off track stands out from the sidebar', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } }); const sw = page.locator('#sbin .zck', { hasText: 'Highlight events without' }), box = sw.locator('input');
+    const knob = () => box.evaluate(e => new DOMMatrix(getComputedStyle(e, '::before').transform).m41);
+    expect((await box.boundingBox()).width).toBeCloseTo(30, 0); expect(await knob()).toBe(0);
+    await sw.locator('span').click(); await expect(box).toBeChecked(); await expect.poll(knob).toBe(12);
+    await box.focus(); await page.keyboard.press('Space'); await expect(box).not.toBeChecked();
+    const ratio = await box.evaluate(e => { const rgb = c => c.match(/\d+/g).slice(0, 3).map(Number), L = c => { const v = rgb(c).map(x => x / 255).map(x => x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const a = L(getComputedStyle(e).backgroundColor), b = L(getComputedStyle(document.getElementById('sb')).backgroundColor); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); });
+    expect(ratio).toBeGreaterThanOrEqual(3);   // WCAG non-text contrast for a control
+  });
   const data = () => blank({ types: [{ id: 't', name: 'Work', color: '#aa5500', icon: 'work' }],
     events: [ev({ id: 'a', title: 'Typed', type: 't', slots: [slot(0, 600, 660)] }), ev({ id: 'b', title: 'Loose', slots: [slot(1, 600, 660)] })] });
   const look = page => page.evaluate(() => [...document.querySelectorAll('.ev')].map(b => { const c = getComputedStyle(b); return [b.textContent.startsWith('Typed') ? 'typed' : 'loose', c.outlineStyle, c.animationName]; }));
