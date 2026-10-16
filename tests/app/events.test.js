@@ -199,6 +199,28 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
   it('a title that has to be cut with an ellipsis also gets the ⋯ marker', () => {
     const d = stubBox(60, 19, null, true); expect(d.classList.contains('clipped')).toBe(true);
   });
+  const timedBox = (H, { titleCut, fitsAfter = false, r2 = true }) => {   // a box with a time on row 1; the title is cut until the time moves (fitsAfter)
+    const a = fresh(blank({ events: [] })); const d = a.d.createElement('div'); d.className = 'ev';
+    const r1 = a.d.createElement('div'); r1.className = 'r1'; const t = a.d.createElement('span'); t.className = 't'; const tm = a.d.createElement('span'); tm.className = 'tm'; tm.textContent = '09:00–17:00'; r1.append(t, tm); d.append(r1);
+    if (r2) { const x = a.d.createElement('div'); x.className = 'r2'; x.innerHTML = '<span class="by">By: Ann</span>'; d.append(x); }
+    const def = (o, p, f) => Object.defineProperty(o, p, { get: f, configurable: true });
+    def(d, 'clientHeight', () => H); def(t, 'clientWidth', () => 10); def(t, 'scrollWidth', () => titleCut && !(fitsAfter && tm.parentNode !== r1) ? 50 : 10);
+    const top = () => 19;
+    Object.defineProperty(a.w.HTMLElement.prototype, 'offsetTop', { get() { return this.className === 'r2' ? top() : 0; }, configurable: true });
+    Object.defineProperty(a.w.HTMLElement.prototype, 'offsetHeight', { get() { return this.className === 'r2' ? 15 : 0; }, configurable: true });
+    a.w.fitBox(d); return d;
+  };
+  it('a title cut short by the time range gets the whole row: the time moves to the start of row 2 (R-EVT-03)', () => {
+    const d = timedBox(60, { titleCut: true, fitsAfter: true }); expect(d.querySelector('.r1 .tm')).toBeNull(); expect(d.querySelector('.r2').firstElementChild.className).toBe('tm');
+    expect(d.querySelector('.r2 .by')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(false);   // after the move everything fits
+  });
+  it('a box without a By/With row gets one for the moved time; a box too short for row 2 loses it and shows ⋯', () => {
+    const d = timedBox(60, { titleCut: true, fitsAfter: true, r2: false }); expect(d.querySelector('.r2 .tm').textContent).toBe('09:00–17:00');
+    const s = timedBox(30, { titleCut: true, fitsAfter: true }); expect(s.querySelector('.tm')).toBeNull(); expect(s.querySelector('.r2')).toBeNull(); expect(s.classList.contains('clipped')).toBe(true);
+  });
+  it('a title that fits leaves the time on row 1', () => {
+    const d = timedBox(60, { titleCut: false }); expect(d.querySelector('.r1 .tm')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(false);
+  });
 });
 
 describe('R-EVT-06 Delete removes the whole event', () => {

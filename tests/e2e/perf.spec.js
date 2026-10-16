@@ -30,21 +30,18 @@ test.describe('R-SEC-03 The largest allowed data set (5,000 events) stays usable
   });
 });
 
-test.describe('R-EVT-05 Clipped boxes are measured in one pass, with the same result as measuring one box at a time', () => {
-  test('a crowded week gets exactly the clipped boxes and dropped By/With rows that box-by-box measuring gives', async ({ page }) => {
+test.describe('R-EVT-05 Clipped boxes are measured all together, with the same result as measuring one box at a time', () => {
+  test('a crowded week gets exactly the clipped boxes, moved times and dropped By/With rows that box-by-box measuring gives', async ({ page }) => {
     await openApp(page);
     const d = big(600); d.people = [{ id: 'p1', name: 'Ann', color: '#e5484d', visible: true }, { id: 'p2', name: 'Luis', color: '#3f51b5', visible: true }];
     d.events.forEach((e, i) => { e.title = i % 3 ? 'Event ' + i : 'A rather long title for event number ' + i + ', much too long to fit on one line of a box'; e.slots[0].end = e.slots[0].start + [15, 30, 45, 60, 90][i % 5]; e.slots[0].person = i % 4 ? 'p1' : ''; e.involved = i % 2 ? ['p2'] : []; });
-    const state = () => [...document.querySelectorAll('.ev')].map(b => (b.classList.contains('clipped') ? 'c' : '-') + (b.querySelector('.r2') ? 'r' : '-') + (b.querySelector('.clipm') ? 'm' : '-')).join('');
+    const state = () => [...document.querySelectorAll('.ev')].map(b => (b.classList.contains('clipped') ? 'c' : '-') + (b.querySelector('.r2') ? 'r' : '-') + (b.querySelector('.clipm') ? 'm' : '-') + (b.querySelector('.r2 .tm') ? '2' : b.querySelector('.r1 .tm') ? '1' : '0')).join('');
     const now = await page.evaluate(([d, f]) => { prefs.colW = 220; prefs.rowH = 120; const x = parseData(d, true); S = x; cw().data = x; render(); return (0, eval)('(' + f + ')')(); }, [d, state.toString()]);
-    const old = await page.evaluate(f => {   // the former fitBox: read and change each box in turn
-      const keep = window.fitMeasure; window.fitMeasure = () => null; render(); window.fitMeasure = keep;
-      document.querySelectorAll('.ev').forEach(d => { const H = d.clientHeight; if (!H) return; const r2 = d.querySelector('.r2'); let clipped = false;
-        if (r2 && r2.offsetTop + r2.offsetHeight > H - 4) { r2.remove(); clipped = true; }
-        if (!clipped) { const t = d.querySelector('.r1 .t'); if (t && t.scrollWidth > t.clientWidth + 1) clipped = true; }
-        if (clipped) { d.classList.add('clipped'); const m = document.createElement('span'); m.className = 'clipm'; m.textContent = '⋯'; d.appendChild(m); } });
+    const old = await page.evaluate(f => {   // the same steps, box by box: read and change each box in turn
+      const keep = window.fitAll; window.fitAll = () => {}; render(); window.fitAll = keep;
+      document.querySelectorAll('.ev').forEach(d => window.fitBox(d));
       return (0, eval)('(' + f + ')')();
     }, state.toString());
-    expect(now.length).toBeGreaterThan(300); expect(now).toContain('c-m'); expect(now).toContain('crm'); expect(now).toContain('-r-'); expect(now).toBe(old);
+    expect(now.length).toBeGreaterThan(300); expect(now).toContain('-r-1'); expect(now).toContain('crm2'); expect(now).toContain('c-m0'); expect(now).toBe(old);   // kept, time moved to row 2, time dropped with row 2
   });
 });

@@ -96,7 +96,7 @@ aside.collapsed .help{display:none}
 .ev .r1{display:flex;gap:8px;align-items:baseline}
 .ev .r1 .t{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev .r1 .tm{flex:0 0 auto;white-space:nowrap;opacity:.95}
-.ev .r2{display:flex;flex-wrap:wrap;gap:0 8px;opacity:.95}.ev .r2 .wi{margin-left:auto;text-align:right}
+.ev .r2{display:flex;flex-wrap:wrap;gap:0 8px;opacity:.95}.ev .r2 .wi{margin-left:auto;text-align:right}.ev .r2 .tm{white-space:nowrap}
 /* resize handles live in the day column, above every box, so an overlapping box drawn later can never cover another one's bottom edge */
 .rz{position:absolute;left:3px;right:calc(3px + var(--gut,0px));height:7px;transform:translateY(-100%);cursor:ns-resize;z-index:6}.rz.ph{left:0;right:0}
 /* background activities by external people (R-EVT-17): slim strips in a gutter on the right of the day column, outside every lane */
@@ -1753,7 +1753,7 @@ function render(){
       });
     });
   });
-  {const ms=fitList.map(fitMeasure);fitList.forEach((d,i)=>fitApply(d,ms[i]))}
+  fitAll(fitList);
   drawNow();
   const hi=hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
   hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
@@ -1799,17 +1799,28 @@ function tapOpen(p,owner){
 /* event box: render only the rows that fit completely, mark clipped content */
 // Clipping is measured for every box first and applied afterwards: reading the layout after a change forces a new layout,
 // which made drawing a crowded week slow down with every box (R-EVT-05).
+// A title cut short while the time range shares its row: the time moves to the start of row 2, so the title gets the whole row
+// (R-EVT-03); the boxes that moved one are measured again, all together.
 function fitMeasure(d){
   const H=d.clientHeight;if(!H)return null;
-  const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t');
-  return {drop:!!r2&&r2.offsetTop+r2.offsetHeight>H-4,title:!!t&&t.scrollWidth>t.clientWidth+1};
+  const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t'),title=!!t&&t.scrollWidth>t.clientWidth+1;
+  return {drop:!!r2&&r2.offsetTop+r2.offsetHeight>H-4,title,mv:title&&!!d.querySelector('.r1 .tm')};
+}
+function fitMove(d,m){
+  if(!m||!m.mv)return;
+  const tm=d.querySelector('.r1 .tm');let r2=d.querySelector('.r2');if(!r2){r2=document.createElement('div');r2.className='r2';d.querySelector('.r1').after(r2)}
+  r2.prepend(tm);
 }
 function fitApply(d,m){
   if(!m)return;
   if(m.drop)d.querySelector('.r2').remove();
   if(m.drop||m.title){d.classList.add('clipped');el('span','clipm',d).textContent='⋯'}
 }
-function fitBox(d){fitApply(d,fitMeasure(d))}
+function fitAll(list){
+  const m1=list.map(fitMeasure);list.forEach((d,i)=>fitMove(d,m1[i]));
+  const m2=list.map((d,i)=>m1[i]&&m1[i].mv?fitMeasure(d):m1[i]);list.forEach((d,i)=>fitApply(d,m2[i]));
+}
+function fitBox(d){fitAll([d])}
 /* hover peek card (mouse only) */
 let peekT=null,peekKey='';
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}
