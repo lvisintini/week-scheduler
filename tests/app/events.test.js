@@ -906,7 +906,7 @@ describe('R-EVT-17 Background activities are slim strips that never clash', () =
     const a = fresh(blank({ people: ppl, events: [clean()] })), st = a.q('.bgs'), r = cssRule(a, '.bgs').style, sp = cssRule(a, '.bgs span').style;
     expect(r.getPropertyValue('border-radius')).toBe('0 6px 6px 0'); expect(st.querySelector('span').textContent).toBe('Cleaning');
     expect(sp.getPropertyValue('writing-mode')).toBe('vertical-rl'); expect(sp.getPropertyValue('transform')).toBe(''); expect(sp.getPropertyValue('text-overflow')).toBe('ellipsis');
-    expect(st.style.color).toBe('rgb(29, 35, 48)');   // ink(): dark text on the light teal
+    expect(st.style.color).toBe('rgb(0, 0, 0)');   // ink(): black text on the light teal
   });
   it('a strip title is plain text, never markup', () => {
     const a = fresh(blank({ people: ppl, events: [clean({ title: '<img src=x onerror=alert(1)>' })] })); const sp = a.q('.bgs span');

@@ -123,7 +123,7 @@ describe('R-PHS-04 Lips: the label tab left of each day column', () => {
     const a = fresh(data()); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); a.ev('S.rhythms[0].visible=false;render()'); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('0px');
   });
   it('lip text is dark on light colours and white on dark colours', () => {
-    const a = fresh(data({ phases: [phase({ color: '#fafafa' })] })); expect(lips(a, 0)[0].style.color).toMatch(/#1d2330|rgb\(29, 35, 48\)/);
+    const a = fresh(data({ phases: [phase({ color: '#fafafa' })] })); expect(lips(a, 0)[0].style.color).toMatch(/#000|rgb\(0, 0, 0\)/);
     a.ev('S.phases[0].color="#1d2330";render()'); expect(lips(a, 0)[0].style.color).toMatch(/#fff|rgb\(255, 255, 255\)/);
   });
 });

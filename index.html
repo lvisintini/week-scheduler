@@ -934,7 +934,7 @@ const eLock=e=>e.rhythms?false:isLocked(e);
 const sVis=(e,s)=>e.rhythms?true:slotVisible(e,s);
 const act=()=>editMode==='phases'?S.phases:S.events;
 const lum=c=>{const v=[1,3,5].map(i=>{const x=parseInt(c.slice(i,i+2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
-const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/(lum('#1d2330')+.05)>1.05/(L+.05)?'#1d2330':'#fff'};   // text colour with the better WCAG contrast (relative luminance)
+const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/.05>1.05/(L+.05)?'#000':'#fff'};   // black or white, whichever contrasts more: always at least 4.58:1 (WCAG contrast (relative luminance)
 const visible=e=>e.schedules.some(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.visible});
 const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=S.schedules.find(x=>x.id===id);return s&&s.locked});
 const evOp=e=>Math.max(...e.schedules.map(id=>S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);

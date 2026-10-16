@@ -47,6 +47,12 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
   });
+  for (const theme of ['light', 'dark']) {
+    test(`the first-run workspace (default rhythm with coloured lips) in the ${theme} theme adds no contrast violation`, async ({ page }) => {
+      await openApp(page, { prefs: { theme } }); await expect(page.locator('.lip').first()).toBeVisible();
+      ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
+    });
+  }
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
     await openApp(page); const r = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, main: document.querySelectorAll('main').length }));
     expect(r.lang).toBe('en'); expect(r.title).toBe('Weekly Schedules'); expect(r.main).toBe(1);

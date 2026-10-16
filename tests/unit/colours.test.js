@@ -47,20 +47,26 @@ describe('R-EVT-07 Copy colours: same hue, brighter or darker', () => {
 describe('R-PHS-04 Lip text colour contrasts with the lip background', () => {
   const ratio = (bg, fg) => { const L = c => app.ev(`lum(${JSON.stringify(c)})`); const [a, b] = [L(bg), L(fg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
   it('white and very light backgrounds get dark text', () => {
-    expect(ev('ink("#ffffff")')).toBe('#1d2330');
-    expect(ev('ink("#fafafa")')).toBe('#1d2330');
+    expect(ev('ink("#ffffff")')).toBe('#000');
+    expect(ev('ink("#fafafa")')).toBe('#000');
   });
   it('dark and mid-tone backgrounds get white text', () => {
     expect(ev('ink("#1d2330")')).toBe('#fff');
-    expect(ev('ink("#3b6df0")')).toBe('#fff');
+    expect(ev('ink("#3f51b5")')).toBe('#fff');
     expect(ev('ink("#8e4ec6")')).toBe('#fff');
   });
-  it('bright yellows, light greens and oranges get dark text, as their luminance is high', () => {
-    for (const c of ['#f5c518', '#7bc043', '#e8912d', '#12a5b5']) expect.soft(ev(`ink(${JSON.stringify(c)})`), c).toBe('#1d2330');
+  it('bright yellows, light greens, oranges and mid-tone reds get black text, as black contrasts more with them', () => {
+    for (const c of ['#f5c518', '#7bc043', '#e8912d', '#12a5b5', '#e5484d']) expect.soft(ev(`ink(${JSON.stringify(c)})`), c).toBe('#000');
   });
-  it('whichever text colour is chosen, the contrast with the background is at least 3:1 for every palette colour', () => {
+  it('whichever text colour is chosen, the contrast with the background is at least 4.5:1 for every palette colour (WCAG AA for small text)', () => {
     const palette = ['#3b6df0', '#e5484d', '#2fa66a', '#e8912d', '#8e4ec6', '#12a5b5', '#d6409f', '#6b7385', '#1d2330', '#f5c518', '#7bc043'];
-    for (const c of palette) expect.soft(ratio(c, ev(`ink(${JSON.stringify(c)})`) === '#fff' ? '#ffffff' : '#1d2330'), c).toBeGreaterThanOrEqual(3);
+    for (const c of palette) expect.soft(ratio(c, ev(`ink(${JSON.stringify(c)})`) === '#fff' ? '#ffffff' : '#000000'), c).toBeGreaterThanOrEqual(4.5);
+  });
+  it('a sweep over the whole colour range never gives lip or strip text below 4.5:1', () => {
+    const worst = ev(`(() => { let w = 99; for (let r = 0; r < 256; r += 17) for (let g = 0; g < 256; g += 17) for (let b = 0; b < 256; b += 17) {
+      const c = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join(''), L = lum(c), t = lum(ink(c) === '#fff' ? '#ffffff' : '#000000');
+      w = Math.min(w, (Math.max(L, t) + .05) / (Math.min(L, t) + .05)); } return w; })()`);
+    expect(worst).toBeGreaterThanOrEqual(4.5);
   });
   it('an invalid colour falls back safely instead of throwing', () => { expect(ev('ink("nonsense")')).toBe('#fff'); });
 });
