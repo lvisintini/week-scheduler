@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, workspace } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, workspace, pointer } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const types = () => [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }, { id: 'tm', name: 'Meal', color: '#e8912d', icon: 'meal' }];
@@ -15,10 +15,10 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     const a = fresh(blank({ types: types() })); const names = a.qa('#sbin .sec .shbtn span').map(s => s.textContent);
     expect(names.indexOf('Activity types')).toBe(names.indexOf('People') + 1); expect(tySec(a).querySelector('.shbtn em').textContent).toBe('2');
   });
-  it('each row shows an eye, the type icon in its colour, an editable name and the ⋯ menu', () => {
+  it('each row shows a grip, an eye, the type icon in its colour, an editable name and the ⋯ menu', () => {
     const a = fresh(blank({ types: types() })); const r = rows(a)[1];
     expect(r.querySelector('.pick').innerHTML).toBe(iconHTML(a, 'meal')); expect(r.querySelector('.pick').style.color).toMatch(/#e8912d|rgb\(232, 145, 45\)/);
-    expect(r.querySelector('input').value).toBe('Meal'); expect(r.querySelector('input').getAttribute('aria-label')).toBe('Activity types'); expect([...r.children].map(c => c.className)).toEqual(['eye', 'ic pick', '', 'eye']); expect(r.querySelector('.eye').title).toBe(a.ev("L('eyeTip')"));
+    expect(r.querySelector('input').value).toBe('Meal'); expect(r.querySelector('input').getAttribute('aria-label')).toBe('Activity types'); expect([...r.children].map(c => c.className)).toEqual(['grip', 'eye', 'ic pick', '', 'eye']); expect(r.querySelector('.eye').title).toBe(a.ev("L('eyeTip')"));
   });
   it('+ asks for a name and adds a type with the plain dot icon (undoable)', () => {
     const a = fresh(blank({ types: types() }), { promptAnswer: 'Homework' }); tySec(a).querySelector('.sech .eye').click();
@@ -172,5 +172,35 @@ describe('R-TYP-04 Activity types can be hidden and shown with their eye (a grid
   it('a type created by "+" or brought in by an insert is shown', () => {
     const a = fresh(blank({ types: types() }), { promptAnswer: 'Homework' }); tySec(a).querySelector('.sech .eye').click(); expect(data(a).types.at(-1).visible).toBe(true);
     a.ev(`insertInto(parseData(${JSON.stringify(blank({ types: [{ id: 'x', name: 'Music', color: '#000000', icon: 'music', visible: false }] }))}))`); expect(data(a).types.at(-1)).toMatchObject({ name: 'Music', visible: true });
+  });
+});
+
+describe('R-TYP-05 Activity types can be reordered; the order is used by the statistics and the event dialog', () => {
+  const three = () => fresh(blank({ people: [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }],
+    types: [{ id: 'ta', name: 'Sleep', color: '#3f51b5', icon: 'moon' }, { id: 'tb', name: 'Meal', color: '#e8912d', icon: 'meal' }, { id: 'tc', name: 'Work', color: '#2fa66a', icon: 'work' }],
+    events: ['ta', 'tb', 'tc'].map((t, i) => ev1({ id: 'e' + i, type: t, slots: [{ day: i, start: 600, end: 660, person: 'A' }] })) }));
+  const names = a => a.ev('S.types.map(t=>t.name)'), grips = a => rows(a).map(r => r.querySelector('.grip'));
+  const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
+  it('each type row starts with a grip that names the type and says what the order is for', () => {
+    const a = three(), g = grips(a); expect(g[0]).toBe(rows(a)[0].firstElementChild); expect(g[1].getAttribute('aria-label')).toBe('Move Meal');
+    expect(g[1].title).toMatch(/^Drag to reorder/); expect(g[1].title).toContain('statistics'); expect(g[1].title).not.toContain('lanes');
+  });
+  it('the arrow keys move a type up or down and keep the focus on its grip; past either end nothing happens', () => {
+    const a = three(); key(grips(a)[0], 'ArrowDown'); expect(names(a)).toEqual(['Meal', 'Sleep', 'Work']); expect(a.d.activeElement.getAttribute('aria-label')).toBe('Move Sleep');
+    const n = a.ev('undoSt.length'); key(grips(a)[0], 'ArrowUp'); expect(names(a)).toEqual(['Meal', 'Sleep', 'Work']); expect(a.ev('undoSt.length')).toBe(n);
+  });
+  it('dragging a grip below the last row moves the type to the end; it is undoable data that marks the workspace unsaved', () => {
+    const a = three(); a.ev('saveMem("all")'); grips(a)[0].onpointerdown({ button: 0, preventDefault() {}, stopPropagation() {} });
+    pointer(a, 'pointermove', { x: 10, y: 500 }); pointer(a, 'pointerup', { x: 10, y: 500 }); expect(names(a)).toEqual(['Meal', 'Work', 'Sleep']); expect(a.ev('isDirty()')).toBe(true);
+    a.toolbar('undo').click(); expect(names(a)).toEqual(['Sleep', 'Meal', 'Work']);
+  });
+  it('the event dialog lists the types in the new order', () => {
+    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp'); a.ev('openDlg(S.events[0])');
+    expect(a.qa('#fTy option').map(o => o.textContent)).toEqual(['(none)', 'Work', 'Sleep', 'Meal']);
+  });
+  it('the statistics table, CSV columns and the everyone view follow the new order', () => {
+    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp');
+    expect(a.ev("statsRows('A',true).slice(1,4).map(r=>r[1])")).toEqual(['Work', 'Sleep', 'Meal']);
+    expect(a.ev("statsRows('*',true)[0].slice(1,4)")).toEqual(['Work', 'Sleep', 'Meal']);
   });
 });
