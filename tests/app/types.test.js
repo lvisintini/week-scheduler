@@ -7,7 +7,7 @@ const iconHTML = (a, k) => a.ev(`(()=>{const d=document.createElement("span");d.
 const tySec = a => a.q('#sbin .tysec');
 const rows = a => [...tySec(a).querySelectorAll('.sch')];
 const data = a => a.ev('JSON.parse(JSON.stringify(S))');
-const menu = (a, i) => { rows(a)[i].querySelector('button.eye').click(); return a.qa('.omenu .oi').map(b => b.textContent.trim()); };
+const menu = (a, i) => { [...rows(a)[i].querySelectorAll('button.eye')].at(-1).click(); return a.qa('.omenu .oi').map(b => b.textContent.trim()); };
 const menuClick = (a, label) => a.qa('.omenu .oi').find(b => b.textContent.trim() === label).click();
 
 describe('R-TYP-01 Activity types are managed in their own sidebar section', () => {
@@ -15,10 +15,10 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     const a = fresh(blank({ types: types() })); const names = a.qa('#sbin .sec .shbtn span').map(s => s.textContent);
     expect(names.indexOf('Activity types')).toBe(names.indexOf('People') + 1); expect(tySec(a).querySelector('.shbtn em').textContent).toBe('2');
   });
-  it('each row shows the type icon in its colour and an editable name, without an eye', () => {
+  it('each row shows an eye, the type icon in its colour, an editable name and the ⋯ menu', () => {
     const a = fresh(blank({ types: types() })); const r = rows(a)[1];
     expect(r.querySelector('.pick').innerHTML).toBe(iconHTML(a, 'meal')); expect(r.querySelector('.pick').style.color).toMatch(/#e8912d|rgb\(232, 145, 45\)/);
-    expect(r.querySelector('input').value).toBe('Meal'); expect(r.querySelector('input').getAttribute('aria-label')).toBe('Activity types'); expect(r.querySelector('.eye.off, [title*="Show or hide"]')).toBeNull();
+    expect(r.querySelector('input').value).toBe('Meal'); expect(r.querySelector('input').getAttribute('aria-label')).toBe('Activity types'); expect([...r.children].map(c => c.className)).toEqual(['eye', 'ic pick', '', 'eye']); expect(r.querySelector('.eye').title).toBe(a.ev("L('eyeTip')"));
   });
   it('+ asks for a name and adds a type with the plain dot icon (undoable)', () => {
     const a = fresh(blank({ types: types() }), { promptAnswer: 'Homework' }); tySec(a).querySelector('.sech .eye').click();
@@ -37,7 +37,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     btns.find(b => b.title === 'Coffee' || b.title === 'Cup').click(); expect(data(a).types[1].icon).toBe('coffee'); expect(a.q('.omenu')).toBeNull();
     a.toolbar('undo').click(); expect(data(a).types[1].icon).toBe('meal');
   });
-  it('the row menu offers the statistics colour, the icon, the soft look and delete', () => {
+  it('the row menu offers the colour, the icon, the soft look and delete', () => {
     const a = fresh(blank({ types: types() })); expect(menu(a, 0)).toEqual(['Colour…', 'Icon…', 'Soft look', 'Delete']);
   });
   it('the soft-look item is ticked for soft types and toggles the look of their events', () => {
@@ -45,7 +45,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     expect(a.qa('.omenu .oi')[2].title).toContain('light tint'); menuClick(a, 'Soft look'); expect(data(a).types[1].soft).toBe(true); expect(a.q('.ev').classList.contains('soft')).toBe(true);
     menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).not.toBeNull(); menuClick(a, 'Soft look'); expect('soft' in data(a).types[1]).toBe(false);
   });
-  it('the type colour is used only for statistics: changing it does not change the event colour', () => {
+  it('by default the type colour is not used on the grid: changing it does not change the event colour', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm', color: '#3b6df0' })] })); a.ev('S.types[1].color="#000000";render()');
     expect(a.q('.ev').style.background).toMatch(/#3b6df0|rgb\(59, 109, 240\)/);
   });
@@ -135,5 +135,42 @@ describe('R-TYP-03 Activity types in saved data, imports and transfers', () => {
   });
   it('anonymised exports keep the type names (like schedule names)', () => {
     const a = fresh(blank({ types: types() })); expect(a.ev('anonymised(buildFile()).types.map(t=>t.name)')).toEqual(['Free time', 'Meal']);
+  });
+});
+
+describe('R-TYP-04 Activity types can be hidden and shown with their eye (a grid filter, like the people filter)', () => {
+  const evs = () => [ev1({ id: 'm', title: 'Lunch', type: 'tm', slots: [{ day: 0, start: 720, end: 780, person: '' }] }), ev1({ id: 'f', title: 'Park', type: 'tf', slots: [{ day: 1, start: 600, end: 660, person: '' }] }),
+    ev1({ id: 'u', title: 'Untyped', slots: [{ day: 2, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', title: 'Screens', type: 'tm', bg: true, slots: [{ day: 3, start: 600, end: 660, person: '' }] })];
+  const titles = a => a.qa('.ev .t, .bgs span').map(x => x.textContent);
+  const eye = (a, i) => rows(a)[i].querySelector('.eye');
+  it('every type is shown at first; clicking its eye hides its boxes and strips, and clicking again shows them', () => {
+    const a = fresh(blank({ types: types(), events: evs() })); expect(titles(a).sort()).toEqual(['Lunch', 'Park', 'Screens', 'Untyped']);
+    eye(a, 1).click(); expect(titles(a).sort()).toEqual(['Park', 'Untyped']); expect(rows(a)[1].classList.contains('off')).toBe(true); expect(data(a).types[1].visible).toBe(false);
+    eye(a, 1).click(); expect(titles(a)).toHaveLength(4); expect(rows(a)[1].classList.contains('off')).toBe(false);
+  });
+  it('events without a type are always shown, even with every type hidden', () => {
+    const a = fresh(blank({ types: types(), events: evs() })); eye(a, 0).click(); eye(a, 1).click(); expect(titles(a)).toEqual(['Untyped']);
+  });
+  it('hidden types are not clickable, not in the day agenda and not counted as "N hidden"', () => {
+    const a = fresh(blank({ types: types(), events: evs() })); eye(a, 1).click();
+    expect(a.ev('itemsAt(0,750,0.5).length')).toBe(0); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).not.toContain('Lunch'); expect(a.q('#hid').style.display).toBe('none');
+  });
+  it('the statistics still count the events of a hidden type', () => {
+    const p = [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }], e = [ev1({ id: 'm', type: 'tm', slots: [{ day: 0, start: 720, end: 780, person: 'A' }] })];
+    const a = fresh(blank({ types: types(), people: p, events: e })); const before = a.ev("personStats('A',true).by.get('tm')");
+    eye(a, 1).click(); expect(a.ev("personStats('A',true).by.get('tm')")).toBe(before); expect(before).toBe(60);
+  });
+  it('the eye is view state: not undoable and not an unsaved change, and undo keeps it', () => {
+    const a = fresh(blank({ types: types(), events: evs() })); a.ev('saveMem("all")'); eye(a, 1).click(); expect(a.ev('isDirty()')).toBe(false); expect(a.ev('undoSt.length')).toBe(0);
+    const n = rows(a)[0].querySelector('input'); n.value = 'Leisure'; n.onchange(); a.toolbar('undo').click(); expect(data(a).types[1].visible).toBe(false);
+  });
+  it('the eye is saved with the workspace and read back; data without it shows every type', () => {
+    const a = fresh(blank({ types: types(), events: evs() })); eye(a, 1).click(); a.ev('saveMem("all")');
+    const b = openApp({ storage: a.storage() }); expect(b.ev('S.types.map(t=>t.visible)')).toEqual([true, false]); expect(b.qa('.ev .t').map(x => x.textContent).sort()).toEqual(['Park', 'Untyped']);
+    expect(a.ev(`parseData(${JSON.stringify(blank({ types: types() }))}).types.map(t=>t.visible)`)).toEqual([true, true]);
+  });
+  it('a type created by "+" or brought in by an insert is shown', () => {
+    const a = fresh(blank({ types: types() }), { promptAnswer: 'Homework' }); tySec(a).querySelector('.sech .eye').click(); expect(data(a).types.at(-1).visible).toBe(true);
+    a.ev(`insertInto(parseData(${JSON.stringify(blank({ types: [{ id: 'x', name: 'Music', color: '#000000', icon: 'music', visible: false }] }))}))`); expect(data(a).types.at(-1)).toMatchObject({ name: 'Music', visible: true });
   });
 });
