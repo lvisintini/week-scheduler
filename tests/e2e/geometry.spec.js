@@ -63,6 +63,16 @@ test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
     const top = await page.evaluate(() => { const h = document.querySelector('.dh:not(.c)').getBoundingClientRect(); const el = document.elementFromPoint(h.left + 20, h.top + 8); return el.closest('.dh') !== null; });
     expect(top).toBe(true);
   });
+  test('the grid can be reached with Tab and scrolled with the arrow keys and Page Down, showing a focus ring', async ({ page }) => {
+    await page.locator('#wrap').focus(); await expect(page.locator('#wrap')).toBeFocused();
+    const top0 = await page.evaluate(() => document.getElementById('wrap').scrollTop);
+    await page.keyboard.press('PageDown'); await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top0);
+    const left0 = await page.evaluate(() => document.getElementById('wrap').scrollLeft);
+    await page.keyboard.press('ArrowRight'); await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollLeft)).toBeGreaterThan(left0);
+    await page.locator('#wrap').blur(); await page.keyboard.press('Tab');
+    for (let i = 0; i < 80 && !(await page.evaluate(() => document.activeElement?.id === 'wrap')); i++) await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle)).toBe('solid');
+  });
   test('scrollbars are real and visible, taking up space in both directions', async ({ page }) => {
     const sizes = await page.evaluate(() => { const w = document.getElementById('wrap'); return { v: w.offsetWidth - w.clientWidth, h: w.offsetHeight - w.clientHeight }; });
     expect(sizes.v).toBeGreaterThan(4); expect(sizes.h).toBeGreaterThan(4);

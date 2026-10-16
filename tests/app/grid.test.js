@@ -245,6 +245,10 @@ describe('R-GRID-08 Scrolling: sticky time column and headers, visible scrollbar
     const a = fresh(); expect(cssRule(a, '.times').style.getPropertyValue('left')).toBe('0');
     const corner = cssRule(a, '.dh.c').style; expect(corner.getPropertyValue('left')).toBe('0'); expect(Number(corner.getPropertyValue('z-index'))).toBeGreaterThan(Number(cssRule(a, '.times').style.getPropertyValue('z-index')));
   });
+  it('the scrolling grid takes keyboard focus (tab stop) and is a named region, in English and Spanish', () => {
+    const w = fresh().q('#wrap'); expect(w.getAttribute('tabindex')).toBe('0'); expect(w.getAttribute('role')).toBe('region'); expect(w.getAttribute('aria-label')).toBe('Week grid (arrow keys scroll)');
+    expect(fresh(null, { languages: ['es'] }).q('#wrap').getAttribute('aria-label')).toBe('Cuadrícula de la semana (las flechas la desplazan)');
+  });
   it('the page uses the dynamic viewport height so phone browser bars do not hide the bottom', () => {
     expect(fresh().d.querySelector('style').textContent).toContain('height:100dvh');
   });

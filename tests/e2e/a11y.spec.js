@@ -15,9 +15,9 @@ const ratchet = (found, known) => {
 };
 
 test.describe('R-UI-03 Automated accessibility scan (ratchet against the known issues)', () => {
-  test('the main screen shows no accessibility violation beyond the known one: a scroll area that cannot take keyboard focus', async ({ page }) => {
+  test('the main screen shows no serious accessibility violation (names, contrast, a grid reachable by keyboard)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup' })] }));
-    ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), {});
   });
   test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
@@ -43,14 +43,14 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     let r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
     await page.locator('#xDlg select').selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
-  test('the dark theme shows no accessibility violation beyond the known one: a scroll area that cannot take keyboard focus', async ({ page }) => {
+  test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
-    ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), {});
   });
   for (const theme of ['light', 'dark']) {
     test(`the first-run workspace (default rhythm with coloured lips) in the ${theme} theme adds no contrast violation`, async ({ page }) => {
       await openApp(page, { prefs: { theme } }); await expect(page.locator('.lip').first()).toBeVisible();
-      ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
+      ratchet(await scan(page), {});
     });
   }
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
