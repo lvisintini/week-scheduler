@@ -361,6 +361,11 @@ describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
     const a = openApp({ phone: true }); a.q('.sbtop .xpand').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(false);
     a.q('#sbBack').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(true); expect(a.q('.sbtop .xpand').title).toBe('Expand sidebar');
   });
+  it('a phone opens on today\'s day view; a desktop window opens on the week; a remembered Live View still wins', () => {
+    const a = openApp({ phone: true }); expect(a.ev('focusD')).toBe(a.ev('today()')); expect(a.qa('.day')).toHaveLength(1); expect(a.q('.dh.fo')).not.toBeNull();
+    expect(openApp().ev('focusD')).toBeNull();
+    const l = openApp({ phone: true, storage: saved({ live: true }) }); expect(l.ev('live')).toBe(true); expect(l.ev('focusD')).toBe(l.ev('today()'));
+  });
   it('the phone stylesheet lays the open sidebar over the grid, above a backdrop, and hides the resize edge', () => {
     const css = openApp().q('style').textContent;
     expect(css).toContain('@media (max-width:600px){aside:not(.collapsed){position:fixed;'); expect(css).toContain('aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;'); expect(css).toContain('aside .rs{display:none}');

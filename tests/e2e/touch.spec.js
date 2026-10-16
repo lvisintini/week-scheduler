@@ -3,8 +3,10 @@ import { openApp, seed, slots, blank, ev, slot, pt, touch, swipe } from './helpe
 
 const phonePrefs = { collapsed: true, rowH: 60 };
 test.beforeEach(async ({ page }) => { await openApp(page, { prefs: phonePrefs }); });
+const week = page => page.evaluate(() => setFocus(null));   // a phone opens on today's day view (R-UI-13); these tests need the week
 
 test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
+  test.beforeEach(async ({ page }) => { await week(page); });
   test('tapping an event opens its dialog', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const p = await pt(page, 0, 630); await page.touchscreen.tap(p.x, p.y);
     await expect(page.locator('#dlg')).toBeVisible(); expect(await page.inputValue('#fT')).toBe('Event');
@@ -69,6 +71,10 @@ test.describe('R-GRID-12 Live View on a phone', () => {
 });
 
 test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
+  test('the app opens on today\'s day view, filling the width; Week brings the seven days back', async ({ page }) => {
+    const name = await page.evaluate(() => DAYS[today()]); await expect(page.locator('.dh.fo')).toContainText(name); await expect(page.locator('.day')).toHaveCount(1);
+    await page.locator('.dh.fo .wk').tap(); await expect(page.locator('.day')).toHaveCount(7);
+  });
   test('it starts closed even when it was left open; opened, it lies over the full-width grid and a tap beside it closes it', async ({ page }) => {
     await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('weekly-schedules-prefs')); p.collapsed = false; localStorage.setItem('weekly-schedules-prefs', JSON.stringify(p)); });
     await page.reload(); await expect(page.locator('#sb')).toHaveClass(/collapsed/);   // left open, yet closed after the reload

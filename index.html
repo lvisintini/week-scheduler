@@ -2219,5 +2219,6 @@ applyPrefs();applyTheme();
 if(window.ResizeObserver){let rt;new ResizeObserver(()=>{if(!prefs.fitW&&!prefs.fitH)return;clearTimeout(rt);rt=setTimeout(zoomRender,80)}).observe($('wrap'))}
 loadStore();
 if(prefs.live){live=true;focusD=today()}   // live view is remembered per browser (R-GRID-12)
+else if(phone())focusD=today();   // a phone opens on today's day view (R-UI-13)
 setLang(lang);handleShareLink();window.addEventListener('hashchange',handleShareLink);
 </script></body></html>
