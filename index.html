@@ -1735,7 +1735,7 @@ function render(){
       });
     });
   });
-  fitList.forEach(fitBox);
+  {const ms=fitList.map(fitMeasure);fitList.forEach((d,i)=>fitApply(d,ms[i]))}
   drawNow();
   const hi=hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
   hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
@@ -1770,13 +1770,19 @@ function tapOpen(p,owner){
   if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,(items.find(i=>i.e===owner)||{}).s);
 }
 /* event box: render only the rows that fit completely, mark clipped content */
-function fitBox(d){
-  const H=d.clientHeight;if(!H)return;
-  const r2=d.querySelector('.r2');let clipped=false;
-  if(r2&&r2.offsetTop+r2.offsetHeight>H-4){r2.remove();clipped=true}
-  if(!clipped){const t=d.querySelector('.r1 .t');if(t&&t.scrollWidth>t.clientWidth+1)clipped=true}
-  if(clipped){d.classList.add('clipped');el('span','clipm',d).textContent='⋯'}
+// Clipping is measured for every box first and applied afterwards: reading the layout after a change forces a new layout,
+// which made drawing a crowded week slow down with every box (R-EVT-05).
+function fitMeasure(d){
+  const H=d.clientHeight;if(!H)return null;
+  const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t');
+  return {drop:!!r2&&r2.offsetTop+r2.offsetHeight>H-4,title:!!t&&t.scrollWidth>t.clientWidth+1};
 }
+function fitApply(d,m){
+  if(!m)return;
+  if(m.drop)d.querySelector('.r2').remove();
+  if(m.drop||m.title){d.classList.add('clipped');el('span','clipm',d).textContent='⋯'}
+}
+function fitBox(d){fitApply(d,fitMeasure(d))}
 /* hover peek card (mouse only) */
 let peekT=null,peekKey='';
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}
