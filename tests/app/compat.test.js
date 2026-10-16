@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openApp, workspace, blank, WS_KEY, PREFS_KEY, ROOT } from '../helpers/app.js';
-import { household, householdAt, grandparents, prefsSample, FIXTURE_PASSWORD } from '../fixtures/household.js';
+import { household, householdAt, grandparents, prefsAt, FIXTURE_PASSWORD } from '../fixtures/household.js';
 
 const FIX = path.join(ROOT, 'tests/fixtures');
 const versions = fs.readdirSync(FIX).filter(n => /^v\d+$/.test(n)).map(n => +n.slice(1)).sort((a, b) => a - b);
@@ -47,7 +47,7 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
   });
   it(`the settings saved by version ${v} are read back with every value`, () => {
     const a = openApp({ storage: { [PREFS_KEY]: read(v, 'prefs.json') } });
-    expect(JSON.parse(a.ev('JSON.stringify(prefs)'))).toMatchObject(prefsSample); expect(a.d.documentElement.dataset.theme).toBe('dark');
+    expect(JSON.parse(a.ev('JSON.stringify(prefs)'))).toMatchObject(prefsAt(v)); expect(a.d.documentElement.dataset.theme).toBe('dark');
   });
   it(`all files of version ${v} hold exactly the same workspace (file, encrypted file, link, browser memory)`, async () => {
     const a = openApp(), plain = JSON.parse(read(v, 'workspace.json')), store = JSON.parse(read(v, 'store.json'));
@@ -73,6 +73,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[3] = [...SHAPES[2], '.events[].bg'].sort();   // 3: in the background (R-EVT-19)
   SHAPES[4] = SHAPES[3];   // 4: same keys; strips come only from event.bg (MIG[3])
   SHAPES[5] = [...SHAPES[4], '.events[].owner', '.events[].slots[].fo', '.events[].slots[].inv'].sort();   // 5: owner, follows the owner, a day's own With list (R-EVT-20/21)
+  SHAPES[6] = [...SHAPES[5], '.events[].slots[].col'].sort();   // 6: a repetition's own colour (R-EVT-22)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));

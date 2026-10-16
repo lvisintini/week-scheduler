@@ -34,7 +34,7 @@ describe('R-I18N-01 English and Spanish translations are complete and consistent
     es.ev('openDlg(null)');
     const labels = es.qa('#dlg label').map(l => l.textContent);
     expect(labels).toContain('Título *'); expect(labels).toContain('Descripción'); expect(labels).toContain('Titular'); expect(labels).toContain('Con');
-    expect(es.qa('#dlg .fsec span').map(x => x.textContent)).toEqual(['Quién', 'Cuándo', 'Cómo encaja', 'Horarios *', 'Ritmos *']); expect(es.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Días', 'Inicio', 'Fin', 'Lo hace', 'Con', 'Horas']);
+    expect(es.qa('#dlg .fsec span').map(x => x.textContent)).toEqual(['Quién', 'Cuándo', 'Cómo encaja', 'Horarios *', 'Ritmos *']); expect(es.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Días', 'Inicio', 'Fin', 'Lo hace', 'Con', 'Color', 'Horas']);
     expect(es.q('#fOk').textContent).toBe('Guardar');
   });
   it('every static Spanish phrase in the dialog table matches some text that is really in the page', () => {

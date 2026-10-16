@@ -186,13 +186,13 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
     expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBg']);   // How it fits in: the event-wide switches together
   });
-  it('the day table has a header row: Days, Start, End, Performed by, With, Timing', () => {
-    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Timing']);
+  it('the day table has a header row: Days, Start, End, Performed by, With, Colour, Timing', () => {
+    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
     expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
   });
-  it('a day row holds its times, performer, With button, timing, copy button and warning; flexible margins on a line below', () => {
-    const r = dialog().qa('#fDays .dr')[0]; expect([...r.children].map(c => c.tagName === 'LABEL' ? 'day' : ['wbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
-      .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
+  it('a day row holds its times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
+    const r = dialog().qa('#fDays .dr')[0]; expect([...r.children].map(c => c.tagName === 'LABEL' ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
+      .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
   });
   it('the day rows and the further-time lines share one grid, so their columns line up with the header', () => {
     const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dr,.dhd,#fDays{display:contents}');
@@ -208,7 +208,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     expect(a.q('#fDays .dr.dx select').getAttribute('aria-label')).toBe('Lunes, hora 2: inicio');
   });
   it('on narrow screens the label column folds away (labels above their fields) and each day folds onto two lines', () => {
-    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/); expect(css).toMatch(/@media \(max-width:560px\)\{[^]*\.dhd,\.dr\{display:grid;[^}]*grid-template-areas:"d s e c x" "p p w w n" "t t t \. \."/);
+    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/); expect(css).toMatch(/@media \(max-width:560px\)\{[^]*\.dhd,\.dr\{display:grid;[^}]*grid-template-areas:"d s e c x" "p p w w n" "t t t k \."/);
   });
   it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
 });

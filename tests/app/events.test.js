@@ -747,6 +747,71 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
   });
 });
 
+describe('R-EVT-22 A colour per repetition: the event colour, the performer colour or one of its own', () => {
+  const twoDays = (s0 = {}, s1 = {}, o = {}) => fresh(blank({ people, events: [ev1({ id: 'e', title: 'Swim', color: '#3b6df0', owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A', fo: true, ...s0 }, { day: 1, start: 600, end: 660, person: 'B', ...s1 }], ...o })] }));
+  const boxC = (a, d) => a.q(`.day[data-d="${d}"] .ev`).style.getPropertyValue('--c');
+  const open = a => a.ev('openDlg(S.events[0])');
+  const sw = (a, i) => a.qa('#fDays .dr')[i].querySelector('.cbtn');
+  const menu = a => a.qa('.cmenu .oi').map(b => b.textContent);
+  const pick = (a, i, label) => { sw(a, i).click(); a.qa('.cmenu .oi').find(b => b.textContent.startsWith(label)).click(); };
+  it('by default every repetition is drawn in the event colour and stores no colour of its own', () => {
+    const a = twoDays(); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#3b6df0', '#3b6df0']);
+    open(a); save(a); expect(events(a)[0].slots.every(s => !('col' in s))).toBe(true);
+  });
+  it('a repetition with its own colour draws its box, margins and hover card in it; the other days keep the event colour', () => {
+    const a = twoDays({ col: '#ff8800', fe: 15 }); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#ff8800', '#3b6df0']);
+    expect(a.q('.day[data-d="0"] .mg').style.getPropertyValue('--c')).toBe('#ff8800');
+    expect(a.ev('peekRows({e:S.events[0],s:S.events[0].slots[0],q:{p:0,day:0,a:600,b:660}})')).toContain('background:#ff8800');
+  });
+  it('"performer colour" follows the person who performs it, also when that person is recoloured; nobody → the event colour', () => {
+    const a = twoDays({ col: 'p' }, { col: 'p' }); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#e5484d', '#2fa66a']);
+    a.ev("S.people[0].color='#123456';render()"); expect(boxC(a, 0)).toBe('#123456');
+    a.ev("S.events[0].slots[1].person='';render()"); expect(boxC(a, 1)).toBe('#3b6df0');
+  });
+  it('background strips and the day agenda use the repetition colour too', () => {
+    const a = twoDays({ col: '#ff8800' }, {}, { bg: true }); expect(a.q('.day[data-d="0"] .bgs').style.getPropertyValue('--c')).toBe('#ff8800');
+    a.ev('openAgenda(0)'); expect(a.q('#agBody .ai').getAttribute('style')).toContain('#ff8800');
+  });
+  it('the dialog has a Colour swatch per time that shows the colour the box will get, named in its label', () => {
+    const a = twoDays({}, { col: 'p' }); open(a);
+    expect(sw(a, 0).style.background).toBe('rgb(59, 109, 240)'); expect(sw(a, 0).getAttribute('aria-label')).toBe('Monday: colour: Event colour');
+    expect(sw(a, 1).style.background).toBe('rgb(47, 166, 106)'); expect(sw(a, 1).getAttribute('aria-label')).toBe("Tuesday: colour: Performer's colour (Bob)");
+    expect(sw(a, 1).querySelector('svg')).not.toBeNull();   // a person icon marks "follows the performer"
+  });
+  it('the swatch menu offers the event colour, the performer colour (named) and another colour, with the current one ticked', () => {
+    const a = twoDays(); open(a); sw(a, 0).click();
+    expect(menu(a)).toEqual(['Event colour', "Performer's colour (Ann)", 'Other colour…']); expect(a.q('.cmenu .oi.on').textContent).toBe('Event colour');
+    expect(a.q('.cmenu').parentElement.id).toBe('dlg');   // inside the modal dialog, so it can be clicked
+  });
+  it('choosing the performer colour saves it as following the performer; choosing the event colour again removes it', () => {
+    const a = twoDays(); open(a); pick(a, 0, "Performer's"); save(a); expect(events(a)[0].slots[0].col).toBe('p');
+    open(a); pick(a, 0, 'Event colour'); save(a); expect('col' in events(a)[0].slots[0]).toBe(false);
+  });
+  it('"Other colour…" opens the colour picker; Apply gives the time a colour of its own', () => {
+    const a = twoDays(); open(a); pick(a, 1, 'Other colour');
+    const pop = a.q('.cpop'); const hex = pop.querySelector('input[type=text]'); hex.value = '#112233'; hex.oninput();
+    [...pop.querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(sw(a, 1).getAttribute('aria-label')).toBe('Tuesday: colour: Own colour (#112233)');
+    save(a); expect(events(a)[0].slots[1].col).toBe('#112233');
+  });
+  it('the swatch follows a new performer, a new owner and a new event colour while the dialog is open', () => {
+    const a = twoDays({ col: 'p' }); open(a); const ps = a.qa('#fDays .dr')[0].querySelectorAll('select')[2];
+    change(a, ps, 'C'); expect(sw(a, 0).getAttribute('aria-label')).toContain('(Cy)');
+    change(a, ps, a.ev('OWN')); change(a, a.q('#fOw'), 'B'); expect(sw(a, 0).getAttribute('aria-label')).toContain('(Bob)');
+    a.ev("setFC('#00ff00')"); expect(sw(a, 1).style.background).toBe('rgb(0, 255, 0)');
+  });
+  it('⧉ copies the colour to the other days and + starts a new time in the event colour', () => {
+    const a = twoDays({ col: '#ff8800' }); open(a); a.qa('#fDays .dr')[0].querySelector('.cpy').click();
+    a.qa('#fDays .dr')[0].querySelector('.addt').click(); save(a);
+    expect(events(a)[0].slots.map(s => s.col)).toEqual(['#ff8800', undefined, '#ff8800']);
+  });
+  it('the saved data keeps only "p" or a #rrggbb colour, and phases never get one', () => {
+    const a = fresh(); const parse = j => JSON.parse(a.ev(`JSON.stringify(parseData(${JSON.stringify(j)}))`));
+    const d = parse(blank({ events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', col: 'p' }, { day: 1, start: 600, end: 660, person: '', col: '#ABCDEF' }, { day: 2, start: 600, end: 660, person: '', col: 'red' }] })],
+      rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'ph', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660, col: '#ff8800' }] }] }));
+    expect(d.events[0].slots.map(s => s.col)).toEqual(['p', '#abcdef', undefined]); expect('col' in d.phases[0].slots[0]).toBe(false);
+  });
+});
+
 describe('R-EVT-16 Involved people only on call: available, not busy', () => {
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
   const ann = (o = {}) => ev1({ id: 'a', title: 'Homework', slots: [{ day: 0, start: 600, end: 720, person: 'A' }], ...o });

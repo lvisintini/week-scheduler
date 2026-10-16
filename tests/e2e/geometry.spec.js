@@ -332,7 +332,7 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT'));
     expect(lb.x + lb.width).toBeLessThan(f.x); expect(Math.abs((lb.y + lb.height / 2) - (f.y + f.height / 2))).toBeLessThan(4);
     const col = async (sel, d) => boxOf(page.locator('#fDays .dr').nth(d).locator(sel).first());   // the columns line up: header, Monday and Wednesday
-    for (const [k, sel] of [[1, 'select'], [3, 'select:nth-of-type(3)'], [4, '.wbtn'], [5, '.tsel']]) {
+    for (const [k, sel] of [[1, 'select'], [3, 'select:nth-of-type(3)'], [4, '.wbtn'], [5, '.cbtn'], [6, '.tsel']]) {
       const hd = await boxOf(page.locator('#paneQ .dhd span').nth(k)), mon = await col(sel, 0), wed = await col(sel, 2);
       expect(Math.abs(hd.x - mon.x), `column ${k}`).toBeLessThan(1); expect(Math.abs(wed.x - mon.x), `column ${k}`).toBeLessThan(1);
     }
@@ -366,6 +366,13 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g = await geo(page);
     expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.head - g.top)).toBeLessThan(2);
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
+  });
+  test('R-EVT-22 the colour swatch menu works with the mouse inside the modal dialog, and the box takes the chosen colour', async ({ page }) => {
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await page.locator('#fDays .dr').nth(2).locator('.cbtn').click(); await page.locator('.cmenu .oi', { hasText: "Performer's colour (Bob)" }).click();
+    await expect(page.locator('.cmenu')).toHaveCount(0); await page.click('#fOk');
+    expect(await page.locator('.day[data-d="2"] .ev').evaluate(b => getComputedStyle(b).backgroundColor)).toBe('rgb(47, 166, 106)');
+    expect(await page.locator('.day[data-d="0"] .ev').evaluate(b => getComputedStyle(b).backgroundColor)).toBe('rgb(59, 109, 240)');
   });
   test('clicking a person chip with the mouse ticks it and shows "only on call"; clicking again unticks it', async ({ page }) => {
     await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));

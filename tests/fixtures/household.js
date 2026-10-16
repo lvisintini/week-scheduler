@@ -25,10 +25,10 @@ export const household = {
       slots: [
         { day: 0, start: 540, end: 1020, person: 'p-ann', fs: 30, fe: 15 },
         { day: 1, start: 540, end: 1020, person: 'p-ann', flex: true },
-        { day: 2, start: 540, end: 1020, person: 'p-ann' },
+        { day: 2, start: 540, end: 1020, person: 'p-ann', col: 'p' },
       ] },
     { id: 'e-school', title: 'School run', desc: 'Bring the lunch box', color: '#3b6df0', owner: 'p-ann', schedules: ['s-home', 's-school'], involved: ['p-lucia'],
-      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis', inv: ['p-lucia', 'p-ann'] }, { day: 2, start: 480, end: 510, person: 'p-ann', fo: true }] },
+      slots: [{ day: 0, start: 480, end: 510, person: 'p-luis', inv: ['p-lucia', 'p-ann'], col: '#ff8800' }, { day: 2, start: 480, end: 510, person: 'p-ann', fo: true }] },
     { id: 'e-clean', title: 'Cleaning', desc: '', color: '#a1662f', oncall: true, bg: true, schedules: ['s-home'], involved: ['p-ann'],
       slots: [{ day: 3, start: 600, end: 780, person: 'p-marta' }] },
     { id: 'e-night', title: 'Night shift', desc: 'Hospital, ward 3', color: '#8e4ec6', schedules: ['s-weekb'], involved: [],
@@ -60,13 +60,23 @@ export const grandparents = {
 const ADDED = {
   2: h => ({ ...h, events: h.events.filter(e => !e.nest) }),   // event.nest, nested activities (R-NST-01)
   3: h => ({ ...h, events: h.events.filter(e => e.id !== 'e-screen') }),   // event.bg, in the background (R-EVT-19)
-  4: h => ({ ...h, events: h.events.map(e => e.id === 'e-clean' ? (({ bg, ...r }) => r)(e) : e) }),
-  5: h => ({ ...h, events: h.events.map(({ owner, ...e }) => ({ ...e, slots: e.slots.map(({ fo, inv, ...sl }) => sl) })) }),   // event owner, a day following the owner, a day's own With list (R-EVT-20/21)   // strips only from bg: the external-led cleaning gets the mark
+  4: h => ({ ...h, events: h.events.map(e => e.id === 'e-clean' ? (({ bg, ...r }) => r)(e) : e) }),   // strips only from bg: the external-led cleaning gets the mark
+  5: h => ({ ...h, events: h.events.map(({ owner, ...e }) => ({ ...e, slots: e.slots.map(({ fo, inv, ...sl }) => sl) })) }),   // event owner, a day following the owner, a day's own With list (R-EVT-20/21)
+  6: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => sl) })) }),   // a repetition's own colour (R-EVT-22)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 
-/** Settings that differ from every default. */
+/** Settings that differ from every default (of the current app). */
 export const prefsSample = {
-  w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fillW: false, fit: true,
+  w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fitW: false, fitH: false, txt: 120,
   side: false, sideFix: true, secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
+};
+
+// Settings have no version of their own; the settings sample of folder v<N> is the one current when that folder was written.
+// Folders up to 5 were written before the zoom controls became Fit width / Fit height / Text size (R-GRID-07): they hold the
+// retired fillW / fit instead, which are no longer read, so the new keys are back at their defaults there.
+export const prefsAt = v => {
+  if (v >= 6) return prefsSample;
+  const rest = Object.fromEntries(Object.entries(prefsSample).filter(([k]) => !['fitW', 'fitH', 'txt'].includes(k)));
+  return { ...rest, fillW: false, fit: true };
 };
