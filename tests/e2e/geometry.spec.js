@@ -344,6 +344,29 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     const mon = page.locator('#fDays .dr').first(), sel = await boxOf(mon.locator('select').first()), wb = await boxOf(mon.locator('.wbtn')); expect(sel.width).toBeGreaterThanOrEqual(67);
     expect(wb.y).toBeGreaterThan(sel.y + sel.height - 1);   // each day folds onto two lines: day, times, performer / With, timing, copy
   });
+  const many = async (page, n) => { const add = page.locator('#fDays .dr').first().locator('.addt'); for (let i = 0; i < n; i++) await add.click(); };
+  const geo = page => page.evaluate(() => { const q = document.getElementById('paneQ'), r = q.getBoundingClientRect(), h = document.querySelector('#paneQ .dhd span').getBoundingClientRect();
+    return { dlg: document.getElementById('dlg').getBoundingClientRect().height, pane: r.height, top: r.top, bottom: r.bottom, scroll: q.scrollHeight - q.clientHeight, head: h.top, vh: innerHeight }; });
+  test('a long list of times scrolls inside the day table, so the dialog stops growing', async ({ page }) => {
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    expect((await geo(page)).scroll).toBeLessThanOrEqual(0);   // a normal week fits without a scroll bar
+    await many(page, 12); const g12 = await geo(page); await many(page, 8); const g20 = await geo(page);
+    expect(g12.scroll).toBeGreaterThan(0); expect(g12.pane).toBeLessThanOrEqual(Math.min(420, g12.vh / 2) + 1);
+    expect(g20.dlg).toBeCloseTo(g12.dlg, 0); expect(g20.dlg).toBeLessThan(g20.vh);
+  });
+  test('the header row stays visible while the times scroll, and a time added with + is scrolled into view', async ({ page }) => {
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0])); await many(page, 20);
+    const last = await boxOf(page.locator('#fDays .dr.dx').last().locator('select').first()), g = await geo(page);
+    expect(last.y).toBeGreaterThanOrEqual(g.top - 1); expect(last.y + last.height).toBeLessThanOrEqual(g.bottom + 1);   // the newest time is visible
+    await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g2 = await geo(page);
+    expect(Math.abs(g2.head - g2.top)).toBeLessThan(2);
+  });
+  test('on a phone the day table also scrolls under a header that stays put', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0])); await many(page, 12);
+    await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g = await geo(page);
+    expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.head - g.top)).toBeLessThan(2);
+    expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
+  });
   test('clicking a person chip with the mouse ticks it and shows "only on call"; clicking again unticks it', async ({ page }) => {
     await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
     await expect(page.locator('#fOcRow')).toBeHidden(); await page.locator('#fInv label', { hasText: 'Bob' }).click();

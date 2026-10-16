@@ -187,7 +187,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBg']);   // How it fits in: the event-wide switches together
   });
   it('the day table has a header row: Days, Start, End, Performed by, With, Timing', () => {
-    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Timing']);
+    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Timing']);
     expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
   });
   it('a day row holds its times, performer, With button, timing, copy button and warning; flexible margins on a line below', () => {

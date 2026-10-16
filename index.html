@@ -126,6 +126,8 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 #fFit{display:flex;flex-direction:column;gap:4px;align-items:flex-start}#fFit label:has(input:disabled){opacity:.5}#fFit label{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}
 
 #paneQ{display:grid;grid-template-columns:var(--dc);gap:6px;align-items:center;margin-top:8px}.dr,.dhd,#fDays{display:contents}
+/* a long list of times scrolls inside the dialog under a header that stays put (the empty header cells and the shadows cover the ⧉/+/⚠ columns and the gaps) */
+#paneQ{max-height:min(420px,50vh);overflow-y:auto;overscroll-behavior:contain;padding-right:4px}.dhd>span{position:sticky;top:0;z-index:2;align-self:stretch;background:var(--card);box-shadow:-6px 0 0 var(--card),0 6px 0 var(--card),-6px 6px 0 var(--card)}
 #paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.5fr) auto auto 18px}
 #dlg.ph #paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) auto auto 18px}
 .wbtn{font-size:12px;padding:5px 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.wbtn.def{color:var(--mut);font-style:italic}.cpy{padding:3px 7px;font-size:14px;line-height:1}.dr.off .wbtn,.dr.off .cpy{opacity:.4}
@@ -133,7 +135,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .wpop{width:auto;min-width:220px;max-width:320px}.wpop .wdef{display:flex;gap:6px;align-items:center;margin:4px 2px 8px;font-size:13px;color:var(--fg)}.wpop .chips{margin:0}
 .dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child{grid-column-start:1}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
 .dr label{margin:0;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
-@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}#paneQ{display:block}   /* each day folds onto two lines: its own small grid with named areas */
+@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}#paneQ{display:block}.dhd{position:sticky;top:0;z-index:2;background:var(--card)}.dhd>span{position:static;box-shadow:none}.dhd>span:nth-child(n+7){display:none}   /* each day folds onto two lines: its own small grid with named areas */
  .dhd,.dr{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 36px 36px;grid-template-areas:"d s e c x" "p p w w n" "t t t . ." "m m m m m";gap:4px 6px;align-items:center;margin-bottom:8px}.dr.off>select:nth-of-type(n+3),.dr.off>.wbtn,.dr.off>.wn{display:none}   /* an unticked day is one line */
  .dhd>:nth-child(1),.dr>label,.dr>.dl{grid-area:d}.dhd>:nth-child(2),.dr>select:nth-of-type(1){grid-area:s}.dhd>:nth-child(3),.dr>select:nth-of-type(2){grid-area:e}
  .dhd>:nth-child(4),.dr>select:nth-of-type(3){grid-area:p}.dhd>:nth-child(5),.dr>.wbtn{grid-area:w}.dhd>:nth-child(6),.dr>.tsel{grid-area:t}
@@ -230,7 +232,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <label title="The people involved on every day, unless a day has its own list in the table below (its With button).">With</label><div><div class="chips" id="fInv"></div></div>
 </div>
 <div class="fsec"><span>When</span></div>
-<div id="paneQ"><div class="dhd"><span title="Tick the days this event repeats on. Each day has its own times, the person who performs it, the people involved and its timing; a newly ticked day starts from the nearest ticked day. + adds another time on that day, ⧉ makes every other ticked day like this one.">Days</span><span>Start</span><span>End</span><span class="ev-only" title="Who performs it on that day: the owner (follows the owner if it changes), nobody (it concerns everyone), or someone stepping in.">Performed by</span><span class="ev-only" title="The people involved on that day: Default follows the list above; click to give the day its own list.">With</span><span class="ev-only" title="Fixed: the times are exact. Flexible start/end: may start a bit late and/or finish a bit early (the fixed part is a normal box, the flexible parts dashed extensions that never cause stripes). Flexible (around these times): happens around these times but may take less; drawn with a dashed border.">Timing</span></div>
+<div id="paneQ"><div class="dhd"><span title="Tick the days this event repeats on. Each day has its own times, the person who performs it, the people involved and its timing; a newly ticked day starts from the nearest ticked day. + adds another time on that day, ⧉ makes every other ticked day like this one.">Days</span><span>Start</span><span>End</span><span class="ev-only" title="Who performs it on that day: the owner (follows the owner if it changes), nobody (it concerns everyone), or someone stepping in.">Performed by</span><span class="ev-only" title="The people involved on that day: Default follows the list above; click to give the day its own list.">With</span><span class="ev-only" title="Fixed: the times are exact. Flexible start/end: may start a bit late and/or finish a bit early (the fixed part is a normal box, the flexible parts dashed extensions that never cause stripes). Flexible (around these times): happens around these times but may take less; drawn with a dashed border.">Timing</span><span></span><span></span><span></span></div>
 <div id="fDays"></div></div>
 <div class="warnline" id="fWarn"></div>
 <div class="fsec ev-only"><span title="Event-wide switches that change how this event interacts with the others.">How it fits in</span></div>
@@ -1962,7 +1964,7 @@ function addTime(o,sl){   // a further time on day o, on a line of its own below
   rowCtl(x,r,o);rowSub(x,r);fillSel(x.s,curStl);fillSel(x.en,curEtl);fillSel(x.ps,perfOpts());o.more.push(x);rowTexts(x,o,o.more.length-1);
   // by default it starts where the day's last time ends (or with it, late at night), for an hour, performed by the owner
   const st=sl?sl.start:+last.en.value<=1380?+last.en.value:+last.s.value;
-  rowLoad(x,sl||{start:st,end:Math.min(MAXEND,st+60),fo:true});o.upd();return x;
+  rowLoad(x,sl||{start:st,end:Math.min(MAXEND,st+60),fo:true});o.upd();if(!sl)x.s.scrollIntoView?.({block:'nearest'});return x;   // a time added with + is scrolled into view
 }
 function newDay(o){   // a newly ticked day: the times of the nearest ticked day above it (else below), the owner, the default With, fixed
   const t=[...rows.slice(0,o.i).reverse(),...rows.slice(o.i+1)].find(x=>x.cb.checked);
