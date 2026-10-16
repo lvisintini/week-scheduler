@@ -280,8 +280,8 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   const bubbles = a => a.qa('.lvl .lvb:not(.out)').map(b => [...b.querySelectorAll('.lvs .pt1')].map(t => t.textContent));   // open bubbles, sections in start order
   const boxOf = (a, title) => a.qa('.day .ev, .day .bgs').find(b => b._it.e.title === title);
   const tap = (a, target, x, min) => { const y = a.y(min); ['pointerdown', 'pointerup', 'click'].forEach(t => target.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: y, bubbles: true, cancelable: true }))); };   // live: the one day column spans x 0..100
-  it('the sidebar has a Live View button with a camera icon under the toolbar; the Now button is hidden', () => {
-    const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.classList.contains('tbar')).toBe(true);
+  it('the sidebar has a Live View button with a camera icon at the top of the Tools section; the Now button is hidden', () => {
+    const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.querySelector('.shbtn span').textContent).toBe('Tools');
     expect(now(a).style.display).toBe('none'); expect(pill(a).style.display).toBe('none');
   });
   it('it jumps to today\'s day view from the week or another day; the button becomes "Stop Live View"', () => {

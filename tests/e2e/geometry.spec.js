@@ -398,3 +398,14 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
     expect(Math.abs(m.y - (s.y + s.height + 4))).toBeLessThan(2);
   });
 });
+
+test.describe('R-UI-11 The Tools highlight in a real browser', () => {
+  const data = () => blank({ types: [{ id: 't', name: 'Work', color: '#aa5500', icon: 'work' }],
+    events: [ev({ id: 'a', title: 'Typed', type: 't', slots: [slot(0, 600, 660)] }), ev({ id: 'b', title: 'Loose', slots: [slot(1, 600, 660)] })] });
+  const look = page => page.evaluate(() => [...document.querySelectorAll('.ev')].map(b => { const c = getComputedStyle(b); return [b.textContent.startsWith('Typed') ? 'typed' : 'loose', c.outlineStyle, c.animationName]; }));
+  test('only the untyped box gets a pulsing red outline; with reduced motion the outline stays but does not pulse', async ({ page }) => {
+    await openApp(page, { prefs: { hlNoType: true } }); await seed(page, data());
+    expect((await look(page)).sort()).toEqual([['loose', 'solid', 'noty'], ['typed', 'none', 'none']]);
+    await page.emulateMedia({ reducedMotion: 'reduce' }); expect((await look(page)).sort()).toEqual([['loose', 'solid', 'none'], ['typed', 'none', 'none']]);
+  });
+});

@@ -34,8 +34,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
     expect(a.qa('.tbar button')).toHaveLength(7); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
   });
-  it('the sections are Schedules, People, Activity types, Rhythms and Zoom in that order', () => {
-    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Activity types', 'Rhythms', 'Zoom']);
+  it('the sections are Schedules, People, Activity types, Rhythms, Tools and Zoom in that order', () => {
+    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Activity types', 'Rhythms', 'Tools', 'Zoom']);
   });
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
@@ -271,5 +271,59 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
     const a = open(blank({ events: [ev1()], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'ph', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660 }] }] }));
     drag(a, a.q('#dGrip'), [500, 108], [800, 208]); a.q('#dlg').close(); a.ev('openDlg(S.phases[0])');
     expect(a.q('#dlg').classList.contains('moved')).toBe(false); expect(pos(a)).toEqual(['', '']);
+  });
+});
+
+describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring the week by type or by person', () => {
+  const ppl = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
+  const tys = [{ id: 'tw', name: 'Work', color: '#aa5500', icon: 'work' }];
+  const week = () => blank({ people: ppl, types: tys, events: [
+    ev1({ id: 'w', title: 'Job', color: '#3b6df0', type: 'tw', slots: [{ day: 0, start: 600, end: 660, person: 'A', col: '#123456' }] }),
+    ev1({ id: 'u', title: 'Loose', color: '#8e4ec6', slots: [{ day: 1, start: 600, end: 660, person: 'B' }, { day: 2, start: 600, end: 660, person: '' }] }),
+    ev1({ id: 's', title: 'Screens', color: '#607d8b', bg: true, slots: [{ day: 3, start: 600, end: 660, person: 'A' }] })] });
+  const tools = a => sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Tools');
+  const box = (a, label) => [...tools(a).querySelectorAll('label.zck')].find(l => l.textContent === label).querySelector('input');
+  const tick = (a, label, v = true) => { const c = box(a, label); c.checked = v; c.onchange(); };
+  const col = (a, d) => a.q(`.day[data-d="${d}"] .ev, .day[data-d="${d}"] .bgs`).style.getPropertyValue('--c');
+  it('the section holds the Live View row and three switches, each with an explanatory tooltip, all off at first', () => {
+    const a = fresh(week()), t = tools(a); expect(t.querySelector('.lvrow #lvB')).not.toBeNull(); expect(a.q('.sbbody > .lvrow')).toBeNull();
+    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false]]);
+    expect([...t.querySelectorAll('label.zck')].every(l => l.title.length > 40)).toBe(true); expect(t.querySelector('.tip').title).toContain('Live View');
+  });
+  it('Live View still starts and stops from its new place', () => {
+    const a = fresh(week()); a.q('#lvB').click(); expect(a.ev('live')).toBe(true); expect(a.q('#lvB').textContent).toBe('Stop Live View'); a.q('#lvB').click(); expect(a.ev('live')).toBe(false);
+  });
+  it('highlighting marks only the boxes and strips of events without an activity type', () => {
+    const a = fresh(week()); expect(a.qa('.noty')).toHaveLength(0); tick(a, 'Highlight events without an activity type');
+    expect(a.qa('.noty').map(x => x._it.e.title)).toEqual(['Loose', 'Loose', 'Screens']); tick(a, 'Highlight events without an activity type', false); expect(a.qa('.noty')).toHaveLength(0);
+  });
+  it('colour by activity type draws every occurrence in its type colour, untyped ones in the statistics grey', () => {
+    const a = fresh(week()); tick(a, 'Colour by activity type'); expect([0, 1, 2, 3].map(d => col(a, d))).toEqual(['#aa5500', '#9aa0a6', '#9aa0a6', '#9aa0a6']);
+  });
+  it('colour by person draws every occurrence in its performer\'s colour, nobody performing in grey', () => {
+    const a = fresh(week()); tick(a, 'Colour by person'); expect([0, 1, 2, 3].map(d => col(a, d))).toEqual(['#e5484d', '#2fa66a', '#9aa0a6', '#e5484d']);
+  });
+  it('the two colour switches exclude each other, and unticking brings back the stored colours unchanged', () => {
+    const a = fresh(week()); tick(a, 'Colour by activity type'); tick(a, 'Colour by person');
+    expect(box(a, 'Colour by activity type').checked).toBe(false); expect(a.ev('prefs.colBy')).toBe('p');
+    tick(a, 'Colour by person', false); expect([0, 1].map(d => col(a, d))).toEqual(['#123456', '#8e4ec6']); expect(a.ev('S.events[0].slots[0].col')).toBe('#123456');
+  });
+  it('the event dialog still shows each time\'s stored colour while the week is coloured by type, and nothing becomes unsaved', () => {
+    const a = fresh(week()); a.ev('saveMem("all")'); tick(a, 'Colour by activity type'); expect(a.ev('isDirty()')).toBe(false); a.ev('openDlg(S.events[0])');
+    expect(a.qa('#fDays .dr')[0].querySelector('.cbtn').getAttribute('aria-label')).toBe('Monday: colour: Own colour (#123456)');
+  });
+  it('every switch and the folded section are remembered by this browser', () => {
+    const a = fresh(week()); tick(a, 'Highlight events without an activity type'); tick(a, 'Colour by person');
+    const b = openApp({ storage: a.storage() }); expect(b.ev('[prefs.hlNoType,prefs.colBy]')).toEqual([true, 'p']);
+    tools(b).querySelector('.shbtn').click(); expect(b.ev('prefs.secTools')).toBe(true); expect(b.q('#lvB')).toBeNull(); expect(openApp({ storage: b.storage() }).ev('prefs.secTools')).toBe(true);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colBy: 'x', hlNoType: 'yes' }) } }).ev('[prefs.colBy,prefs.hlNoType]')).toEqual(['', false]);
+  });
+  it('printing keeps the colouring on screen but never the highlight', () => {
+    const a = fresh(week()); tick(a, 'Highlight events without an activity type'); a.ev('printSchedule()');
+    expect(a.w.__printed).toContain('noty'); expect(a.ev("[...document.styleSheets[0].cssRules].some(r=>r.selectorText==='#pr .noty'&&r.style.outlineStyle!=='solid')")).toBe(true);
+  });
+  it('the section and its switches are translated', () => {
+    const a = fresh(week(), { languages: ['es'] });
+    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona']);
   });
 });
