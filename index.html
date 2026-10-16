@@ -5,14 +5,14 @@
 <title>Weekly Schedules</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='24' rx='4' fill='white' stroke='%233b6df0' stroke-width='2.5'/%3E%3Crect x='3' y='5' width='26' height='9' rx='4' fill='%233b6df0'/%3E%3Cpath d='M10 2v6M22 2v6' stroke='%233b6df0' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M8 19h4M14 19h4M20 19h4M8 24h4M14 24h4' stroke='%233b6df0' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-:root{color-scheme:light;--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#636b7d;--line:#dfe3ea;--card:#fff;--acc:#3b6df0}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}}
-:root[data-theme="dark"]{color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff}
+:root{color-scheme:light;--weh:#e0e5f7;--bg:#f6f7f9;--fg:#1d2330;--mut:#636b7d;--line:#dfe3ea;--card:#fff;--acc:#3b6df0;--onacc:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff;--onacc:#0d1220}}
+:root[data-theme="dark"]{color-scheme:dark;--weh:#232842;--bg:#14171d;--fg:#e8ebf1;--mut:#8b93a5;--line:#2a2f3a;--card:#1c2029;--acc:#6b93ff;--onacc:#0d1220}
 *{box-sizing:border-box}
 body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;height:100dvh;overflow:hidden}
 main{display:flex;height:100vh;height:100dvh}
 button{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
-button:hover:not(:disabled){border-color:var(--acc)}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}button.d{color:#d33}
+button:hover:not(:disabled){border-color:var(--acc)}button.p{background:var(--acc);color:var(--onacc);border-color:var(--acc)}button.d{color:#d33}
 button:disabled{opacity:.4;cursor:default}
 /* sidebar */
 aside{position:relative;width:var(--sbw,290px);flex-shrink:0;border-right:1px solid var(--line);background:var(--card)}
@@ -155,7 +155,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .phmode .lip{cursor:grab}
 .phmode .ev{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}.phmode .ov{opacity:.3!important}
 .wrap.phm{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent)}
-.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}.seg button{flex:1;border:0;border-radius:0;padding:6px;background:var(--card)}.seg button.on{background:var(--acc);color:#fff}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}.seg button{flex:1;border:0;border-radius:0;padding:6px;background:var(--card)}.seg button.on{background:var(--acc);color:var(--onacc)}
 #dlg.ph .ev-only{display:none!important}#dlg:not(.ph) .ph-only{display:none}
 .ev .clipm{position:absolute;right:5px;bottom:-1px;z-index:5;font-weight:700;line-height:1;text-shadow:0 1px 2px #000a;pointer-events:none}
 .ev.clipped::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.28));pointer-events:none;z-index:4}

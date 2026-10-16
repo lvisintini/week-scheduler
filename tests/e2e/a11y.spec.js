@@ -43,9 +43,9 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     let r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
     await page.locator('#xDlg select').selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
-  test('the dark theme shows no accessibility violation beyond the known ones: contrast of the selected switch button', async ({ page }) => {
+  test('the dark theme shows no accessibility violation beyond the known one: a scroll area that cannot take keyboard focus', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
-    ratchet(await scan(page), { 'color-contrast': 1, 'scrollable-region-focusable': 1 });
+    ratchet(await scan(page), { 'scrollable-region-focusable': 1 });
   });
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
     await openApp(page); const r = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, main: document.querySelectorAll('main').length }));

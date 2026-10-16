@@ -76,3 +76,15 @@ describe('R-GRID-06 Hour labels and other muted text are readable (WCAG AA, 4.5:
     const t = theme(/:root\[data-theme="dark"\]\{([^}]*)\}/); expect(ratio(t.mut, t.bg)).toBeGreaterThanOrEqual(4.5); expect(ratio(t.mut, t.card)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe('R-UI-08 Text on the accent colour is readable in both themes (WCAG AA, 4.5:1)', () => {
+  const ratio = (x, y) => { const L = c => app.ev(`lum(${JSON.stringify(c)})`); const [a, b] = [L(x), L(y)].sort((p, q) => q - p); return (a + 0.05) / (b + 0.05); };
+  const css = () => [...app.qa('style')].map(s => s.textContent).join('');
+  const theme = re => Object.fromEntries([...css().match(re)[1].matchAll(/--(\w+):(#[0-9a-f]{3,6})\b/g)].map(m => [m[1], app.ev(`normHex(${JSON.stringify(m[2])})`)]));
+  it('the text colour for accent backgrounds (--onacc) has at least 4.5:1 on the accent in the light and the dark theme', () => {
+    for (const re of [/:root\{color-scheme:light;([^}]*)\}/, /:root\[data-theme="dark"\]\{([^}]*)\}/, /:root:not\(\[data-theme="light"\]\)\{([^}]*)\}/]) { const t = theme(re); expect.soft(ratio(t.onacc, t.acc), String(re)).toBeGreaterThanOrEqual(4.5); }
+  });
+  it('the selected Events | Phases button and the primary buttons use that text colour, not a fixed white', () => {
+    expect(css()).toContain('.seg button.on{background:var(--acc);color:var(--onacc)}'); expect(css()).toMatch(/button\.p\{background:var\(--acc\);color:var\(--onacc\)/);
+  });
+});
