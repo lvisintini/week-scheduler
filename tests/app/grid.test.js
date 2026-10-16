@@ -321,6 +321,13 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     tap(a, a.q('.lvb'), 20, 700); expect(bubbles(a)).toEqual([['Gym']]); expect(a.ev('lvOpen.length')).toBe(1);
     tap(a, boxOf(a, 'School'), 20, 690); tap(a, a.q('.day'), 20, 1200); expect(bubbles(a)).toEqual([]); expect(a.ev('lvOpen.length')).toBe(0);
   });
+  it('tapping the same box again moves its bubble to the new tap and restarts its minute instead of opening a duplicate', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); a.ev('window.__to=[];const st=setTimeout;setTimeout=(f,d)=>{__to.push([f,d]);return st(()=>{},0)}');
+    tap(a, boxOf(a, 'School'), 20, 690); tap(a, boxOf(a, 'School'), 30, 700); tap(a, boxOf(a, 'School'), 40, 710);
+    expect(bubbles(a)).toEqual([['School']]); expect(a.qa('.lvb')).toHaveLength(1); expect(a.ev('lvOpen.length')).toBe(1); expect(+a.q('.lvb').dataset.ax).toBe(40);
+    expect(a.q('.lvb').classList.contains('in')).toBe(false);   // it does not fade in again
+    const timers = a.ev('__to.filter(x=>x[1]===60000).length'); expect(timers).toBe(3); a.ev('__to.filter(x=>x[1]===60000)[1][0]()'); expect(a.ev('lvOpen.length')).toBe(1);   // an earlier minute no longer closes it
+  });
   it('each bubble fades away a minute after it opened', () => {
     const a = fresh(day()); at(a, 2, 11, 30); start(a); a.ev('window.__to=[];const st=setTimeout;setTimeout=(f,d)=>{__to.push([f,d]);return st(()=>{},0)}');
     tap(a, boxOf(a, 'School'), 20, 690); const [f, d] = a.ev('__to.find(x=>x[1]===60000)'); expect(d).toBe(60000); f(); expect(bubbles(a)).toEqual([]); expect(a.q('.lvb').classList.contains('out')).toBe(true);

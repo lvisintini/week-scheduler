@@ -57,3 +57,13 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     expect(r.doc).toBeLessThanOrEqual(1); expect(r.body).toBe('hidden');
   });
 });
+
+test.describe('R-GRID-12 Live View on a phone', () => {
+  test('tapping the same box three times keeps one bubble, moved to the last tap, instead of opening duplicates', async ({ page }) => {
+    const d = await page.evaluate(() => today());
+    await seed(page, blank({ events: [ev({ title: 'Gym', slots: [slot(d, 300, 1380)] })] })); await page.evaluate(() => setLive(true));
+    const vh = page.viewportSize().height;
+    for (const f of [0.3, 0.5, 0.7]) { const b = await page.locator('.ev').first().boundingBox(); await page.touchscreen.tap(b.x + b.width * f, vh * 0.6); }   // the box runs all day; mid-screen is inside it
+    await expect(page.locator('.lvb')).toHaveCount(1); expect(await page.evaluate(() => lvOpen.length)).toBe(1);
+  });
+});

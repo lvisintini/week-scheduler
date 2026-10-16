@@ -1129,6 +1129,7 @@ function updLive(){
 const LV_AR=9,LV_PEEK=60000,LV_SLACK=6;   // arrow height; how long a bubble stays; how far the arrow tip may sit from the tap (room at the column edges)
 let lvOpen=[],lvRects=[],lvDown=null;   // lvOpen: {keys, fx, m, timer, el}; lvRects: bubbles drawn in this redraw
 function lvClose(o,now){clearTimeout(o.timer);lvOpen=lvOpen.filter(x=>x!==o);const b=o.el;if(!b)return;if(b._st)b._st.remove();if(now){b.remove();return}b.classList.add('out');setTimeout(()=>b.remove(),300)}
+function lvTime(o){clearTimeout(o.timer);const t=setTimeout(()=>{if(o.timer===t)lvClose(o)},LV_PEEK);o.timer=t}   // a minute from now; only the latest timer counts
 function lvCloseAll(now){lvOpen.slice().forEach(o=>lvClose(o,now))}
 function lvDraw(o,fresh){
   const col=document.querySelector(`#grid .day[data-d="${focusD}"]`);if(!col)return;
@@ -1151,7 +1152,7 @@ function lvDraw(o,fresh){
     if(!best||sc<best.sc)best={sc,r,side,axb,axT,tier};
   }
   if(!best){const top=Math.max(2,Math.min(H-h-2,y+LV_AR)),left=Math.max(0,Math.min(W-bw,ax-bw/2)),axb=Math.max(12,Math.min(bw-10,ax-left));best={r:{x:left,y:top,w:bw,h},side:'b',axb,axT:left+axb,tier:0}}   // no room: below, clamped
-  const {r,side,axb,axT,tier}=best;b.classList.add(side);b.style.left=r.x+'px';b.style.top=r.y+'px';b.style.setProperty('--ax',axb+'px');b.dataset.ax=axT;lvRects.push(r);
+  const {r,side,axb,axT,tier}=best;b.classList.add(side);b.style.left=r.x+'px';b.style.top=r.y+'px';b.style.setProperty('--ax',axb+'px');b.dataset.ax=axT;lvRects.push(r);o.r=r;
   if(tier){const st=el('div','lvstem',L0),y0=side==='b'?y:r.y+h+LV_AR,y1=side==='b'?r.y-LV_AR:y;st.style.cssText=`left:${axT-1}px;top:${y0}px;height:${Math.max(0,y1-y0)}px`;b._st=st}
 }
 function liveTap(x,y,tg){
@@ -1159,7 +1160,11 @@ function liveTap(x,y,tg){
   const col=tg&&tg.closest&&tg.closest('.day');if(!col){lvCloseAll();return}
   const di=+col.dataset.d,m=minAt(col,y),fx=fxAt(col,x),its=piecesAt(di,m,true,fx,S.events);
   if(!its.length){lvCloseAll();return}   // empty space closes them all
-  const o={keys:its.map(it=>it.e.id+'|'+it.i+'|'+it.piece),fx,m};lvOpen.push(o);o.timer=setTimeout(()=>lvClose(o),LV_PEEK);lvDraw(o,true);
+  const keys=its.map(it=>it.e.id+'|'+it.i+'|'+it.piece),same=lvOpen.find(o=>o.keys.length===keys.length&&o.keys.every(k=>keys.includes(k)));
+  if(same){   // the same occurrences again: that bubble moves to the new tap and gets a new minute, no duplicate
+    lvTime(same);same.fx=fx;same.m=m;
+    if(same.el){same.el.remove();if(same.el._st)same.el._st.remove()}lvRects=lvRects.filter(r=>r!==same.r);lvDraw(same,false);return}
+  const o={keys,fx,m};lvOpen.push(o);lvTime(o);lvDraw(o,true);
 }
 // while live the grid is read-only: presses only open bubbles (taps) or scroll; nothing reaches the boxes' own handlers
 {const g=$('grid'),stop=ev=>{if(!live)return false;ev.stopPropagation();return true};

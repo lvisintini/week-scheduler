@@ -238,7 +238,8 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
   });
   test('several open bubbles never overlap; clicking empty space fades them all out', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await live(page);
-    await clickAt(page, 'School', 0.5, 0.7); await clickAt(page, 'School', 0.5, 0.3); await clickAt(page, 'Gym'); await clickAt(page, 'Screen-free time', 0.3); await expect(page.locator('.lvb')).toHaveCount(4);   // two taps on one row of one box want the same spot (a bubble never covers the tapped row)
+    await clickAt(page, 'School', 0.5, 0.7); await clickAt(page, 'Gym', 0.5, 0.3); await clickAt(page, 'Gym'); await clickAt(page, 'Screen-free time', 0.3); await expect(page.locator('.lvb')).toHaveCount(3);   // Gym twice: its bubble moves to the second click
+    await clickAt(page, 'School', 0.5, 0.3); await expect(page.locator('.lvb')).toHaveCount(3);   // School again: moved too, no duplicate
     const bs = await Promise.all((await page.locator('.lvb').all()).map(boxOf)); bs.forEach((r, i) => bs.slice(i + 1).forEach(q => expect(hit(r, q)).toBe(false)));
     const [day, wrap] = [await boxOf(page.locator('.day')), await boxOf(page.locator('#wrap'))]; await page.mouse.click(day.x + 40, wrap.y + wrap.height - 40); await expect(page.locator('.lvb')).toHaveCount(0);   // empty space in the evening
   });
