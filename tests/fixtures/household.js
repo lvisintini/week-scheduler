@@ -72,10 +72,10 @@ export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v
 export const prefsSample = {
   w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fitW: false, fitH: false, txt: 120,
   secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
-  hlNoType: true, colBy: 't', secTools: true,
+  hlNoType: true, colBy: 't', secTools: true, lanesFix: true,
 };
 // Settings added to the sample after folder v<n> was written (they are back at their defaults in that folder and every older one).
-const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools']]];   // Tools (R-UI-11)
+const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools', 'lanesFix']]];   // Tools (R-UI-11, R-EVT-23)
 // Settings retired after folder v<n> was written: that folder and every older one still hold them (no longer read, but kept in prefs).
 const PREFS_RETIRED = [[8, { side: false, sideFix: true }]];   // side by side can no longer be turned off (R-EVT-10/13)
 

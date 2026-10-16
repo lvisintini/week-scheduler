@@ -1006,3 +1006,54 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
     expect(d.events.map(e => e.bg)).toEqual([true, undefined]);
   });
 });
+
+describe('R-EVT-23 Fixed lanes (Tools): a lane per visible person, in People order, never shared', () => {
+  const at = (id, title, person, start, end, o = {}, day = 0) => ev1({ id, title, slots: [{ day, start, end, person }], ...o });
+  const fixed = (events, o = {}) => { const a = fresh(blank({ people, events, ...o })); a.ev('prefs.lanesFix=true;render()'); return a; };
+  const boxes = (a, t) => a.qa('.ev').filter(b => b.getAttribute('aria-label').startsWith(t + ','));
+  const lanesOf = (a, t) => boxes(a, t).map(b => b.dataset.lane);
+  it('it is off by default; the Tools switch turns it on and this browser remembers it', () => {
+    const a = fresh(blank({ people, events: [at('a', 'Solo', 'A', 600, 660)] })); expect(a.ev('prefs.lanesFix')).toBe(false); expect(lanesOf(a, 'Solo')).toEqual([undefined]);
+    const c = [...a.qa('#sbin label.zck')].find(l => l.textContent === 'Fixed lanes, one per person').querySelector('input'); c.checked = true; c.onchange();
+    expect(lanesOf(a, 'Solo')).toEqual(['0/3']); expect(openApp({ storage: a.storage() }).ev('prefs.lanesFix')).toBe(true);
+  });
+  it('every visible person has a lane on every day, also where they have nothing planned: a lone event keeps its person\'s narrow lane', () => {
+    const a = fixed([at('a', 'Ann alone', 'A', 600, 660), at('c', 'Cy alone', 'C', 600, 660, {}, 1)]);
+    expect(lanesOf(a, 'Ann alone')).toEqual(['0/3']); expect(lanesOf(a, 'Cy alone')).toEqual(['2/3']);
+  });
+  it('a hidden person has no lane; the lanes follow the People order as shown', () => {
+    const a = fixed([at('a', 'Ann alone', 'A', 600, 660), at('c', 'Cy alone', 'C', 600, 660)], { people: [people[2], { ...people[1], visible: false }, people[0]] });
+    expect(lanesOf(a, 'Cy alone')).toEqual(['0/2']); expect(lanesOf(a, 'Ann alone')).toEqual(['1/2']);
+  });
+  it('an event is drawn in the lane of each of its people: neighbouring lanes make one box, separated lanes separate boxes', () => {
+    const a = fixed([at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] }), at('y', 'Ann with Bob', 'A', 600, 660, { involved: ['B'] }, 1)]);
+    expect(lanesOf(a, 'Ann with Cy')).toEqual(['0/3', '2/3']); expect(lanesOf(a, 'Ann with Bob')).toEqual(['0-1/3']);
+  });
+  it('people only on call take no lane, unless they are the only visible people of the event', () => {
+    const a = fixed([at('x', 'Cleaning', 'A', 600, 660, { involved: ['C'], oncall: true })]); expect(lanesOf(a, 'Cleaning')).toEqual(['0/3']);
+    const b = fixed([at('x', 'Cleaning', 'A', 600, 660, { involved: ['C'], oncall: true })], { people: [{ ...people[0], visible: false }, people[1], people[2]] });
+    expect(lanesOf(b, 'Cleaning')).toEqual(['1/2']);
+  });
+  it('an event without a responsible person spans every lane', () => {
+    const a = fixed([at('x', 'Family dinner', '', 1200, 1260, { involved: ['B'] })]); expect(lanesOf(a, 'Family dinner')).toEqual(['0-2/3']);
+  });
+  it('stripes appear only in a shared lane: Ann\'s work under her shared event, not Bob\'s work beside it', () => {
+    const a = fixed([at('a', 'Ann work', 'A', 540, 720), at('b', 'Bob work', 'B', 540, 720), at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] })]);
+    expect(a.qa('.day[data-d="0"] .ov').map(o => o.dataset.lane)).toEqual(['0/3']);
+  });
+  it('clicking either box of an event finds it, and an empty lane finds nothing', () => {
+    const a = fixed([at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] })]); const ids = fx => a.ev(`piecesAt(0,630,true,${fx}).map(x=>x.e.id)`);
+    expect(ids(0.1)).toEqual(['x']); expect(ids(0.9)).toEqual(['x']); expect(ids(0.5)).toEqual([]);
+  });
+  it('dragging the second box of an event moves the event', async () => {
+    const a = fixed([at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] })]);
+    await dragFrom(a, boxes(a, 'Ann with Cy')[1], { col: 0, min: 630 }, { col: 1, min: 690 }); expect(a.ev('S.events[0].slots[0]')).toMatchObject({ day: 1, start: 660 });
+  });
+  it('a nested activity sits in its host\'s box that holds its own person\'s lane', () => {
+    const a = fixed([at('h', 'School run', 'A', 480, 540, { involved: ['C'] }), at('m', 'Milk', 'C', 495, 510, { nest: true })]);
+    expect(lanesOf(a, 'School run')).toEqual(['0/3', '2/3']); expect(boxes(a, 'Milk')[0].classList.contains('nest')).toBe(true); expect(lanesOf(a, 'Milk')).toEqual(['2/3']);
+  });
+  it('without any visible person everything shares one lane, as before', () => {
+    const a = fixed([at('a', 'One', '', 600, 660), at('b', 'Two', '', 600, 660)], { people: [] }); expect([...lanesOf(a, 'One'), ...lanesOf(a, 'Two')]).toEqual([undefined, undefined]);
+  });
+});

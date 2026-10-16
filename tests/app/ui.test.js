@@ -285,9 +285,9 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   const box = (a, label) => [...tools(a).querySelectorAll('label.zck')].find(l => l.textContent === label).querySelector('input');
   const tick = (a, label, v = true) => { const c = box(a, label); c.checked = v; c.onchange(); };
   const col = (a, d) => a.q(`.day[data-d="${d}"] .ev, .day[data-d="${d}"] .bgs`).style.getPropertyValue('--c');
-  it('the section holds the Live View row and three switches, each with an explanatory tooltip, all off at first', () => {
+  it('the section holds the Live View row and four switches, each with an explanatory tooltip, all off at first', () => {
     const a = fresh(week()), t = tools(a); expect(t.querySelector('.lvrow #lvB')).not.toBeNull(); expect(a.q('.sbbody > .lvrow')).toBeNull();
-    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false]]);
+    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false], ['Fixed lanes, one per person', false]]);
     expect([...t.querySelectorAll('label.zck')].every(l => l.title.length > 40)).toBe(true); expect(t.querySelector('.tip').title).toContain('Live View');
   });
   it('Live View still starts and stops from its new place', () => {
@@ -324,7 +324,7 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   });
   it('the section and its switches are translated', () => {
     const a = fresh(week(), { languages: ['es'] });
-    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona']);
+    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona', 'Carriles fijos, uno por persona']);
   });
 });
 

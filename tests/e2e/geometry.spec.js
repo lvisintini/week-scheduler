@@ -425,3 +425,14 @@ test.describe('R-UI-12 The day table scrolls to the clicked repetition, in a rea
     await page.keyboard.press('Escape'); await page.evaluate(() => { document.getElementById('wrap').scrollTop = 0; }); await clickTime(page, 1); g = await geo(page); expect(g.scroll).toBe(0); expect(g.mid).toBeGreaterThan(g.v0); expect(g.mid).toBeLessThan(g.v1);
   });
 });
+
+test.describe('R-EVT-23 Fixed lanes in a real browser', () => {
+  const P = [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
+  const data = () => blank({ people: P, events: [ev({ id: 'a', title: 'Ann alone', slots: [slot(0, 600, 660, 'A')] }), ev({ id: 'x', title: 'Ann with Cy', involved: ['C'], slots: [slot(1, 600, 660, 'A')] })] });
+  test('each person gets a third of the column on every day; an event with two separated people is two boxes in their thirds', async ({ page }) => {
+    await openApp(page, { prefs: { lanesFix: true, colW: 330 } }); await seed(page, data());
+    const geo = await page.evaluate(() => ['0', '1'].map(d => { const c = document.querySelector(`.day[data-d="${d}"]`).getBoundingClientRect(), w = c.width - 6;
+      return [...document.querySelectorAll(`.day[data-d="${d}"] .ev`)].map(b => { const r = b.getBoundingClientRect(); return [Math.round((r.left - c.left - 3) / w * 3), Math.round(r.width / w * 3 * 10) / 10]; }); }));
+    expect(geo[0]).toEqual([[0, 1]]); expect(geo[1]).toEqual([[0, 1], [2, 1]]);
+  });
+});
