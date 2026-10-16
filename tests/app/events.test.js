@@ -661,6 +661,17 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     const a = fresh(blank({ people, events: [work(), pickup('B')] })); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual([undefined, undefined]);
     const b = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }] }), pickup('B')] })); expect(b.qa('.ev').map(x => x.dataset.lane)).toEqual(['0/2', '1/2']);
   });
+  it('a piece that is all margin (the text box before a core that starts after midnight) takes a lane beside parallel events', () => {
+    // three people go to sleep: Luis may start up to 1 h 30 late, so his core starts at midnight and Monday shows only margin
+    const sleep = ev1({ id: 's', title: 'Sleep', slots: [{ day: 0, start: 1350, end: 1875, person: 'A', fs: 90 }, { day: 0, start: 1230, end: 1875, person: 'B', fs: 30 }, { day: 0, start: 1320, end: 1875, person: 'C', fs: 30 }] });
+    const a = fresh(blank({ people, events: [sleep] })), mon = [...col0(a).querySelectorAll('.ev')];
+    const luis = mon.find(b => b.classList.contains('mgo')); expect(luis.getAttribute('aria-label')).toContain('Ann');
+    expect(mon.map(b => b.dataset.lane).sort()).toEqual(['0/3', '1/3', '2/3']); expect(col0(a).querySelectorAll('.ov')).toHaveLength(0);
+  });
+  it('an all-margin piece that shares a person with an overlapping event stays in that event\'s lane and gets no stripes', () => {
+    const a = fresh(blank({ people, events: [ev1({ id: 'x', title: 'X', slots: [{ day: 0, start: 1200, end: 1440, person: 'A' }] }), ev1({ id: 'y', title: 'Y', slots: [{ day: 0, start: 1320, end: 1560, person: 'A', fs: 180 }] })] }));
+    expect([...col0(a).querySelectorAll('.ev')].map(b => b.dataset.lane)).toEqual([undefined, undefined]); expect(col0(a).querySelectorAll('.ov')).toHaveLength(0);
+  });
   it('when cores overlap and the events go side by side, their margins follow their lanes', () => {
     const a = fresh(blank({ people, events: [work(), pickup('B', 960)] })); expect(a.q('.mg.b').dataset.lane).toBe('0/2'); expect(a.q('.mg.t').dataset.lane).toBe('0/2');
   });
@@ -687,10 +698,10 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
   it('the resize handle sits at the outer end of the bottom margin', () => {
     const a = fresh(blank({ people, events: [work()] })); expect(a.q('.ev')._rz.style.top).toBe(y(1020));
   });
-  it('a piece past midnight that is all margin is drawn as a dashed box with the title and keeps the full width', () => {
+  it('a piece past midnight that is all margin is drawn as a dashed box with the title, beside a parallel event in its own lane', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 1320, end: 1470, person: 'A', fe: 30 }] }), ev1({ id: 'o', slots: [{ day: 1, start: 0, end: 60, person: 'B' }] })] }));
     a.ev('prefs.showEarly=true;render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
-    expect(tue).not.toBeNull(); expect(tue.dataset.lane).toBeUndefined(); expect(tue.querySelector('.t').textContent).toBe('Event'); expect(tue._rz).toBeTruthy();
+    expect(tue).not.toBeNull(); expect(tue.dataset.lane).toBe('0/2'); expect(a.q('.day[data-d="1"] .ev:not(.mgo)').dataset.lane).toBe('1/2'); expect(tue.querySelector('.t').textContent).toBe('Event'); expect(tue._rz).toBeTruthy();
     expect(cssRule(a, '.ev.mgo').style.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/);
   });
   it('screen readers, the hover card and the agenda give the flexible start and end times', () => {

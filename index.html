@@ -984,7 +984,7 @@ function laneLayout(its){
   // the rest go side by side. Each occurrence gets a range of lanes [l..l1]: parallel ones never share a lane, clashing ones share
   // at least one, so an occurrence that clashes with several parallel ones spans their lanes. Impossible cases fall back to merging.
   const n=its.length,ppl=its.map(pplOf),O=[],C=[];
-  const ov=(x,y)=>x.start<x.end&&y.start<y.end&&x.start<y.end&&y.start<x.end;   // an empty range (a piece that is all flexible margin) overlaps nothing
+  const ov=(x,y)=>x.start<x.end&&y.start<y.end&&x.start<y.end&&y.start<x.end;   // an empty range overlaps nothing
   for(let i=0;i<n;i++){O[i]=[];C[i]=[]}
   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const o=ov(its[i],its[j]),c=o&&(!prefs.side||!its[i].s.person||!its[j].s.person||ppl[i].some(p=>ppl[j].includes(p)));O[i][j]=O[j][i]=o;C[i][j]=C[j][i]=c}
   const uf=(ids,edge)=>{const par=new Map(ids.map(i=>[i,i])),f=i=>par.get(i)===i?i:(par.set(i,f(par.get(i))),par.get(i));
@@ -1612,7 +1612,8 @@ function render(){
     const gut=sl.length*(SW+2);gutMap[di]=gut;if(gut)col.style.setProperty('--gut',gut+'px');
     // nested pieces (R-NST-01) are drawn inside their host and take no part in lanes or stripes
     const nst=nestPick(evs),flat=evs.filter(it=>!nst.has(it));nst.forEach((h,x)=>nestMap.set(nkey(x.e,x.s,x.piece),{x,h}));
-    const lay=laneLayout(flat.map(it=>({...it,start:it.cs,end:it.ce,src:it}))),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
+    // lanes look at cores, except a piece that is all margin: it is the box with the text, so it takes a lane by its own window (R-EVT-15)
+    const lay=laneLayout(flat.map(it=>({...it,...(it.ce>it.cs?{start:it.cs,end:it.ce}:{start:Math.max(it.start,a*60)}),src:it}))),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
     const px=m=>(m-a*60)/60*HH,mgEls=[];   // margins are inserted below every core box once the column is drawn (later-starting on top)
     [...flat,...nst.keys()].forEach(it=>{   // nested boxes last, so they lie above their host
       const e=it.e,s=it.s,hst=nst.get(it),v=lv.get(hst||it),pos=hst?insetPos:lanePos,core=it.ce>it.cs,vs0=Math.max(it.start,a*60),lk=isLocked(e),warn=ovOf(e).has(s),ty=tyOf(e);
