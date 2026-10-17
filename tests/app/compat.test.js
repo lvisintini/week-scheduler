@@ -59,7 +59,7 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
 
 describe('R-DATA-08 The current format is frozen: changing it needs a new version number and sample files', () => {
   // The stored keys of each published version. A change here means: raise FMT in index.html, add MIG[FMT-1],
-  // update tests/fixtures/household.js and run `node tests/fixtures/make.mjs` (CLAUDE.md R-DATA-08).
+  // update tests/fixtures/household.js and run `node tests/fixtures/make.mjs` (docs/requirements/data.md, R-DATA-08).
   const SHAPES = {
     1: ['.events', '.events[].color', '.events[].desc', '.events[].id', '.events[].involved', '.events[].oncall', '.events[].schedules', '.events[].slots',
       '.events[].slots[].day', '.events[].slots[].end', '.events[].slots[].fe', '.events[].slots[].flex', '.events[].slots[].fs', '.events[].slots[].person',

@@ -1,0 +1,6 @@
+# Printing, agendas, translations
+
+- **R-PRN-01** **[U]** **Day agenda** (click a day header): items shown that day in time order (time, title, person, with, schedules, ⚠, description; continuation pieces say "from Mon 22:00"), printer-friendly, with the visible schedules and people listed at the top.
+- **R-PRN-02** **[U]** **Print schedule**: current grid on A4 portrait (the day view while focused on one day, R-GRID-11) in light colours, with the visible schedules and people listed at the top. Mechanism: hidden `#pr` is filled, `window.print()`, `@media print` hides everything else.
+- **R-PRN-03** **[U]** **Print day view**: one-column clone of the grid for that day only (all boxes and phases as on screen; lips regenerated).
+- **R-I18N-01** **[U]** English/Spanish. Language from `navigator.languages[0]` (`es*` → Spanish), switchable in Settings, not persisted. Dynamic strings: add a key to both `D.en` and `D.es`, use `L('key',{var})`; static dialog HTML: English in the HTML plus an `['English prefix','Spanish']` entry in `ES` (keys <12 chars match exactly; longer by prefix; `applyStatic()` handles `<dialog>` only). Always `esc()` user text in `innerHTML`.

@@ -15,7 +15,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 2 | Tap *Work* | Its dialog opens (R-TOUCH-01) | | |
 | 3 | Tap *Gym* on Tuesday | The dialog opens, and Tuesday's line in the day table pulses once (R-UI-12) | | |
 | 4 | Press and hold an empty spot for about half a second, then drag down | A short vibration (Android only). A new event follows your finger, and the dialog opens when you let go | | |
-| 5 | Press and hold *Work*, then drag it down an hour **in several small moves** | The box keeps following your finger the whole way, not just the first step (bug 3 in CLAUDE.md §14). The page does not scroll | | |
+| 5 | Press and hold *Work*, then drag it down an hour **in several small moves** | The box keeps following your finger the whole way, not just the first step (bug 3 in docs/known-issues.md). The page does not scroll | | |
 | 6 | Press and hold *Gym*'s bottom edge, then drag down | All three repetitions get longer. A toast offers *Only this day* and *Undo* (R-REP-06) | | |
 | 7 | Tap *Undo* in the toast | Gym is back to 18:00–19:00 | | |
 | 8 | Make two events overlap (drag one onto the other), then tap the overlap | A small list asks which event you mean (R-SEL-01) | | |
@@ -39,4 +39,4 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says
-into the conversation, or into an issue. CLAUDE.md §12 and §14 are updated with the result.
+into the conversation, or into an issue. docs/parked.md and docs/known-issues.md are updated with the result.

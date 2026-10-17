@@ -1,12 +1,15 @@
-// Traceability: every requirement ID in CLAUDE.md must be named in at least one test title, and every ID named in a
-// test title must exist in CLAUDE.md. Also guards the quality of the test descriptions shown on the console.
+// Traceability: every requirement ID defined in docs/requirements/*.md must be named in at least one test title, and every
+// ID named in a test title must be defined there. Also guards the quality of the test descriptions shown on the console.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './helpers/app.js';
 
-const doc = fs.readFileSync(path.join(ROOT, 'CLAUDE.md'), 'utf8');
-const requirementIds = [...new Set([...doc.matchAll(/\*\*(R-[A-Z0-9]+-\d+)\*\*/g)].map(m => m[1]))].sort();
+const REQ_DIR = path.join(ROOT, 'docs', 'requirements');
+const DEF = /\*\*(R-[A-Z0-9]+-\d+)\*\*/g;
+const reqFiles = fs.readdirSync(REQ_DIR).filter(f => f.endsWith('.md')).sort();
+const definitions = reqFiles.flatMap(f => [...fs.readFileSync(path.join(REQ_DIR, f), 'utf8').matchAll(DEF)].map(m => ({ file: f, id: m[1] })));
+const requirementIds = [...new Set(definitions.map(d => d.id))].sort();
 
 function testFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
@@ -23,14 +26,20 @@ const titles = testFiles(path.join(ROOT, 'tests')).flatMap(file => {
 const idsIn = t => t.match(/R-[A-Z0-9]+-\d+/g) || [];
 const tests = titles.filter(t => t.kind !== 'describe');
 
-describe('Requirements traceability (CLAUDE.md ↔ tests)', () => {
-  it('CLAUDE.md defines requirement IDs and the test files could be scanned', () => {
+describe('Requirements traceability (docs/requirements ↔ tests)', () => {
+  it('the requirement files define requirement IDs and the test files could be scanned', () => {
     expect(requirementIds.length).toBeGreaterThan(50); expect(titles.length).toBeGreaterThan(200);
   });
   it.each(requirementIds)('requirement %s is named in at least one test or test group', id => {
     const hits = titles.filter(t => idsIn(t.title).includes(id)); expect(hits.length, `No test mentions ${id}`).toBeGreaterThan(0);
   });
-  it('every requirement ID mentioned in a test title exists in CLAUDE.md (no typos, no retired IDs)', () => {
+  it('each requirement ID is defined exactly once across the requirement files (nothing duplicated or merged)', () => {
+    const twice = requirementIds.filter(id => definitions.filter(d => d.id === id).length > 1); expect(twice).toEqual([]);
+  });
+  it('CLAUDE.md defines no requirement IDs, so the specification stays out of the file loaded into every session', () => {
+    const doc = fs.readFileSync(path.join(ROOT, 'CLAUDE.md'), 'utf8'); expect([...doc.matchAll(DEF)].map(m => m[1])).toEqual([]);
+  });
+  it('every requirement ID mentioned in a test title is defined in a requirement file (no typos, no retired IDs)', () => {
     const unknown = titles.flatMap(t => idsIn(t.title).filter(id => !requirementIds.includes(id)).map(id => `${id} in ${t.file}`)); expect(unknown).toEqual([]);
   });
   it('every group of tests that is tied to a requirement starts with its ID so the console output reads "R-XXX-nn <what is checked>"', () => {

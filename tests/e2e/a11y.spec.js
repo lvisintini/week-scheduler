@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { openApp, seed, blank, ev, person, toolbar } from './helpers.js';
 
-// KNOWN ISSUES (found by the first scan, see CLAUDE.md §14): these tests are a ratchet. They fail if a *new* kind of violation appears or
+// KNOWN ISSUES (found by the first scan, see docs/known-issues.md): these tests are a ratchet. They fail if a *new* kind of violation appears or
 // an existing kind spreads to more elements; when an issue is fixed, lower its number here (to 0 and then delete the entry).
 // Impacts below are the "serious" and "critical" ones from axe-core (WCAG 2 A/AA).
 const scan = async page => {

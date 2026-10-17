@@ -29,7 +29,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
 
 ## Save file
-A saved file or link holds one workspace (`version: 5`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`, `owner`, `nest`, `bg`; each slot optionally `fo` and `inv`), `rhythms`, `phases`, `phaseOpacity`. See `CLAUDE.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.
+A saved file or link holds one workspace (`version: 5`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`, `owner`, `nest`, `bg`; each slot optionally `fo` and `inv`), `rhythms`, `phases`, `phaseOpacity`. See `docs/requirements/data.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.
 
 Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
 
@@ -46,4 +46,4 @@ npm run lint                # ESLint on the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```
 
-Every requirement in `CLAUDE.md` has an ID such as `R-REP-06`; each test group starts with the ID of the requirement it checks, so the console reads like a specification. `tests/requirements.test.js` fails if a requirement has no test. See `CLAUDE.md` §14 for how the tests are organised and how to add one. GitHub Actions (`.github/workflows/tests.yml`) runs lint and the fast tests on every push, the Chromium browser tests on every push, and all browsers nightly.
+Every requirement in `docs/requirements/` has an ID such as `R-REP-06`; each test group starts with the ID of the requirement it checks, so the console reads like a specification. `tests/requirements.test.js` fails if a requirement has no test. See the Testing section of `CLAUDE.md` and `docs/testing.md` for how the tests are organised and how to add one. GitHub Actions (`.github/workflows/tests.yml`) runs lint and the fast tests on every push, the Chromium browser tests on every push, and all browsers nightly.

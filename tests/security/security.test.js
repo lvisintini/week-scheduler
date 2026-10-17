@@ -122,7 +122,7 @@ describe('R-SEC-04 Nothing leaves the device and nothing unexpected is stored', 
 });
 
 describe('R-SEC-05 Deployment hygiene is documented where it cannot be fixed in code', () => {
-  it('CLAUDE.md warns that sites on one github.io account share one browser storage origin', async () => {
-    const fs = await import('node:fs'); const doc = fs.readFileSync(new URL('../../CLAUDE.md', import.meta.url), 'utf8'); expect(doc).toMatch(/github\.io/i); expect(doc).toMatch(/origin/i);
+  it('the security requirements warn that sites on one github.io account share one browser storage origin', async () => {
+    const fs = await import('node:fs'); const doc = fs.readFileSync(new URL('../../docs/requirements/security.md', import.meta.url), 'utf8'); expect(doc).toMatch(/github\.io/i); expect(doc).toMatch(/origin/i);
   });
 });

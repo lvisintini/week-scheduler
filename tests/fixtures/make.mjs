@@ -1,7 +1,7 @@
 // Writes the sample files of the CURRENT data format into tests/fixtures/v<FMT>/, using the app itself
 // (index.html in jsdom, through its real save functions). Run it once per format version:
 //   node tests/fixtures/make.mjs
-// It refuses to touch a folder that already exists: published formats are frozen (CLAUDE.md, R-DATA-08).
+// It refuses to touch a folder that already exists: published formats are frozen (docs/requirements/data.md, R-DATA-08).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
