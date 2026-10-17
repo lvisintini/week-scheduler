@@ -12,7 +12,6 @@
 - **[P]** **Revisit the weekly statistics** (R-STAT-01…04) **[U]**.
 - **[P]** **Revisit plans longer than one week** (modes, formats, data models; today the two-week rota is the *Show only this one* workaround, R-SCH-03) **[U]**.
 - **[P]** **Count cards per owner** (Fair Play): statistics of how many events / hours each person owns, next to the hours they perform (R-EVT-20).
-- **[P]** **Confirm the default rhythm's phase boundaries** (R-PHS-08): chosen by Claude, not yet confirmed by the user.
 - **[P]** Locking browser memory with a passphrase (R-DATA-02; deliberately postponed **[U]**).
 - **[P]** Reordering the other sidebar lists (schedules, rhythms) like people and activity types (R-PPL-02).
 - **[P]** Dragging a flexible event's core edges (R-EVT-15; today only the outer window moves and resizes).
