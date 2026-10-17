@@ -17,3 +17,54 @@
 - Resize handles are *not* inside their boxes: each `.rz` is a child of the `.day` column positioned at the box's bottom (`translateY(-100%)`), sharing the box's pointer handler; tests reach it with `box._rz`.
 - Static dialog translation gotcha: `applyStatic` re-translates every `[title]` in dialogs from the English it first saw (`__t`), by prefix; a title set from `L()` at runtime must also set `el.__t` to the translated text, or a shorter prefix key overwrites it (this once hit the flexible-time toggles).
 - Geometry: each day = `.dw` wrapper = `.lane` (outside-left, lips and `.lbg` bands) + `.day`; header cells `.dh` pad by the lane and draw their left separator (and the weekend hue, header only) with background gradients offset by `var(--lane)`.
+
+## Names by requirement
+
+Implementation names that the requirement files describe in words (functions, variables, constants, CSS classes and custom properties), listed under the requirement they implement. Search `index.html` for them.
+
+- R-DATA-02: `buildFile`, `parseWorkspace`
+- R-DATA-03: `openImport`, `pickReplace`, `confirmReplace`, `adoptWs`
+- R-DATA-04: `openTransfer`, `askPeople`
+- R-EVT-03: `fitMove`
+- R-EVT-05: `fitMeasure`, `fitMove`, `fitApply`, `.clipped`
+- R-EVT-10: `laneLayout`, `laneMap`, `inLane`, `fxAt`
+- R-EVT-11: `.ev.soft`
+- R-EVT-12: `--dash`
+- R-EVT-15: `coreOf`, `fitMg`, `errCore`, `.tsel`, `.dsub`, `.mg.t`, `.mg.b`, `.ev.mgo`, `edgeNote`, `piecesAt`, `coreIn`
+- R-EVT-16: `pplOf`, `slotVisible`
+- R-EVT-17: `isBg`, `.bgs`, `gutMap`, `.bgb`, `fxW`
+- R-EVT-19: `updBg`
+- R-EVT-21: `pplOf`, `slotVisible`
+- R-EVT-22: `.cbtn`, `cSet`, `updCols`, `dlgTy`
+- R-EVT-23: `laneLayout`, `fixedLayout`, `segs`
+- R-GRID-03: `wj`, `--weh`
+- R-GRID-06: `DAY2`, `nr`
+- R-GRID-07: `.zsub`, `fitted`
+- R-GRID-11: `.foc`, `focusD`, `.dh.fo`, `.prv`, `.nxt`, `stepFocus`, `.wk`, `printDay`, `days = [focusD]`
+- R-GRID-12: `.lvrow`, `lvin`, `LV_SLACK`, `LV_PEEK`, `lvTime`, `lvOpen`, `lvDraw`, `.lvstem`, `liveTick`, `liveBusy`, `liveTop`, `LV_BACK`, `lvRet`, `liveBack`
+- R-NST-01: `nestPick`, `pplOf`
+- R-NST-02: `insetPos`, `NI`, `nestFirst`
+- R-NST-03: `nestCarry`, `carryMove`
+- R-PHS-08: `defaultRhythm()`
+- R-PPL-01: `slotVisible`
+- R-PPL-03: `.extb`, `ourPeople()`
+- R-PPL-04: `.subh`, `.extg`
+- R-REP-02: `.dr.dx`
+- R-REP-06: `isAdv`
+- R-SEC-02: `normHex`
+- R-SHARE-01: `openProtect`
+- R-SHARE-03: `genPassword`
+- R-SHARE-04: `seal`, `unseal`
+- R-SHARE-07: `plainWarn`, `buildFile`
+- R-STAT-01: `openStats`, `stP`, `stInv`
+- R-STAT-02: `personStats`
+- R-STAT-04: `cellSafe`
+- R-TYP-01: `iconMenu`
+- R-TYP-02: `TYN`
+- R-TYP-03: `mapTypes`, `retype`
+- R-TYP-04: `tvis`, `restoreState`
+- R-UI-03: `setTab`
+- R-UI-07: `.fg`, `.chips`, `rowCtl`, `rowSub`, `.wbtn`, `.tsel`, `.dsub`
+- R-UI-10: `.dgrip`, `dlgPlace`, `moved`
+- R-UI-11: `.noty`, `NOTY`
+- R-UI-12: `dlgJump`, `.dr.pulse`
