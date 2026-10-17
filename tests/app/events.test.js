@@ -1059,6 +1059,21 @@ describe('R-EVT-23 Fixed lanes (Tools): a lane per visible person, in People ord
   it('an event without a responsible person spans every lane', () => {
     const a = fixed([at('x', 'Family dinner', '', 1200, 1260, { involved: ['B'] })]); expect(lanesOf(a, 'Family dinner')).toEqual(['0-2/3']);
   });
+  const gardener = { id: 'G', name: 'Gardener', color: '#607d8b', visible: true, external: true };
+  it('an external person gets no lane unless they have an activity that is not in the background', () => {
+    const none = fixed([at('a', 'Ann alone', 'A', 600, 660)], { people: [...people, gardener] }); expect(lanesOf(none, 'Ann alone')).toEqual(['0/3']);   // no activity at all
+    const bg = fixed([at('a', 'Ann alone', 'A', 600, 660), at('g', 'Mowing', 'G', 600, 720, { bg: true })], { people: [...people, gardener] });
+    expect(lanesOf(bg, 'Ann alone')).toEqual(['0/3']); expect(bg.qa('.bgs')).toHaveLength(1);   // only a strip: still no lane
+  });
+  it('one activity of theirs on the grid gives an external person a lane after our people, on every day', () => {
+    const a = fixed([at('a', 'Ann alone', 'A', 600, 660, {}, 1), at('g', 'Hedges', 'G', 600, 720)], { people: [gardener, ...people] });
+    expect(lanesOf(a, 'Hedges')).toEqual(['3/4']); expect(lanesOf(a, 'Ann alone')).toEqual(['0/4']);   // Tuesday has the lane too
+  });
+  it('an activity in a hidden schedule, or only on call, gives an external person no lane', () => {
+    const hid = fixed([at('a', 'Ann alone', 'A', 600, 660), at('g', 'Hedges', 'G', 600, 720, { schedules: ['s2'] })], { people: [...people, gardener], schedules: [sched(), sched({ id: 's2', name: 'Hidden', visible: false })] });
+    expect(lanesOf(hid, 'Ann alone')).toEqual(['0/3']);
+    const oc = fixed([at('x', 'Questions', 'A', 600, 660, { involved: ['G'], oncall: true })], { people: [...people, gardener] }); expect(lanesOf(oc, 'Questions')).toEqual(['0/3']);
+  });
   it('stripes appear only in a shared lane: Ann\'s work under her shared event, not Bob\'s work beside it', () => {
     const a = fixed([at('a', 'Ann work', 'A', 540, 720), at('b', 'Bob work', 'B', 540, 720), at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] })]);
     expect(a.qa('.day[data-d="0"] .ov').map(o => o.dataset.lane)).toEqual(['0/3']);
