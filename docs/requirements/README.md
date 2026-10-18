@@ -10,7 +10,7 @@ The specification of the app, one file per area. Each file is the **flattened, c
 - A **Rejected:** clause names alternatives that were tried or proposed and turned down, so they are not proposed again.
 
 ## How the user likes to work
-Discuss design first for large or ambiguous features ("let's discuss this first"), get suggestions with trade-offs and a recommendation, then say "do it". Every user-facing string must exist in English and Spanish. Tooltips should explain workarounds (e.g. emulating a two-week rota). The user reviews these files and expects them to capture *every* requirement and accepted decision: when finishing a task, re-read the conversation's decisions and update the matching entry in the file for that area.
+Discuss design first for large or ambiguous features ("let's discuss this first"), get suggestions with trade-offs and a recommendation, then say "do it". Every user-facing string must exist in English and Spanish. Tooltips should explain workarounds (e.g. keeping a rota as an owner plus involved people, R-CYC-15). The user reviews these files and expects them to capture *every* requirement and accepted decision: when finishing a task, re-read the conversation's decisions and update the matching entry in the file for that area.
 
 ## Files
 | File | IDs |
@@ -18,11 +18,12 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `product.md` | what the app is (no IDs) |
 | `grid.md` | R-GRID-01…11 |
 | `live-view.md` | R-GRID-12 |
-| `events.md` | R-EVT-01…08, 11, 12, 15, 16, 17, 19, 20, 21, 22 |
+| `events.md` | R-EVT-01…08, 11, 12, 15, 16, 17, 19, 20, 21, 22, 24 |
 | `lanes.md` | R-EVT-09, 10, 13, 18, 23 |
 | `repetitions.md` | R-REP-01…07 |
 | `nesting.md` | R-NST-01…05 |
 | `interaction.md` | R-SEL-01…03, R-TOUCH-01 |
+| `cycle.md` | R-CYC-01…16 |
 | `schedules.md` | R-SCH-01…04 |
 | `people.md` | R-PPL-01…04 |
 | `types.md` | R-TYP-01…05 |

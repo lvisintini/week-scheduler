@@ -1,6 +1,6 @@
 # Weekly schedules: instructions for Claude
 
-A single static `index.html` (HTML + CSS + vanilla JS; no libraries, no build, no network requests) that must work opened from disk and on GitHub Pages (https://lvisintini.github.io/week-scheduler/, serves `main`). A repeating Monday–Sunday planner (days are not dates): **workspaces** holding **schedules**, **events** with repetitions, **people**, **activity types** and background **rhythms** made of **phases**. English and Spanish. Phones are for *checking* a schedule (Live View, the day view), not for building one.
+A single static `index.html` (HTML + CSS + vanilla JS; no libraries, no build, no network requests) that must work opened from disk and on GitHub Pages (https://lvisintini.github.io/week-scheduler/, serves `main`). A repeating Monday–Sunday planner (days are not dates; a workspace may repeat every 1–4 weeks): **workspaces** holding **schedules**, **events** with repetitions, **people**, **activity types** and background **rhythms** made of **phases**. English and Spanish. Phones are for *checking* a schedule (Live View, the day view), not for building one.
 
 This file holds only what applies to every task. The full specification is in `docs/requirements/`: read the file for an area before changing it (table below).
 
@@ -8,7 +8,7 @@ This file holds only what applies to every task. The full specification is in `d
 - Large or ambiguous features: discuss the design first ("let's discuss this first"). Give suggestions with trade-offs and a recommendation, then wait for "do it".
 - Decisions tagged **[U]** (asked for by the user) and **[C✓]** (proposed by Claude and accepted, explicitly or by not objecting) are deliberate: never undo them silently.
 - Every user-facing string exists in English and Spanish (see *Bilingual strings*).
-- Tooltips carry the long explanations and explain workarounds (e.g. a two-week rota = two schedules + *Show only this one*); labels stay short.
+- Tooltips carry the long explanations and explain workarounds (e.g. a rota = an owner who set it + the people in it as involved); labels stay short.
 - **When finishing a task:** re-read the conversation's decisions and update the matching entry in the requirement file for that area (table below), editing it in place. Parked ideas go to `docs/parked.md`, known bugs and limits to `docs/known-issues.md`, code-map changes to `docs/architecture.md`. The user reviews these files and expects them to capture *every* requirement and accepted decision.
 
 ## The specification (`docs/requirements/`)
@@ -23,6 +23,7 @@ This file holds only what applies to every task. The full specification is in `d
 | event boxes and fields, an event's activity type, flexible time, on call, background strips, owner, per-day With, colours | `docs/requirements/events.md` |
 | overlaps, stripes, side-by-side lanes, fixed lanes | `docs/requirements/lanes.md` |
 | repetitions, the dialog's day table, past midnight, dragging all / one | `docs/requirements/repetitions.md` |
+| cycles of several weeks, week patterns, the week switcher, Live View's week, rotas | `docs/requirements/cycle.md` |
 | nested activities | `docs/requirements/nesting.md` |
 | clicking or dragging overlapping things, choosers, touch | `docs/requirements/interaction.md` |
 | schedules | `docs/requirements/schedules.md` |
@@ -45,7 +46,7 @@ This file holds only what applies to every task. The full specification is in `d
 - Dynamic strings: add the key to both `D.en` and `D.es`, use `L('key', {var})`.
 - Static dialog HTML: English in the HTML plus an `['English prefix', 'Spanish']` entry in `ES` (keys under 12 characters match exactly, longer ones by prefix; `applyStatic()` handles `<dialog>` only).
 - A `title` set from `L()` at runtime must also set `el.__t` to the translated text, or `applyStatic` re-translates it from a shorter prefix key.
-- Terms: phases = *franjas*, rhythms = *ritmos*, background strips = *tiras* (never *franjas*); schedule = *horario*; a time's Timing list = *Horas* (not *Horario*).
+- Terms: phases = *franjas*, rhythms = *ritmos*, background strips = *tiras* (never *franjas*); schedule = *horario*; a time's Timing list = *Horas* (not *Horario*); cycle = *ciclo*, week 2 = *semana 2*, Away = *Fuera de casa*.
 
 ### Security and escaping (details: `docs/requirements/security.md`)
 - Every piece of user-controlled text put into `innerHTML`/`insertAdjacentHTML` goes through `esc()`; prefer `textContent`/DOM properties.
