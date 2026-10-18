@@ -38,4 +38,4 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 The prefix of an ID is where the requirement was first filed, not necessarily the file it lives in now (e.g. R-EVT-13 is in `lanes.md`); IDs are never renumbered.
 
 ## Retired IDs (never reuse)
-- R-EVT-14: option A for the legibility of overlapping labels (every box its own layer, stripes inside the topmost box, labels on solid chips), rejected by the user (see `../parked.md`).
+- R-EVT-14: option A for the legibility of overlapping labels (every box its own layer, stripes inside the topmost box, labels on solid chips), rejected by the user, as was option B (later clashing boxes indented); the legibility of overlapping labels was then dropped from the backlog **[U]**.
