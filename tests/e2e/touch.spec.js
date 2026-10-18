@@ -98,3 +98,13 @@ test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
     await expect(page.locator('#sb')).toHaveClass(/collapsed/); await expect(page.locator('#sbBack')).toBeHidden();
   });
 });
+
+test.describe('R-CYC-04 On a phone the week switcher is at hand and a swipe crosses into the next week', () => {
+  test('the corner shows the week in the day view, and swiping on from Sunday shows Monday of the next week', async ({ page }) => {
+    await seed(page, blank({ cycle: 2 })); await page.evaluate(() => { curWk = 1; setFocus(6); });
+    const b = await page.locator('.wkb').boundingBox(); expect(b).not.toBeNull(); expect(b.width).toBeGreaterThan(20);
+    await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(() => page.evaluate(() => [focusD, curWk])).toEqual([0, 2]);
+    await expect(page.locator('.wkb')).toHaveText('W2'); await expect(page.locator('.dh.fo')).toContainText('Monday · W2');
+    await page.locator('.wkb').tap(); await expect(page.locator('.omenu .oi')).toHaveCount(3);
+  });
+});

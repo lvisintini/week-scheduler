@@ -53,6 +53,21 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
       ratchet(await scan(page), {});
     });
   }
+  test('R-CYC-04 a workspace with a cycle of weeks (the corner week switcher and its menu) adds no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 3, events: [ev({ weeks: [1] })] })); ratchet(await scan(page), {});
+    await page.locator('.wkb').click(); const r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+  });
+  test('R-CYC-08 R-EVT-24 the event dialog with its Weeks row, the week of every time and Drawn as adds no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, people: [person()], events: [ev({ slots: [{ day: 0, start: 600, end: 660, person: 'p1', wk: 1 }, { day: 0, start: 600, end: 660, person: '', wk: 2 }] })] }));
+    await page.evaluate(() => openDlg(S.events[0])); ratchet(await scan(page), {});
+    page.once('dialog', d => d.accept()); await page.locator('#fPw').uncheck(); await expect(page.locator('#fWk .chips')).toBeVisible(); ratchet(await scan(page), {});   // the weeks differ: the switch back asks first
+  });
+  test('R-CYC-10 R-CYC-05 the cycle dialog, the shrinking question and Live View\'s week question add no accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 3, events: [ev({ weeks: [3] })] }));
+    const dlg = async () => { const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); };
+    await page.evaluate(() => openCycle()); await dlg(); await page.locator('#xDlg select').selectOption('1'); await page.locator('#xDlg button', { hasText: 'Apply' }).click(); await expect(page.locator('#xDlg li')).toHaveCount(1); await dlg();
+    await page.locator('#xDlg button', { hasText: 'Cancel' }).click(); await page.locator('#lvB').click(); await expect(page.locator('#xDlg h3')).toHaveText('Which week is it?'); await dlg();
+  });
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
     await openApp(page); const r = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, main: document.querySelectorAll('main').length }));
     expect(r.lang).toBe('en'); expect(r.title).toBe('Weekly Schedules'); expect(r.main).toBe(1);

@@ -40,8 +40,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with nineteen tips, among them focusing on a day, nested activities, background events and live view', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(19); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
+  it('the Help button opens a "How to use" dialog with twenty tips, among them focusing on a day, nested activities, background events, live view and Away (R-EVT-24)', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(20); expect(a.qa('#xDlg li')[19].textContent).toMatch(/Drawn as: Away/); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
   });
 });
 
@@ -184,14 +184,15 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('nothing event-level pretends to set the days: no general times, no By list, no Timing switch', () => {
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
-    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBg']);   // How it fits in: the event-wide switches together
+    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBox', 'fBg', 'fAw']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24)
   });
   it('the day table has a header row: Days, Start, End, Performed by, With, Colour, Timing', () => {
     const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
     expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
   });
-  it('a day row holds its times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
-    const r = dialog().qa('#fDays .dr')[0]; expect([...r.children].map(c => c.tagName === 'LABEL' ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
+  it('a day row holds its day (with the week button of R-CYC-08), times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
+    const r = dialog().qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.children[0].querySelector('.wkc')).not.toBeNull();
+    expect([...r.children].map(c => c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
       .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
   });
   it('the day rows and the further-time lines share one grid, so their columns line up with the header', () => {

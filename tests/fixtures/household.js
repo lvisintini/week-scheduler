@@ -39,6 +39,12 @@ export const household = {
       slots: [{ day: 0, start: 1080, end: 1200, person: 'p-lucia' }] },
     { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
       slots: [{ day: 5, start: 600, end: 720, person: '' }, { day: 5, start: 900, end: 960, person: '' }] },
+    { id: 'e-swim', title: 'Swimming', desc: '', color: '#3b6df0', weeks: [1], schedules: ['s-home'], involved: [],
+      slots: [{ day: 6, start: 1260, end: 1500, person: 'p-lucia' }] },
+    { id: 'e-cook', title: 'Cooking', desc: 'Swap turns in the family chat', color: '#e5484d', owner: 'p-ann', schedules: ['s-home'], involved: [],
+      slots: [{ day: 0, start: 1080, end: 1140, person: 'p-ann', wk: 1, fo: true }, { day: 0, start: 1080, end: 1140, person: 'p-luis', wk: 2 }, { day: 3, start: 1080, end: 1140, person: 'p-luis', wk: 1 }] },
+    { id: 'e-dad', title: "At Dad's", desc: '', color: '#8e4ec6', away: true, weeks: [2], schedules: ['s-home'], involved: ['p-lucia'],
+      slots: [{ day: 4, start: 1020, end: 2880, person: '' }, { day: 6, start: 0, end: 1080, person: '' }] },
   ],
   rhythms: [{ id: 'r-normal', name: 'Normal rhythm', visible: true }, { id: 'r-holiday', name: 'Holiday rhythm', visible: false }],
   phases: [
@@ -47,6 +53,7 @@ export const household = {
     { id: 'ph-sleep', title: 'Sleep', desc: '', color: '#3f51b5', rhythms: ['r-normal'], slots: [{ day: 6, start: 0, end: 420 }, { day: 6, start: 1320, end: 1440 }] },
   ],
   phaseOpacity: 0.45,
+  cycle: 2,
 };
 
 /** The second workspace of the browser-memory sample: almost empty. */
@@ -65,6 +72,7 @@ const ADDED = {
   6: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => sl) })) }),   // a repetition's own colour (R-EVT-22)
   7: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => col === undefined || col === 't' ? sl : { ...sl, col }) })) }),   // the activity type's colour (R-EVT-22)
   8: h => ({ ...h, types: h.types.map(({ visible, ...t }) => t) }),   // the activity type's eye (R-TYP-04)
+  9: ({ cycle, ...h }) => ({ ...h, events: h.events.filter(e => !['e-swim', 'e-cook', 'e-dad'].includes(e.id)) }),   // the cycle of weeks (R-CYC-14) and Away (R-EVT-24)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

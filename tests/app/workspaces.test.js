@@ -13,8 +13,8 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
   it('a first start has a single workspace called "Workspace" shown in the switcher under the title', () => {
     const a = fresh(); expect(names(a)).toEqual(['Workspace']); expect(a.q('.wsbtn .wsn').textContent).toBe('Workspace');
   });
-  it('the switcher menu lists the workspaces and offers New, Rename, Duplicate and Delete', () => {
-    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'New workspace…', 'Rename current…', 'Duplicate current', 'Delete current…']);
+  it('the switcher menu lists the workspaces and offers New, Rename, Duplicate, the cycle of weeks and Delete (R-CYC-01)', () => {
+    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'New workspace…', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
   });
   it('the current workspace is marked with a tick in the menu', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();

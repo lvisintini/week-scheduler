@@ -6,6 +6,8 @@
 - Side-by-side layout: `fixedLayout` (R-EVT-23, while `prefs.lanesFix`), `laneLayout` (clash/parallel matrices, groups, spanners, joining people's own lanes `join`/`fits`, lane-order search, fallback; R-EVT-10/13/18), `laneMap` (last drawn lane ranges, keyed `eventId|slotIndex|piece`) read by `inLane`; boxes and stripes carry `data-lane="l/n"` or `"l0-l1/n"` (tests read that, since jsdom rewrites the `calc()` positions).
 - Nested activities (R-NST): `nestPick` (the rule), `dayPieces`/`nestOfDay`/`nkey` (pieces of a day, keyed like `laneMap`), `nestMap` (last drawn grid, for the peek card), `insetPos`/`NI` (drawing), `isNestK`/`nestFirst` (hit-testing), `nestCarry`/`carryMove` (drag).
 - Focus on one day: `focusD`, `setFocus`, `stepFocus`, `weekDays` (R-GRID-11); header buttons `.dhb` (`.foc`, `.prv`, `.nxt`, `.wk`).
+- Cycles of weeks (R-CYC): `S.cycle` (`cyc()`), the shown week `curWk` (view state), `wksOf` (an event's pattern `weeks` or a repetition's `wk`), `inWk` (does a piece appear in week w; a Sunday's part after midnight belongs to the next week), `prevWk`, `ivs(s,e)` (cores on the cycle's timeline, for `overlapSet`), `normWk` (validation and normalisation, also after dialog saves and cycle changes); the corner switcher `.wkb` → `wkMenu`/`setWeek`; `openCycle`/`setCycle`/`extendWeeks`/`shrinkCycle`/`moveWeeks` (R-CYC-10); `askCycle`/`placeWeeks` (insert and transfer, R-CYC-13); Live View's week `lvWk`/`liveWk`/`askLiveWeek`/`ymd` (memory only, R-CYC-05); dialog `dWk`, `drawWk` (`#fWk`), `setPW`, `wkCtl`/`wkSet`/`wkPop` (the `.wkc` button in a time's day cell), `snapRow`/`loadRow`/`sortDay`; drags `absD`/`shiftDay`/`sameDay`; statistics `personStats(pid,inv,w)`, `stOf`/`stWeeks`/`stW`; print `printAll`/`schedPage`/`dayPage`/`wkSuf`; labels `wksText`/`wkNote`/`evWks`.
+- Away (R-EVT-24): `isAway`, `awayPpl`, `awayHits` (the clash rule), `awayPieces`/`awayOf`/`awayLine` (peek card, agenda); in `render()` the hit map `awc`, stripes `.ov.awov`, strips `.bgs.aw` (no `.bgb` band), the fixed-lane hatch `.awl` (`fixIds`); dialog radios `#fBox`/`#fBg`/`#fAw` in `#fDraw`; statistics `away`/`awPl`, pattern `#sta`.
 - Live View (R-GRID-12): `live`/`livePaused`/`liveTop`/`liveWant`/`lvRet`/`LV_BACK`, `today`, `setLive`, `liveScroll`, `liveTick` (on the 30 s interval with `drawNow`), `liveBack`, `liveBusy` (`ptrHeld` from document pointer listeners), `updLive` (sidebar `#lvB`/`#lvC`, pill `#lvPill`); tap bubbles: capture listeners on `#grid` (`lvDown`) → `liveTap` → `lvDraw` (`.lvb` with sections `.lvs` in a `.lvl` layer, `lvRects`, `LV_AR`, `LV_SLACK`), `lvOpen`/`lvClose`/`lvCloseAll`, `LV_PEEK`; `piecesAt` takes an optional list (events only here); `lvOn` in `render()` (class `lv`, bare header); restored from `prefs.live` at startup.
 - Interaction: `grab` (disambiguation) → `startDrag` (move/resize, all vs Shift) / `startCreate`; `overlapMenu` (choosers, optional grouping); history: `hist()` *before* mutations or `pushUndo(before)` for drags; `restoreState` preserves view state.
 - Dialogs: `openDlg` (kind inferred: event/phase), `openCopy`, `xdlg` (generic modal), `pickColor`, `openSettings`, `openHelp`, `showAgenda`.
@@ -22,6 +24,14 @@
 
 Implementation names that the requirement files describe in words (functions, variables, constants, CSS classes and custom properties), listed under the requirement they implement. Search `index.html` for them.
 
+- R-CYC-03: `normWk`
+- R-CYC-04: `curWk`, `.wkb`, `wkMenu`
+- R-CYC-05: `lvWk`, `liveWk`, `askLiveWeek`
+- R-CYC-06: `inWk`, `prevWk`, `ivs`
+- R-CYC-08: `#fWk`, `#fPw`, `.wkc`, `setPW`
+- R-CYC-09: `shiftDay`, `sameDay`
+- R-CYC-10: `extendWeeks`, `shrinkCycle`, `moveWeeks`
+- R-CYC-13: `askCycle`, `placeWeeks`
 - R-DATA-02: `buildFile`, `parseWorkspace`
 - R-DATA-03: `openImport`, `pickReplace`, `confirmReplace`, `adoptWs`
 - R-DATA-04: `openTransfer`, `askPeople`
@@ -36,7 +46,8 @@ Implementation names that the requirement files describe in words (functions, va
 - R-EVT-19: `updBg`
 - R-EVT-21: `pplOf`, `slotVisible`
 - R-EVT-22: `.cbtn`, `cSet`, `updCols`, `dlgTy`
-- R-EVT-23: `laneLayout`, `fixedLayout`, `segs`
+- R-EVT-23: `laneLayout`, `fixedLayout`, `segs`, `fixIds`
+- R-EVT-24: `isAway`, `awayHits`, `.bgs.aw`, `.awov`, `.awl`, `#fAw`
 - R-GRID-03: `wj`, `--weh`
 - R-GRID-06: `DAY2`, `nr`
 - R-GRID-07: `.zsub`, `fitted`

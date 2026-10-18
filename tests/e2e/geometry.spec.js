@@ -405,7 +405,7 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
     expect(overlaps(ev0, d0)).toBe(true);
     const g = await boxOf(page.locator('#dGrip')), dx = ev0.x + ev0.width + 10 - d0.x;
     await page.mouse.move(g.x + 40, g.y + g.height / 2); await page.mouse.down(); await page.mouse.move(g.x + 40 + dx, g.y + g.height / 2 + 30, { steps: 8 }); await page.mouse.up();
-    const d1 = await boxOf(page.locator('#dlg')); expect(Math.round(d1.x - d0.x)).toBe(Math.round(dx)); expect(Math.round(d1.y - d0.y)).toBe(30);
+    const d1 = await boxOf(page.locator('#dlg')); expect(Math.abs(d1.x - d0.x - dx)).toBeLessThanOrEqual(1); expect(Math.abs(d1.y - d0.y - 30)).toBeLessThanOrEqual(1);   // a centred dialog may sit on half a pixel; placed, it is rounded
     expect(overlaps(ev0, d1)).toBe(false); await expect(page.locator('#dlg')).toHaveAttribute('open', '');
     const sw = page.locator('#fDays .dr').nth(2).locator('.cbtn'); await sw.click(); const s = await boxOf(sw), m = await boxOf(page.locator('.cmenu'));
     expect(Math.abs(m.y - (s.y + s.height + 4))).toBeLessThan(2);

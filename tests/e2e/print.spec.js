@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, person } from './helpers.js';
+import { openApp, seed, blank, ev, slot, person, toolbar } from './helpers.js';
 
 const rich = () => blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ title: 'Standup', slots: [slot(0, 600, 660, 'A'), slot(2, 600, 660, 'A')] })], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r'], slots: [0, 1, 2, 3, 4].map(d => ({ day: d, start: 720, end: 780 })) }] });
 const pdfInfo = buf => {
@@ -61,5 +61,22 @@ test.describe('R-PRN-03 Print day view', () => {
   test('the single column uses the page width instead of a narrow strip', async ({ page }) => {
     await page.locator('.dh:not(.c)').nth(1).click(); await page.locator('#agPrint2').click(); await page.emulateMedia({ media: 'print' });
     const w = await page.evaluate(() => ({ grid: document.querySelector('#pr .grid').getBoundingClientRect().width, day: document.querySelector('#pr .day').getBoundingClientRect().width })); expect(w.day).toBeGreaterThan(w.grid * 0.7);
+  });
+});
+
+test.describe('R-CYC-12 Printing every week of the cycle', () => {
+  const two = () => blank({ cycle: 2, events: [ev({ id: 'a', title: 'Week one only', weeks: [1] }), ev({ id: 'b', title: 'Week two only', weeks: [2], slots: [slot(3, 1200, 1260)] })] });
+  test.beforeEach(async ({ page }) => { await seed(page, two()); });
+  test('Print every week gives one A4 page per week of the cycle', async ({ page }) => {
+    await toolbar(page, 'print').click(); await page.locator('.omenu .oi', { hasText: 'Print every week' }).click();
+    await expect(page.locator('#pr h1')).toHaveText(['Weekly schedule — Week 1', 'Weekly schedule — Week 2']);
+    await page.emulateMedia({ media: 'print' }); expect(pdfInfo(await page.pdf({ preferCSSPageSize: true })).pages).toBe(2);
+  });
+  test('Print this week gives one page of the week shown', async ({ page }) => {
+    await page.evaluate(() => setWeek(2)); await toolbar(page, 'print').click(); await page.locator('.omenu .oi', { hasText: 'Print this week' }).click();
+    await expect(page.locator('#pr h1')).toHaveText('Weekly schedule — Week 2'); await page.emulateMedia({ media: 'print' }); expect(pdfInfo(await page.pdf({ preferCSSPageSize: true })).pages).toBe(1);
+  });
+  test('the week switcher is never printed', async ({ page }) => {
+    await page.evaluate(() => printSchedule()); await page.emulateMedia({ media: 'print' }); expect(await page.locator('#pr .wkb').evaluate(e => getComputedStyle(e).display)).toBe('none');
   });
 });
