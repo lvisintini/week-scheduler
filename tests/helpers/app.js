@@ -15,9 +15,9 @@ export const PREFS_KEY = 'weekly-schedules-prefs';
 export const PASSWORD = 'k7Qm9-xTa2L-wdR4n-Hy6Be-Zc8Vp';   // a valid (>= 20 characters) test password
 
 /** Opens the app. Options: url, storage (localStorage seed), languages, promptAnswer, confirmAnswer, compression, crypto,
- *  phone (matchMedia reports a window narrower than 600 px). */
+ *  phone (matchMedia reports a window narrower than 600 px), now ([year, month0, day, hour, minute]: the clock, frozen from the start). */
 export function openApp(opts = {}) {
-  const { url = 'https://app.test/', storage = {}, languages = ['en-US'], promptAnswer = 'x', confirmAnswer = true, compression = true, crypto = true, phone = false } = opts;
+  const { url = 'https://app.test/', storage = {}, languages = ['en-US'], promptAnswer = 'x', confirmAnswer = true, compression = true, crypto = true, phone = false, now = null } = opts;
   const log = { errors: [], alerts: [], prompts: [], confirms: [] };
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => log.errors.push(String(e.message)));
@@ -25,6 +25,7 @@ export function openApp(opts = {}) {
     url, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       Object.defineProperty(w.navigator, 'languages', { value: languages, configurable: true });
+      if (now) { const R = w.Date; w.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(...now); } static now() { return new R(...now).getTime(); } }; }
       w.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
       w.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new w.Event('close')); };
       w.confirm = m => { log.confirms.push(m); return typeof confirmAnswer === 'function' ? confirmAnswer(m) : confirmAnswer; };

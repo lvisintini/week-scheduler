@@ -191,12 +191,16 @@ describe('R-CYC-10 Changing the cycle length keeps meaning where it can and neve
   });
 });
 
-describe('R-CYC-05 Live View asks which week of the cycle today is in, keeps it in memory only and follows it', () => {
+describe('R-CYC-05 Live View asks which week of the cycle today is in, once per workspace, and this browser remembers it', () => {
   const freeze = (a, d, h = 10, m = 0) => a.ev(`Date=class extends Date{constructor(...a){a.length?super(...a):super(2026,9,${12 + d},${h},${m})}}`);   // 12 October 2026 is a Monday
+  const on = (d, h = 10) => [2026, 9, 12 + d, h, 0];
   const start = a => a.q('#lvB').click();
-  const answer = (a, w) => { const s = a.q('#xDlg select'); s.value = String(w); a.click('Start Live View'); };
+  const answer = (a, w, btn = 'Start Live View') => { const s = a.q('#xDlg select'); s.value = String(w); a.click(btn); };
   const corner = a => a.q('.dh.c .wkb');
+  const anchors = a => JSON.parse(a.storage()['weekly-schedules-prefs'] || '{}').lvAnchor || {};
   const data = () => blank({ cycle: 3, events: [ev1({ id: 'two', weeks: [2], slots: [sl(2, 600, 660)] })] });
+  const stored = (a, prefs) => ({ 'weekly-schedules-workspaces': a.storage()['weekly-schedules-workspaces'], 'weekly-schedules-prefs': JSON.stringify(prefs) });
+  const saved = () => { const a = fresh(data()); a.ev("saveMem('all')"); return { a, id: a.ev('curId') }; };
   it('starting Live View with a cycle asks the week first, preselecting the week shown', () => {
     const a = fresh(data()); freeze(a, 2); week(a, 2); start(a); expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.ev('live')).toBe(false);
     expect(a.q('#xDlg select').value).toBe('2'); expect(a.qa('#xDlg select option').map(o => o.textContent)).toEqual(['Week 1', 'Week 2', 'Week 3']);
@@ -205,25 +209,72 @@ describe('R-CYC-05 Live View asks which week of the cycle today is in, keeps it 
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2);
     expect(a.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(a.q('.dh:not(.c)').textContent).toBe('Wednesday · W2');
   });
-  it('Cancel does not start Live View', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); a.click('Cancel'); expect(a.ev('live')).toBe(false); expect(a.ev('focusD')).toBeNull();
+  it('Cancel does not start Live View and remembers nothing', () => {
+    const a = fresh(data()); freeze(a, 2); start(a); a.click('Cancel'); expect(a.ev('live')).toBe(false); expect(a.ev('focusD')).toBeNull(); expect(anchors(a)).toEqual({});
   });
-  it('a cycle of one week starts Live View at once, without asking', () => {
-    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('live')).toBe(true); expect(a.dlgOpen()).toBe(false);
+  it('a cycle of one week starts Live View at once, without asking or remembering a date', () => {
+    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('live')).toBe(true); expect(a.dlgOpen()).toBe(false); expect(anchors(a)).toEqual({});
   });
-  it('the answer is asked only once while the page is open', () => {
+  it('the answer is remembered in this browser as the Monday of a week 1, for this workspace only', () => {
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev("saveMem('all')");
+    expect(anchors(a)).toEqual({ [a.ev('curId')]: '2026-10-05' });   // Wednesday 14 October is in week 2, so week 1 began on Monday 5 October
+    expect(a.storage()['weekly-schedules-workspaces']).not.toMatch(/2026|lvAnchor/); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/2026|lvAnchor/);
+    expect(a.ev('anyDirty()')).toBe(false); expect(a.ev('undoSt.length')).toBe(0);
+  });
+  it('the week is asked only once: stopping and starting again does not ask', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); start(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('[live,curWk]')).toEqual([true, 3]);
   });
-  it('the answer is never stored: not in prefs, browser memory or the workspace data', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev("saveMem('all')");
-    expect(a.storage()['weekly-schedules-prefs']).not.toMatch(/lvWk|"wk"|curWk/); expect(a.storage()['weekly-schedules-workspaces']).not.toMatch(/lvWk/); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/lvWk/);
-    expect(a.ev('anyDirty()')).toBe(false);
+  it('after a reload with Live View remembered, it starts at once on today\'s week, without asking', () => {
+    const { a, id } = saved();
+    const b = openApp({ now: on(2), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.dlgOpen()).toBe(false); expect(b.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]);
+    const c = openApp({ now: on(2 + 7), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(c.ev('[live,focusD,curWk]')).toEqual([true, 2, 3]);   // a week later
+    const d = openApp({ now: on(2 + 14), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(d.ev('curWk')).toBe(1);   // the cycle wraps
   });
-  it('after a reload with Live View remembered, the week is asked again; answering starts it, Cancel leaves it off', () => {
-    const store = a => ({ 'weekly-schedules-workspaces': a.storage()['weekly-schedules-workspaces'], 'weekly-schedules-prefs': JSON.stringify({ live: true }) });
-    const a = fresh(data()); a.ev("saveMem('all')");
-    const b = openApp({ storage: store(a) }); expect(b.dlgTitle()).toBe('Which week is it?'); expect(b.ev('live')).toBe(false); answer(b, 3); expect(b.ev('[live,curWk]')).toEqual([true, 3]);
-    const c = openApp({ storage: store(a) }); c.click('Cancel'); expect(c.ev('live')).toBe(false); expect(JSON.parse(c.storage()['weekly-schedules-prefs']).live).toBe(false);
+  it('after a reload with Live View remembered but no week known, it asks; Cancel leaves it off', () => {
+    const { a } = saved();
+    const b = openApp({ now: on(2), storage: stored(a, { live: true }) }); expect(b.dlgTitle()).toBe('Which week is it?'); expect(b.ev('live')).toBe(false); answer(b, 3); expect(b.ev('[live,curWk]')).toEqual([true, 3]);
+    const c = openApp({ now: on(2), storage: stored(a, { live: true }) }); c.click('Cancel'); expect(c.ev('live')).toBe(false); expect(JSON.parse(c.storage()['weekly-schedules-prefs']).live).toBe(false);
+  });
+  it('outside Live View the page opens on today\'s week, and the week menu and corner tooltip name it', () => {
+    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-09-28' } }) });   // week 1 began two weeks earlier: today is in week 3
+    expect(b.ev('[live,focusD,curWk]')).toEqual([false, null, 3]); expect(b.q('.dh.c .wkb').title).toBe('Week 3 of 3 is shown. Choose another week of the cycle. Today is in week 3 (remembered in this browser; to correct it, change the week while Live View runs).');
+    b.q('.dh.c .wkb').dispatchEvent(new b.w.MouseEvent('click', { bubbles: true, cancelable: true })); expect(b.qa('.omenu .oi').map(x => x.textContent.trim()).slice(0, 3)).toEqual(['Week 1', 'Week 2', 'Week 3 · today']);
+    const c = openApp({ now: on(2), storage: stored(a, {}) }); expect(c.ev('curWk')).toBe(1); expect(c.q('.dh.c .wkb').title).toBe('Week 1 of 3 is shown. Choose another week of the cycle');
+  });
+  it('a phone opens on today\'s day view in today\'s week', () => {
+    const { a, id } = saved(); const b = openApp({ phone: true, now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.ev('[live,focusD,curWk]')).toEqual([false, 2, 2]);
+  });
+  it('once today\'s week is known, the now line shows only in that week', () => {
+    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); b.ev('nowOn=true;drawNow()');
+    expect(b.qa('.day[data-d="2"] .now')).toHaveLength(1); week(b, 1); b.ev('drawNow()'); expect(b.qa('.now')).toHaveLength(0);
+    const c = openApp({ now: on(2), storage: stored(a, {}) }); c.ev('nowOn=true;drawNow()'); expect(c.qa('.day[data-d="2"] .now')).toHaveLength(1);   // not known: in whichever week is shown
+  });
+  it('each workspace has its own week: switching while live asks for one it does not know yet', async () => {
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); const first = a.ev('curId');
+    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);WS.push(w);switchWs(w.id)})()`); await a.sleep(5);
+    expect(a.dlgTitle()).toBe('Which week is it?'); answer(a, 3, 'Show this week'); expect(a.ev('[live,curWk]')).toEqual([true, 3]);
+    a.ev(`switchWs('${first}')`); await a.sleep(5); expect(a.dlgOpen()).toBe(false); expect(a.ev('curWk')).toBe(2); expect(Object.keys(anchors(a))).toHaveLength(2);
+  });
+  it('Cancel on that question stops Live View', async () => {
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2);
+    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);WS.push(w);switchWs(w.id)})()`); await a.sleep(5); a.click('Cancel'); expect(a.ev('live')).toBe(false);
+  });
+  it('a workspace that gets a cycle while live asks its week at the next tick', () => {
+    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('live')).toBe(true); a.ev('S.cycle=2;render();liveTick()');
+    expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.dlgButtons()).toContain('Show this week'); answer(a, 2, 'Show this week'); expect(a.ev('[live,curWk]')).toEqual([true, 2]);
+  });
+  it('duplicating a workspace keeps its week; deleting one or clearing the memory forgets it', () => {
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev('setLive(false)'); const first = a.ev('curId');
+    a.ev('duplicateWorkspace()'); const copy = a.ev('curId'); expect(anchors(a)).toEqual({ [first]: '2026-10-05', [copy]: '2026-10-05' });
+    a.ev('deleteWorkspace()'); expect(anchors(a)).toEqual({ [first]: '2026-10-05' }); a.ev('clearMem()'); expect(anchors(a)).toEqual({});
+  });
+  it('damaged or hostile remembered weeks are ignored, and no workspace id can reach the object prototype', () => {
+    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: 'soon', other: 5, ['x'.repeat(65)]: '2026-10-05' } }) });
+    expect(b.ev('Object.keys(prefs.lvAnchor)')).toEqual([]); expect(b.ev('curWk')).toBe(1);
+    const c = openApp({ now: on(2), storage: { ...stored(a, {}), 'weekly-schedules-prefs': `{"lvAnchor":{"__proto__":"2026-10-05","constructor":"2026-10-05"}}` } });
+    expect(c.ev('({}).constructor===Object')).toBe(true); expect(c.ev('prefs.lvAnchor.constructor')).toBe('2026-10-05'); expect(c.ev('curWk')).toBe(1);
+    c.ev(`cw().id='constructor';curId='constructor';render()`); expect(c.ev('todayWk()')).toBe(2);
+    c.ev(`cw().id='__proto__';curId='__proto__';setAnchor(1)`); expect(c.ev('Object.getPrototypeOf(prefs.lvAnchor)===null&&({}).constructor===Object&&!("2026-10-12" in {})')).toBe(true); expect(c.ev('todayWk()')).toBe(1);
   });
   it('at midnight after Sunday Live View moves on to Monday of the next week', () => {
     const a = fresh(data()); freeze(a, 6, 23, 50); start(a); answer(a, 1); expect(a.ev('[focusD,curWk]')).toEqual([6, 1]);
@@ -235,17 +286,21 @@ describe('R-CYC-05 Live View asks which week of the cycle today is in, keeps it 
   it('a tablet that slept for days still lands on the right week', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); freeze(a, 2 + 14 + 6); a.ev('liveTick()'); expect(a.ev('[focusD,curWk]')).toEqual([1, 1]);   // 20 days later: Tuesday, three weeks on
   });
-  it('the corner switcher stays pressable while live and correcting the week jumps to today in that week', () => {
+  it('the corner switcher stays pressable while live; correcting the week jumps to today in that week and is remembered', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); expect(corner(a).textContent).toBe('W1');
-    corner(a).dispatchEvent(new a.w.MouseEvent('click', { bubbles: true, cancelable: true })); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Week 1 · today (Live View)', 'Week 2', 'Week 3']);
-    a.qa('.omenu .oi')[1].click(); expect(a.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']);
+    corner(a).dispatchEvent(new a.w.MouseEvent('click', { bubbles: true, cancelable: true })); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Week 1 · today', 'Week 2', 'Week 3']);
+    a.qa('.omenu .oi')[1].click(); expect(a.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(anchors(a)).toEqual({ [a.ev('curId')]: '2026-10-05' });
     freeze(a, 3); a.ev('liveTick()'); expect(a.ev('[focusD,curWk]')).toEqual([3, 2]);
+  });
+  it('outside Live View choosing a week only changes the week shown, not the remembered one', () => {
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); a.ev('setLive(false)'); a.ev('setWeek(3)'); expect(a.ev('[curWk,todayWk()]')).toEqual([3, 1]);
   });
   it('leaving Live View keeps its week on the grid', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); expect(a.ev('[focusD,curWk]')).toEqual([null, 3]);
   });
   it('the question is translated into Spanish', () => {
     const a = openApp({ languages: ['es-ES'] }); setData(a, data()); freeze(a, 2); start(a); expect(a.dlgTitle()).toBe('¿Qué semana es?'); expect(a.dlgButtons()).toContain('Iniciar vista en directo');
+    answer(a, 1, 'Iniciar vista en directo'); a.ev('setLive(false)'); expect(a.q('.dh.c .wkb').title).toMatch(/Hoy está en la semana 1 \(lo recuerda este navegador/);
   });
 });
 
