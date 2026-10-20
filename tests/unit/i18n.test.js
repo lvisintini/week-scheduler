@@ -66,3 +66,20 @@ describe('R-I18N-01 The interface language follows the browser and can be switch
     expect(es.ev('S.schedules[0].name')).toBe('Rutina'); expect(es.ev('S.rhythms[0].name')).toBe('Ritmo normal'); expect(es.ev('cw().name')).toBe('Espacio de trabajo');
   });
 });
+
+describe('R-I18N-02 Descriptions, tooltips and help are household/workplace agnostic', () => {
+  const ES = app.ev('JSON.parse(JSON.stringify(ES))');
+  const titles = [...html.matchAll(/\stitle="([^"]*)"/g)].map(m => m[1]);
+  const en = [...Object.values(D.en), ...titles], es = [...Object.values(D.es), ...ES.map(r => r[1])];
+  const hits = (texts, re) => texts.filter(t => re.test(t));
+  it('English texts never speak of the household alone, only of the "household/workplace"', () => {
+    expect(hits(en, /\bhousehold\b(?!\/workplace)|\b(not at home|school run|gardener|of the household)\b/i)).toEqual([]);
+  });
+  it('Spanish texts never speak of the home alone, only of the "hogar o lugar de trabajo"', () => {
+    expect(hits(es, /\bhogar\b(?! o lugar de trabajo)|los de casa|no es de casa|personas de casa|de fuera de casa|no están? en casa|jardiner/i)).toEqual([]);
+  });
+  it('the household/workplace wording is really used where the household used to be named', () => {
+    expect(D.en.extTip).toMatch(/^For someone from outside the household\/workplace/); expect(D.es.extTip).toMatch(/^Para alguien de fuera del hogar o lugar de trabajo/);
+    expect(D.en.help18).toContain('household/workplace'); expect(D.es.help18).toContain('hogar o lugar de trabajo');
+  });
+});

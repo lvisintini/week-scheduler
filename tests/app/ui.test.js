@@ -166,7 +166,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('fields have visible labels tied to them, and the colour swatch has a name', () => {
     const a = dialog(); ['fT', 'fD', 'fTy', 'fOw'].forEach(id => expect(a.q(`#dlg label[for="${id}"]`), id).not.toBeNull()); expect(a.q('#fC').getAttribute('aria-label')).toBe('Colour');
-    expect(a.q('#dlg label[for="fOw"]').textContent).toBe('Owner'); expect(a.q('#dlg label[for="fOw"]').title).toMatch(/Fair Play/); expect(a.q('#fInv').closest('.fg').querySelector('label:not([for])').textContent).toBe('With');
+    expect(a.q('#dlg label[for="fOw"]').textContent).toBe('Owner'); expect(a.q('#dlg label[for="fOw"]').title).toMatch(/^The person who owns the task's conception, planning and execution, not necessarily the one who performs it/); expect(a.q('#dlg label[for="fOw"]').title).not.toMatch(/Fair Play/); expect(a.q('#fInv').closest('.fg').querySelector('label:not([for])').textContent).toBe('With');
   });
   it('section headers read Who, When, How it fits in and Schedules for events', () => {
     const a = dialog(); expect(a.qa('#dlg .fsec span').filter(x => shown(a, x)).map(x => x.textContent)).toEqual(['Who', 'When', 'How it fits in', 'Schedules *']);

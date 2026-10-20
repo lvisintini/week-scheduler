@@ -194,11 +194,11 @@ describe('R-PPL-02 People can be reordered in the sidebar (the order sets the si
   });
 });
 
-describe('R-PPL-03 External people (someone from outside the household, e.g. a cleaner)', () => {
+describe('R-PPL-03 External people (someone from outside the household/workplace, e.g. a cleaner)', () => {
   const ppl = () => { const a = fresh(blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'C', name: 'Cleaner', color: '#12a5b5' })] })); a.ev('prefs.secExt=false;render()'); return a; };   // External group expanded (R-PPL-04)
   const extItem = a => a.qa('.omenu .oi').find(b => b.textContent.trim().startsWith('External'));
   it('the person menu toggles "External (not one of us)" with a tick and an explanatory tooltip; it is undoable data', () => {
-    const a = ppl(); moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).title).toMatch(/^For someone from outside the household/); expect(extItem(a).querySelector('svg')).toBeNull();
+    const a = ppl(); moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).title).toMatch(/^For someone from outside the household\/workplace/); expect(extItem(a).querySelector('svg')).toBeNull();
     menuClick(a, 'External'); expect(a.ev('S.people[1].external')).toBe(true); expect(a.ev('isDirty()')).toBe(true);
     moreBtn(peopleRows(a)[1]).click(); expect(extItem(a).querySelector('svg')).not.toBeNull(); a.key('Escape');
     a.toolbar('undo').click(); expect(a.ev('S.people[1].external')).toBeUndefined();
@@ -239,7 +239,7 @@ describe('R-PPL-04 External people are kept in a collapsible sub-group at the en
   const names = a => a.ev('S.people.map(p=>p.name)');
   it('by default only our people are listed; external people are folded under "External (N)" with a hidden count', () => {
     const a = mix(); expect(topRows(a)).toEqual(['Ann', 'Bob']); expect(sec(a).querySelector('.extg')).toBeNull();
-    expect(subh(a).textContent).toBe('External21 hidden'); expect(subh(a).getAttribute('aria-expanded')).toBe('false'); expect(sec(a).querySelector('.subh .tip').title).toMatch(/^People from outside the household/);
+    expect(subh(a).textContent).toBe('External21 hidden'); expect(subh(a).getAttribute('aria-expanded')).toBe('false'); expect(sec(a).querySelector('.subh .tip').title).toMatch(/^People from outside the household\/workplace/);
   });
   it('clicking the sub-header unfolds the external people, and the choice is remembered per browser', () => {
     const a = mix(); subh(a).click(); expect(extRows(a)).toEqual(['Cleaner', 'Gardener']); expect(subh(a).getAttribute('aria-expanded')).toBe('true');

@@ -1,4 +1,4 @@
-// Away (R-EVT-24): strips for people who are not at home, which clash with their activities.
+// Away (R-EVT-24): strips for people who are away, which clash with their activities.
 import { describe, it, expect } from 'vitest';
 import { openApp, setData, blank, ev1, person } from '../helpers/app.js';
 
@@ -109,7 +109,7 @@ describe('R-EVT-24 The dialog: Drawn as Box / In the background / Away', () => {
   });
   it('the choices and the error are translated into Spanish', () => {
     const a = openApp({ languages: ['es-ES'] }); setData(a, blank({ people, events: [ev1()] })); a.ev('openDlg(S.events[0])');
-    expect(a.q('#fDrawL').textContent).toBe('Dibujado como'); expect(a.q('#fAw').parentElement.textContent).toBe('Fuera de casa'); expect(a.q('#fBox').parentElement.textContent).toBe('Caja');
-    pick(a, 'fAw'); save(a); expect(a.q('#err').textContent).toContain('Fuera de casa necesita al menos una persona');
+    expect(a.q('#fDrawL').textContent).toBe('Dibujado como'); expect(a.q('#fAw').parentElement.textContent).toBe('Ausente'); expect(a.q('#fBox').parentElement.textContent).toBe('Caja'); expect(a.q('#fAw').parentElement.title).toMatch(/^Para personas que están fuera durante un tiempo/);
+    pick(a, 'fAw'); save(a); expect(a.q('#err').textContent).toContain('Ausente necesita al menos una persona');
   });
 });

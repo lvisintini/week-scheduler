@@ -11,7 +11,7 @@ const change = (a, el, v) => { el.value = v; el.dispatchEvent(new a.w.Event('cha
 const tick = (a, d) => { const cb = row(a, d).querySelector('input'); cb.checked = true; cb.onchange(); };
 const parse = (a, d) => a.ev(`parseData(${JSON.stringify(d)})`);
 
-describe('R-EVT-20 An event has an owner (Fair Play) who performs it by default; any day can have someone stepping in', () => {
+describe('R-EVT-20 An event has an owner (who owns its conception, planning and execution) who performs it by default; any day can have someone stepping in', () => {
   it('the owner is chosen in the dialog; days "Performed by: Owner" follow it, a stand-in stays', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); fillDialog(a, { title: 'School run', person: 'A' }); tick(a, 1); tick(a, 2); change(a, perf(a, 2), 'B'); save(a);
     expect(events(a)[0].owner).toBe('A'); expect(events(a)[0].slots.map(s => [s.person, !!s.fo])).toEqual([['A', true], ['A', true], ['B', false]]);

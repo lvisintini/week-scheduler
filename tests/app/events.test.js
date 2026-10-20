@@ -1013,7 +1013,7 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
   });
   it('the dialog checkbox saves and loads the mark, and turns the nesting option off while ticked', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(S.events[0])'); const cb = a.q('#fBg');
-    expect(cb.closest('label').textContent).toBe("In the background (doesn't keep the household busy)"); expect(cb.closest('label').title).toMatch(/^For things that happen in the background.*the cleaner/);
+    expect(cb.closest('label').textContent).toBe("In the background (doesn't keep us busy)"); expect(cb.closest('label').title).toMatch(/^For things that happen in the background.*the cleaner/);
     expect(a.q('#fNest').disabled).toBe(false); cb.checked = true; cb.onchange(); expect(a.q('#fNest').disabled).toBe(true);
     a.q('#fOk').click(); expect(a.ev('S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
     a.ev('openDlg(S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
@@ -1021,7 +1021,7 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
   });
   it('the checkbox and its explanation are translated', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(S.events[0])');
-    expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no ocupa a los de casa)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para lo que ocurre en segundo plano.*tira/);
+    expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no nos ocupa)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para lo que ocurre en segundo plano.*tira/);
   });
   it('import accepts the mark only when it is exactly true', () => {
     const d = fresh().ev('parseData({schedules:[],events:[{id:"x",schedules:[],bg:true,slots:[{day:0,start:0,end:60}]},{id:"y",schedules:[],bg:1,slots:[{day:0,start:0,end:60}]}]})');
