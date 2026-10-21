@@ -212,7 +212,8 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
   test('the other event\'s core covers the margin, and the uncovered margin shows a 2 px dashed border', async ({ page }) => {
     const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
-    expect(await at(1008)).toBe('core:Pick');   // (Work's resize handle covers its last ~9 minutes, as for every box) expect(await at(550)).toBe('margin:Work'); expect(await at(700)).toBe('core:Work');
+    expect(await at(1008)).toBe('core:Pick');   // (Work's resize handle covers its last ~9 minutes, as for every box)
+    expect(await at(550)).toBe('margin:Work'); expect(await at(700)).toBe('core:Work');
     const st = await page.locator('.mg.t').evaluate(m => { const c = getComputedStyle(m); return [c.borderTopStyle, c.borderTopWidth, c.borderBottomStyle]; });
     expect(st).toEqual(['dashed', '2px', 'none']);
   });
@@ -238,7 +239,8 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
     const p = await clickAt(page, 'School'); await expect(page.locator('.lvb')).toHaveCount(1); await expect(page.locator('.lvb')).toHaveClass(/\bin\b/);
     expect(await page.locator('.lvb').evaluate(e => getComputedStyle(e).animationName)).toBe('lvin');
     const [day, r] = [await boxOf(page.locator('.day')), await boxOf(page.locator('.lvb'))], ax = await page.locator('.lvb').evaluate(e => +e.dataset.ax);
-    expect(Math.abs(day.x + ax - p.x)).toBeLessThan(7);   // at the click, or up to 6 px from it near the column edges expect(r.y > p.y || r.y + r.height < p.y).toBe(true);
+    expect(Math.abs(day.x + ax - p.x)).toBeLessThan(7);   // at the click, or up to 6 px from it near the column edges
+    expect(r.y > p.y || r.y + r.height < p.y).toBe(true);
     expect(r.x).toBeGreaterThanOrEqual(day.x - 1); expect(r.x + r.width).toBeLessThanOrEqual(day.x + day.width + 1);
   });
   test('several open bubbles never overlap; clicking empty space fades them all out', async ({ page }) => {
