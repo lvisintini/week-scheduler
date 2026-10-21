@@ -349,7 +349,7 @@ describe('R-CYC-08 The event dialog: a Weeks row, and a week for every time when
   });
   it('⧉ makes the other ticked days like this one, weeks included', () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 2, person: '' }), sl(2, 800, 860, { wk: 1 })] })] })); a.ev('openDlg(S.events[0])');
-    dayRow(a, 0).querySelector('.cpy').click(); save(a); expect(ev(a).slots.filter(s => s.day === 2).map(s => [s.start, s.wk])).toEqual([[600, 1], [600, 2]]);
+    dayRow(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(ev(a).slots.filter(s => s.day === 2).map(s => [s.start, s.wk])).toEqual([[600, 1], [600, 2]]);
   });
   it('a newly ticked day in per-week mode starts in the week shown on the grid', () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); week(a, 2); a.ev('openDlg(S.events[0])'); tick(a, 3);

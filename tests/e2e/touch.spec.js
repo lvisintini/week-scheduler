@@ -140,3 +140,14 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
     expect(r.y).toBeGreaterThanOrEqual(p.y); expect(r.y + r.height).toBeLessThanOrEqual(p.y + p.height);
   });
 });
+
+test.describe('R-REP-02 The day copy menu on a phone', () => {
+  test('tapping ⧉ in the full-screen dialog opens the menu on screen, and tapping "The days above" copies upwards', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    await page.locator('.dtabs button', { hasText: 'When' }).tap(); await page.locator('#fDays .dr:not(.dx)').nth(2).locator('.cpy').tap();
+    const m = page.locator('#dlg .cmenu'); await expect(m).toBeVisible(); const r = await m.boundingBox(), v = page.viewportSize();
+    expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
+    await m.locator('.oi', { hasText: 'The days above' }).tap(); await page.locator('#fOk').tap();
+    expect((await slots(page)).map(s => [s.day, s.start])).toEqual([[0, 720], [2, 720], [4, 600]]);
+  });
+});

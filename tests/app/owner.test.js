@@ -96,7 +96,7 @@ describe('R-EVT-21 Involved people: the event has a default list, and a day can 
   });
   it('the copy button gives every other ticked day the same performer and own list', () => {
     const a = fresh(blank({ people, events: [ev1({ owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'B', inv: ['C'] }, { day: 2, start: 600, end: 660, person: 'A', fo: true }] })] }));
-    a.ev('openDlg(S.events[0])'); row(a, 0).querySelector('.cpy').click(); save(a); expect(events(a)[0].slots.map(s => [s.person, s.inv])).toEqual([['B', ['C']], ['B', ['C']]]);
+    a.ev('openDlg(S.events[0])'); row(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(events(a)[0].slots.map(s => [s.person, s.inv])).toEqual([['B', ['C']], ['B', ['C']]]);
   });
   it('deleting a person removes them from the days\' own lists', () => {
     const a = fresh(two(['B', 'C'])); a.ev('delPerson(S.people.find(q=>q.id==="C"))'); expect(events(a)[0].slots[0].inv).toEqual(['B']);

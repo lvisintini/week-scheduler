@@ -501,3 +501,14 @@ test.describe('R-UI-14 On a desktop the event dialog keeps its floating, all-in-
     await page.evaluate(() => { document.getElementById('dlg').close(); openSettings(); }); const s = await page.locator('#xDlg').boundingBox(); expect(s.width).toBeLessThan(v.width - 100);
   });
 });
+
+test.describe('R-REP-02 The day copy menu in a real browser', () => {
+  test('⧉ opens its menu beside the button inside the dialog; "The days below" copies only to the later ticked days', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    const cp = page.locator('#fDays .dr:not(.dx)').nth(2).locator('.cpy'); await cp.click(); const m = page.locator('#dlg .cmenu');
+    await expect(m).toBeVisible(); const b = await cp.boundingBox(), r = await m.boundingBox(), v = page.viewportSize();
+    expect(r.y).toBeGreaterThanOrEqual(b.y + b.height - 1); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
+    await m.locator('.oi', { hasText: 'The days below' }).click(); await expect(m).toBeHidden(); await expect(page.locator('#toast')).toHaveText('Copied to Friday');
+    await page.locator('#fOk').click(); expect((await slots(page)).map(s => [s.day, s.start])).toEqual([[0, 600], [2, 720], [4, 720]]);
+  });
+});

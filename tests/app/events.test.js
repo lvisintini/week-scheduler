@@ -647,7 +647,7 @@ describe('R-EVT-12 Around these times: a repetition with approximate timing is d
     const a = fresh(blank({ events: [twoDays(true, true)] })); open(a); change(a, tsel(a, 0), ''); save(a); expect(events(a)[0].slots.map(s => !!s.flex)).toEqual([false, true]);
   });
   it('the copy button of a day gives every other ticked day its timing too', () => {
-    const a = fresh(blank({ events: [twoDays()] })); open(a); change(a, tsel(a, 0), 'flex'); a.qa('#fDays .dr')[0].querySelector('.cpy').click();
+    const a = fresh(blank({ events: [twoDays()] })); open(a); change(a, tsel(a, 0), 'flex'); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click();
     expect(tsel(a, 2).value).toBe('flex'); save(a); expect(events(a)[0].slots.every(s => s.flex)).toBe(true);
   });
   it('a newly ticked day starts fixed, with the times of the nearest ticked day above it', () => {
@@ -790,7 +790,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; onl
   });
   it('the copy button carries the margins to every other ticked day', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '' }, { day: 2, start: 540, end: 1020, person: '' }] })] })); open(a);
-    change(a, tsel(a, 0), 'edge'); change(a, mg(a, 0)[0], '30'); row(a, 0).querySelector('.cpy').click(); expect(tsel(a, 2).value).toBe('edge'); expect(mg(a, 2).map(x => x.value)).toEqual(['30', '15']);
+    change(a, tsel(a, 0), 'edge'); change(a, mg(a, 0)[0], '30'); row(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); expect(tsel(a, 2).value).toBe('edge'); expect(mg(a, 2).map(x => x.value)).toEqual(['30', '15']);
     a.q('#fOk').click(); expect(events(a)[0].slots.map(s => [s.fs, s.fe])).toEqual([[30, 15], [30, 15]]);
   });
   it('opening an event with flexible start/end shows it on its day, and saving keeps it', () => {
@@ -862,7 +862,7 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
     a.ev("setFC('#00ff00')"); expect(sw(a, 1).style.background).toBe('rgb(0, 255, 0)');
   });
   it('⧉ copies the colour to the other days and + starts a new time in the event colour', () => {
-    const a = twoDays({ col: '#ff8800' }); open(a); a.qa('#fDays .dr')[0].querySelector('.cpy').click();
+    const a = twoDays({ col: '#ff8800' }); open(a); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click();
     a.qa('#fDays .dr')[0].querySelector('.addt').click(); save(a);
     expect(events(a)[0].slots.map(s => s.col)).toEqual(['#ff8800', undefined, '#ff8800']);
   });
@@ -890,7 +890,7 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
     sw(a, 1).click(); expect(menu(a)).toContain('Activity type colour (Sleep)');
   });
   it('choosing the type colour saves "t", and ⧉ copies it to the other days', () => {
-    const a = typed({ col: undefined }); open(a); pick(a, 0, 'Activity type'); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); save(a);
+    const a = typed({ col: undefined }); open(a); pick(a, 0, 'Activity type'); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a);
     expect(events(a)[0].slots.map(s => s.col)).toEqual(['t', 't']);
   });
 });

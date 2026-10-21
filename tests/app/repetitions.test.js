@@ -23,8 +23,8 @@ describe('R-REP-01 An event can repeat on chosen days with its own times and peo
   });
   it('the copy button of a day gives every other ticked day its times', () => {
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'T', days: { 0: { start: '840', end: '900' }, 1: { start: '720', end: '780' }, 3: {} } });
-    rows(a)[0].querySelector('.cpy').click(); save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 840, 900], [1, 840, 900], [3, 840, 900]]);
-    expect(a.toast()).toBe('Copied to the other days');
+    rows(a)[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 840, 900], [1, 840, 900], [3, 840, 900]]);
+    expect(a.toast()).toBe('Copied to Tuesday, Thursday');
   });
   it('each repetition can have its own performer, defaulting to the owner', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); fillDialog(a, { title: 'T', person: 'A' }); fillDialog(a, { days: { 0: {}, 1: {}, 2: { person: 'B' } } });
@@ -84,8 +84,30 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
   it('the copy button of a day makes every other ticked day like it, adding or removing their further times', () => {
     const a = dlg(); days(a)[0].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click();
     const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '900'; x[0].onchange(); x[1].value = '960'; x[1].onchange();   // Monday 10:00–11:00 and 15:00–16:00
-    days(a)[0].querySelector('.cpy').click(); expect(a.qa('#fDays .dr.dx')).toHaveLength(3); save(a);
+    days(a)[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click(); expect(a.qa('#fDays .dr.dx')).toHaveLength(3); save(a);
     expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 600, 660], [0, 900, 960], [2, 600, 660], [2, 900, 960], [4, 600, 660], [4, 900, 960]]);
+  });
+  const setT = (a, d, s, e) => { const x = days(a)[d].querySelectorAll('select'); x[0].value = s; x[0].onchange(); x[1].value = e; x[1].onchange(); };
+  const menu = a => a.qa('.cmenu .oi').map(b => [b.textContent, b.disabled]);
+  it('the copy button opens a menu: all other ticked days, the ones below or the ones above, naming them; a direction with none is greyed out', () => {
+    const a = dlg(); const cp = days(a)[2].querySelector('.cpy'); expect(cp.getAttribute('aria-haspopup')).toBe('menu'); cp.click();
+    expect(a.q('.cmenu .oh').textContent).toBe('Wednesday: copy to'); expect(a.q('.cmenu').closest('dialog')).toBe(a.q('#dlg'));
+    expect(menu(a)).toEqual([['All other days (Mon, Fri)', false], ['The days below (Fri)', false], ['The days above (Mon)', false]]);
+    expect(a.d.activeElement).toBe(a.q('.cmenu .oi'));
+    a.q('.cmenu').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); expect(a.q('.cmenu')).toBeNull(); expect(a.d.activeElement).toBe(cp);
+    days(a)[0].querySelector('.cpy').click(); expect(menu(a)).toEqual([['All other days (Wed, Fri)', false], ['The days below (Wed, Fri)', false], ['The days above (none ticked)', true]]);
+  });
+  it('copying to the days below changes only the ticked days after this one; to the days above only those before it', () => {
+    let a = dlg(); setT(a, 2, '900', '960'); days(a)[2].querySelector('.cpy').click(); a.qa('.cmenu .oi')[1].click();
+    expect(a.toast()).toBe('Copied to Friday'); expect([0, 2, 4].map(d => times(days(a)[d]))).toEqual([['600', '660'], ['900', '960'], ['900', '960']]);
+    a = dlg(); setT(a, 2, '900', '960'); days(a)[2].querySelector('.cpy').click(); a.qa('.cmenu .oi')[2].click();
+    expect(a.toast()).toBe('Copied to Monday'); expect([0, 2, 4].map(d => times(days(a)[d]))).toEqual([['900', '960'], ['900', '960'], ['600', '660']]);
+    save(a); expect(slots(a).map(s => [s.day, s.start])).toEqual([[0, 900], [2, 900], [4, 600]]);
+  });
+  it('the copy menu and its message are translated', () => {
+    const a = dlg(); a.ev("setLang('es')"); days(a)[2].querySelector('.cpy').click();
+    expect(a.q('.cmenu .oh').textContent).toBe('Miércoles: copiar a'); expect(menu(a).map(x => x[0])).toEqual(['Todos los demás días (Lun, Vie)', 'Los días de abajo (Vie)', 'Los días de arriba (Lun)']);
+    a.qa('.cmenu .oi')[1].click(); expect(a.toast()).toBe('Copiado a: Viernes');
   });
   it('end times at or before the start are disabled in the end list', () => {
     const a = fresh(blank()); a.toolbar('add').click(); const end = a.qa('#fDays .dr')[0].querySelectorAll('select')[1]; const disabled = [...end.options].filter(o => o.disabled).map(o => +o.value);

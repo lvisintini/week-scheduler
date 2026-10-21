@@ -202,7 +202,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   it('every time and person select of the day rows and blocks has a spoken name, also in Spanish', () => {
     const a = dialog(), r = a.qa('#fDays .dr')[0];
     expect([...r.querySelectorAll('select')].map(x => x.getAttribute('aria-label'))).toEqual(['Monday: start', 'Monday: end', 'Monday: performed by', 'Monday: timing', 'Flexible start', 'Flexible end']);
-    expect(r.querySelector('.wbtn').getAttribute('aria-label')).toMatch(/^Monday: with: Default/); expect(r.querySelector('.cpy').getAttribute('aria-label')).toMatch(/^Copy this day to all the other days/);
+    expect(r.querySelector('.wbtn').getAttribute('aria-label')).toMatch(/^Monday: with: Default/); expect(r.querySelector('.cpy').getAttribute('aria-label')).toMatch(/^Copy this day to the other ticked days/);
     r.querySelector('.addt').click(); const x = a.q('#fDays .dr.dx');
     expect([...x.querySelectorAll('select')].slice(0, 4).map(y => y.getAttribute('aria-label'))).toEqual(['Monday, time 2: start', 'Monday, time 2: end', 'Monday, time 2: performed by', 'Monday, time 2: timing']); expect(x.querySelector('.bx').getAttribute('aria-label')).toBe('Remove this time');
     a.ev("setLang('es')"); const wed = a.qa('#fDays .dr:not(.dx)')[2]; expect(wed.querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio'); expect(wed.querySelectorAll('select')[2].getAttribute('aria-label')).toBe('Miércoles: lo hace');
