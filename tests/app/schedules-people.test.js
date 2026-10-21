@@ -276,3 +276,28 @@ describe('R-PPL-04 External people are kept in a collapsible sub-group at the en
     const a = fresh(blank({ people: [person({ id: 'X', name: 'Cleaner', external: true, visible: false })] }), { languages: ['es'] }); expect(subh(a).textContent).toBe('Externas11 ocultas');
   });
 });
+
+describe('R-SCH-05 Schedules can be reordered in the sidebar like people and activity types', () => {
+  const three = () => fresh(blank({ schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', color: '#e5484d' }), sched({ id: 's3', name: 'School', color: '#2fa66a' })], events: [ev1({ schedules: ['s1'] })] }));
+  const names = a => a.ev('S.schedules.map(s=>s.name)'), grips = a => [...schedRows(a)].map(r => r.querySelector('.grip'));
+  const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
+  it('each schedule row starts with a grip that names the schedule and explains what the order does', () => {
+    const a = three(), g = grips(a); expect(g[0]).toBe(schedRows(a)[0].firstElementChild); expect(g[1].getAttribute('aria-label')).toBe('Move Work');
+    expect(g[1].title).toMatch(/^Drag to reorder/); expect(g[1].title).toContain('first visible schedule');
+  });
+  it('the arrow keys and dragging move a schedule; it is undoable data that marks the workspace unsaved', () => {
+    const a = three(); a.ev('saveMem("all")'); key(grips(a)[0], 'ArrowDown'); expect(names(a)).toEqual(['Work', 'Home', 'School']); expect(a.d.activeElement.getAttribute('aria-label')).toBe('Move Home');
+    grips(a)[2].onpointerdown({ button: 0, preventDefault() {}, stopPropagation() {} }); pointer(a, 'pointermove', { x: 10, y: -500 }); pointer(a, 'pointerup', { x: 10, y: -500 });
+    expect(names(a)).toEqual(['School', 'Work', 'Home']); expect(a.ev('isDirty()')).toBe(true); a.toolbar('undo').click(); expect(names(a)).toEqual(['Work', 'Home', 'School']);
+  });
+  it('a new event goes into the first visible schedule in the new order, and the dialog lists the schedules in that order', () => {
+    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp'); a.toolbar('add').click();
+    expect(a.qa('#fSch label').map(l => [l.textContent.trim(), l.querySelector('input').checked])).toEqual([['School', true], ['Home', false], ['Work', false]]);
+  });
+  it('printouts list the visible schedules in the new order', () => {
+    const a = three(); key(grips(a)[0], 'ArrowDown'); expect(a.ev('metaLine()').indexOf('Work')).toBeLessThan(a.ev('metaLine()').indexOf('Home'));
+  });
+  it('the order changes nothing on the grid: the events, their colours and their lanes stay the same', () => {
+    const a = three(); const before = a.q('#grid').innerHTML; key(grips(a)[0], 'ArrowDown'); expect(a.q('#grid').innerHTML).toBe(before);
+  });
+});

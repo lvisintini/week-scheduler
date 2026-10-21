@@ -10,7 +10,6 @@
 - **[P]** A touch equivalent of right-click Copy (long-press is now move/create; R-TOUCH-01); phases in day agendas; lip text shrinking for very short phases; real-device testing of the touch gestures on **iOS Safari** (`tests/manual/touch.md`; Android Chrome passed every step).
 - **[P]** Cycles of weeks (R-CYC): per-week rhythms for shift work (R-CYC-16); a side-by-side view of the whole cycle (every week's days in one row).
 - **[P]** Locking browser memory with a passphrase (R-DATA-02; deliberately postponed **[U]**).
-- **[P]** Reordering the other sidebar lists (schedules, rhythms) like people and activity types (R-PPL-02).
 - **[P]** Dragging a flexible event's core edges (R-EVT-15; today only the outer window moves and resizes).
 - **[P]** A stricter CSP with hashed scripts, which needs a build step (R-SEC-01).
 - **[P]** **Calendar exports: iCal (`.ics`) and Google Calendar** **[U]**. To discuss first, because both meet existing decisions:

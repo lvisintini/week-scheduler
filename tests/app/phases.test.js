@@ -266,3 +266,24 @@ describe('R-PHS-06 Clicking a phase in Phases mode opens its edit dialog', () =>
     const p = phaseList(a)[0]; expect(p.title).toBe('Long lunch'); expect(p.involved).toBeUndefined(); expect(p.slots.every(s => s.person === undefined)).toBe(true);
   });
 });
+
+describe('R-PHS-09 Rhythms can be reordered in the sidebar like people and activity types', () => {
+  const three = () => fresh(blank({ rhythms: [rhythm({ visible: false }), rhythm({ id: 'r2', name: 'Holiday', visible: false }), rhythm({ id: 'r3', name: 'Exams', visible: false })], phases: [phase()] }));
+  const rows = a => [...sections(a)[3].querySelectorAll('.sch')].filter(r => r.querySelector('.grip'));
+  const names = a => a.ev('S.rhythms.map(s=>s.name)'), grips = a => rows(a).map(r => r.querySelector('.grip'));
+  const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
+  it('each rhythm row starts with a grip (the opacity row has none) that explains what the order does', () => {
+    const a = three(); expect(grips(a)).toHaveLength(3); expect(grips(a)[0]).toBe(rows(a)[0].firstElementChild); expect(grips(a)[1].getAttribute('aria-label')).toBe('Move Holiday');
+    expect(grips(a)[1].title).toContain('Phases mode shows the first rhythm');
+  });
+  it('the arrow keys move a rhythm; it is undoable data', () => {
+    const a = three(); key(grips(a)[1], 'ArrowUp'); expect(names(a)).toEqual(['Holiday', 'Normal', 'Exams']); a.toolbar('undo').click(); expect(names(a)).toEqual(['Normal', 'Holiday', 'Exams']);
+  });
+  it('switching to Phases mode with no rhythm shown shows the first one in the new order', () => {
+    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp'); modeBtn(a, 'Phases').click();
+    expect(a.ev('S.rhythms.filter(r=>r.visible).map(r=>r.name)')).toEqual(['Exams']);
+  });
+  it('the phase dialog lists the rhythms in the new order', () => {
+    const a = three(); key(grips(a)[0], 'ArrowDown'); a.ev('openDlg(S.phases[0])'); expect(a.qa('#fSch label').map(l => l.textContent.trim())).toEqual(['Holiday', 'Normal', 'Exams']);
+  });
+});
