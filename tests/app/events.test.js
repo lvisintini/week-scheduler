@@ -633,6 +633,7 @@ describe('R-EVT-12 Around these times: a repetition with approximate timing is d
   it('screen readers, the hover card and the agenda say "Flexible time (around these times)"', () => {
     const a = fresh(blank({ events: [twoDays(true)] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Flexible time (around these times)');
     expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('Flexible time'); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('Flexible time');
+    a.ev("setLang('es')"); expect(a.q('.ev').getAttribute('aria-label')).toContain('Horas flexibles (alrededor de estas horas)');   // horario is the word for a schedule
   });
   it('each day has its own Timing list; "Around these times" marks only that day as flexible', () => {
     const a = fresh(blank({ events: [twoDays()] })); open(a); expect([tsel(a, 0).value, tsel(a, 2).value]).toEqual(['', '']);
