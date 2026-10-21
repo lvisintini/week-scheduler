@@ -566,19 +566,69 @@ describe('R-EVT-11 Activity type: each event has at most one type, shown by its 
   });
 });
 
-describe('R-EVT-12 Flexible time: events or single repetitions with approximate timing get a dashed border', () => {
+describe('R-EVT-12 Around these times: a repetition with approximate timing is drawn and treated as all flexible margin', () => {
   const tsel = (a, day) => a.qa('#fDays .dr')[day].querySelector('.tsel');   // each day's own Timing list
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
   const twoDays = (f0 = false, f2 = false) => ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', ...(f0 ? { flex: true } : {}) }, { day: 2, start: 600, end: 660, person: '', ...(f2 ? { flex: true } : {}) }] });
-  it('a flexible repetition is drawn with a dashed border; the other repetitions keep the normal border', () => {
+  const ol = [person({ id: 'O', name: 'Olivia', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
+  const hw = (start = 1020, end = 1080, o = {}) => ev1({ id: 'h', title: 'Homework', slots: [{ day: 0, start, end, person: 'O', flex: true, ...o }] });
+  const at = (id, title, start, end, p = 'O', o = {}) => ev1({ id, title, color: '#2fa66a', slots: [{ day: 0, start, end, person: p }], ...o });
+  const hwBox = a => a.qa('.day[data-d="0"] .ev').find(b => b.querySelector('.t').textContent === 'Homework');
+  it('a flexible repetition looks like a margin (translucent tint, dashed border in its colour); the other repetitions stay solid boxes', () => {
     const a = fresh(blank({ events: [twoDays(true, false)] }));
     const [mon, wed] = [a.q('.day[data-d="0"] .ev'), a.q('.day[data-d="2"] .ev')];
-    expect(mon.classList.contains('flex')).toBe(true); expect(mon.style.getPropertyValue('--dash')).not.toBe(''); expect(wed.classList.contains('flex')).toBe(false);
-    expect(cssRule(a, '.ev.flex').style.getPropertyValue('border')).toMatch(/2px dashed var\(--dash\)/);
+    expect(mon.classList.contains('mgo')).toBe(true); expect(wed.classList.contains('mgo')).toBe(false);
+    const r = cssRule(a, '.ev.mgo').style; expect(r.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/); expect(r.getPropertyValue('background')).toMatch(/var\(--c\) 30%/);
   });
-  it('the dashed border colour contrasts with the box: light on dark colours, dark on light ones', () => {
-    const a = fresh(blank({ events: [ev1({ id: 'd', color: '#1d2330', slots: [{ day: 0, start: 600, end: 660, person: '', flex: true }] }), ev1({ id: 'y', color: '#f5c518', slots: [{ day: 1, start: 600, end: 660, person: '', flex: true }] })] }));
-    expect(a.q('.day[data-d="0"] .ev').style.getPropertyValue('--dash')).toMatch(/^#fff/); expect(a.q('.day[data-d="1"] .ev').style.getPropertyValue('--dash')).toMatch(/^#1d2330/);
+  it('a flexible box lies under every core box, so a core of its own person covers it where they meet', () => {
+    const a = fresh(blank({ people: ol, events: [at('p', 'Piano', 1050, 1080), hw(1020, 1140)] })), kids = [...a.q('.day[data-d="0"]').children];
+    expect(kids.indexOf(hwBox(a))).toBeLessThan(kids.indexOf(a.qa('.ev').find(b => !b.classList.contains('mgo'))));
+    expect(a.ev('piecesAt(0,1060,true).map(x=>x.e.id)')).toEqual(['p']); expect(a.ev('piecesAt(0,1030,true).map(x=>x.e.id)')).toEqual(['h']);
+  });
+  it('a core of its own person over part of its window makes no stripes and no warning, and both share one lane', () => {
+    const a = fresh(blank({ people: ol, events: [hw(1020, 1140), at('p', 'Piano', 1080, 1110)] }));
+    expect(a.qa('.ov')).toHaveLength(0); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual([undefined, undefined]);
+    expect(hwBox(a).getAttribute('aria-label')).not.toContain('No time left'); expect(hwBox(a).querySelector('.flags')).toBeNull();
+  });
+  it('squeezed out: when cores of its people cover its whole window it clashes again, with stripes, a warning and a line in the card and agenda', () => {
+    const a = fresh(blank({ people: ol, events: [hw(), at('f', 'Football', 1020, 1110)] })), note = 'No time left around these times (Football)';
+    expect(a.qa('.ov')).toHaveLength(1); expect(hwBox(a).getAttribute('aria-label')).toContain(note); expect(hwBox(a).querySelector('.flags')).not.toBeNull();
+    expect(hwBox(a).classList.contains('mgo')).toBe(true); expect(a.ev('piecesAt(0,1040,true).map(x=>x.e.id).sort()')).toEqual(['f', 'h']);
+    expect(a.ev('peekHTML(piecesAt(0,1040,true))')).toContain(note); a.ev('openAgenda(0)'); expect(a.q('#agBody').textContent).toContain('⚠ ' + note);
+    a.ev("setLang('es')"); expect(hwBox(a).getAttribute('aria-label')).toContain('No queda tiempo libre alrededor de estas horas (Football)');
+  });
+  it('several cores back to back and an event without a responsible person squeeze it out together; another person\'s core never does', () => {
+    const a = fresh(blank({ people: ol, events: [hw(), at('f', 'Football', 1000, 1050), at('d', 'Dinner', 1050, 1100, '')] }));
+    expect(hwBox(a).getAttribute('aria-label')).toContain('(Football, Dinner)');
+    const b = fresh(blank({ people: ol, events: [hw(), at('f', 'Football', 1000, 1050), at('d', 'Dinner', 1050, 1100, 'B')] }));
+    expect(hwBox(b).getAttribute('aria-label')).not.toContain('No time left'); expect(b.qa('.ov')).toHaveLength(0);
+  });
+  it('an Away strip of its people that covers its whole window squeezes it out: hatched stripes and an away line', () => {
+    const away = ev1({ id: 'aw', title: "At Dad's", color: '#8e4ec6', away: true, involved: ['O'], slots: [{ day: 0, start: 960, end: 1200, person: '' }] });
+    const a = fresh(blank({ people: ol, events: [hw(), away] })); expect(a.qa('.awov')).toHaveLength(1);
+    expect(hwBox(a).getAttribute('aria-label')).toContain('Olivia is away'); expect(hwBox(a).getAttribute('aria-label')).toContain("No time left around these times (At Dad's)");
+    const b = fresh(blank({ people: ol, events: [hw(), { ...away, slots: [{ day: 0, start: 960, end: 1050, person: '' }] }] })); expect(b.qa('.awov')).toHaveLength(0);
+  });
+  it('past midnight it is squeezed out only when every part is covered: a covered evening with a free morning is fine', () => {
+    const late = ev1({ id: 'r', title: 'Reading', slots: [{ day: 0, start: 1380, end: 1500, person: 'O', flex: true }] });
+    const mon = a => a.qa('.day[data-d="0"] .ev').find(b => b.querySelector('.t').textContent === 'Reading');
+    const a = fresh(blank({ people: ol, events: [late, at('x', 'Call', 1320, 1440)] })); expect(mon(a).getAttribute('aria-label')).not.toContain('No time left'); expect(a.qa('.ov')).toHaveLength(0);
+    const b = fresh(blank({ people: ol, events: [late, at('x', 'Call', 1320, 1440), ev1({ id: 'y', title: 'Night call', slots: [{ day: 1, start: 0, end: 90, person: 'O' }] })] }));
+    expect(mon(b).getAttribute('aria-label')).toContain('No time left around these times (Call, Night call)');
+  });
+  it('another person\'s occurrence goes beside it for its whole window, even where it would only reach the flexible part', () => {
+    const a = fresh(blank({ people: ol, events: [hw(1020, 1140), at('c', 'Cooking', 1110, 1200, 'B')] }));
+    expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('marked as done along the way, it is nested when its whole window lies within an activity of its person', () => {
+    const a = fresh(blank({ people: ol, events: [at('f', 'Football', 960, 1110), ev1({ id: 'm', title: 'Milk', nest: true, slots: [{ day: 0, start: 1035, end: 1050, person: 'O', flex: true }] })] }));
+    expect(a.qa('.ev.nest').map(b => b.querySelector('.t').textContent)).toEqual(['Milk']); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('repetitions of one event: one around these times is warned about only when clashing repetitions leave no minute of it (R-REP-05)', () => {
+    const a = fresh(); const set = (s1, s2) => a.ev(`overlapSet({},${JSON.stringify([s1, s2])}).size`);
+    expect(set({ day: 0, start: 600, end: 660, flex: true }, { day: 0, start: 630, end: 720 })).toBe(0); expect(set({ day: 0, start: 600, end: 660, flex: true }, { day: 0, start: 600, end: 720 })).toBe(2);
+    expect(set({ day: 0, start: 600, end: 660, flex: true, person: 'A' }, { day: 0, start: 540, end: 720, person: 'B' })).toBe(0);
+    expect(set({ day: 0, start: 600, end: 660, flex: true }, { day: 0, start: 600, end: 660, flex: true })).toBe(0);
   });
   it('screen readers, the hover card and the agenda say "Flexible time (around these times)"', () => {
     const a = fresh(blank({ events: [twoDays(true)] })); expect(a.q('.ev').getAttribute('aria-label')).toContain('Flexible time (around these times)');
@@ -615,7 +665,7 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
     const p = a => a.ev('parseData({schedules:[],rhythms:[{id:"r"}],events:[{id:"x",schedules:[],slots:[{day:0,start:0,end:60,flex:true},{day:1,start:0,end:60,flex:1}]}],phases:[{id:"p",rhythms:["r"],slots:[{day:0,start:0,end:60,flex:true}]}]})');
     const d = p(fresh()); expect(d.events[0].slots.map(s => s.flex)).toEqual([true, undefined]); expect(d.phases[0].slots[0].flex).toBeUndefined();
   });
-  it('the overlap rules do not change: overlapping flexible events with nobody in common still sit side by side', () => {
+  it('overlapping flexible events with nobody in common sit side by side without stripes', () => {
     const a = fresh(blank({ people, events: [ev1({ id: 'a', slots: [{ day: 0, start: 600, end: 720, person: 'A', flex: true }] }), ev1({ id: 'b', slots: [{ day: 0, start: 660, end: 780, person: 'B', flex: true }] })] }));
     expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
   });
@@ -626,7 +676,7 @@ describe('R-EVT-12 Flexible time: events or single repetitions with approximate 
   });
 });
 
-describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that never cause stripes or lanes', () => {
+describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; only cores clash, and other people go beside the margins', () => {
   const y = m => `${(m - 300) / 60 * 48}px`;
   const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15 }], ...o });
   const pickup = (person = 'B', start = 1005, o = {}) => ev1({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [{ day: 0, start, end: 1050, person, ...o }] });
@@ -663,8 +713,8 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     const a = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A', fe: 15 }] }), pickup('A', 975)] })), ov = a.qa('.ov');
     expect(ov).toHaveLength(1); expect(ov[0].style.top).toBe(y(975)); expect(parseFloat(ov[0].style.height)).toBeCloseTo(30 / 60 * 48 - 1, 1);
   });
-  it('parallel events that touch only through a margin both keep the full column width (no side-by-side lanes)', () => {
-    const a = fresh(blank({ people, events: [work(), pickup('B')] })); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual([undefined, undefined]);
+  it('parallel events that touch only through a margin go side by side for their whole length', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('B')] })); expect(a.qa('.ev').map(b => b.dataset.lane)).toEqual(['0/2', '1/2']); expect(a.q('.mg.b').dataset.lane).toBe('0/2'); expect(a.qa('.ov')).toHaveLength(0);
     const b = fresh(blank({ people, events: [work({ slots: [{ day: 0, start: 540, end: 1020, person: 'A' }] }), pickup('B')] })); expect(b.qa('.ev').map(x => x.dataset.lane)).toEqual(['0/2', '1/2']);
   });
   it('a piece that is all margin (the text box before a core that starts after midnight) takes a lane beside parallel events', () => {
@@ -673,6 +723,11 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     const a = fresh(blank({ people, events: [sleep] })), mon = [...col0(a).querySelectorAll('.ev')];
     const luis = mon.find(b => b.classList.contains('mgo')); expect(luis.getAttribute('aria-label')).toContain('Ann');
     expect(mon.map(b => b.dataset.lane).sort()).toEqual(['0/3', '1/3', '2/3']); expect(col0(a).querySelectorAll('.ov')).toHaveLength(0);
+  });
+  it('events of the same person, or without a responsible person, that touch only through a margin share one lane without stripes', () => {
+    const a = fresh(blank({ people, events: [work(), pickup('A'), ev1({ id: 'q', title: 'Q', slots: [{ day: 0, start: 900, end: 1050, person: 'B' }] })] }));
+    const lane = id => a.qa('.ev').find(b => b._it.e.id === id).dataset.lane; expect([lane('w'), lane('p'), lane('q')]).toEqual(['0/2', '0/2', '1/2']); expect(a.qa('.ov')).toHaveLength(0);
+    const b = fresh(blank({ people, events: [work(), pickup('')] })); expect(b.qa('.ev').map(x => x.dataset.lane)).toEqual([undefined, undefined]); expect(b.qa('.ov')).toHaveLength(0);
   });
   it('an all-margin piece that shares a person with an overlapping event stays in that event\'s lane and gets no stripes', () => {
     const a = fresh(blank({ people, events: [ev1({ id: 'x', title: 'X', slots: [{ day: 0, start: 1200, end: 1440, person: 'A' }] }), ev1({ id: 'y', title: 'Y', slots: [{ day: 0, start: 1320, end: 1560, person: 'A', fs: 180 }] })] }));
@@ -687,9 +742,9 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins that
     expect(set({ day: 6, start: 1380, end: 1500, fe: 60 }, { day: 0, start: 0, end: 60, fs: 30 })).toBe(0);
   });
   it('the pointer over a margin covered by another core picks that core only; over margins alone it finds the margin', () => {
-    const a = fresh(blank({ people, events: [work(), pickup('B')] }));
+    const a = fresh(blank({ people, events: [work(), pickup('')] }));
     expect(a.ev('piecesAt(0,1010,true).map(x=>x.e.id)')).toEqual(['p']); expect(a.ev('piecesAt(0,550,true).map(x=>x.e.id)')).toEqual(['w']);
-    const b = fresh(blank({ people, events: [work(), pickup('B', 1005, { fs: 15 })] })); expect(b.ev('piecesAt(0,1010,true).map(x=>x.e.id)')).toEqual(['w', 'p']);
+    const b = fresh(blank({ people, events: [work(), pickup('A', 1005, { fs: 15 })] })); expect(b.ev('piecesAt(0,1010,true).map(x=>x.e.id)')).toEqual(['w', 'p']);
   });
   it('dragging a margin moves the whole event and the margins come along', async () => {
     const a = fresh(blank({ people, events: [work()] })); await dragFrom(a, a.q('.mg.t'), { col: 0, min: 550 }, { col: 1, min: 610 });

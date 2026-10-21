@@ -164,6 +164,26 @@ describe('R-EVT-15 R-STAT-02 Flexible start/end in the statistics', () => {
   });
 });
 
+describe('R-EVT-12 R-STAT-02 Around these times in the statistics: all flexible margin, unless squeezed out', () => {
+  const hw = (start = 1020, end = 1080, o = {}) => ev1({ id: 'h', type: 'tf', slots: [{ day: 0, start, end, person: 'A', flex: true }], ...o });
+  it('it counts as planned and flexible time, and a core of the same person at the same time takes that time', () => {
+    const a = fresh(blank({ people, types, events: [hw(1020, 1140), ev1({ id: 'p', type: 'tw', slots: [{ day: 0, start: 1080, end: 1110, person: 'A' }] })] }));
+    const s = stats(a); expect(s.by).toEqual({ tf: 90, tw: 30 }); expect(s.fx).toEqual({ tf: 90 }); expect(s.overlap).toBe(0); expect(s.places).toBe(0);
+  });
+  it('two of them at the same time are split evenly and are not counted as overlapping', () => {
+    const a = fresh(blank({ people, types, events: [hw(), ev1({ id: 'r', type: 'tw', slots: [{ day: 0, start: 1020, end: 1080, person: 'A', flex: true }] })] }));
+    const s = stats(a); expect(s.by).toEqual({ tf: 30, tw: 30 }); expect(s.flex).toBe(60); expect(s.overlap).toBe(0);
+  });
+  it('squeezed out by cores of the same person it is a core again: the time is split and counted as overlapping', () => {
+    const a = fresh(blank({ people, types, events: [hw(), ev1({ id: 'f', type: 'tw', slots: [{ day: 0, start: 1020, end: 1110, person: 'A' }] })] }));
+    const s = stats(a); expect(s.by).toEqual({ tf: 30, tw: 60 }); expect(s.overlap).toBe(60); expect(s.places).toBe(1); expect(s.fx).toEqual({ tf: 30 });
+  });
+  it('a nested one done during another activity takes its time, as nested activities do', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ id: 'f', type: 'tw', slots: [{ day: 0, start: 960, end: 1110, person: 'A' }] }), hw(1020, 1035, { nest: true })] }));
+    const s = stats(a); expect(s.by).toEqual({ tw: 135, tf: 15 }); expect(s.overlap).toBe(0);
+  });
+});
+
 describe('R-PPL-03 R-EVT-16 R-STAT-02 External people and on-call involvement in the statistics', () => {
   const ppl = [...people, person({ id: 'X', name: 'Cleaner', color: '#12a5b5', external: true })];
   it('external people are not in the person picker, the Everyone view or the table behind it', () => {

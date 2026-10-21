@@ -199,15 +199,16 @@ test.describe('R-EVT-11 R-EVT-12 Soft-look activity types and flexible time as d
     const ch = free.bg.match(/[\d.]+/g).slice(0, 3).map(Number), scale = free.bg.startsWith('color(') ? 255 : 1;   // Chrome reports color-mix() as color(srgb r g b) in 0–1
     expect(ch.reduce((t, v) => t + v * scale, 0)).toBeGreaterThan(600);   // much lighter than #2fa66a (sum 433)
   });
-  test('a flexible repetition has a 2 px dashed border', async ({ page }) => {
-    expect((await look(page, 'Homework')).top).toBe('2px dashed'); expect((await look(page, 'Plain')).top).toBe('1px solid');
+  test('a flexible repetition is a translucent tint with a 2 px dashed border in its own colour, like a margin', async ({ page }) => {
+    const hw = await page.locator('.ev', { hasText: 'Homework' }).evaluate(b => { const c = getComputedStyle(b); return { top: c.borderTopWidth + ' ' + c.borderTopStyle, bc: c.borderTopColor, bg: c.backgroundColor }; });
+    expect(hw.top).toBe('2px dashed'); expect(hw.bc).toBe('rgb(232, 145, 45)'); expect(hw.bg).toMatch(/0\.3\)$/); expect((await look(page, 'Plain')).top).toBe('1px solid');
   });
 });
 
 test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   test.beforeEach(async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })], events: [
-      ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] }), ev({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [slot(0, 1005, 1050, 'B')] })] }));
+      ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] }), ev({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [slot(0, 1005, 1050, '')] })] }));
   });
   test('the other event\'s core covers the margin, and the uncovered margin shows a 2 px dashed border', async ({ page }) => {
     const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
@@ -215,9 +216,13 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
     const st = await page.locator('.mg.t').evaluate(m => { const c = getComputedStyle(m); return [c.borderTopStyle, c.borderTopWidth, c.borderBottomStyle]; });
     expect(st).toEqual(['dashed', '2px', 'none']);
   });
-  test('both events keep the full column width although they touch through a margin', async ({ page }) => {
-    const w = await boxOf(page.locator('.ev', { hasText: 'Work' })), p = await boxOf(page.locator('.ev', { hasText: 'Pickup' }));
+  test('an event without a responsible person covers the margin at full width; another person\'s event goes beside it for its whole length', async ({ page }) => {
+    let w = await boxOf(page.locator('.ev', { hasText: 'Work' })), p = await boxOf(page.locator('.ev', { hasText: 'Pickup' }));
     expect(Math.abs(w.width - p.width)).toBeLessThan(1); expect(Math.abs(w.x - p.x)).toBeLessThan(1); expect(await page.locator('.ov').count()).toBe(0);
+    await page.evaluate(() => { S.events[1].slots[0].person = 'B'; render(); });
+    w = await boxOf(page.locator('.ev', { hasText: 'Work' })); p = await boxOf(page.locator('.ev', { hasText: 'Pickup' })); const mb = await boxOf(page.locator('.mg.b'));
+    expect(Math.abs(w.width - p.width)).toBeLessThan(3);   // half width each (the 2 px gap between lanes)
+    expect(w.x + w.width).toBeLessThanOrEqual(p.x + 1); expect(Math.abs(mb.x - w.x)).toBeLessThan(1); expect(await page.locator('.ov').count()).toBe(0);
   });
 });
 
