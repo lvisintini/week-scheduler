@@ -94,6 +94,11 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await page.evaluate(() => { document.getElementById('dlg').close(); openDlg(S.phases[1]); }); await expect(page.locator('#fWk .chips')).toBeVisible();
     r = await new AxeBuilder({ page }).include('#dlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
+  test('R-CYC-19 every week of the cycle side by side adds no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, weekInfo: [{}, { name: 'Nights', color: '#8e4ec6' }], events: [ev({ title: 'Standup', weeks: [2] })] }));
+    await page.evaluate(() => setAllWk(true)); await expect(page.locator('#grid .day')).toHaveCount(14);
+    ratchet(await scan(page), {});
+  });
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

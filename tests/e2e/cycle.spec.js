@@ -35,6 +35,32 @@ test.describe('R-CYC-14 A 4-week cycle at the import limit stays usable', () => 
   });
 });
 
+test.describe('R-CYC-19 All weeks side by side in a real browser', () => {
+  const data = () => blank({ cycle: 2, weekInfo: [{}, { name: 'Nights', color: '#8e4ec6' }], events: [ev({ id: 'a', title: 'Week one only', weeks: [1] }), ev({ id: 'p', title: 'Late', slots: [{ day: 6, start: 1260, end: 1320, person: '', wk: 1 }] })] });
+  test('the grid has a column per day of each week, in order, with a separator at each new week, and the corner button stays in view', async ({ page }) => {
+    await openApp(page); await seed(page, data()); await page.locator('.wkb').click(); await page.locator('.omenu .oi', { hasText: 'All weeks side by side' }).click();
+    await expect(page.locator('.wkb')).toHaveText('W1–2'); const xs = await page.locator('#grid .day').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().left));
+    expect(xs).toHaveLength(14); xs.slice(1).forEach((x, i) => expect(x).toBeGreaterThan(xs[i]));
+    const sep = await page.locator('.dh.wks').evaluate(h => getComputedStyle(h).boxShadow); expect(sep).toContain('inset');
+    await page.evaluate(() => { document.getElementById('wrap').scrollLeft = 900; }); const b = await boxOf(page.locator('.wkb')), w = await boxOf(page.locator('#wrap')); expect(b.x).toBeLessThan(w.x + 80);
+  });
+  test('a mouse drag of a time with its own week from Sunday of week 1 to Monday of week 2 moves it along the cycle', async ({ page }) => {
+    await openApp(page, { prefs: { colW: 110 } }); await seed(page, data()); await page.evaluate(() => setAllWk(true));
+    const box = page.locator('.day[data-w="1"][data-d="6"] .ev'); await box.scrollIntoViewIfNeeded(); const b = await boxOf(box);
+    const t = await boxOf(page.locator('.day[data-w="2"][data-d="0"]'));
+    await page.mouse.move(b.x + b.width / 2, b.y + 5); await page.mouse.down(); await page.mouse.move(b.x + b.width / 2 + 40, b.y + 5, { steps: 4 }); await page.mouse.move(t.x + t.width / 2, b.y + 5, { steps: 8 }); await page.mouse.up();
+    const s = await page.evaluate(() => S.events[1].slots[0]); expect([s.day, s.wk, s.start]).toEqual([0, 2, 1260]);
+    await expect(page.locator('.day[data-w="2"][data-d="0"] .ev')).toHaveText(/Late/);
+  });
+  test('a 4-week cycle at the import limit is drawn side by side within the budget of one week', async ({ page, browserName }) => {
+    await openApp(page);
+    const d = blank({ cycle: 4, events: Array.from({ length: 5000 }, (_, i) => { const start = (i * 15) % 1380; return ev({ id: 'e' + i, title: 'Event ' + i, weeks: [1 + (i % 4)], slots: [slot(i % 7, start, start + 30)] }); }) });
+    await page.evaluate(x => { const y = parseData(x, true); S = y; cw().data = y; render(); }, d);
+    const ms = await page.evaluate(() => { const t = performance.now(); setAllWk(true); return performance.now() - t; });
+    expect(ms).toBeLessThan(browserName === 'chromium' ? 3000 : 8000); expect(await page.locator('#grid .day').count()).toBe(28);
+  });
+});
+
 test.describe('R-EVT-24 Away strips in a real browser', () => {
   test('the hatched strip sits flush with the right edge, and the stripes on a clashing box stay inside the box', async ({ page }) => {
     await openApp(page);

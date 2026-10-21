@@ -196,7 +196,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}.seg button{flex:1;border:0;border-radius:0;padding:6px;background:var(--card)}.seg button.on{background:var(--acc);color:var(--onacc)}
 #dlg.ph .ev-only{display:none!important}#dlg:not(.ph) .ph-only{display:none}
 /* R-CYC-17: the colour of a week: a band under the day headers of the shown week, the filled week switcher, chips, the Weeks chips and printed titles */
-.wkband .dh{box-shadow:inset 0 -4px var(--wkc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dh.wkbd{box-shadow:inset 0 -4px var(--wkc)}.dh.wks{box-shadow:inset 2px 0 color-mix(in srgb,var(--fg) 45%,transparent)}.dh.wks.wkbd{box-shadow:inset 2px 0 color-mix(in srgb,var(--fg) 45%,transparent),inset 0 -4px var(--wkc)}.dw.wks{box-shadow:inset 2px 0 color-mix(in srgb,var(--fg) 45%,transparent)}.wkband .dh{box-shadow:inset 0 -4px var(--wkc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .wkchip{display:inline-block;flex-shrink:0;width:10px;height:10px;border-radius:3px;margin:0 4px 0 0;vertical-align:-1px;border:1px solid #0003;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .omenu .oi:has(.wkd){flex-wrap:wrap}.omenu .wkd{flex-basis:100%;padding-left:23px;color:var(--mut);font-size:11px;white-space:normal}
 .chips label.wcol{border-color:var(--wc);box-shadow:inset 4px 0 var(--wc)}.chips label.wcol:has(input:checked){background:color-mix(in srgb,var(--wc) 22%,var(--card));border-color:var(--wc)}
@@ -394,7 +394,7 @@ agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',no
 resp:'Responsible:',withl:'With:',byl:'By:',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine',
 cyMenu:'Weeks in the cycle…',cyTitle:'Weeks in the cycle',cyBody:'How many weeks this workspace repeats over. Events happen every week unless you choose their weeks in the event dialog (Weeks). A rota whose turns change is better kept as one event: whoever set it as the owner, the people in it as involved, the rules in the description.',cyLen:'Repeat every',cyW1:'1 week',cyWn:'{n} weeks',cyApply:'Apply',
 cyExtend:'Keep chosen weeks in step: repeat their events, names and colours in the new weeks (week 1 also in week {a}…), so “every other week” stays every other week',cyWkH:'The weeks',cyWkNote:'Optional: a short name shown next to the week number, a longer description shown in tooltips and the week menu, and a colour that marks the week on the grid, in the event dialog, prints and statistics.',cyWkCol:'Week {n}: colour ({c}). Click to choose it',cyNoCol:'none',cyWkClr:'Week {n}: no colour',cyNamePh:'Name, e.g. At Dad\'s',cyDescPh:'Description, e.g. Night shifts from Monday',cyWkName:'Week {n}: name',cyWkDesc:'Week {n}: description',cyOdd:'Events of chosen weeks keep their week numbers: “every other week” cannot be kept in a cycle of {n} weeks.',cyDone:'The cycle now has {n} weeks',cyDone1:'Every week is the same again (a cycle of one week)',
-wkShort:'W{n}',wkName:'Week {n}',wksName:'Weeks {l} and {z}',cyShrinkBody:'{w} will no longer be part of the cycle. These events and phases happen there:',cyAllGone:'nothing left in the other weeks',cyRm:'Remove what happens in those weeks',cyMv:'Move it into a schedule (for phases, a rhythm) of its own for each of those weeks (as week 1), to keep it',wkTip:'Week {n} of {c} is shown. Choose another week of the cycle',wkLiveMark:'today',lwTitle:'Which week is it?',lwBody:'Live View follows today. This workspace repeats over several weeks: which week of the cycle is today in? This browser remembers it for this workspace and moves on every Monday; if it is wrong, change the week with the button in the corner while Live View runs.',lwSet:'Show this week',wkTodayTip:'Today is in week {n} (remembered in this browser; to correct it, change the week while Live View runs).',lwToday:'Today is in',lwStart:'Start Live View',wkRow:'Weeks',wkRowTip:'The weeks of the cycle this event happens in; all of them = every week. For different days, times or people in different weeks, tick Different per week. A rota whose turns change is better kept as one event with the people in it as involved and the rules in the description.',wkPer:'Different per week',cyOrdNote:'Drag a week by its grip (or focus the grip and use the arrow keys) to change the order of the cycle. Everything in that week moves with it: its events, phases and times, its name and colour. A time that runs past Sunday midnight then runs into the new next week. Today stays the week you are in, under its new number. The grips are there while the length stays as it is.',cyWas:'(was week {n})',cyGripTip:'Drag to change the order of the weeks (or focus and use the arrow keys).',cyGripLbl:'Move week {n}',wkRowTipPh:'The weeks of the cycle in which this phase is part of the rhythm; all of them = every week. For different times in different weeks (shift work: day shifts one week, nights the next), tick Different per week.',wkPerTip:'Give every time its own week (the small number next to the day): for different days or times in different weeks, or a fixed person per week. + adds the same times in the next week.',rowWk:'{d}: week {n}',rowWkH:'{d}: week',icBody:'Some of the events or phases arriving ({n}) happen in weeks beyond this workspace\'s cycle ({c}).',icLen:'Make this workspace\'s cycle {m} weeks long',stAvgW:'Average week',awNote:'Away',awHit:'{n} is away ({t})',sqNote:'No time left around these times ({t})',errAway:'Who is away? Choose who performs it or who is involved: Away needs at least one person.',stAway:'Away',stAwPl:'Planned while away: {h}',help20:'Someone away for a while (a child at the other parent\'s every other weekend, a business trip, a training course): in the event dialog choose Drawn as: Away, with the person as performer or involved. It is drawn as a hatched strip, and their activities at that time are striped with ⚠. With a cycle of weeks, choose the weeks it happens in.',prThis:'Print this week (week {n})',prAll:'Print every week (one page each)',stAvg:'Average',stCyc:'Cycle total',stWk:'Week to show',stOverCyc:'Overlapping over the whole cycle: {h} in {n} place(s)',stTurnsH:'Turns in rotas',stTurnsTip:'Rotas are events in which two or more people are responsible on different days or weeks. Each time a person is responsible counts as one turn over the whole cycle. A rota kept as an owner with the people in it as involved people has no turns to count.',stRota:'Rota',stTurns:'Turns',stTuOf:'Of all turns',stTuAll:'All turns',tuCyc:'turns in the cycle',tuWk:'turns a week',stUnit:'Show the figures as',stUnitTip:'How the bars and the week columns show their figures. Hours: the length of time. % of week: the share of the 168-hour week (in the day bars, of the 24-hour day). % of planned: the share of the planned time (in the day bars, of that day\'s planned time; the figure above a day is its share of the week\'s planned time). The table always keeps its Hours, % of week and % of planned columns.',stTyF:'Activity types shown:',stTyFTip:'Only in this dialog: independent of the eyes in the sidebar. The time of the types you switch off is shown together, in grey, as Filtered out, so the week still has 168 hours and % of planned still counts all the planned time.',stTyOn:'{n}: shown. Click to filter it out',stTyOff:'{n}: filtered out. Click to show it',stShowAll:'Show all',stFilt:'Filtered out',stFiltN:'Filtered out ({n} type(s))',pwBack:'The weeks have different times. Keep only the times of week {n} for every week of the event? The differences of the other weeks are dropped.'},
+wkShort:'W{n}',wkName:'Week {n}',wksName:'Weeks {l} and {z}',cyShrinkBody:'{w} will no longer be part of the cycle. These events and phases happen there:',cyAllGone:'nothing left in the other weeks',cyRm:'Remove what happens in those weeks',cyMv:'Move it into a schedule (for phases, a rhythm) of its own for each of those weeks (as week 1), to keep it',wkTip:'Week {n} of {c} is shown. Choose another week of the cycle',wkLiveMark:'today',lwTitle:'Which week is it?',lwBody:'Live View follows today. This workspace repeats over several weeks: which week of the cycle is today in? This browser remembers it for this workspace and moves on every Monday; if it is wrong, change the week with the button in the corner while Live View runs.',lwSet:'Show this week',wkTodayTip:'Today is in week {n} (remembered in this browser; to correct it, change the week while Live View runs).',lwToday:'Today is in',lwStart:'Start Live View',wkRow:'Weeks',wkRowTip:'The weeks of the cycle this event happens in; all of them = every week. For different days, times or people in different weeks, tick Different per week. A rota whose turns change is better kept as one event with the people in it as involved and the rules in the description.',wkPer:'Different per week',wkAllM:'All weeks side by side',wkAllMTip:'Show every week of the cycle in one row (in the day view: that day of each week). Choose a week to go back to one week.',wkAllS:'W1–{n}',wkAllTip:'All {c} weeks of the cycle side by side, change the view',wkAllT:'All weeks',prView:'Print this view (all weeks side by side)',cyOrdNote:'Drag a week by its grip (or focus the grip and use the arrow keys) to change the order of the cycle. Everything in that week moves with it: its events, phases and times, its name and colour. A time that runs past Sunday midnight then runs into the new next week. Today stays the week you are in, under its new number. The grips are there while the length stays as it is.',cyWas:'(was week {n})',cyGripTip:'Drag to change the order of the weeks (or focus and use the arrow keys).',cyGripLbl:'Move week {n}',wkRowTipPh:'The weeks of the cycle in which this phase is part of the rhythm; all of them = every week. For different times in different weeks (shift work: day shifts one week, nights the next), tick Different per week.',wkPerTip:'Give every time its own week (the small number next to the day): for different days or times in different weeks, or a fixed person per week. + adds the same times in the next week.',rowWk:'{d}: week {n}',rowWkH:'{d}: week',icBody:'Some of the events or phases arriving ({n}) happen in weeks beyond this workspace\'s cycle ({c}).',icLen:'Make this workspace\'s cycle {m} weeks long',stAvgW:'Average week',awNote:'Away',awHit:'{n} is away ({t})',sqNote:'No time left around these times ({t})',errAway:'Who is away? Choose who performs it or who is involved: Away needs at least one person.',stAway:'Away',stAwPl:'Planned while away: {h}',help20:'Someone away for a while (a child at the other parent\'s every other weekend, a business trip, a training course): in the event dialog choose Drawn as: Away, with the person as performer or involved. It is drawn as a hatched strip, and their activities at that time are striped with ⚠. With a cycle of weeks, choose the weeks it happens in.',prThis:'Print this week (week {n})',prAll:'Print every week (one page each)',stAvg:'Average',stCyc:'Cycle total',stWk:'Week to show',stOverCyc:'Overlapping over the whole cycle: {h} in {n} place(s)',stTurnsH:'Turns in rotas',stTurnsTip:'Rotas are events in which two or more people are responsible on different days or weeks. Each time a person is responsible counts as one turn over the whole cycle. A rota kept as an owner with the people in it as involved people has no turns to count.',stRota:'Rota',stTurns:'Turns',stTuOf:'Of all turns',stTuAll:'All turns',tuCyc:'turns in the cycle',tuWk:'turns a week',stUnit:'Show the figures as',stUnitTip:'How the bars and the week columns show their figures. Hours: the length of time. % of week: the share of the 168-hour week (in the day bars, of the 24-hour day). % of planned: the share of the planned time (in the day bars, of that day\'s planned time; the figure above a day is its share of the week\'s planned time). The table always keeps its Hours, % of week and % of planned columns.',stTyF:'Activity types shown:',stTyFTip:'Only in this dialog: independent of the eyes in the sidebar. The time of the types you switch off is shown together, in grey, as Filtered out, so the week still has 168 hours and % of planned still counts all the planned time.',stTyOn:'{n}: shown. Click to filter it out',stTyOff:'{n}: filtered out. Click to show it',stShowAll:'Show all',stFilt:'Filtered out',stFiltN:'Filtered out ({n} type(s))',pwBack:'The weeks have different times. Keep only the times of week {n} for every week of the event? The differences of the other weeks are dropped.'},
 es:{
 appTitle:'Horarios semanales',collapseTip:'Contraer barra lateral',expandTip:'Expandir barra lateral',
 undo:'Deshacer',undoTip:'Deshacer el último cambio (Ctrl+Z)',redoTip:'Rehacer (Ctrl+Y)',
@@ -463,7 +463,7 @@ agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostr
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina',
 cyMenu:'Semanas del ciclo…',cyTitle:'Semanas del ciclo',cyBody:'Cada cuántas semanas se repite este espacio de trabajo. Los eventos ocurren todas las semanas salvo que elijas sus semanas en el diálogo del evento (Semanas). Una rotación cuyos turnos cambian se lleva mejor como un solo evento: quien la organiza como titular, las personas que participan como implicadas y las reglas en la descripción.',cyLen:'Repetir cada',cyW1:'1 semana',cyWn:'{n} semanas',cyApply:'Aplicar',
 cyExtend:'Mantener el ritmo de las semanas elegidas: repetir sus eventos, nombres y colores en las semanas nuevas (la semana 1 también en la {a}…), para que «una semana sí y otra no» siga igual',cyWkH:'Las semanas',cyWkNote:'Opcional: un nombre corto que se muestra junto al número de la semana, una descripción más larga que se muestra en las descripciones emergentes y en el menú de semanas, y un color que marca la semana en la cuadrícula, en el diálogo del evento, al imprimir y en las estadísticas.',cyWkCol:'Semana {n}: color ({c}). Haz clic para elegirlo',cyNoCol:'ninguno',cyWkClr:'Semana {n}: sin color',cyNamePh:'Nombre, p. ej. Con papá',cyDescPh:'Descripción, p. ej. Turnos de noche desde el lunes',cyWkName:'Semana {n}: nombre',cyWkDesc:'Semana {n}: descripción',cyOdd:'Los eventos de semanas elegidas conservan sus números de semana: «una semana sí y otra no» no se puede mantener en un ciclo de {n} semanas.',cyDone:'El ciclo tiene ahora {n} semanas',cyDone1:'Todas las semanas vuelven a ser iguales (un ciclo de una semana)',
-wkShort:'S{n}',wkName:'Semana {n}',wksName:'Semanas {l} y {z}',cyShrinkBody:'Saldrán del ciclo: {w}. Estos eventos y franjas ocurren en ellas:',cyAllGone:'no queda nada en las otras semanas',cyRm:'Quitar lo que ocurre en esas semanas',cyMv:'Moverlo a un horario (para las franjas, un ritmo) propio para cada una de esas semanas (como semana 1), para conservarlo',wkTip:'Se muestra la semana {n} de {c}. Elige otra semana del ciclo',wkLiveMark:'hoy',lwTitle:'¿Qué semana es?',lwBody:'La vista en directo sigue el día de hoy. Este espacio de trabajo se repite durante varias semanas: ¿en qué semana del ciclo está hoy? Este navegador la recuerda para este espacio y avanza cada lunes; si no es correcta, cambia la semana con el botón de la esquina mientras la vista en directo está activa.',lwSet:'Mostrar esta semana',wkTodayTip:'Hoy está en la semana {n} (lo recuerda este navegador; para corregirlo, cambia la semana mientras la vista en directo está activa).',lwToday:'Hoy está en la',lwStart:'Iniciar vista en directo',wkRow:'Semanas',wkRowTip:'Las semanas del ciclo en las que ocurre este evento; todas = cada semana. Para días, horas o personas distintos en semanas distintas, marca Distinto cada semana. Una rotación cuyos turnos cambian se lleva mejor como un solo evento con sus participantes como implicados y las reglas en la descripción.',wkPer:'Distinto cada semana',cyOrdNote:'Arrastra una semana por su asa (o enfoca el asa y usa las flechas) para cambiar el orden del ciclo. Todo lo de esa semana se mueve con ella: sus eventos, franjas y horas, su nombre y su color. Una hora que pasa de la medianoche del domingo pasa entonces a la nueva semana siguiente. Hoy sigue siendo la semana en la que estás, con su nuevo número. Las asas están mientras la duración no cambie.',cyWas:'(antes semana {n})',cyGripTip:'Arrastra para cambiar el orden de las semanas (o enfoca y usa las flechas).',cyGripLbl:'Mover la semana {n}',wkRowTipPh:'Las semanas del ciclo en las que esta franja forma parte del ritmo; todas = cada semana. Para horas distintas en semanas distintas (trabajo por turnos: de día una semana, de noche la siguiente), marca Distinto cada semana.',wkPerTip:'Da a cada hora su propia semana (el número junto al día): para días u horas distintos en semanas distintas, o una persona fija por semana. + añade las mismas horas en la semana siguiente.',rowWk:'{d}: semana {n}',rowWkH:'{d}: semana',icBody:'Algunos de los eventos o franjas que llegan ({n}) ocurren en semanas fuera del ciclo de este espacio de trabajo ({c}).',icLen:'Hacer que el ciclo de este espacio de trabajo dure {m} semanas',stAvgW:'Semana media',awNote:'Ausente',awHit:'{n} está ausente ({t})',sqNote:'No queda tiempo libre alrededor de estas horas ({t})',errAway:'¿Quién está fuera? Elige quién lo hace o quién está implicado: Ausente necesita al menos una persona.',stAway:'Ausente',stAwPl:'Planificado estando fuera: {h}',help20:'Alguien que está fuera durante un tiempo (un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación): en el diálogo del evento elige Dibujado como: Ausente, con la persona como quien lo hace o implicada. Se dibuja como una tira rayada, y sus actividades a esa hora se rayan con ⚠. Con un ciclo de semanas, elige las semanas en que ocurre.',prThis:'Imprimir esta semana (semana {n})',prAll:'Imprimir todas las semanas (una página cada una)',stAvg:'Media',stCyc:'Total del ciclo',stWk:'Semana que se muestra',stOverCyc:'Superpuesto en todo el ciclo: {h} en {n} sitio(s)',stTurnsH:'Turnos en las rotaciones',stTurnsTip:'Las rotaciones son eventos de los que se encargan dos o más personas en días o semanas distintos. Cada vez que una persona se encarga cuenta como un turno en todo el ciclo. Una rotación guardada como titular con las personas que rotan como implicadas no tiene turnos que contar.',stRota:'Rotación',stTurns:'Turnos',stTuOf:'De todos los turnos',stTuAll:'Todos los turnos',tuCyc:'turnos en el ciclo',tuWk:'turnos a la semana',stUnit:'Mostrar las cifras como',stUnitTip:'Cómo muestran sus cifras las barras y las columnas de las semanas. Horas: la duración. % de la semana: la parte de la semana de 168 horas (en las barras de los días, del día de 24 horas). % de lo planificado: la parte del tiempo planificado (en las barras de los días, del tiempo planificado ese día; la cifra encima de un día es su parte del tiempo planificado de la semana). La tabla conserva siempre sus columnas Horas, % de la semana y % de lo planificado.',stTyF:'Tipos de actividad que se muestran:',stTyFTip:'Solo en este diálogo: no depende de los ojos de la barra lateral. El tiempo de los tipos que desactives se muestra junto, en gris, como Filtrado, así la semana sigue teniendo 168 horas y el % de lo planificado sigue contando todo el tiempo planificado.',stTyOn:'{n}: se muestra. Haz clic para filtrarlo',stTyOff:'{n}: filtrado. Haz clic para mostrarlo',stShowAll:'Mostrar todos',stFilt:'Filtrado',stFiltN:'Filtrado ({n} tipo(s))',pwBack:'Las semanas tienen horas distintas. ¿Conservar solo las horas de la semana {n} para todas las semanas del evento? Se descartan las diferencias de las otras semanas.'}};
+wkShort:'S{n}',wkName:'Semana {n}',wksName:'Semanas {l} y {z}',cyShrinkBody:'Saldrán del ciclo: {w}. Estos eventos y franjas ocurren en ellas:',cyAllGone:'no queda nada en las otras semanas',cyRm:'Quitar lo que ocurre en esas semanas',cyMv:'Moverlo a un horario (para las franjas, un ritmo) propio para cada una de esas semanas (como semana 1), para conservarlo',wkTip:'Se muestra la semana {n} de {c}. Elige otra semana del ciclo',wkLiveMark:'hoy',lwTitle:'¿Qué semana es?',lwBody:'La vista en directo sigue el día de hoy. Este espacio de trabajo se repite durante varias semanas: ¿en qué semana del ciclo está hoy? Este navegador la recuerda para este espacio y avanza cada lunes; si no es correcta, cambia la semana con el botón de la esquina mientras la vista en directo está activa.',lwSet:'Mostrar esta semana',wkTodayTip:'Hoy está en la semana {n} (lo recuerda este navegador; para corregirlo, cambia la semana mientras la vista en directo está activa).',lwToday:'Hoy está en la',lwStart:'Iniciar vista en directo',wkRow:'Semanas',wkRowTip:'Las semanas del ciclo en las que ocurre este evento; todas = cada semana. Para días, horas o personas distintos en semanas distintas, marca Distinto cada semana. Una rotación cuyos turnos cambian se lleva mejor como un solo evento con sus participantes como implicados y las reglas en la descripción.',wkPer:'Distinto cada semana',wkAllM:'Todas las semanas lado a lado',wkAllMTip:'Muestra todas las semanas del ciclo en una fila (en la vista de un día: ese día de cada semana). Elige una semana para volver a ver una sola.',wkAllS:'S1–{n}',wkAllTip:'Las {c} semanas del ciclo lado a lado, cambiar la vista',wkAllT:'Todas las semanas',prView:'Imprimir esta vista (todas las semanas lado a lado)',cyOrdNote:'Arrastra una semana por su asa (o enfoca el asa y usa las flechas) para cambiar el orden del ciclo. Todo lo de esa semana se mueve con ella: sus eventos, franjas y horas, su nombre y su color. Una hora que pasa de la medianoche del domingo pasa entonces a la nueva semana siguiente. Hoy sigue siendo la semana en la que estás, con su nuevo número. Las asas están mientras la duración no cambie.',cyWas:'(antes semana {n})',cyGripTip:'Arrastra para cambiar el orden de las semanas (o enfoca y usa las flechas).',cyGripLbl:'Mover la semana {n}',wkRowTipPh:'Las semanas del ciclo en las que esta franja forma parte del ritmo; todas = cada semana. Para horas distintas en semanas distintas (trabajo por turnos: de día una semana, de noche la siguiente), marca Distinto cada semana.',wkPerTip:'Da a cada hora su propia semana (el número junto al día): para días u horas distintos en semanas distintas, o una persona fija por semana. + añade las mismas horas en la semana siguiente.',rowWk:'{d}: semana {n}',rowWkH:'{d}: semana',icBody:'Algunos de los eventos o franjas que llegan ({n}) ocurren en semanas fuera del ciclo de este espacio de trabajo ({c}).',icLen:'Hacer que el ciclo de este espacio de trabajo dure {m} semanas',stAvgW:'Semana media',awNote:'Ausente',awHit:'{n} está ausente ({t})',sqNote:'No queda tiempo libre alrededor de estas horas ({t})',errAway:'¿Quién está fuera? Elige quién lo hace o quién está implicado: Ausente necesita al menos una persona.',stAway:'Ausente',stAwPl:'Planificado estando fuera: {h}',help20:'Alguien que está fuera durante un tiempo (un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación): en el diálogo del evento elige Dibujado como: Ausente, con la persona como quien lo hace o implicada. Se dibuja como una tira rayada, y sus actividades a esa hora se rayan con ⚠. Con un ciclo de semanas, elige las semanas en que ocurre.',prThis:'Imprimir esta semana (semana {n})',prAll:'Imprimir todas las semanas (una página cada una)',stAvg:'Media',stCyc:'Total del ciclo',stWk:'Semana que se muestra',stOverCyc:'Superpuesto en todo el ciclo: {h} en {n} sitio(s)',stTurnsH:'Turnos en las rotaciones',stTurnsTip:'Las rotaciones son eventos de los que se encargan dos o más personas en días o semanas distintos. Cada vez que una persona se encarga cuenta como un turno en todo el ciclo. Una rotación guardada como titular con las personas que rotan como implicadas no tiene turnos que contar.',stRota:'Rotación',stTurns:'Turnos',stTuOf:'De todos los turnos',stTuAll:'Todos los turnos',tuCyc:'turnos en el ciclo',tuWk:'turnos a la semana',stUnit:'Mostrar las cifras como',stUnitTip:'Cómo muestran sus cifras las barras y las columnas de las semanas. Horas: la duración. % de la semana: la parte de la semana de 168 horas (en las barras de los días, del día de 24 horas). % de lo planificado: la parte del tiempo planificado (en las barras de los días, del tiempo planificado ese día; la cifra encima de un día es su parte del tiempo planificado de la semana). La tabla conserva siempre sus columnas Horas, % de la semana y % de lo planificado.',stTyF:'Tipos de actividad que se muestran:',stTyFTip:'Solo en este diálogo: no depende de los ojos de la barra lateral. El tiempo de los tipos que desactives se muestra junto, en gris, como Filtrado, así la semana sigue teniendo 168 horas y el % de lo planificado sigue contando todo el tiempo planificado.',stTyOn:'{n}: se muestra. Haz clic para filtrarlo',stTyOff:'{n}: filtrado. Haz clic para mostrarlo',stShowAll:'Mostrar todos',stFilt:'Filtrado',stFiltN:'Filtrado ({n} tipo(s))',pwBack:'Las semanas tienen horas distintas. ¿Conservar solo las horas de la semana {n} para todas las semanas del evento? Se descartan las diferencias de las otras semanas.'}};
 const ES=[
 ['Drag to move this window','Arrastra para mover esta ventana y ver lo que hay detrás (también se mueve con las flechas). La próxima vez se abre de nuevo en el centro.'],['The colour of this time on the grid','Color de esta hora en la cuadrícula: el del evento (por defecto), el de la persona que lo hace (sigue a quien lo hace), el del tipo de actividad del evento (sigue al tipo) o uno propio. ⧉ lo copia a los demás días.'],
 ['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no nos ocupa)'],['Drawn as','Dibujado como'],['Box','Caja'],['Away','Ausente'],['How the event is drawn','Cómo se dibuja el evento y cómo se relaciona con los demás: una caja, una tira en segundo plano, o una tira que dice que sus personas están fuera.'],['A normal box, with','Una caja normal, con las reglas de superposición de cualquier actividad.'],['For people who are away for','Para personas que están fuera durante un tiempo: un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación. Quien lo hace y las personas implicadas están fuera: se dibuja como una tira rayada, y sus actividades a esa hora (también estando solo de guardia), y las actividades sin responsable, se rayan con ⚠. Su tiempo es una línea propia en las estadísticas. Ausente necesita al menos una persona.'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar al hogar o lugar de trabajo: la limpiadora trabajando, las horas de silencio o el tiempo sin pantallas. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger el correo al volver de comer. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: puede empezar un poco tarde y/o terminar un poco antes (la parte fija es un recuadro normal y las flexibles, prolongaciones más claras y discontinuas). Alrededor de estas horas: ocurre alrededor de estas horas pero puede durar menos; todo el recuadro es más claro y discontinuo. Las partes flexibles nunca chocan con otras actividades de las mismas personas, que pueden taparlas, siempre que a una actividad alrededor de estas horas le quede algo de tiempo libre. Las actividades de otras personas se ponen al lado, no encima.'],['Description','Descripción'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Event','Evento'],['Phase','Franja'],['More','Más'],['Rhythms','Ritmos'],['Week','Semana'],['With different times per week','Con horas distintas por semana: la semana del ciclo en la que está cada hora.'],['+ Add a time','+ Añadir una hora'],['Adds a time on a day','Añade una hora el día que elijas (y, con horas distintas por semana, en la semana que elijas).'],['Days','Días'],['Day','Día'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
@@ -895,11 +895,13 @@ function shrinkCycle(n,wi){   // wi: the weeks' info as edited in the cycle dial
 // the week switcher (R-CYC-04) in the grid's corner cell: which week of the cycle the grid shows
 function setWeek(w){
   if(live){setAnchor(w);clearTimeout(lvRet);lvCloseAll(true);livePaused=false;focusD=today()}   // correcting Live View's week: today's day and now point in that week
-  curWk=w;render();updLive()}
+  curWk=w;allWk=false;render();updLive()}
+function setAllWk(on){allWk=on&&cyc()>1&&!live;render()}   // every week of the cycle side by side (R-CYC-19)
 function wkMenu(anchor){rowMenu(anchor,(m,mi)=>{
   for(let w=1;w<=cyc();w++){mi((w===curWk?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+wkChip(w),wkLabel(w)+(w===todayWk()?' · '+L('wkLiveMark'):''),()=>setWeek(w));
     if(wkDesc(w)){const b=m.lastElementChild;b.title=wkDesc(w);el('small','wkd',b).textContent=wkDesc(w)}}   // the description under its name (R-CYC-17)
-  if(!live){el('hr','',m);mi(ICON_WEEK,L('cyMenu'),openCycle)}
+  if(!live){mi((allWk?ICON_CHECK:'<span class="ic" style="margin:0"></span>'),L('wkAllM'),()=>setAllWk(true));m.lastElementChild.title=L('wkAllMTip');   // R-CYC-19
+    el('hr','',m);mi(ICON_WEEK,L('cyMenu'),openCycle)}
 })}
 function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
   WS.forEach(w=>mi(w.id===curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>',w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id)));
@@ -1186,7 +1188,7 @@ const W=10080;
 const piecesOf=s=>{const p=[{p:0,day:s.day,a:s.start,b:Math.min(s.end,1440)}];if(s.end>1440)p.push({p:1,day:(s.day+1)%7,a:0,b:s.end-1440});return p};
 /* a cycle of several weeks (R-CYC): the grid shows week curWk (view state, never stored, R-CYC-04). An event happens in the weeks of its
    pattern (event.weeks, absent = every week) or each repetition in its own week (slot.wk); phases are weekly (R-CYC-16). */
-let curWk=1;
+let curWk=1,allWk=false;   // allWk: every week of the cycle side by side (R-CYC-19), view state like curWk
 const cyc=()=>S.cycle||1;
 const wksOf=(e,s)=>s&&s.wk?[s.wk]:e.weeks||null;   // null = every week (events and phases alike, R-CYC-16)
 const prevWk=w=>(w+cyc()-2)%cyc()+1;
@@ -1358,21 +1360,22 @@ function fixedLayout(its){
   return out;
 }
 const NI=14;   // left indent of a nested box inside its host (px)
-let laneMap=new Map(),gutMap={},fxW=0,nestMap=new Map(),sqMap=new Set();   // sqMap: nkeys of the squeezed-out pieces of the last drawn grid (R-EVT-12)
+let laneMap=new Map(),gutMap={},fxW=0,nestMap=new Map(),sqMap=new Set();
+const gk=k=>curWk+'#'+k;   // a key of the last drawn grid: with every week side by side (R-CYC-19) a piece appears in several columns   // sqMap: nkeys of the squeezed-out pieces of the last drawn grid (R-EVT-12)
    // nestMap: nkey of a nested piece -> {x, h: its host} in the last drawn grid (R-NST-01)
    // gutMap: day -> strip gutter (px); fxW: width of the column last measured by fxAt   // 'eventId|slotIndex|piece' -> [first lane, last lane, lanes] of the last drawn grid, for hit-testing by x
-const inLane=(e,i,p,fx,di)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(e.id+'|'+i+'|'+p);if(!v)return true;
-  const fr=(1-fx)*fxW,g=gutMap[di]||0;   // distance from the right edge (px): strips live there, boxes stop before the gutter
+const inLane=(e,i,p,fx,di)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(gk(e.id+'|'+i+'|'+p));if(!v)return true;
+  const fr=(1-fx)*fxW,g=gutMap[gk(di)]||0;   // distance from the right edge (px): strips live there, boxes stop before the gutter
   if(v[0]==='s')return fr>=v[1]&&fr<v[2];
   if(g&&fxW){if(fr<g)return false;fx=fx*fxW/(fxW-g)}
   if(v[0]==='m')return v[1].some(([x,y])=>fx>=x/v[2]&&fx<(y+1)/v[2]);   // fixed lanes: one box per run of lanes (R-EVT-23)
   if(v[0]==='n')return fx>=v[1]/v[3]+(fxW>g?NI/(fxW-g):0)&&fx<(v[2]+1)/v[3];   // a nested box: its host's lanes minus the indent (R-NST-02)
   return fx>=v[0]/v[2]&&fx<(v[1]+1)/v[2]};
 const fxAt=(c,x)=>{const r=c.getBoundingClientRect();fxW=r.width;return r.width?(x-r.left)/r.width:null};
-const isNestK=x=>(laneMap.get(x.e.id+'|'+x.i+'|'+x.piece)||[])[0]==='n';
+const isNestK=x=>(laneMap.get(gk(x.e.id+'|'+x.i+'|'+x.piece))||[])[0]==='n';
 const nestFirst=its=>{const nb=its.filter(isNestK);return nb.length?nb:its};   // a nested box lies on top of its host (R-NST-02)
 const piecesAt=(di,m,all,fx,list=act())=>{
-  let its=list.filter(e=>eVis(e)&&(all||!eLock(e))).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&inWk(e,s,q)&&sVis(e,s)&&inLane(e,i,q.p,fx,di)).map(q=>({e,s,i,piece:q.p,core:sqMap.has(nkey(e,s,q.p))||(([a,b])=>a<=m&&m<b)(coreIn(s,q))}))));
+  let its=list.filter(e=>eVis(e)&&(all||!eLock(e))).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&inWk(e,s,q)&&sVis(e,s)&&inLane(e,i,q.p,fx,di)).map(q=>({e,s,i,piece:q.p,core:sqMap.has(gk(nkey(e,s,q.p)))||(([a,b])=>a<=m&&m<b)(coreIn(s,q))}))));
   its=nestFirst(its);
   return its.some(x=>x.core)?its.filter(x=>x.core):its;   // a core covers the flexible margins of other events (R-EVT-15)
 };
@@ -1395,9 +1398,9 @@ function hiddenInfo(){
 function drawNow(){
   document.querySelectorAll('.now').forEach(n=>n.remove());if(!nowOn&&!live)return;   // live view always shows the line (R-GRID-12)
   const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
-  const tw=todayWk();if(tw&&tw!==curWk)return;   // with today's week known, only in that week (R-CYC-05)
-  const col=document.querySelector('.day[data-d="'+((d.getDay()+6)%7)+'"]');if(!col)return;
-  const n=el('div','now',col);n.style.top=(m-a)/60*HH+'px';n.title=fmt(m);
+  const tw=todayWk();if(tw&&!allWk&&tw!==curWk)return;   // with today's week known, only in that week (R-CYC-05); all weeks side by side: in its column (R-CYC-19)
+  document.querySelectorAll('.day[data-d="'+((d.getDay()+6)%7)+'"]').forEach(col=>{if(allWk&&tw&&+col.dataset.w!==tw)return;
+    const n=el('div','now',col);n.style.top=(m-a)/60*HH+'px';n.title=fmt(m)});
 }
 setInterval(()=>{drawNow();liveTick()},30000);
 /* live view (R-GRID-12), for a public screen: today's day view, read-only, following the now line a third of the way down, with live
@@ -1765,7 +1768,9 @@ function agendaHTML(di){
 let agDay=0;
 let agFn=null;
 function showAgenda(fn,day){agFn=fn;agDay=day;$('agBody').innerHTML=fn();$('agPrint2').style.display=day==null?'none':'';$('agPrint2').textContent=L('agPrintDay');$('agDlg').showModal()}
-function openAgenda(di){showAgenda(()=>agendaHTML(di),di)}
+let agWk=1;
+const withWk=(w,fn)=>{const c=curWk,a=allWk;curWk=w;allWk=false;try{return fn()}finally{curWk=c;allWk=a}};   // fn as if week w alone were shown (no redraw)
+function openAgenda(di,w=curWk){agWk=w;showAgenda(()=>withWk(w,()=>agendaHTML(di)),di)}   // the day of the header's week (R-CYC-19)
 function openRhythmAgenda(rh){showAgenda(()=>rhythmAgendaHTML(rh),null)}
 function rhythmAgendaHTML(rh){
   const lst=S.phases.filter(p=>p.rhythms.includes(rh.id)&&p.slots.length).map(p=>({p,min:Math.min(...p.slots.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
@@ -1789,7 +1794,7 @@ function rhythmAgendaHTML(rh){
 function printDay(di){doPrint(dayPage(di),false)}
 function dayPage(di){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
-  [...c.children].forEach(ch=>{if(ch.classList.contains('times')||ch.classList.contains('c'))return;if(ch.dataset.d!==String(di))ch.remove()});
+  [...c.children].forEach(ch=>{if(ch.classList.contains('times')||ch.classList.contains('c'))return;if(ch.dataset.d!==String(di)||(ch.dataset.w&&ch.dataset.w!==String(curWk)))ch.remove()});
   c.querySelectorAll('.lane .lbg').forEach(b=>{const l=document.createElement('div');l.className=('lip '+(b.dataset.fs||'')).trim();l.style.cssText=`top:${b.style.top};height:${b.style.height};background:${b.dataset.col};color:${ink(b.dataset.col)}`;const s=document.createElement('span');s.textContent=b.dataset.title;l.append(s);b.replaceWith(l)});
   c.querySelectorAll('.dh.wj').forEach(h=>h.classList.remove('wj'));
   c.style.gridTemplateColumns='52px 1fr';c.style.minWidth='0';c.classList.add('one');
@@ -1897,7 +1902,7 @@ function renderSide(){
   tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_PRINT,L('printTip'),ev=>{const one=()=>focusD!=null?printDay(focusD):printSchedule();   // prints what is on screen
-    if(cyc()<2)return one();rowMenu(ev.currentTarget,(m,mi)=>{mi(ICON_PRINT,L('prThis',{n:curWk}),one);mi(ICON_PRINT,L('prAll'),printAll)})});   // with a cycle: this week or every week (R-CYC-12)
+    if(cyc()<2)return one();rowMenu(ev.currentTarget,(m,mi)=>{mi(ICON_PRINT,allWk?L('prView'):L('prThis',{n:curWk}),one);mi(ICON_PRINT,L('prAll'),printAll)})});   // with a cycle: this week or every week (R-CYC-12)
   tbtn(ICON_STATS,L('stTip'),()=>openStats());
   // schedules
   const s1=el('div','sec',body);
@@ -1998,16 +2003,18 @@ function delRhythm(rh){
   S.phases=S.phases.filter(p=>p.rhythms.length);
   render();
 }
-const wkSuf=()=>cyc()>1?' — '+wkLabel(curWk):'';
-const wkH1=txt=>{const c=wkCol(curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
+const wkSuf=()=>cyc()>1?' — '+(allWk?L('wkAllT'):wkLabel(curWk)):'';
+const wkH1=txt=>{const c=!allWk&&wkCol(curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
 function schedPage(){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
   const w=el('div');w.innerHTML=wkH1(L('printTitle')+wkSuf())+metaLine();w.append(c);return w;
 }
-function printSchedule(){doPrint(schedPage(),false)}
+function printSchedule(){doPrint(schedPage(),allWk)}   // every week side by side prints across the page (R-CYC-19)
+// fn drawn with one week shown (w), as when every week is side by side a page or day view is printed (R-CYC-19)
+function oneWeek(w,fn){const a=allWk,c=curWk;allWk=false;curWk=w;try{return fn()}finally{allWk=a;curWk=c;render()}}
 function printAll(){   // every week of the cycle, one page each (the focused day of each week while focused)
-  const w0=curWk,out=el('div');
-  try{for(let w=1;w<=cyc();w++){curWk=w;const pg=focusD!=null?dayPage(focusD):schedPage();if(w>1)pg.className='pgb';out.append(pg)}}finally{curWk=w0;render()}
+  const w0=curWk,a0=allWk,out=el('div');allWk=false;
+  try{for(let w=1;w<=cyc();w++){curWk=w;const pg=focusD!=null?dayPage(focusD):schedPage();if(w>1)pg.className='pgb';out.append(pg)}}finally{curWk=w0;allWk=a0;render()}
   doPrint(out,false);
 }
 function delPerson(q){
@@ -2027,32 +2034,39 @@ function delSchedule(s){
 /* ---------- grid ---------- */
 function render(){
   if(curWk>cyc())curWk=cyc();   // a shorter cycle, another workspace, an undo (R-CYC-04)
+  if(allWk&&(cyc()<2||live))allWk=false;   // every week side by side: only with a cycle, never live (R-CYC-19)
   if(!skipSide)renderSide();
   hidePeek();
   const fitW=!printMode&&prefs[FWK()],fitH=!printMode&&prefs[FH()],ts=printMode?1:prefs.txt/100;
   const colMin=printMode?110:fitW?40:prefs[WK()];
-  const g=$('grid'),a=vs(),hrs=24-a,days=focusD!=null?[focusD]:weekDays(),lvOn=live&&!printMode;
+  const g=$('grid'),a=vs(),hrs=24-a,days=focusD!=null?[focusD]:weekDays(),lvOn=live&&!printMode,w0=curWk;
+  // the columns: the days of the shown week, or with every week side by side the days of each week in turn (R-CYC-19)
+  const cols=allWk?[...Array(cyc()).keys()].flatMap(k=>days.map(d=>({w:k+1,d}))):days.map(d=>({w:curWk,d}));
   document.documentElement.style.setProperty('--ts',ts);g.style.setProperty('--ts',ts);g.classList.toggle('lv',lvOn);g.classList.toggle('fo',focusD!=null);
   // Fit height: the visible hours fill the window under the day header, whose height follows the text size. Measured before the grid
   // is emptied (layout of an empty grid would reset the scroll position), on the previous header with the new text size; no layout → the slider
   const wh=fitH?$('wrap').clientHeight:0,dhH=wh&&g.querySelector('.dh')?.offsetHeight||38,ww=$('wrap').clientWidth;   // ww: for narrow week headers
   HH=printMode?48:wh?Math.max(14,Math.min(200,Math.floor((wh-dhH)/hrs))):prefs[RH()];
   g.innerHTML='';g.style.setProperty('--hh',HH+'px');g.classList.toggle('phmode',editMode==='phases');$('wrap').classList.toggle('phm',editMode==='phases');
-  const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');const tw=Math.round(52*ts);g.style.gridTemplateColumns=`${tw}px repeat(${days.length},${printMode||fitW||focusD!=null?`minmax(${colMin+lane}px,1fr)`:colMin+lane+'px'})`;g.style.minWidth=(tw+days.length*(colMin+lane))+'px';   // the time column grows with the text size
+  const lane=vrhythm()?18:0;g.style.setProperty('--lane',lane+'px');const tw=Math.round(52*ts);g.style.gridTemplateColumns=`${tw}px repeat(${cols.length},${printMode||fitW||focusD!=null?`minmax(${colMin+lane}px,1fr)`:colMin+lane+'px'})`;g.style.minWidth=(tw+cols.length*(colMin+lane))+'px';   // the time column grows with the text size
   const cc=el('div','dh c',g);
-  if(cyc()>1){const b=el('button','wkb',cc);b.type='button';b.textContent=L('wkShort',{n:curWk});const nm=wkI(curWk).name?' · '+wkI(curWk).name+(wkDesc(curWk)?': '+wkDesc(curWk):''):wkDesc(curWk)?': '+wkDesc(curWk):'';
+  if(cyc()>1&&allWk){const b=el('button','wkb',cc);b.type='button';b.textContent=L('wkAllS',{n:cyc()});const t=L('wkAllTip',{c:cyc()});b.setAttribute('aria-label',t);b.title=t;b.onclick=()=>wkMenu(b)}   // R-CYC-19
+  else if(cyc()>1){const b=el('button','wkb',cc);b.type='button';b.textContent=L('wkShort',{n:curWk});const nm=wkI(curWk).name?' · '+wkI(curWk).name+(wkDesc(curWk)?': '+wkDesc(curWk):''):wkDesc(curWk)?': '+wkDesc(curWk):'';
     b.setAttribute('aria-label',L('wkTip',{n:curWk,c:cyc()})+nm);const tw=todayWk();b.title=L('wkTip',{n:curWk,c:cyc()})+nm+(tw?'. '+L('wkTodayTip',{n:tw}):'');b.onclick=()=>wkMenu(b);
     const c=wkCol(curWk);if(c){b.classList.add('col');b.style.background=c;b.style.borderColor=c;b.style.color=ink(c)}}   // the week's colour (R-CYC-17)
-  {const c=wkCol(curWk);g.classList.toggle('wkband',!!c);g.style.setProperty('--wkc',c||'transparent')}   // a band under the day headers in the shown week's colour
+  {const c=!allWk&&wkCol(curWk);g.classList.toggle('wkband',!!c);g.style.setProperty('--wkc',c||'transparent');g.classList.toggle('allwk',allWk)}   // all weeks: each header carries its own week's band   // a band under the day headers in the shown week's colour
   // narrow week columns (under 70 px, e.g. a phone): a short name and no buttons; a tap opens that day, whose header has the agenda (R-GRID-06)
-  const nar=focusD==null&&!printMode&&(fitW?(ww?(ww-tw)/days.length-lane:1e9):colMin)<70;
-  days.forEach((di,k)=>{const h=el('div','dh'+(di>4?' we':'')+(di>4&&k>0&&days[k-1]>4?' wj':'')+(focusD!=null?' fo':'')+(nar&&!lvOn?' nr':''),g);h.dataset.d=di;
+  const nar=focusD==null&&!printMode&&(fitW?(ww?(ww-tw)/cols.length-lane:1e9):colMin)<70;
+  const wks=k=>allWk&&k>0&&cols[k].w!==cols[k-1].w;   // the first column of a week, with every week side by side
+  cols.forEach(({w,d:di},k)=>{const h=el('div','dh'+(di>4?' we':'')+(di>4&&k>0&&cols[k-1].d>4&&!wks(k)?' wj':'')+(focusD!=null?' fo':'')+(nar&&!lvOn?' nr':'')+(wks(k)?' wks':''),g);h.dataset.d=di;
+    if(allWk){h.dataset.w=w;const c=wkCol(w);if(c){h.classList.add('wkbd');h.style.setProperty('--wkc',c)}}
+    const wn=allWk?' · '+L('wkShort',{n:w}):'';   // every week side by side: each header names its week (R-CYC-19)
     if(lvOn){h.textContent=DAYS[di]+(cyc()>1?' · '+(phone()?L('wkShort',{n:curWk}):wkShortL(curWk)):'');if(wkDesc(curWk))h.title=wkTip(curWk);return}   // live view: only the day name, nothing to press (R-GRID-12)
-    if(nar){h.textContent=DAY2[lang][di];h.title=L('focusTip',{d:DAYS[di]});h.setAttribute('aria-label',DAYS[di]);h.onclick=()=>setFocus(di);return}
-    h.title=L('agendaTip');h.onclick=()=>openAgenda(di);
+    if(nar){h.textContent=DAY2[lang][di]+(allWk?' '+w:'');h.title=L('focusTip',{d:DAYS[di]});h.setAttribute('aria-label',DAYS[di]+wn);h.onclick=()=>setFocus(di);return}
+    h.title=L('agendaTip');h.onclick=()=>openAgenda(di,w);
     const hb=(cls,icon,tip,fn)=>{const b=el('button','dhb '+cls,h);b.type='button';b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=ev=>{ev.stopPropagation();fn()};return b};
     if(focusD!=null)hb('prv',ICON_CL,L('focusPrev'),()=>stepFocus(-1));
-    h.insertAdjacentHTML('beforeend',`<span class="ic">${ICON_AGENDA}</span>`+esc(DAYS[di]+(focusD!=null&&cyc()>1?' · '+L('wkShort',{n:curWk}):'')));
+    h.insertAdjacentHTML('beforeend',`<span class="ic">${ICON_AGENDA}</span>`+esc(DAYS[di]+(allWk?wn:focusD!=null&&cyc()>1?' · '+L('wkShort',{n:curWk}):'')));
     if(focusD==null)hb('foc',ICON_FOCUS,L('focusTip',{d:DAYS[di]}),()=>setFocus(di));
     else{hb('nxt',ICON_CR,L('focusNext'),()=>stepFocus(1));hb('wk',ICON_WEEK,L('focusWeekTip'),()=>setFocus(null)).append(L('focusWeek'))}});
   const tm=el('div','times',g);tm.style.height=hrs*HH+'px';
@@ -2063,11 +2077,12 @@ function render(){
   // a nested box (R-NST-02) sits inside its host's lanes, indented on the left by NI px (also in a single-lane column)
   const insetPos=(x,v)=>{const l1=v.l1??v.l,w='(100% - 6px - var(--gut,0px))';if(v.n>1)x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + ${w} * ${v.l/v.n} + ${NI}px)`;x.style.right='auto';x.style.width=`calc(${w} * ${(l1-v.l+1)/v.n} - ${(l1<v.n-1?2:0)+NI}px)`};
   const lipK=new Map();   // the lip of each group of identical phases, for its bands (R-PHS-10)
-  const phByCol=days.map(di=>vsel?S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di&&inWk(p,x.s,{p:0,day:di}))):[]);   // the shown week's phases (R-CYC-16)
-  days.forEach((di,k)=>{
-    const dw=el('div','dw',g);dw.dataset.d=di;
+  const phByCol=cols.map(({w,d:di})=>vsel?S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di&&inWk(p,x.s,{p:0,day:di},w))):[]);   // the column's week's phases (R-CYC-16)
+  try{cols.forEach(({w,d:di},k)=>{
+    curWk=w;   // everything drawn in this column belongs to its week (R-CYC-19)
+    const dw=el('div','dw'+(wks(k)?' wks':''),g);dw.dataset.d=di;if(allWk)dw.dataset.w=w;
     const ln=el('div','lane',dw);ln.style.height=hrs*HH+'px';
-    const col=el('div','day',dw);col.style.height=hrs*HH+'px';col.dataset.d=di;
+    const col=el('div','day',dw);col.style.height=hrs*HH+'px';col.dataset.d=di;if(allWk)col.dataset.w=w;
     phByCol[k].forEach(x=>{
       const {p,s,i}=x;if(s.end<=a*60)return;
       const st=Math.max(s.start,a*60),top=(st-a*60)/60*HH,h=(s.end-st)/60*HH,wn=wkNote(p,s),range=fmt(s.start)+'–'+fmtEnd(s.end)+(wn?' · '+wn:'');
@@ -2081,30 +2096,30 @@ function render(){
         bx.onpointerdown=rz.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=ev.target===rz?'resize':'move';press(ev,e2=>grab(e2,{e:p,s,i,piece:0},md),p2=>tapOpen(p2,p))};
       }
       if(!(k>0&&phByCol[k-1].some(y=>y.key===x.key))){
-        let n=1;while(k+n<days.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
+        let n=1;while(k+n<cols.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
         const lp=el('div','lip'+(h<12?' s0':''),ln);lp.style.cssText=`top:${top}px;height:${h}px;background:${esc(p.color)};color:${ink(p.color)}`;lipK.set(x.key,lp);   // too short for any text: none (R-PHS-10)
         el('span','',lp).textContent=p.title;
-        lp.title=p.title+'\n'+(n>1?DAYS[di].slice(0,3)+'–'+DAYS[days[k+n-1]].slice(0,3)+' ':'')+range+(p.desc?'\n'+p.desc:'');
+        lp.title=p.title+'\n'+(n>1?DAYS[di].slice(0,3)+'–'+DAYS[cols[k+n-1].d].slice(0,3)+' ':'')+range+(p.desc?'\n'+p.desc:'');
         lp.onpointerdown=ev=>{if(editMode==='phases'&&!ev.button){ev.stopPropagation();press(ev,e2=>grab(e2,{e:p,s,i,piece:0},'move'),p2=>tapOpen(p2,p))}};
       }else{
         const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.phaseOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;lb._lip=lipK.get(x.key);
       }
     });
     el('div','gl',col);
-    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){if(selK){selK=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}press(ev,e2=>startCreate(e2,di,col),null)}};
-    col.oncontextmenu=ev=>{ev.preventDefault();if(lastPtrType==='touch')return;const its=piecesAt(di,minAt(col,ev.clientY),true,fxAt(col,ev.clientX));
+    col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){atCol(col);if(selK){selK=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}press(ev,e2=>startCreate(e2,di,col),null)}};
+    col.oncontextmenu=ev=>{ev.preventDefault();if(lastPtrType==='touch')return;atCol(col);const its=piecesAt(di,minAt(col,ev.clientY),true,fxAt(col,ev.clientX));
       if(its.length)overlapMenu(ev.clientX,ev.clientY,its,openCopy,L('ctxCopy'))};
-    col.onpointermove=ev=>peekMove(ev,di,col);col.onpointerleave=hidePeek;
+    col.onpointermove=ev=>{atCol(col);peekMove(ev,di,col)};col.onpointerleave=hidePeek;
     // cs/ce = the visible core of the piece (R-EVT-15): lanes and stripes only look at cores; a piece that is all margin has an empty core
     const bgs=[],evs=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q),cs=Math.max(c0,a*60);
       return {e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,c0,c1,cs,ce:c1>cs?c1:cs,color:colOf(e,s),op:evOp(e)}}))).filter(it=>!isBg(it.e,it.s)||!bgs.push(it));
     // strips (R-EVT-17): packed into sub-lanes by their whole window; the gutter is reserved only when the column has any
     const sl=[],SW=14;bgs.forEach(it=>{let k=sl.findIndex(ln=>ln.every(x=>x.end<=Math.max(it.start,a*60)||Math.max(x.start,a*60)>=it.end));if(k<0){k=sl.length;sl.push([])}sl[k].push(it);it.k=k});
-    const gut=sl.length*(SW+2);gutMap[di]=gut;if(gut)col.style.setProperty('--gut',gut+'px');
+    const gut=sl.length*(SW+2);gutMap[gk(di)]=gut;if(gut)col.style.setProperty('--gut',gut+'px');
     // nested pieces (R-NST-01) are drawn inside their host and take no part in lanes or stripes
-    const nst=nestPick(evs),flat=evs.filter(it=>!nst.has(it));nst.forEach((h,x)=>nestMap.set(nkey(x.e,x.s,x.piece),{x,h}));
+    const nst=nestPick(evs),flat=evs.filter(it=>!nst.has(it));nst.forEach((h,x)=>nestMap.set(gk(nkey(x.e,x.s,x.piece)),{x,h}));
     // "around these times" with no minute left counts as a core over its whole window (R-EVT-12)
-    flat.forEach(it=>{const ts=sqOf(it.e,it.s,it.piece,curWk,sqc);if(!ts)return;it.sq=ts;it.c0=it.start;it.c1=it.end;it.cs=Math.max(it.start,a*60);it.ce=it.end;sqMap.add(nkey(it.e,it.s,it.piece))});
+    flat.forEach(it=>{const ts=sqOf(it.e,it.s,it.piece,curWk,sqc);if(!ts)return;it.sq=ts;it.c0=it.start;it.c1=it.end;it.cs=Math.max(it.start,a*60);it.ce=it.end;sqMap.add(gk(nkey(it.e,it.s,it.piece)))});
     const aws=bgs.filter(it=>isAway(it.e)),awc=new Map();if(aws.length)evs.forEach(it=>{const h=awayHits(it,aws);if(h.length)awc.set(it,h)});   // Away clashes (R-EVT-24)
     // lanes look at whole windows, margins included (R-EVT-15): another person's occurrence goes beside a margin, never over it; occurrences that
     // clash share a lane, where a core covers the margins and stripes only mark core on core
@@ -2114,7 +2129,7 @@ function render(){
       const hst=nst.get(it),v0=lv.get(hst||it),sg=v0.segs;
       // fixed lanes (R-EVT-23): a box for each run of neighbouring lanes; a nested box sits in the host's box that holds its person's lane
       const vs=!sg?[v0]:hst?[(q=>({...v0,l:q[0],l1:q[1]}))(sg.find(([x,y])=>{const k=v0.ids.indexOf(it.s.person);return x<=k&&k<=y})||sg[0])]:sg.map(([x,y])=>({...v0,l:x,l1:y}));
-      laneMap.set(it.e.id+'|'+it.e.slots.indexOf(it.s)+'|'+it.piece,hst?['n',vs[0].l,vs[0].l1??vs[0].l,v0.n]:vs.length>1?['m',sg,v0.n]:[vs[0].l,vs[0].l1,v0.n]);
+      laneMap.set(gk(it.e.id+'|'+it.e.slots.indexOf(it.s)+'|'+it.piece),hst?['n',vs[0].l,vs[0].l1??vs[0].l,v0.n]:vs.length>1?['m',sg,v0.n]:[vs[0].l,vs[0].l1,v0.n]);
       vs.forEach(v=>drawBox(it,hst,v));
     });
     function drawBox(it,hst,v){
@@ -2154,7 +2169,7 @@ function render(){
     }
     bgs.forEach(it=>{
       const e=it.e,s=it.s,lk=isLocked(e),ty=tyOf(e),top=Math.max(it.start,a*60),r0=it.k*(SW+2),d=el('div','bgs',col);d._it=it;   // flush with the right edge, shaped like a lip (R-EVT-17)
-      laneMap.set(e.id+'|'+e.slots.indexOf(s)+'|'+it.piece,['s',r0,r0+SW+2]);d.dataset.strip=it.k+'/'+sl.length;   // sub-lanes tile the gutter: [k*16, (k+1)*16) px from the right edge
+      laneMap.set(gk(e.id+'|'+e.slots.indexOf(s)+'|'+it.piece),['s',r0,r0+SW+2]);d.dataset.strip=it.k+'/'+sl.length;   // sub-lanes tile the gutter: [k*16, (k+1)*16) px from the right edge
       d.style.cssText=`top:${px(top)}px;height:${Math.max(6,px(it.end)-px(top)-1)}px;right:${r0}px;opacity:${it.op}`;d.style.setProperty('--c',it.color);
       const lb=el('span','',d);lb.textContent=e.title;d.style.color=ink(it.color);   // the title reads top-to-bottom
       const awy=isAway(e);if(awy){const k=ink(it.color);d.classList.add('aw');d.style.background=`repeating-linear-gradient(45deg,${it.color} 0 5px,color-mix(in srgb,${it.color} 70%,${k==='#000'?'#fff':'#000'}) 5px 9px)`}   // Away: hatched (R-EVT-24)
@@ -2195,16 +2210,17 @@ function render(){
         o.style.opacity=.85*Math.max(...cov.map(c=>c.op));
       });
     });
-  });
+  })}finally{curWk=w0}
   fitAll(fitList);fitLips(g);
   drawNow();
-  const hi=hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
+  const hi=allWk?[...Array(cyc()).keys()].map(k=>withWk(k+1,hiddenInfo)).reduce((x,y)=>({n:x.n+y.n}),{n:0}):hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
   hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
   updLive();if(lvOn){lvRects=[];lvOpen.slice().forEach(o=>lvDraw(o,false));if(!livePaused&&!liveBusy())liveScroll()}
   if(!printMode)updZoomUI();
 }
 /* ---------- pointer interactions ---------- */
-function colAt(x){const cs=[...document.querySelectorAll('.day')];for(const c of cs){if(x<c.getBoundingClientRect().right)return c}return cs[cs.length-1]}
+function colAt(x){const cs=[...document.querySelectorAll('.day')];let c=cs.find(c=>x<c.getBoundingClientRect().right)||cs[cs.length-1];atCol(c);return c}
+const atCol=c=>{if(allWk&&c&&c.dataset.w)curWk=+c.dataset.w};   // with every week side by side the column under the pointer is the week (R-CYC-19)
 const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/HH*60;
 const snapM=m=>Math.round(m/SNAP)*SNAP;
 const rzMin=()=>((window.matchMedia&&matchMedia('(pointer:coarse)').matches)?16:7)/HH*60+1;
@@ -2282,7 +2298,7 @@ function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card
     if(s.person)rows.push(`<div>${esc(L('byl'))} ${esc(pname(s.person))}</div>`);
     if(inv.length)rows.push(`<div>${esc(L(e.oncall?'oncl':'withl'))} ${inv.join(', ')}</div>`);
     if(e.owner)rows.push(`<div>${esc(L('ownl'))} ${pTag(e.owner)}</div>`);
-    {const k=nkey(e,s,piece||0),nh=nestMap.get(k),ins=[...nestMap.values()].filter(v=>v.h.e===e&&v.h.s===s&&v.h.piece===(piece||0));   // nested activities (R-NST-02)
+    {const k=gk(nkey(e,s,piece||0)),nh=nestMap.get(k),ins=[...nestMap].filter(([x,v])=>x.startsWith(curWk+'#')&&v.h.e===e&&v.h.s===s&&v.h.piece===(piece||0)).map(([,v])=>v);   // nested activities (R-NST-02)
      if(nh)rows.push(`<div>${esc(L('nestDur',{t:nh.h.e.title}))}</div>`);
      if(ins.length)rows.push(`<div>${esc(L('nestAlso'))} ${ins.map(v=>esc(v.x.e.title+' '+fmt(v.x.s.start)+'–'+fmtEnd(v.x.s.end))).join(', ')}</div>`)}
     if(e.desc)rows.push(`<div style="white-space:pre-wrap;margin-top:4px">${esc(e.desc)}</div>`);
@@ -2354,21 +2370,24 @@ function carryMove(cs,hs,ho,only){   // hs/ho: the host's slots now / before the
 }
 function startDrag(ev,it,mode){
   const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
-  const col=colAt(ev.clientX),cDay=+col.dataset.d,cMin=minAt(col,ev.clientY),cFx=fxAt(col,ev.clientX),off=cMin+1440*pc-e.start,dur=e.end-e.start;
+  const col=colAt(ev.clientX),cDay=+col.dataset.d,cW=curWk,cMin=minAt(col,ev.clientY),cFx=fxAt(col,ev.clientX),off=cMin+1440*pc-e.start,dur=e.end-e.start;
   const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
   const ovB=overlapSet(owner,orig).size,carry=mode==='move'&&!owner.rhythms?nestCarry(owner):[];
   let moved=false,single=false,final=null;const x0=ev.clientX,y0=ev.clientY;
   const mv=p=>{
     if(!moved&&Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;moved=true;single=p.shiftKey;
     const c=colAt(p.clientX),m=minAt(c,p.clientY),cd=+c.dataset.d,t={day:o0.day,start:o0.start,end:o0.end};
-    if(mode==='move'){t.day=(cd-pc+7)%7;t.start=Math.max(0,Math.min(1425,MAXEND-dur,snapM(m+1440*pc-off)));t.end=t.start+dur}
+    // with every week side by side a move can cross into another week: the shift is counted along the cycle (R-CYC-19)
+    const aD=allWk&&mode==='move'?((curWk-cW)*7+cd-cDay):null;
+    if(mode==='move'){t.day=(cd-pc+7)%7;t.start=Math.max(0,Math.min(1425,MAXEND-dur,snapM(m+1440*pc-off)));t.end=t.start+dur;
+      if(aD!=null&&o0.wk){const x={day:o0.day,wk:o0.wk};shiftDay(x,aD);t.day=x.day;t.wk=x.wk}}
     else{let rel=(cd-o0.day+7)%7;rel=rel>1?(rel===6?0:1):rel;t.end=Math.max(o0.start+SNAP,Math.min(MAXEND,snapM(m+1440*rel)))}
     owner.slots.forEach((s,i)=>Object.assign(s,orig[i]));
     if(!multi||single){
-      if(mode==='move'&&!adv&&owner.slots.some(x=>x!==e&&sameDay(x,e,t.day)))t.day=o0.day;
+      if(mode==='move'&&!adv&&owner.slots.some(x=>x!==e&&sameDay(x,{...e,...t})))Object.assign(t,{day:o0.day,...(o0.wk?{wk:o0.wk}:{})});
       Object.assign(e,t);if(!owner.rhythms)fitMg(e);
     }else{
-      const dD=t.day-o0.day,dS=t.start-o0.start,dE=t.end-o0.end;
+      const dD=aD!=null?aD:t.day-o0.day,dS=t.start-o0.start,dE=t.end-o0.end;
       owner.slots.forEach(s=>{
         if(mode==='move'){const du=s.end-s.start;shiftDay(s,dD);s.start=Math.max(0,Math.min(1425,MAXEND-du,s.start+dS));s.end=s.start+du}
         else{s.end=Math.max(s.start+SNAP,Math.min(MAXEND,s.end+dE));if(!owner.rhythms)fitMg(s)}
@@ -2388,7 +2407,7 @@ function startDrag(ev,it,mode){
         {label:L('rpOnly'),fn:()=>{
           if(undoSt.length!==mark||!act().includes(owner))return;
           owner.slots=orig.map(x=>({...x}));const s=owner.slots[idx];
-          if(mode==='move'){if(adv||!owner.slots.some(x=>x!==s&&sameDay(x,s,fin.day)))s.day=fin.day;s.start=fin.start;s.end=fin.end}else{s.end=fin.end;fitMg(s)}
+          if(mode==='move'){if(adv||!owner.slots.some(x=>x!==s&&sameDay(x,{...s,...fin})))Object.assign(s,{day:fin.day,...(fin.wk?{wk:fin.wk}:{})});s.start=fin.start;s.end=fin.end}else{s.end=fin.end;fitMg(s)}
           carryMove(carry,owner.slots,orig,idx);render()}},undoBtn]);
     }else if(warn)toast('⚠ '+L('rpWarn'),[undoBtn]);
   };
@@ -2415,7 +2434,7 @@ function startCreate(ev,di,col){
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);gh.remove();
     if(!moved&&touchCopy(ev,ev.clientX,ev.clientY,di,minAt(col,ev.clientY),fxAt(col,ev.clientX)))return;   // a locked event lets the finger through to the column
     let lo=Math.min(a,b),hi=Math.max(a,b);if(!moved||hi-lo<SNAP)hi=Math.min(1440,lo+60);
-    openDlg(null,{day:di,start:lo,end:hi})};
+    openDlg(null,{day:di,start:lo,end:hi,...(allWk?{wk:curWk}:{})})};   // with every week side by side: an event of that week (R-CYC-19)
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
 /* ---------- event dialog ---------- */
@@ -2705,7 +2724,7 @@ function openDlg(e,def,src){   // src: the repetition that was clicked, to jump 
   dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
   cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
   const slots=e?e.slots:[{day:0,start:540,end:600,person:'',fo:true,...def}];
-  dWk={pw:!!(e&&e.slots.some(x=>x.wk)),weeks:new Set(e&&e.weeks||[...Array(cyc()).keys()].map(k=>k+1))};   // R-CYC-08
+  dWk={pw:!!(e&&e.slots.some(x=>x.wk)),weeks:new Set(e&&e.weeks||(def&&def.wk?[def.wk]:[...Array(cyc()).keys()].map(k=>k+1)))};   // R-CYC-08; created in a week's column, that week (R-CYC-19)
   curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
   $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
   // the owner: our people, plus a current owner who has since become external (kept, marked)
@@ -2778,7 +2797,7 @@ function openCopy(src){
 $('hid').onclick=openSettings;
 $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agFn();doPrint(d,false)};
-$('agPrint2').onclick=()=>printDay(agDay);
+$('agPrint2').onclick=()=>allWk?oneWeek(agWk,()=>printDay(agDay)):printDay(agDay);
 $('file').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   const name=f.name.replace(/\.json$/i,'').replace(/-encrypted$/,''),show=obj=>{try{openImport(parseWorkspace(obj,name),'file')}catch(err){alert(L(errKey(err,'badFile')))}};

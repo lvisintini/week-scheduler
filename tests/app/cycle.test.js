@@ -1,6 +1,6 @@
 // Cycles of several weeks on the screen (docs/requirements/cycle.md): what each week of the cycle draws and finds.
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, dragFrom, workspace, sleep, pointer } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, dragFrom, createDrag, workspace, sleep, pointer } from '../helpers/app.js';
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
 const week = (a, w) => a.ev(`curWk=${w};render()`);
@@ -162,7 +162,7 @@ describe('R-CYC-04 The week switcher in the grid corner chooses the week shown, 
     const a = two(); expect(btn(a).textContent).toBe('W1'); expect(btn(a).getAttribute('aria-label')).toBe('Week 1 of 2 is shown. Choose another week of the cycle');
   });
   it('its menu lists every week, ticks the shown one, and offers Weeks in the cycle…', () => {
-    const a = two(); btn(a).click(); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Week 1', 'Week 2', 'Weeks in the cycle…']);
+    const a = two(); btn(a).click(); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Week 1', 'Week 2', 'All weeks side by side', 'Weeks in the cycle…']);
     expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
   });
   it('choosing a week redraws the grid for that week', () => {
@@ -786,3 +786,59 @@ describe('R-CYC-20 The weeks of a cycle can be reordered; everything in a week m
   });
 });
 const openCycleDlg2 = a => { a.q('.wsbtn').click(); a.qa('.omenu .oi').find(b => b.textContent.includes('Semanas del ciclo')).click(); };
+
+describe('R-CYC-19 All weeks side by side: every week of the cycle in one row, chosen in the week switcher', () => {
+  const data = (o = {}) => blank({ cycle: 2, weekInfo: [{}, { name: 'Nights', color: '#8e4ec6' }], people, events: [ev1({ id: 'w2', title: 'Week two', weeks: [2], slots: [sl(0, 600, 660)] }),
+    ev1({ id: 'per', title: 'Per', slots: [sl(6, 1320, 1800, { wk: 1 })] }), ev1({ id: 'all', title: 'All', slots: [sl(2, 600, 660)] })], ...o });
+  const all = a => { a.q('.dh.c .wkb').click(); a.qa('.omenu .oi').find(b => b.textContent.trim() === 'All weeks side by side').click(); };
+  const cell = (a, w, d) => a.q(`.day[data-w="${w}"][data-d="${d}"]`);
+  const ids = (a, w, d) => [...cell(a, w, d).querySelectorAll('.ev')].map(b => b._it.e.id + (b._it.piece ? '+' : ''));
+  it('the week menu offers it with a tooltip; the grid then has a column for every day of every week, each headed with its week', () => {
+    const a = fresh(data()); a.q('.dh.c .wkb').click(); expect(a.qa('.omenu .oi').find(b => b.textContent.trim() === 'All weeks side by side').title).toContain('every week of the cycle in one row');
+    a.d.body.click(); all(a); expect(a.q('.wkb').textContent).toBe('W1–2'); expect(a.q('.wkb').getAttribute('aria-label')).toContain('All 2 weeks'); expect(a.qa('.day')).toHaveLength(14);
+    expect(a.qa('.dh:not(.c)').map(h => h.textContent.trim()).slice(6, 8)).toEqual(['Sunday · W1', 'Monday · W2']);
+    expect(a.qa('.dh.wks').map(h => h.dataset.w)).toEqual(['2']); expect(a.q('.dh[data-w="2"]').classList.contains('wkbd')).toBe(true); expect(a.q('#grid').classList.contains('wkband')).toBe(false);
+  });
+  it('each column draws only its own week: patterns, per-week times, and Sunday night running into Monday of the next week', () => {
+    const a = fresh(data()); all(a);
+    expect([ids(a, 1, 0), ids(a, 2, 0), ids(a, 1, 6), ids(a, 2, 6), ids(a, 1, 2), ids(a, 2, 2)]).toEqual([[], ['w2', 'per+'], ['per'], [], ['all'], ['all']]);
+  });
+  it('choosing a week goes back to one week; it is view state, not undoable and not an unsaved change', () => {
+    const a = fresh(data()); a.ev('saveMem("all")'); all(a); expect(a.ev('[isDirty(),undoSt.length]')).toEqual([false, 0]);
+    a.q('.dh.c .wkb').click(); expect(a.q('.omenu .oi.on, .omenu .oi svg') !== null).toBe(true); a.qa('.omenu .oi').find(b => b.textContent.trim().startsWith('Week 2')).click();
+    expect(a.qa('.day')).toHaveLength(7); expect(a.q('.wkb').textContent).toBe('W2');
+  });
+  it('lanes, clicks and the hover card follow the week of the column', async () => {
+    const a = fresh(data({ events: [ev1({ id: 'w2', title: 'Week two', weeks: [2], slots: [sl(0, 600, 660, { person: 'A' })] }), ev1({ id: 'x', title: 'Every week', slots: [sl(0, 600, 660, { person: 'B' })] })] })); all(a);
+    expect([...cell(a, 1, 0).querySelectorAll('.ev')].map(b => b.dataset.lane || '')).toEqual(['']); expect([...cell(a, 2, 0).querySelectorAll('.ev')].map(b => b.dataset.lane)).toEqual(['0/2', '1/2']);
+    expect(a.ev(`(atCol(document.querySelectorAll('.day')[7]),piecesAt(0,630,false,0.25).map(x=>x.e.id))`)).toEqual(['w2']);
+    expect(a.ev(`(atCol(document.querySelectorAll('.day')[0]),piecesAt(0,630,false,0.25).map(x=>x.e.id))`)).toEqual(['x']);   // week 1 has one lane, whatever week 2 has
+    await dragFrom(a, cell(a, 1, 0).querySelector('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { move: false }); expect(a.q('#fT').value).toBe('Every week');
+  });
+  it('a header opens the agenda of that day in its own week', () => {
+    const a = fresh(data()); all(a); a.qa('.dh:not(.c)')[7].click(); expect(a.q('#agBody h1').textContent).toContain('Monday — Week 2 · Nights'); expect(a.q('#agBody').textContent).toContain('Week two');
+  });
+  it('dragging a time with its own week across the week edge moves it along the cycle', async () => {
+    const a = fresh(data()); all(a); await dragFrom(a, cell(a, 1, 6).querySelector('.ev'), { col: 6, min: 1350 }, { col: 7, min: 1350 });
+    expect(a.ev('JSON.stringify(S.events[1].slots[0])')).toMatch(/"day":0,"start":1320.*"wk":2|"wk":2.*"day":0/);
+  });
+  it('creating in a week\'s column makes an event of that week', async () => {
+    const a = fresh(data()); all(a); await createDrag(a, { col: 9, min: 600 }, { col: 9, min: 660 });
+    expect(a.qa('#fWk .chips input').map(i => i.checked)).toEqual([false, true]); a.q('#fT').value = 'New'; a.q('#fOk').click(); expect(a.ev('S.events.at(-1).weeks')).toEqual([2]);
+  });
+  it('the day view shows that day of every week, which also suits a phone', () => {
+    const a = fresh(data()); all(a); a.ev('setFocus(0)'); expect(a.qa('.dh:not(.c)').map(h => h.textContent.trim().replace(/\s+/g, ' '))).toEqual(expect.arrayContaining([expect.stringContaining('Monday · W1'), expect.stringContaining('Monday · W2')]));
+    expect(a.qa('.day')).toHaveLength(2);
+  });
+  it('Live View turns it off, and a cycle of one week does not offer it', () => {
+    const a = fresh(data()); all(a); a.ev('setAnchor(1);setLive(true)'); expect(a.ev('allWk')).toBe(false); a.ev('setLive(false)');
+    const b = fresh(blank()); expect(b.q('.dh.c .wkb')).toBeNull(); b.ev('setAllWk(true)'); expect(b.ev('allWk')).toBe(false);
+  });
+  it('Print offers this view (across the page) or every week, one week per page', () => {
+    const a = fresh(data()); all(a); a.toolbar('print').click(); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Print this view (all weeks side by side)', 'Print every week (one page each)']);
+    a.qa('.omenu .oi')[1].click(); expect((a.w.__printed.match(/class="day"/g) || []).length).toBe(14); expect(a.ev('allWk')).toBe(true); expect(a.qa('#grid .day')).toHaveLength(14);
+  });
+  it('in Spanish the menu item and the corner button are translated', () => {
+    const b = openApp({ languages: ['es'] }); setData(b, data()); b.ev('setAllWk(true)'); expect(b.q('.wkb').textContent).toBe('S1–2'); expect(b.q('.dh[data-w="2"]').textContent).toContain('· S2');
+  });
+});

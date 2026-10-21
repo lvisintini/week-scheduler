@@ -111,7 +111,7 @@ test.describe('R-CYC-04 On a phone the week switcher is at hand and a swipe cros
     const b = await page.locator('.wkb').boundingBox(); expect(b).not.toBeNull(); expect(b.width).toBeGreaterThan(20);
     await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(() => page.evaluate(() => [focusD, curWk])).toEqual([0, 2]);
     await expect(page.locator('.wkb')).toHaveText('W2'); await expect(page.locator('.dh.fo')).toContainText('Monday · W2');
-    await page.locator('.wkb').tap(); await expect(page.locator('.omenu .oi')).toHaveCount(3);
+    await page.locator('.wkb').tap(); await expect(page.locator('.omenu .oi')).toHaveCount(4);   // Week 1, Week 2, All weeks side by side, Weeks in the cycle…
   });
 });
 
