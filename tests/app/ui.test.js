@@ -378,3 +378,73 @@ describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
     expect(css).toContain('@media (max-width:600px){aside:not(.collapsed){position:fixed;'); expect(css).toContain('aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;'); expect(css).toContain('aside .rs{display:none}');
   });
 });
+
+describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in tabs', () => {
+  const ppl = [person({ id: 'A', name: 'Ann' })];
+  const open = (o = {}, data = blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 2, start: 600, end: 660, person: 'A' }] })] })) => { const a = fresh(data, o); a.ev('openDlg(S.events[0])'); return a; };
+  const tabs = a => a.qa('#dlg .dtabs button'), pane = (a, k) => a.q(`#dlg .dpane[data-p="${k}"]`);
+  const shown = a => a.qa('#dlg .dpane').filter(p => !p.classList.contains('off')).map(p => p.dataset.p);
+  const sel = a => tabs(a).map(b => b.getAttribute('aria-selected'));
+  it('the event dialog has a tab row (Event, When, More) and three panes holding its sections', () => {
+    const a = open(); expect(tabs(a).map(b => b.textContent)).toEqual(['EventPhase', 'When', 'MoreRhythms']);
+    expect(a.q('#dlg .dtabs').getAttribute('role')).toBe('tablist'); expect(tabs(a).every(b => b.getAttribute('role') === 'tab' && b.type === 'button')).toBe(true);
+    expect(['#fT', '#fD', '#fTy', '#fOw', '#fInv'].every(s => pane(a, 'ev').contains(a.q(s)))).toBe(true);
+    expect(['#fWk', '#paneQ', '#fWarn'].every(s => pane(a, 'wh').contains(a.q(s)))).toBe(true);
+    expect(['#fFit', '#fSch'].every(s => pane(a, 'mo').contains(a.q(s)))).toBe(true);
+    expect(a.qa('#dlg .dpane').some(p => p.contains(a.q('#err')) || p.contains(a.q('#fOk')))).toBe(false);
+  });
+  it('on a desktop the tab row is hidden and every pane is shown; on a phone only the active pane is', () => {
+    const a = open(), css = [...a.d.styleSheets[0].cssRules];
+    expect(css.find(r => r.selectorText === '.dtabs').style.display).toBe('none');
+    const ph = css.filter(r => r.media && /max-width: ?600px/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
+    expect(ph.find(r => r.selectorText === '#dlg .dpane.off').style.display).toBe('none'); expect(ph.find(r => r.selectorText === '#dlg .dtabs').style.display).toBe('flex');
+    expect(css.some(r => !r.media && r.selectorText && /\.dpane\.off/.test(r.selectorText))).toBe(false);
+  });
+  it('every open starts on Event; clicking a tab or the arrow keys switch, with aria-selected and a roving tab stop', () => {
+    const a = open({ phone: true }); expect(shown(a)).toEqual(['ev']); expect(sel(a)).toEqual(['true', 'false', 'false']);
+    tabs(a)[1].click(); expect(shown(a)).toEqual(['wh']); expect(tabs(a).map(b => b.tabIndex)).toEqual([-1, 0, -1]);
+    a.q('#dlg .dtabs').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); expect(shown(a)).toEqual(['mo']); expect(a.d.activeElement).toBe(tabs(a)[2]);
+    a.q('#dlg .dtabs').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); expect(shown(a)).toEqual(['ev']);
+    a.q('#fCancel').click(); a.ev('openDlg(S.events[0])'); expect(shown(a)).toEqual(['ev']);
+  });
+  it('a failed save shows the tab with the field it is about and marks that tab', () => {
+    const a = open({ phone: true }); tabs(a)[2].click(); a.q('#fT').value = ''; a.q('#fOk').click();
+    expect(shown(a)).toEqual(['ev']); expect(tabs(a)[0].classList.contains('bad')).toBe(true); expect(a.q('#err').textContent).toBe('Title is required.');
+    a.q('#fT').value = 'Event'; a.q('#fSch input').checked = false; a.q('#fOk').click(); expect(shown(a)).toEqual(['mo']);
+    expect(tabs(a).map(b => b.classList.contains('bad'))).toEqual([false, false, true]);
+    a.q('#fSch input').checked = true; a.q('#fOk').click(); expect(a.q('#dlg').open).toBe(false); a.ev('openDlg(S.events[0])'); expect(tabs(a).some(b => b.classList.contains('bad'))).toBe(false);
+  });
+  it('the When tab shows ⚠ while repetitions in the table clash', () => {
+    const a = open({ phone: true }, blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'A' }] })] }));
+    expect(a.q('#fWarn').textContent).toContain('⚠'); expect(tabs(a)[1].classList.contains('warn')).toBe(true);
+    const b = open({ phone: true }); expect(tabs(b)[1].classList.contains('warn')).toBe(false);
+  });
+  it('the jump to the clicked repetition waits until the When tab is shown on a phone', () => {
+    const a = fresh(blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 4, start: 600, end: 660, person: 'A' }] })] }), { phone: true });
+    a.ev('openDlg(S.events[0],null,S.events[0].slots[1])'); const fri = a.qa('#fDays .dr')[4]; expect(fri.classList.contains('pulse')).toBe(false);
+    tabs(a)[1].click(); expect(fri.classList.contains('pulse')).toBe(true);
+    const b = fresh(blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 4, start: 600, end: 660, person: 'A' }] })] }));
+    b.ev('openDlg(S.events[0],null,S.events[0].slots[1])'); expect(b.qa('#fDays .dr')[4].classList.contains('pulse')).toBe(true);
+  });
+  it('a phase dialog names its tabs Phase, When and Rhythms, and Spanish translates them all', () => {
+    const a = fresh(blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'P', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 0, end: 60 }] }] }), { phone: true });
+    a.ev("editMode='phases';openDlg(S.phases[0])"); expect(a.q('#dlg').classList.contains('ph')).toBe(true);
+    expect(tabs(a).map(b => [...b.querySelectorAll('.ph-only')].map(s => s.textContent).join('') || b.textContent)).toEqual(['Phase', 'When', 'Rhythms']);
+    a.ev("setLang('es')"); expect(tabs(a).map(b => b.textContent)).toEqual(['EventoFranja', 'Cuándo', 'MásRitmos']);
+  });
+  it('on a phone the dialog cannot be dragged, by its grip, an empty part or the arrow keys', () => {
+    const a = open({ phone: true }), dl = a.q('#dlg');
+    dl.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: 300, clientY: 110, button: 0, bubbles: true, cancelable: true })); pointer(a, 'pointermove', { x: 100, y: 300 }); pointer(a, 'pointerup', { x: 100, y: 300 });
+    a.q('#dGrip').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); expect(dl.classList.contains('moved')).toBe(false); expect(dl.style.top).toBe('');
+  });
+  it('Settings, Help, Statistics and Copy fill the screen on a phone; small dialogs such as Weeks in the cycle stay floating', () => {
+    const a = open({ phone: true }); a.q('#fCancel').click();
+    a.ev('openSettings()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
+    a.ev('openHelp()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
+    a.ev('openStats("A")'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
+    a.ev('openCopy(S.events[0])'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
+    a.ev('openCycle()'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
+    const ph = [...a.d.styleSheets[0].cssRules].filter(r => r.media).flatMap(r => [...r.cssRules]).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');
+    expect(ph.style.width).toBe('100vw'); expect(ph.style.height).toBe('100dvh');
+  });
+});

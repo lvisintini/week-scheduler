@@ -166,6 +166,21 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .wrap.phm{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}.seg button{flex:1;border:0;border-radius:0;padding:6px;background:var(--card)}.seg button.on{background:var(--acc);color:var(--onacc)}
 #dlg.ph .ev-only{display:none!important}#dlg:not(.ph) .ph-only{display:none}
+/* R-UI-14: on a phone the large dialogs fill the screen (header and footer stay, the middle scrolls) and the event dialog shows one tab at a
+   time; on a desktop its tab row is hidden and every pane is shown */
+.dtabs{display:none}
+@media (max-width:600px){
+#dlg,#agDlg,#xDlg.full{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border:0;border-radius:0;padding:10px 14px max(12px,env(safe-area-inset-bottom))}
+#dlg[open],#agDlg[open],#xDlg.full[open]{display:flex;flex-direction:column}
+#dlg .dgrip{display:none}#dlg form{flex:1;min-height:0;display:flex;flex-direction:column}
+#dlg .dtabs{display:flex;flex-shrink:0;gap:2px;border-bottom:1px solid var(--line);margin:0 0 6px}
+#dlg .dtabs button{flex:1;min-height:44px;border:0;border-bottom:3px solid transparent;border-radius:6px 6px 0 0;background:none;margin-bottom:-1px;padding:6px 4px;color:var(--fg);font-weight:600}
+#dlg .dtabs button{-webkit-tap-highlight-color:transparent}#dlg .dtabs button.on{color:var(--acc);border-bottom-color:var(--acc)}#dlg .dtabs button.warn::after{content:' ⚠';color:#c97a00}#dlg .dtabs button.bad::after{content:' ●';color:#d33}
+#dlg .dpane{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}#dlg .dpane.off{display:none}#dlg .dpane>.fsec:first-child{margin-top:6px}#dlg .dpane[data-p="wh"]>.fsec:first-child{display:none}   /* the tab already says When */
+#dlg .dpane[data-p="wh"]:not(.off){display:flex;flex-direction:column}#dlg .dpane[data-p="wh"] #paneQ{flex:1 0 160px;max-height:none}
+#dlg .btns,#agDlg .btns,#xDlg.full .btns,#xDlg.full h3{flex-shrink:0}#dlg .err{flex-shrink:0}
+#xDlg.full .xb,#agDlg .agenda{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+}
 .ev .clipm{position:absolute;right:5px;bottom:-1px;z-index:5;font-weight:700;line-height:1;text-shadow:0 1px 2px #000a;pointer-events:none}
 .ev.clipped::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.28));pointer-events:none;z-index:4}
 @media(pointer:coarse){.rz{height:16px}}
@@ -233,6 +248,8 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <div id="pills"><button id="lvPill" type="button" style="display:none"><i></i><span></span></button><button id="hid" style="display:none"></button></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
 <dialog id="dlg"><button type="button" class="dgrip" id="dGrip" title="Drag to move this window and see what is behind it (the arrow keys move it too). It opens in the middle again next time."><svg viewBox="0 0 24 12" fill="currentColor"><circle cx="6" cy="3" r="1.6"/><circle cx="12" cy="3" r="1.6"/><circle cx="18" cy="3" r="1.6"/><circle cx="6" cy="9" r="1.6"/><circle cx="12" cy="9" r="1.6"/><circle cx="18" cy="9" r="1.6"/></svg></button><form method="dialog" id="f" onsubmit="return false">
+<div class="dtabs" role="tablist"><button type="button" role="tab" data-p="ev"><span class="ev-only">Event</span><span class="ph-only">Phase</span></button><button type="button" role="tab" data-p="wh">When</button><button type="button" role="tab" data-p="mo"><span class="ev-only">More</span><span class="ph-only">Rhythms</span></button></div>
+<div class="dpane" data-p="ev" role="tabpanel">
 <div class="fg">
 <label for="fT">Title *</label><div class="fcell"><input type="text" id="fT"><button type="button" class="swatch" id="fC" title="Colour"></button></div>
 <label for="fD">Description</label><textarea id="fD" rows="2"></textarea>
@@ -243,14 +260,19 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 <label for="fOw" title="The person who owns the task's conception, planning and execution, not necessarily the one who performs it. By default the owner performs it too; any day can have someone else stepping in, in the table below. Only our own people (not external ones) can own a task.">Owner</label><div class="fcell"><span id="fOwIc" class="ic"></span><select id="fOw"></select></div>
 <label title="The people involved on every day, unless a day has its own list in the table below (its With button).">With</label><div><div class="chips" id="fInv"></div></div>
 </div>
+</div>
+<div class="dpane" data-p="wh" role="tabpanel">
 <div class="fsec"><span>When</span></div>
 <div id="fWk" class="wkrow ev-only"></div>
 <div id="paneQ"><div class="dhd"><span title="Tick the days this event repeats on. Each day has its own times, the person who performs it, the people involved and its timing; a newly ticked day starts from the nearest ticked day. + adds another time on that day, ⧉ makes every other ticked day like this one.">Days</span><span>Start</span><span>End</span><span class="ev-only" title="Who performs it on that day: the owner (follows the owner if it changes), nobody (it concerns everyone), or someone stepping in.">Performed by</span><span class="ev-only" title="The people involved on that day: Default follows the list above; click to give the day its own list.">With</span><span class="ev-only" title="The colour of this time on the grid: the event's colour (the default), the colour of the person who performs it (it follows the performer), the colour of the event's activity type (it follows the type), or one of its own. ⧉ copies it to the other days.">Colour</span><span class="ev-only" title="Fixed: the times are exact. Flexible start/end: may start a bit late and/or finish a bit early (the fixed part is a normal box, the flexible parts lighter dashed extensions). Around these times: happens around these times but may take less; the whole box is lighter and dashed. Flexible parts never clash with other activities of the same people, which may cover them, as long as an activity around these times keeps some of its time free. Other people's activities go beside them, not over them.">Timing</span><span></span><span></span><span></span></div>
 <div id="fDays"></div></div>
 <div class="warnline" id="fWarn"></div>
+</div>
+<div class="dpane" data-p="mo" role="tabpanel">
 <div class="fsec ev-only"><span title="Event-wide switches that change how this event interacts with the others.">How it fits in</span></div>
 <div class="fflags ev-only" id="fFit"><div id="fOcRow"><label title="They are only available (for example at hand to answer the cleaner's questions), not busy: the event never clashes with their other activities and does not count in their statistics."><input type="checkbox" id="fOnCall">Involved people are only on call</label></div><label title="For small tasks done along the way, such as picking up the post on the way back from lunch. When it falls completely within other activities of its responsible person (one or several in a row), it is drawn as a small box inside them instead of as a conflict, its time counts for it in the statistics, and it moves along when you drag the activity it is in."><input type="checkbox" id="fNest">Can be done during the person's other activities</label><div id="fDraw" role="radiogroup" aria-labelledby="fDrawL"><span id="fDrawL" title="How the event is drawn and how it meets the others: a box, a strip in the background, or a strip saying that its people are away.">Drawn as</span><label title="A normal box, with the overlap rules of every activity."><input type="radio" name="fdr" id="fBox">Box</label><label title="For things that happen in the background without keeping the household/workplace busy: the cleaner at work, quiet hours, or screen-free time. Drawn as a strip at the right edge of the day, never a conflict with anything, and left out of the statistics. Strips are never nested, so the option above is off while this is ticked."><input type="radio" name="fdr" id="fBg">In the background (doesn't keep us busy)</label><label title="For people who are away for a while: a child at the other parent's every other weekend, a business trip, a training course. Its performer and involved people are away: drawn as a hatched strip, and their activities at that time (also when only on call), and activities without a responsible person, are striped with ⚠. Its time is its own line in the statistics. Away needs at least one person."><input type="radio" name="fdr" id="fAw">Away</label></div></div>
 <div class="fsec"><span class="ev-only" title="At least one. Tick several to make the event appear in each one; editing it then updates all of them.">Schedules *</span><span class="ph-only" title="At least one. Tick several to make the phase appear in each rhythm. Use Copy… to copy it into another rhythm as an independent phase.">Rhythms *</span></div><div class="chips" id="fSch"></div>
+</div>
 <div class="err" id="err"></div>
 <div class="btns"><button class="d" id="fDel" type="button" title="Deletes the event including every repeated day. To remove a single day, untick it under Days and save.">Delete</button><button type="button" id="fCopy" title="Copy this event to another schedule, choosing the colour of the copy.">Copy…</button><button type="button" id="fCancel">Cancel</button><button type="button" class="p" id="fOk">Save</button></div>
 </form></dialog>
@@ -403,7 +425,7 @@ cyExtend:'Mantener el ritmo de los eventos de semanas elegidas: repetirlos en la
 wkShort:'S{n}',wkName:'Semana {n}',wksName:'Semanas {l} y {z}',cyShrinkBody:'Saldrán del ciclo: {w}. Estos eventos ocurren en ellas:',cyAllGone:'no queda nada en las otras semanas',cyRm:'Quitar lo que ocurre en esas semanas',cyMv:'Moverlo a un horario propio para cada una de esas semanas (como semana 1), para conservarlo',wkTip:'Se muestra la semana {n} de {c}. Elige otra semana del ciclo',wkLiveMark:'hoy',lwTitle:'¿Qué semana es?',lwBody:'La vista en directo sigue el día de hoy. Este espacio de trabajo se repite durante varias semanas: ¿en qué semana del ciclo está hoy? Este navegador la recuerda para este espacio y avanza cada lunes; si no es correcta, cambia la semana con el botón de la esquina mientras la vista en directo está activa.',lwSet:'Mostrar esta semana',wkTodayTip:'Hoy está en la semana {n} (lo recuerda este navegador; para corregirlo, cambia la semana mientras la vista en directo está activa).',lwToday:'Hoy está en la',lwStart:'Iniciar vista en directo',wkRow:'Semanas',wkRowTip:'Las semanas del ciclo en las que ocurre este evento; todas = cada semana. Para días, horas o personas distintos en semanas distintas, marca Distinto cada semana. Una rotación cuyos turnos cambian se lleva mejor como un solo evento con sus participantes como implicados y las reglas en la descripción.',wkPer:'Distinto cada semana',wkPerTip:'Da a cada hora su propia semana (el número junto al día): para días u horas distintos en semanas distintas, o una persona fija por semana. + añade las mismas horas en la semana siguiente.',rowWk:'{d}: semana {n}',rowWkH:'{d}: semana',icBody:'Algunos de los eventos que llegan ({n}) ocurren en semanas fuera del ciclo de este espacio de trabajo ({c}).',icLen:'Hacer que el ciclo de este espacio de trabajo dure {m} semanas',stAvgW:'Semana media',awNote:'Ausente',awHit:'{n} está ausente ({t})',sqNote:'No queda tiempo libre alrededor de estas horas ({t})',errAway:'¿Quién está fuera? Elige quién lo hace o quién está implicado: Ausente necesita al menos una persona.',stAway:'Ausente',stAwPl:'Planificado estando fuera: {h}',help20:'Alguien que está fuera durante un tiempo (un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación): en el diálogo del evento elige Dibujado como: Ausente, con la persona como quien lo hace o implicada. Se dibuja como una tira rayada, y sus actividades a esa hora se rayan con ⚠. Con un ciclo de semanas, elige las semanas en que ocurre.',prThis:'Imprimir esta semana (semana {n})',prAll:'Imprimir todas las semanas (una página cada una)',stAvg:'Media',stCyc:'Total del ciclo',stWk:'Semana que se muestra',stOverCyc:'Superpuesto en todo el ciclo: {h} en {n} sitio(s)',pwBack:'Las semanas tienen horas distintas. ¿Conservar solo las horas de la semana {n} para todas las semanas del evento? Se descartan las diferencias de las otras semanas.'}};
 const ES=[
 ['Drag to move this window','Arrastra para mover esta ventana y ver lo que hay detrás (también se mueve con las flechas). La próxima vez se abre de nuevo en el centro.'],['The colour of this time on the grid','Color de esta hora en la cuadrícula: el del evento (por defecto), el de la persona que lo hace (sigue a quien lo hace), el del tipo de actividad del evento (sigue al tipo) o uno propio. ⧉ lo copia a los demás días.'],
-['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no nos ocupa)'],['Drawn as','Dibujado como'],['Box','Caja'],['Away','Ausente'],['How the event is drawn','Cómo se dibuja el evento y cómo se relaciona con los demás: una caja, una tira en segundo plano, o una tira que dice que sus personas están fuera.'],['A normal box, with','Una caja normal, con las reglas de superposición de cualquier actividad.'],['For people who are away for','Para personas que están fuera durante un tiempo: un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación. Quien lo hace y las personas implicadas están fuera: se dibuja como una tira rayada, y sus actividades a esa hora (también estando solo de guardia), y las actividades sin responsable, se rayan con ⚠. Su tiempo es una línea propia en las estadísticas. Ausente necesita al menos una persona.'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar al hogar o lugar de trabajo: la limpiadora trabajando, las horas de silencio o el tiempo sin pantallas. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger el correo al volver de comer. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: puede empezar un poco tarde y/o terminar un poco antes (la parte fija es un recuadro normal y las flexibles, prolongaciones más claras y discontinuas). Alrededor de estas horas: ocurre alrededor de estas horas pero puede durar menos; todo el recuadro es más claro y discontinuo. Las partes flexibles nunca chocan con otras actividades de las mismas personas, que pueden taparlas, siempre que a una actividad alrededor de estas horas le quede algo de tiempo libre. Las actividades de otras personas se ponen al lado, no encima.'],['Description','Descripción'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Days','Días'],['Day','Día'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
+['Title *','Título *'],['Activity type','Tipo de actividad'],['What kind of activity','Qué tipo de actividad es (Dormir, Comida, Trabajo/Escuela…), para todo el evento. Su icono se muestra en el evento. Gestiona la lista en la barra lateral, en Tipos de actividad.'],['Timing','Horas'],['Involved people are only on call','Las personas implicadas solo están de guardia'],['Can be done during the person','Se puede hacer durante otras actividades de la persona'],['In the background','En segundo plano (no nos ocupa)'],['Drawn as','Dibujado como'],['Box','Caja'],['Away','Ausente'],['How the event is drawn','Cómo se dibuja el evento y cómo se relaciona con los demás: una caja, una tira en segundo plano, o una tira que dice que sus personas están fuera.'],['A normal box, with','Una caja normal, con las reglas de superposición de cualquier actividad.'],['For people who are away for','Para personas que están fuera durante un tiempo: un niño en casa del otro progenitor un fin de semana sí y otro no, un viaje de trabajo, un curso de formación. Quien lo hace y las personas implicadas están fuera: se dibuja como una tira rayada, y sus actividades a esa hora (también estando solo de guardia), y las actividades sin responsable, se rayan con ⚠. Su tiempo es una línea propia en las estadísticas. Ausente necesita al menos una persona.'],['For things that happen in the background','Para lo que ocurre en segundo plano sin ocupar al hogar o lugar de trabajo: la limpiadora trabajando, las horas de silencio o el tiempo sin pantallas. Se dibuja como una tira en el borde derecho del día, nunca entra en conflicto con nada y queda fuera de las estadísticas. Las tiras nunca se anidan, así que la opción de arriba queda desactivada mientras esta esté marcada.'],['For small tasks done along','Para tareas pequeñas que se hacen de paso, como recoger el correo al volver de comer. Si cae por completo dentro de otras actividades de su responsable (una o varias seguidas), se dibuja como una cajita dentro de ellas en vez de como un conflicto, su tiempo cuenta para ella en las estadísticas y se mueve con la actividad en la que está cuando la arrastras.'],['They are only available','Solo están disponibles (por ejemplo, a mano para responder a las preguntas de la limpiadora), no ocupadas: el evento nunca choca con sus otras actividades y no cuenta en sus estadísticas.'],['Fixed: the times are exact','Fijas: las horas son exactas. Inicio/fin flexible: puede empezar un poco tarde y/o terminar un poco antes (la parte fija es un recuadro normal y las flexibles, prolongaciones más claras y discontinuas). Alrededor de estas horas: ocurre alrededor de estas horas pero puede durar menos; todo el recuadro es más claro y discontinuo. Las partes flexibles nunca chocan con otras actividades de las mismas personas, que pueden taparlas, siempre que a una actividad alrededor de estas horas le quede algo de tiempo libre. Las actividades de otras personas se ponen al lado, no encima.'],['Description','Descripción'],['With','Con'],['Who','Quién'],['When','Cuándo'],['Event','Evento'],['Phase','Franja'],['More','Más'],['Rhythms','Ritmos'],['Days','Días'],['Day','Día'],['Start','Inicio'],['End','Fin'],['Colour','Color'],
 ['Tick the days this event','Marca los días en que se repite este evento. Cada día tiene sus propias horas, quién lo hace, las personas implicadas y sus horas flexibles; un día recién marcado empieza como el día marcado más cercano. + añade otra hora ese día; ⧉ hace que todos los demás días marcados sean como este.'],['Owner','Titular'],['The person who owns','La persona titular de la concepción, la planificación y la ejecución de la tarea, no necesariamente quien la hace. Por defecto el titular también la hace; cualquier día puede hacerla otra persona en su lugar, en la tabla de abajo. Solo nuestras propias personas (no las externas) pueden ser titulares.'],['The people involved on every','Las personas implicadas todos los días, salvo que un día tenga su propia lista en la tabla de abajo (su botón Con).'],['Performed by','Lo hace'],['Who performs it on that day','Quién lo hace ese día: el titular (lo sigue si cambia), nadie (concierne a todos) o alguien que lo sustituye.'],['The people involved on that day','Las personas implicadas ese día: Por defecto sigue la lista de arriba; haz clic para darle al día su propia lista.'],['How it fits in','Cómo encaja'],['Event-wide switches','Opciones de todo el evento que cambian cómo se relaciona con los demás.'],
 ['Schedules *','Horarios *'],
 ['At least one. Tick several to make the event','Al menos uno. Marca varios para que el evento aparezca en cada uno; al editarlo se actualizan todos.'],
@@ -843,14 +865,14 @@ function openTransfer(kind,obj){
   const rd=el('div','radios',body);
   const mk=(v,k,c)=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='trop';i.value=v;i.checked=c;l.append(' '+L(k));return i};
   mk('copy','trCopy',true);const rm=mk('move','trMove',false);
-  xdlg({title:L('trTitle')+': '+(obj.name||obj.title),body,buttons:[{label:L('trGo'),cls:'p',fn:()=>{const tw=WS.find(w=>w.id===sel.value),mv=rm.checked;setTimeout(()=>doTransfer(kind,obj,tw,mv),0)}},{label:L('cancel'),dismiss:true}]});
+  xdlg({title:L('trTitle')+': '+(obj.name||obj.title),full:true,body,buttons:[{label:L('trGo'),cls:'p',fn:()=>{const tw=WS.find(w=>w.id===sel.value),mv=rm.checked;setTimeout(()=>doTransfer(kind,obj,tw,mv),0)}},{label:L('cancel'),dismiss:true}]});
 }
 function askPeople(src,tw,pids,cb){
   const body=el('div');el('p','note',body).textContent=L('mapBody',{t:tw.name});
   const rows=pids.map(pid=>{const q=src.people.find(x=>x.id===pid),r=el('div','mrow',body);el('span','',r).innerHTML=pIcon(q)+esc(q.name);
     const s=el('select','',r);fillSel(s,[['__new__',L('mapNew',{n:q.name})],...tw.data.people.map(x=>[x.id,L('mapUse',{n:x.name})]),['',L('mapBlank')]]);
     const same=tw.data.people.find(x=>x.name.toLowerCase()===q.name.toLowerCase());s.value=same?same.id:'__new__';return [pid,s]});
-  xdlg({title:L('mapTitle'),body,buttons:[{label:L('mapCont'),cls:'p',fn:()=>{const map={};rows.forEach(([pid,s])=>map[pid]=s.value);setTimeout(()=>cb(map),0)}},{label:L('cancel'),dismiss:true}]});
+  xdlg({title:L('mapTitle'),full:true,body,buttons:[{label:L('mapCont'),cls:'p',fn:()=>{const map={};rows.forEach(([pid,s])=>map[pid]=s.value);setTimeout(()=>cb(map),0)}},{label:L('cancel'),dismiss:true}]});
 }
 function doTransfer(kind,obj,tw,move){
   syncWs();const src=S,td=tw.data;
@@ -1364,7 +1386,7 @@ function xdlg(o){
   const d=$('xDlg');d.innerHTML='';let done=false;const tok=++xTok;
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
-  d.classList.toggle('wide',!!o.wide);
+  d.classList.toggle('wide',!!o.wide);d.classList.toggle('full',!!o.full);   // full: fills the screen on a phone (R-UI-14)
   const bt=el('div','btns',d);
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
     x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
@@ -1399,12 +1421,12 @@ function openSettings(){
    [['en','English'],['es','Español']].forEach(([c,n])=>{const o=el('option','',ls);o.value=c;o.textContent=n});
    ls.value=lang;ls.onchange=()=>{setLang(ls.value);openSettings()};ls.setAttribute('aria-label',L('lang'))}
   show(panes[setTab]?setTab:'viewH');
-  xdlg({title:L('settings'),body,buttons:[{label:L('closeB'),cls:'p'}]});
+  xdlg({title:L('settings'),full:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
   for(let i=1;i<=20;i++)el('li','',ul).textContent=L('help'+i);
-  xdlg({title:L('helpTitle'),body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
+  xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }
 /* ---------- statistics: how a person's week is spent, by activity type (R-STAT-01..04) ---------- */
 function personStats(pid,inv,w=1){   // w: the week of the cycle (R-CYC-11)
@@ -1534,7 +1556,7 @@ function openStats(pid){
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb()};
   const csv=()=>{const a=el('a');a.href=URL.createObjectURL(new Blob(['﻿'+toCsv(statsRows(stP,stInv))],{type:'text/csv'}));a.download='weekly-schedules-stats-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('stCsvDone')};
   const print=()=>{const w=el('div','stats');w.innerHTML=`<h1>${esc(L('stTitle')+' — '+who())}</h1>`+metaLine()+out.innerHTML+`<p class="note">${esc(L('stNote'))}</p>`;doPrint(w,false)};
-  xdlg({title:L('stTitle'),body,wide:true,buttons:[{label:L('stCopy'),fn:()=>{copy();return false}},{label:L('stCsv'),fn:()=>{csv();return false}},{label:L('stPrint'),fn:()=>{print();return false}},{label:L('closeB'),cls:'p'}]});
+  xdlg({title:L('stTitle'),body,wide:true,full:true,buttons:[{label:L('stCopy'),fn:()=>{copy();return false}},{label:L('stCsv'),fn:()=>{csv();return false}},{label:L('stPrint'),fn:()=>{print();return false}},{label:L('closeB'),cls:'p'}]});
 }
 /* agenda / print */
 function metaLine(){
@@ -2378,7 +2400,7 @@ function updWarn(){
   rows.forEach(o=>[o,...o.more].forEach(x=>x.wn.style.visibility='hidden'));
   const set=overlapSet({oncall:ev&&$('fOnCall').checked,involved:ev?defInv():[],...(ev&&!dWk.pw&&dWk.weeks.size<cyc()?{weeks:[...dWk.weeks]}:{})},items);   // as it would be saved: performers and With lists count (R-REP-05)
   items.forEach(s=>{if(set.has(s))s.o.wn.style.visibility='visible'});
-  const n=[...new Set(items.filter(s=>set.has(s)).map(s=>DAYS[s.day]))];$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';
+  const n=[...new Set(items.filter(s=>set.has(s)).map(s=>DAYS[s.day]))];$('fWarn').textContent=n.length?'⚠ '+L('ovDlg',{d:n.join(', ')}):'';dTabs()[1].classList.toggle('warn',!!n.length);   // the When tab on a phone (R-UI-14)
 }
 function refreshDlg(){updWarn();updOc()}
 function updOwn(){   // the owner's icon, and "Owner (name)" in every performer list
@@ -2397,12 +2419,26 @@ function dlgPlace(x,y){const d=$('dlg');if(x==null){d.classList.remove('moved');
   const r=d.getBoundingClientRect(),w=r.width||0,k=120;   // at least 120 px of it (and the grip bar's height) stay in the window
   d.classList.add('moved');d.style.left=Math.round(Math.max(k-w,Math.min(innerWidth-k,x)))+'px';d.style.top=Math.round(Math.max(0,Math.min(innerHeight-40,y)))+'px'}
 const DLG_NODRAG='input,select,textarea,label,a,button:not(.dgrip),.chips,#paneQ,.omenu,.cpop,.wpop';
-$('dlg').addEventListener('pointerdown',ev=>{const d=$('dlg');if(ev.button||ev.target.closest(DLG_NODRAG))return;
+$('dlg').addEventListener('pointerdown',ev=>{const d=$('dlg');if(phone()||ev.button||ev.target.closest(DLG_NODRAG))return;   // full screen on a phone (R-UI-14)
   ev.preventDefault();const r=d.getBoundingClientRect(),ox=ev.clientX-r.left,oy=ev.clientY-r.top,g=ev.target.closest('.dgrip');if(g)g.focus();
   const mv=e=>dlgPlace(e.clientX-ox,e.clientY-oy),up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up)};
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
-$('dGrip').onkeydown=ev=>{const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v)return;ev.preventDefault();
+$('dGrip').onkeydown=ev=>{const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v||phone())return;ev.preventDefault();
   const r=$('dlg').getBoundingClientRect();dlgPlace(r.left+v[0],r.top+v[1])};
+// R-UI-14: on a phone the event dialog shows one tab at a time (Event · When · More; the CSS hides the other panes and, on a desktop, the
+// tab row). Every open starts on Event; the jump to the clicked repetition (R-UI-12) waits until When is first shown, as a hidden pane can't scroll
+let dJump=null;
+const dTabs=()=>[...$('dlg').querySelectorAll('.dtabs button')];
+function dlgTab(k,focus){
+  $('dlg').querySelectorAll('.dpane').forEach(p=>p.classList.toggle('off',p.dataset.p!==k));
+  dTabs().forEach(b=>{const on=b.dataset.p===k;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on&&focus)b.focus()});
+  if(k==='wh'&&dJump){const s=dJump;dJump=null;dlgJump(s)}
+}
+dTabs().forEach(b=>b.onclick=()=>dlgTab(b.dataset.p));
+$('dlg').querySelector('.dtabs').onkeydown=ev=>{const d=ev.key==='ArrowRight'?1:ev.key==='ArrowLeft'?-1:0;if(!d)return;ev.preventDefault();
+  const bs=dTabs(),i=bs.findIndex(b=>b.classList.contains('on'));dlgTab(bs[(i+d+bs.length)%bs.length].dataset.p,true)};
+// a failed save shows its message on the tab with the field it is about, and marks that tab until the next save or open
+const dErr=(k,msg)=>{$('err').textContent=msg;dlgTab(k);dTabs().find(b=>b.dataset.p===k).classList.add('bad')};
 // R-UI-12: opening a repeating event (or phase) from the grid brings the clicked repetition's line into view, centred in the day table only
 // when it is not fully visible below the sticky header, and makes it pulse once
 function dlgJump(s){
@@ -2438,22 +2474,23 @@ function openDlg(e,def,src){   // src: the repetition that was clicked, to jump 
   $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
-  dlgPlace(null);$('dlg').showModal();$('fT').focus();if(e&&src&&e.slots.length>1)dlgJump(src);
+  dTabs().forEach(b=>b.classList.remove('bad'));dJump=null;dlgTab('ev');
+  dlgPlace(null);$('dlg').showModal();$('fT').focus();if(e&&src&&e.slots.length>1){if(phone())dJump=src;else dlgJump(src)}
 }
 $('fOk').onclick=()=>{
-  const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);
+  const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);dTabs().forEach(b=>b.classList.remove('bad'));
   const slots=formSlots().sort((a,b)=>a.day-b.day||(a.wk||0)-(b.wk||0)||a.start-b.start);
-  if(!title)return $('err').textContent=L('errTitle');
-  if(!slots.length)return $('err').textContent=L('errDay');
+  if(!title)return dErr('ev',L('errTitle'));
+  if(!slots.length)return dErr('wh',L('errDay'));
   const bad=slots.find(s=>s.end<=s.start);
-  if(bad)return $('err').textContent=L('errEnd',{d:DAYS[bad.day]});
+  if(bad)return dErr('wh',L('errEnd',{d:DAYS[bad.day]}));
   const thin=dkind==='event'&&slots.find(s=>(s.fs||0)+(s.fe||0)>s.end-s.start-SNAP);
-  if(thin)return $('err').textContent=L('errCore',{d:DAYS[thin.day]});
-  if(!sch.length)return $('err').textContent=L(dkind==='phase'?'errRh':'errSch');
+  if(thin)return dErr('wh',L('errCore',{d:DAYS[thin.day]}));
+  if(!sch.length)return dErr('mo',L(dkind==='phase'?'errRh':'errSch'));
   const wks=dkind==='event'&&!dWk.pw&&dWk.weeks.size<cyc()?{weeks:[...dWk.weeks].sort((a,b)=>a-b)}:{};   // R-CYC-02/03
   const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,rhythms:sch,slots:slots.map(({day,start,end})=>({day,start,end}))}
     :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:$('fAw').checked?{away:true}:{}),...wks,schedules:sch,slots,involved:defInv()};
-  if(d.away&&!slots.some(x=>x.person||(x.inv||defInv()).length))return $('err').textContent=L('errAway');   // somebody must be away (R-EVT-24)
+  if(d.away&&!slots.some(x=>x.person||(x.inv||defInv()).length))return dErr('wh',L('errAway'));   // somebody must be away (R-EVT-24)
   hist();
   if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.bg;delete cur.away;delete cur.weeks}
   if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
@@ -2478,7 +2515,7 @@ function openCopy(src){
       sw.onclick=e=>{e.preventDefault();pickColor(sw,pv,c=>{pv=c;sw.style.background=c;rad.pick.checked=true})}}});
   const auto=()=>{rad[mem.includes(sel.value)?'tweak':'same'].checked=true};
   sel.onchange=auto;auto();
-  xdlg({title:L('cpTitle')+': '+src.title,body,buttons:[
+  xdlg({title:L('cpTitle')+': '+src.title,full:true,body,buttons:[
     {label:L('cpDo'),cls:'p',fn:()=>{
       const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
       const used=(isPh?S.phases:S.events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));

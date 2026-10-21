@@ -37,6 +37,8 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 24 | Tap the camera on the rail | Live View starts. Tap one box several times: still one bubble, which follows your tap (R-GRID-12) | | |
 | 25 | Open **Tools** and **Zoom** in the sidebar and flip their switches | Sliding toggles that react to a tap on the switch or its label | | |
 | 26 | In a workspace with a cycle of 2 weeks (workspace menu → *Weeks in the cycle…*), tap the **W1** button in the grid's top-left corner and choose *Week 2*; then, in the day view on Sunday, swipe left | The menu opens beside the button and the grid shows week 2; the swipe shows *Monday · W1* (the cycle wraps) | | |
+| 27 | Tap an event; tap **When**, scroll the days, then tap **More**; clear the title and tap **Save** | The dialog fills the screen with no grip bar; the tabs and the Delete/Copy/Cancel/Save row stay put while the days scroll; Save without a title goes back to **Event** with a red dot on it (R-UI-14) | | |
+| 28 | Open Settings (gear), then a day's agenda (day name) | Both fill the screen with Close always visible (R-UI-14) | | |
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says

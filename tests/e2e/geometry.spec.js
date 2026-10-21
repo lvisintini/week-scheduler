@@ -382,7 +382,8 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     expect(Math.abs(g2.head - g2.top)).toBeLessThan(2);
   });
   test('on a phone the day table also scrolls under a header that stays put', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0])); await many(page, 12);
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await page.locator('.dtabs button', { hasText: 'When' }).click(); await many(page, 12);   // the day table is on the When tab (R-UI-14)
     await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g = await geo(page);
     expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.head - g.top)).toBeLessThan(2);
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
@@ -489,4 +490,14 @@ test.describe('R-UI-01 The sidebar top row in a real browser', () => {
       expect(cover).toBe(true);   // drawn above the scrolled content, so a tap reaches it
     });
   }
+});
+
+test.describe('R-UI-14 On a desktop the event dialog keeps its floating, all-in-one layout', () => {
+  test('no tab row, 760 px wide, every section shown and the grip bar in place; Settings stays a floating window', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ events: [ev()] })); await page.evaluate(() => openDlg(S.events[0]));
+    await expect(page.locator('.dtabs')).toBeHidden(); await expect(page.locator('#dGrip')).toBeVisible();
+    for (const s of ['#fT', '#paneQ', '#fSch']) await expect(page.locator(s)).toBeVisible();
+    const b = await page.locator('#dlg').boundingBox(), v = page.viewportSize(); expect(Math.round(b.width)).toBe(Math.min(760, Math.floor(v.width * 0.96))); expect(b.height).toBeLessThan(v.height);
+    await page.evaluate(() => { document.getElementById('dlg').close(); openSettings(); }); const s = await page.locator('#xDlg').boundingBox(); expect(s.width).toBeLessThan(v.width - 100);
+  });
 });

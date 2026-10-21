@@ -108,3 +108,35 @@ test.describe('R-CYC-04 On a phone the week switcher is at hand and a swipe cros
     await page.locator('.wkb').tap(); await expect(page.locator('.omenu .oi')).toHaveCount(3);
   });
 });
+
+test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows one tab at a time', () => {
+  const many = () => blank({ events: [ev({ slots: [0, 1, 2, 3, 4, 5, 6].map(d => slot(d, 600, 660)) })] });
+  const fills = async (page, sel) => { const b = await page.locator(sel).boundingBox(), v = page.viewportSize(); expect(Math.abs(b.x) + Math.abs(b.y)).toBeLessThan(1); expect(Math.abs(b.width - v.width)).toBeLessThan(1); expect(Math.abs(b.height - v.height)).toBeLessThan(1); };
+  test('the event dialog fills the screen, has no grip and cannot be dragged; tabs and the footer stay while the When pane scrolls', async ({ page }) => {
+    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0])); await fills(page, '#dlg'); await expect(page.locator('#dGrip')).toBeHidden();
+    await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fT')).toBeHidden(); await expect(page.locator('#paneQ')).toBeVisible();
+    const tabs0 = await page.locator('.dtabs').boundingBox(), ok0 = await page.locator('#fOk').boundingBox();
+    await swipe(page, { x: 200, y: 600 }, 0, -300); await expect.poll(() => page.locator('#paneQ').evaluate(p => p.scrollTop)).toBeGreaterThan(20);
+    expect(await page.locator('.dtabs').boundingBox()).toEqual(tabs0); expect(await page.locator('#fOk').boundingBox()).toEqual(ok0);
+    expect(ok0.y + ok0.height).toBeLessThanOrEqual(page.viewportSize().height); await fills(page, '#dlg');
+    await touch(page, [{ x: 200, y: 20 }, { x: 200, y: 200 }, { x: 200, y: 300 }]); await fills(page, '#dlg');
+  });
+  test('the tabs are finger-sized and tapping More shows the switches and schedules', async ({ page }) => {
+    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0]));
+    for (const b of await page.locator('.dtabs button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    await page.locator('.dtabs button', { hasText: 'More' }).tap(); await expect(page.locator('#fSch')).toBeVisible(); await expect(page.locator('#paneQ')).toBeHidden();
+  });
+  test('Settings, Statistics and the day agenda fill the screen; Weeks in the cycle stays a floating window', async ({ page }) => {
+    await seed(page, blank({ people: [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }] }));
+    await page.evaluate(() => openSettings()); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
+    await page.evaluate(() => openStats('A')); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
+    await page.evaluate(() => openAgenda(0)); await fills(page, '#agDlg'); await page.evaluate(() => document.getElementById('agDlg').close());
+    await page.evaluate(() => openCycle()); const b = await page.locator('#xDlg').boundingBox(); expect(b.width).toBeLessThan(page.viewportSize().width); expect(b.height).toBeLessThan(page.viewportSize().height / 2);
+  });
+  test('opening a repetition from the grid shows it in the When tab, scrolled into view and pulsing', async ({ page }) => {
+    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0], null, S.events[0].slots[6]));
+    await page.locator('.dtabs button', { hasText: 'When' }).tap(); const sun = page.locator('#fDays .dr').nth(6);
+    await expect(sun).toHaveClass(/pulse/); const r = await sun.locator('input').first().boundingBox(), p = await page.locator('#paneQ').boundingBox();
+    expect(r.y).toBeGreaterThanOrEqual(p.y); expect(r.y + r.height).toBeLessThanOrEqual(p.y + p.height);
+  });
+});
