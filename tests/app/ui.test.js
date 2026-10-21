@@ -192,11 +192,12 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('a day row holds its day (with the week button of R-CYC-08), times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
     const r = dialog().qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.children[0].querySelector('.wkc')).not.toBeNull();
-    expect([...r.children].map(c => c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
+    expect([...r.children].filter(c => !c.classList.contains('cl')).map(c => c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
       .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
   });
-  it('the day rows and the further-time lines share one grid, so their columns line up with the header', () => {
-    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dr,.dhd,#fDays{display:contents}');
+  it('the day rows and the further-time lines share one grid (each line a subgrid box), so their columns line up with the header', () => {
+    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dhd,#fDays{display:contents}');
+    expect(css).toContain('.dr{display:grid;grid-template-columns:subgrid;grid-column:1/-1;');
     expect(css).toContain('.dhd>:first-child,.dr>:first-child{grid-column-start:1}');
   });
   it('every time and person select of the day rows and blocks has a spoken name, also in Spanish', () => {
@@ -208,10 +209,30 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     a.ev("setLang('es')"); const wed = a.qa('#fDays .dr:not(.dx)')[2]; expect(wed.querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio'); expect(wed.querySelectorAll('select')[2].getAttribute('aria-label')).toBe('Miércoles: lo hace');
     expect(a.q('#fDays .dr.dx select').getAttribute('aria-label')).toBe('Lunes, hora 2: inicio');
   });
-  it('on narrow screens the label column folds away (labels above their fields) and each day folds onto two lines', () => {
-    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/); expect(css).toMatch(/@media \(max-width:560px\)\{[^]*\.dhd,\.dr\{display:grid;[^}]*grid-template-areas:"d s e c x" "p p w w n" "t t t k \."/);
+  it('on narrow screens the label column folds away (labels above their fields); on a phone each ticked day is a card with labelled fields', () => {
+    const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/);
+    expect(css).toContain('@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fDayCh{display:flex;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
   });
   it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
+});
+
+describe('R-UI-13 R-UI-01 A phone gets floating buttons and a two-line drawer header; the computer keeps its row', () => {
+  const rules = a => [...a.d.styleSheets[0].cssRules].filter(r => r.media && /max-width: ?600px/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
+  const rule = (a, sel) => rules(a).find(r => r.selectorText === sel);
+  it('the top row reads favicon, title, help, settings and the chevron, in that order, on every screen', () => {
+    const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr']);
+  });
+  it('closed on a phone, the sidebar floats at the bottom-left as ? · Live View · › (no gear), so the grid has the whole width', () => {
+    const a = openApp({ phone: true }), r = rule(a, 'aside.collapsed');
+    expect([r.style.position, r.style.left, r.style.width]).toEqual(['fixed', '4px', 'auto']); expect(r.style.bottom).toContain('safe-area-inset-bottom');
+    expect(['aside.collapsed .sbtop .help', 'aside.collapsed .lvr', 'aside.collapsed .sbtop .xpand'].map(s => rule(a, s).style.order)).toEqual(['1', '2', '3']);
+    expect(rule(a, 'aside.collapsed .gear').style.display).toBe('none'); expect(rule(a, 'aside.collapsed .sbtop .eye').style.getPropertyValue('border-radius')).toBe('50%');
+  });
+  it('open on a phone, the drawer is up to 360 px wide and its top row has the title on one line and ? · ⚙ · Live View · ‹ below', () => {
+    const a = openApp({ phone: true }); expect(rules(a).find(r => r.selectorText === 'aside:not(.collapsed)').style.width).toMatch(/^min\(90vw, ?360px\)$/);
+    expect(rule(a, 'aside:not(.collapsed) .ttl').style.getPropertyValue('white-space')).toBe('nowrap'); expect(rule(a, 'aside:not(.collapsed) .sbtop').style.getPropertyValue('flex-wrap')).toBe('wrap');
+    expect(['aside:not(.collapsed) .sbtop .help', 'aside:not(.collapsed) .gear', 'aside:not(.collapsed) .lvr', 'aside:not(.collapsed) .sbtop .xpand'].map(s => rule(a, s).style.order)).toEqual(['1', '2', '3', '4']);
+  });
 });
 
 describe('R-UI-08 Light and dark theme', () => {

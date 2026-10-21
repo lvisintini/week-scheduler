@@ -357,12 +357,15 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
       expect(Math.abs(hd.x - mon.x), `column ${k}`).toBeLessThan(1); expect(Math.abs(wed.x - mon.x), `column ${k}`).toBeLessThan(1);
     }
   });
-  test('on a phone the labels move above their fields and the dialog does not scroll sideways', async ({ page }) => {
+  test('on a phone the labels move above their fields, each ticked day is a card with labelled fields, and nothing scrolls sideways', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT')); expect(lb.y + lb.height).toBeLessThanOrEqual(f.y + 1);
-    expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
-    const mon = page.locator('#fDays .dr').first(), sel = await boxOf(mon.locator('select').first()), wb = await boxOf(mon.locator('.wbtn')); expect(sel.width).toBeGreaterThanOrEqual(67);
-    expect(wb.y).toBeGreaterThan(sel.y + sel.height - 1);   // each day folds onto two lines: day, times, performer / With, timing, copy
+    await page.locator('.dtabs button', { hasText: 'When' }).click(); await expect(page.locator('#fDayCh')).toBeVisible();
+    const ticked = await page.locator('#fDays .dr:not(.dx)').evaluateAll(rs => rs.filter(r => !r.classList.contains('off')).length); await expect(page.locator('#fDays .dr:visible')).toHaveCount(ticked);   // unticked days take no room
+    const mon = page.locator('#fDays .dr').first(), sel = await boxOf(mon.locator('select').first()), ls = await boxOf(mon.locator('.cl.ls')), wb = await boxOf(mon.locator('.wbtn'));
+    expect(ls.y + ls.height).toBeLessThanOrEqual(sel.y + 1); expect(sel.width).toBeGreaterThanOrEqual(90); expect(wb.y).toBeGreaterThan(sel.y + sel.height - 1);
+    await expect(mon.locator('.dn')).toHaveText('Monday'); await expect(mon.locator('.cl.lp')).toHaveText('Performed by');
+    expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true); expect(await page.locator('#paneQ').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
   });
   const many = async (page, n) => { const add = page.locator('#fDays .dr').first().locator('.addt'); for (let i = 0; i < n; i++) await add.click(); };
   const geo = page => page.evaluate(() => { const q = document.getElementById('paneQ'), r = q.getBoundingClientRect(), h = document.querySelector('#paneQ .dhd span').getBoundingClientRect();
@@ -381,11 +384,12 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g2 = await geo(page);
     expect(Math.abs(g2.head - g2.top)).toBeLessThan(2);
   });
-  test('on a phone the day table also scrolls under a header that stays put', async ({ page }) => {
+  test('on a phone a long list of times scrolls inside the When tab, with the day chips and the footer in place', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
     await page.locator('.dtabs button', { hasText: 'When' }).click(); await many(page, 12);   // the day table is on the When tab (R-UI-14)
-    await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g = await geo(page);
-    expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.head - g.top)).toBeLessThan(2);
+    const ch0 = await boxOf(page.locator('#fDayCh')); await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; });
+    const q = await page.evaluate(() => { const p = document.getElementById('paneQ'); return p.scrollHeight - p.clientHeight; }); expect(q).toBeGreaterThan(0);
+    expect(await boxOf(page.locator('#fDayCh'))).toEqual(ch0); await expect(page.locator('#fOk')).toBeInViewport();
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
   });
   test('R-EVT-22 the colour swatch menu works with the mouse inside the modal dialog, and the box takes the chosen colour', async ({ page }) => {
@@ -407,7 +411,7 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
   const box = () => blank({ events: [ev({ id: 'a', title: 'Behind', slots: [slot(2, 600, 720), slot(3, 600, 720)] })] });
   const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   test('dragging the grip bar moves the dialog off a box it was hiding; menus inside it still open at their button', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { fitW: true } }); await seed(page, box());
+    await page.setViewportSize({ width: 1700, height: 800 }); await openApp(page, { prefs: { fitW: true } }); await seed(page, box());   // room beside the 900 px dialog
     await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - vs()) * HH - 100; openDlg(S.events[0]); });
     const ev0 = await boxOf(page.locator('.day[data-d="2"] .ev')), d0 = await boxOf(page.locator('#dlg'));
     expect(overlaps(ev0, d0)).toBe(true);
@@ -493,11 +497,11 @@ test.describe('R-UI-01 The sidebar top row in a real browser', () => {
 });
 
 test.describe('R-UI-14 On a desktop the event dialog keeps its floating, all-in-one layout', () => {
-  test('no tab row, 760 px wide, every section shown and the grip bar in place; Settings stays a floating window', async ({ page }) => {
+  test('no tab row, 900 px wide, every section shown and the grip bar in place; Settings stays a floating window', async ({ page }) => {
     await openApp(page); await seed(page, blank({ events: [ev()] })); await page.evaluate(() => openDlg(S.events[0]));
     await expect(page.locator('.dtabs')).toBeHidden(); await expect(page.locator('#dGrip')).toBeVisible();
     for (const s of ['#fT', '#paneQ', '#fSch']) await expect(page.locator(s)).toBeVisible();
-    const b = await page.locator('#dlg').boundingBox(), v = page.viewportSize(); expect(Math.round(b.width)).toBe(Math.min(760, Math.floor(v.width * 0.96))); expect(b.height).toBeLessThan(v.height);
+    const b = await page.locator('#dlg').boundingBox(), v = page.viewportSize(); expect(Math.round(b.width)).toBe(Math.min(900, Math.floor(v.width * 0.96))); expect(b.height).toBeLessThan(v.height);
     await page.evaluate(() => { document.getElementById('dlg').close(); openSettings(); }); const s = await page.locator('#xDlg').boundingBox(); expect(s.width).toBeLessThan(v.width - 100);
   });
 });
@@ -520,5 +524,18 @@ test.describe('R-CYC-17 The week colour as drawn by a real browser', () => {
     await page.evaluate(() => setWeek(2));
     const shadows = await page.locator('.dh').evaluateAll(hs => hs.map(h => getComputedStyle(h).boxShadow)); expect(shadows.every(s => s === 'rgb(142, 78, 198) 0px -4px 0px 0px inset')).toBe(true);
     const b = await page.locator('.wkb').evaluate(x => [getComputedStyle(x).backgroundColor, getComputedStyle(x).color]); expect(b).toEqual(['rgb(142, 78, 198)', 'rgb(255, 255, 255)']);
+  });
+});
+
+test.describe('R-UI-07 The day table of a 900 px dialog on a computer', () => {
+  test('days alternate in light bands with a rule between them, a further time shares its day\'s band, and nothing scrolls sideways at 1280 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(1, 600, 660), slot(1, 720, 780)] })] }));
+    await page.evaluate(() => openDlg(S.events[0])); expect(Math.round((await page.locator('#dlg').boundingBox()).width)).toBe(900);
+    const line = await page.locator('#fDays .dr').nth(1).boundingBox(), sel = await page.locator('#fDays .dr').nth(1).locator('select').first().boundingBox();
+    expect(line && line.width).toBeGreaterThan(800); expect(line.x).toBeLessThanOrEqual(sel.x);   // each line is a box across the table (a subgrid), so its band is drawn
+    const bg = i => page.locator('#fDays .dr').nth(i).evaluate(r => getComputedStyle(r).backgroundColor);
+    const [mon, tue, tue2, wed] = [await bg(0), await bg(1), await bg(2), await bg(3)]; expect(tue).not.toBe(mon); expect(tue2).toBe(tue); expect(wed).toBe(mon);
+    expect(await page.locator('#fDays .dr').nth(1).evaluate(r => getComputedStyle(r).borderTopStyle)).toBe('solid');
+    expect(await page.locator('#paneQ').evaluate(p => p.scrollWidth <= p.clientWidth + 1)).toBe(true); await expect(page.locator('#fDayCh')).toBeHidden(); await expect(page.locator('#fDays .dr .cl').first()).toBeHidden();
   });
 });

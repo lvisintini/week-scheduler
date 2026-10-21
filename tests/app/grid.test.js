@@ -157,6 +157,16 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     const b = openApp({ phone: true, storage: { [PREFS_KEY]: JSON.stringify({ rowH: 30, fitH: true, rowHP: 500 }) } }); expect(b.ev('[HH,prefs.rowHP,prefs.fitHP]')).toEqual([120, 120, false]);
     const c = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 60, fitH: false, rowHP: 90 }) } }); expect(c.ev('HH')).toBe(60);
   });
+  it('on a phone Fit width follows the view: on in the day view, off in the week view keeping the column width, on again back in a day', () => {
+    const a = fresh(blank(), { phone: true }); expect(a.ev('[focusD!=null,prefs.fitWP]')).toEqual([true, true]);
+    a.ev('prefs.colWP=150'); a.q('.dh.fo .wk').click(); expect(a.ev('[focusD,prefs.fitWP,prefs.colWP]')).toEqual([null, false, 150]); expect(stored(a).fitWP).toBe(false);
+    a.q('.sbtop .xpand').click(); expect(box(a, 'Fit width').checked).toBe(false); expect(slider(a, 'Column width').value).toBe('150');
+    tick(a, 'Fit width', true); expect(a.ev('prefs.fitWP')).toBe(true); a.ev('render()'); expect(a.ev('prefs.fitWP')).toBe(true);   // a hand-made choice lasts until the next switch
+    a.ev('setFocus(3)'); expect(a.ev('prefs.fitWP')).toBe(true); a.ev('setFocus(null)'); expect(a.ev('prefs.fitWP')).toBe(false);
+    a.ev('setFocus(null);prefs.colWP=300;prefs.fitWP=false;renderSide()'); a.qa('#sbin .zreset')[0].click(); expect(a.ev('[prefs.colWP,prefs.fitWP]')).toEqual([110, true]);
+    expect([stored(a).colW ?? 110, stored(a).fitW ?? true]).toEqual([110, true]);   // the computer setting is untouched
+    const c = fresh(blank()); c.ev('prefs.fitW=false;setFocus(2);setFocus(null)'); expect(c.ev('prefs.fitW')).toBe(false);   // a computer keeps its own choice
+  });
   it('by default both Fit boxes are ticked, their two sliders are disabled and the text size slider is enabled', () => {
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
     expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);

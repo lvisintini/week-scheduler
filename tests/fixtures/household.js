@@ -83,10 +83,10 @@ export const prefsSample = {
   w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fitW: false, fitH: false, txt: 120,
   secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
   hlNoType: true, colBy: 't', secTools: true, lanesFix: true,
-  lvAnchor: { 'ws-family': '2026-10-05' }, rowHP: 80, fitHP: true,
+  lvAnchor: { 'ws-family': '2026-10-05' }, rowHP: 80, fitHP: true, colWP: 140, fitWP: false,
 };
 // Settings added to the sample after folder v<n> was written (they are back at their defaults in that folder and every older one).
-const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools', 'lanesFix']], [9, ['lvAnchor', 'rowHP', 'fitHP']]];   // Tools (R-UI-11, R-EVT-23); today's week per workspace (R-CYC-05); a phone's own row height (R-GRID-07)
+const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools', 'lanesFix']], [9, ['lvAnchor', 'rowHP', 'fitHP']], [10, ['colWP', 'fitWP']]];   // Tools (R-UI-11, R-EVT-23); today's week per workspace (R-CYC-05); a phone's own row height (R-GRID-07)
 // Settings retired after folder v<n> was written: that folder and every older one still hold them (no longer read, but kept in prefs).
 const PREFS_RETIRED = [[8, { side: false, sideFix: true }]];   // side by side can no longer be turned off (R-EVT-10/13)
 

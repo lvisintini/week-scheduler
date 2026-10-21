@@ -82,4 +82,5 @@ Implementation names that the requirement files describe in words (functions, va
 - R-UI-11: `.noty`, `NOTY`
 - R-UI-12: `dlgJump`, `.dr.pulse`
 - R-CYC-17: `wiNorm`, `wiResize`, `wkLabel`, `wkChip`, `.wkchip`, `#grid.wkband`, `.wkh`, `.cywr`
+- R-UI-13 (phone layout pass): the floating rail and the two-line drawer header (CSS block after `.sbtop .eye`), `WK`/`FWK`/`phoneFit` (a phone's width follows the view), `dayChips`/`#fDayCh`, the card labels `.cl`/`.dn` (made in `rowCtl`, translated in `rowTexts`), `.dr.alt` (day bands; `.dr` is a subgrid)
 - R-UI-14: `.dtabs`, `.dpane`, `dlgTab`, `dTabs`, `dErr`, `dJump`, `#xDlg.full`

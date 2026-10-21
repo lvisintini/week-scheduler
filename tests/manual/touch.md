@@ -40,6 +40,9 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 27 | Tap an event; tap **When**, scroll the days, then tap **More**; clear the title and tap **Save** | The dialog fills the screen with no grip bar; the tabs and the Delete/Copy/Cancel/Save row stay put while the days scroll; Save without a title goes back to **Event** with a red dot on it (R-UI-14) | | |
 | 28 | Open Settings (gear), then a day's agenda (day name) | Both fill the screen with Close always visible (R-UI-14) | | |
 | 29 | Open the app with a fresh browser profile (or tap *Reset zoom*) and look at the day view | About 7 hours fill the screen (100 px per hour, *Fit height* off); a one-hour event is easy to tap open (R-GRID-07) | | |
+| 30 | Close the sidebar, then open it with **›** | Closed: only three round buttons float at the bottom-left (? · camera · ›) and the day fills the width. Open: the title on one line, then ? · ⚙ · camera · ‹ (R-UI-13) | | |
+| 31 | Tap **Week**, then the focus button of a day | The week is wider than the screen and scrolls sideways; the day fills the width again (R-GRID-07) | | |
+| 32 | Open an event, tap **When**, tap a day chip | That day appears as a card with labelled fields; unticked days take no room (R-UI-07) | | |
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says

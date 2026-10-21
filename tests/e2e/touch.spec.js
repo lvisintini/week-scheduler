@@ -78,8 +78,8 @@ test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
     const top = await page.evaluate(() => document.getElementById('wrap').scrollTop); await swipe(page, { x: 200, y: 600 }, 0, -300);
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top); expect(await d()).toBe((t + 6) % 7);
   });
-  test('the phone week shows short day names that fit their columns; tapping one opens that day', async ({ page }) => {
-    await page.evaluate(() => { prefs.fitW = true; setFocus(null); });
+  test('the phone week, with Fit width ticked, shows short day names that fit their columns; tapping one opens that day', async ({ page }) => {
+    await page.evaluate(() => { setFocus(null); prefs.fitWP = true; render(); });   // the week view turns Fit width off on a phone (R-GRID-07); ticked by hand
     const hs = page.locator('.dh.nr'); await expect(hs).toHaveCount(7); await expect(hs.first()).toHaveText('Mo');
     for (const h of await hs.all()) expect(await h.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);   // nothing cut off or overlapping
     await hs.nth(3).tap(); await expect(page.locator('.dh.fo')).toContainText('Thursday');
@@ -137,7 +137,7 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
   test('opening a repetition from the grid shows it in the When tab, scrolled into view and pulsing', async ({ page }) => {
     await seed(page, many()); await page.evaluate(() => openDlg(S.events[0], null, S.events[0].slots[6]));
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); const sun = page.locator('#fDays .dr').nth(6);
-    await expect(sun).toHaveClass(/pulse/); const r = await sun.locator('input').first().boundingBox(), p = await page.locator('#paneQ').boundingBox();
+    await expect(sun).toHaveClass(/pulse/); const r = await sun.locator('select').first().boundingBox(), p = await page.locator('#paneQ').boundingBox();
     expect(r.y).toBeGreaterThanOrEqual(p.y); expect(r.y + r.height).toBeLessThanOrEqual(p.y + p.height);
   });
 });
@@ -164,5 +164,36 @@ test.describe('R-GRID-07 R-GRID-12 A phone shows about 7 hours, and leaving Live
     await seed(page, blank()); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
     const d = await page.evaluate(() => focusD); await page.locator('#lvPill').tap();
     await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => focusD)).toBe(d);
+  });
+});
+
+test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, the drawer header, zoom by view and day cards', () => {
+  test('closed, the sidebar is ? · Live View · › floating at the bottom-left and the grid has the whole width', async ({ page }) => {
+    const v = page.viewportSize(), w = await page.locator('#wrap').boundingBox(); expect(w.x).toBeLessThan(1); expect(w.width).toBeGreaterThan(v.width - 2);
+    const bs = []; for (const s of ['.sbtop .help', '#lvR', '.sbtop .xpand']) bs.push(await page.locator(s).boundingBox());
+    expect(bs.every(b => b && b.x < 10 && b.width >= 44 && b.height >= 44)).toBe(true); expect(bs[0].y).toBeLessThan(bs[1].y); expect(bs[1].y).toBeLessThan(bs[2].y);
+    expect(bs[2].y + bs[2].height).toBeLessThanOrEqual(v.height - 10); await expect(page.locator('.sbtop .gear')).toBeHidden();
+    await page.locator('.sbtop .help').tap(); await expect(page.locator('#xDlg')).toBeVisible();
+  });
+  test('open, the drawer is about 354 px wide with the title on one line and ? · ⚙ · Live View · ‹ on the line below', async ({ page }) => {
+    await page.locator('.sbtop .xpand').tap(); const sb = await page.locator('#sb').boundingBox(); expect(Math.abs(sb.width - Math.min(page.viewportSize().width * 0.9, 360))).toBeLessThan(2);
+    const t = await page.locator('.sbtop .ttl').boundingBox(); expect(t.height).toBeLessThan(26);
+    const bs = []; for (const s of ['.sbtop .help', '.sbtop .gear', '#lvR', '.sbtop .xpand']) bs.push(await page.locator(s).boundingBox());
+    expect(bs.every(b => b.y > t.y + t.height - 1)).toBe(true); expect(bs.map(b => b.x)).toEqual([...bs.map(b => b.x)].sort((x, y) => x - y));
+  });
+  test('the day view fills the width; Week turns Fit width off and the 110 px columns scroll sideways; a day turns it back on', async ({ page }) => {
+    await seed(page, blank({ events: [ev()] })); const v = page.viewportSize();
+    expect((await page.locator('.day').first().boundingBox()).width).toBeGreaterThan(v.width - 80);
+    await page.locator('.dh.fo .wk').tap(); await expect(page.locator('.day')).toHaveCount(7);
+    expect(Math.round((await page.locator('.day').first().boundingBox()).width)).toBeGreaterThanOrEqual(108);
+    expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.scrollWidth > w.clientWidth + 100; })).toBe(true);
+    await page.locator('.dh .foc').nth(2).tap(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => prefs.fitWP)).toBe(true);
+  });
+  test('in the When tab, tapping a day chip shows that day as a card; unticked days take no room and nothing scrolls sideways', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2);
+    await page.locator('#fDayCh label', { hasText: 'Fr' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(3); await expect(page.locator('#fDays .dr').nth(4).locator('.dn')).toHaveText('Friday');
+    for (const r of await page.locator('#fDays .dr:visible').all()) { const b = await r.boundingBox(); expect(b.x).toBeGreaterThanOrEqual(0); expect(b.x + b.width).toBeLessThanOrEqual(page.viewportSize().width); }
+    await page.locator('#fOk').tap(); expect((await slots(page)).map(s => s.day)).toEqual([0, 2, 4]);
   });
 });

@@ -23,6 +23,11 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
     ratchet(await scan(page), {});
   });
+  test('R-UI-13 on a phone the day view with its floating buttons, and the open drawer, add no serious accessibility violation', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 851 }); await openApp(page, { prefs: { collapsed: true } }); await seed(page, blank({ people: [person()], events: [ev()] }));
+    await expect(page.locator('#lvR')).toBeVisible(); ratchet(await scan(page), {});
+    await page.locator('.sbtop .xpand').click(); await expect(page.locator('#sb')).not.toHaveClass(/collapsed/); ratchet(await scan(page), {});
+  });
   test('R-UI-14 on a phone each tab of the full-screen event dialog has no serious accessibility violation', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 }); await openApp(page); await seed(page, blank({ people: [person()], events: [ev()] }));
     await page.evaluate(() => openDlg(S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();

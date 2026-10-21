@@ -109,6 +109,22 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
     expect(a.q('.cmenu .oh').textContent).toBe('Miércoles: copiar a'); expect(menu(a).map(x => x[0])).toEqual(['Todos los demás días (Lun, Vie)', 'Los días de abajo (Vie)', 'Los días de arriba (Lun)']);
     a.qa('.cmenu .oi')[1].click(); expect(a.toast()).toBe('Copiado a: Viernes');
   });
+  it('on a phone day chips tick the days: they follow the rows, and ticking one ticks its day as its checkbox would', () => {
+    const a = dlg(), ch = () => a.qa('#fDayCh input');
+    expect(a.q('#fDayCh').getAttribute('role')).toBe('group'); expect(a.qa('#fDayCh label').map(l => l.textContent)).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']); expect(ch()[1].getAttribute('aria-label')).toBe('Tuesday');
+    expect(ch().map(c => c.checked)).toEqual([true, false, true, false, true, false, false]);
+    ch()[1].checked = true; ch()[1].dispatchEvent(new a.w.Event('change')); expect(days(a)[1].classList.contains('off')).toBe(false); expect(times(days(a)[1])).toEqual(['600', '660']);
+    ch()[0].checked = false; ch()[0].dispatchEvent(new a.w.Event('change')); expect(days(a)[0].classList.contains('off')).toBe(true);
+    days(a)[3].querySelector('input').checked = true; days(a)[3].querySelector('input').onchange(); expect(ch()[3].checked).toBe(true);
+    save(a); expect(slots(a).map(s => s.day)).toEqual([1, 2, 3, 4]);
+  });
+  it('each line has the labels and title of its phone card, translated; days alternate in bands that their further times share', () => {
+    const a = dlg(); days(a)[1].querySelector('.addt'); days(a)[2].querySelector('.addt').click();
+    expect([...days(a)[0].querySelectorAll('.cl')].map(x => x.textContent)).toEqual(['Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
+    expect(days(a)[0].querySelector('.dn').textContent).toBe('Monday'); expect(a.q('#fDays .dr.dx .dn').textContent).toBe('Wednesday, time 2');
+    expect(days(a).map(r => r.classList.contains('alt'))).toEqual([false, true, false, true, false, true, false]); expect(a.q('#fDays .dr.dx').classList.contains('alt')).toBe(false);
+    a.ev("setLang('es')"); expect(days(a)[0].querySelector('.cl.lp').textContent).toBe('Lo hace'); expect(days(a)[0].querySelector('.dn').textContent).toBe('Lunes'); expect(a.qa('#fDayCh label')[0].textContent).toBe('Lu');
+  });
   it('end times at or before the start are disabled in the end list', () => {
     const a = fresh(blank()); a.toolbar('add').click(); const end = a.qa('#fDays .dr')[0].querySelectorAll('select')[1]; const disabled = [...end.options].filter(o => o.disabled).map(o => +o.value);
     expect(Math.max(...disabled)).toBe(540); expect(disabled.every(v => v <= 540)).toBe(true);
