@@ -20,9 +20,14 @@ describe('R-CYC-14 The cycle length is stored on the workspace and validated', (
     const a = openApp(); a.ev("cw().lb=keyOf(S)"); expect(a.ev('anyDirty()')).toBe(false);
     a.ev('S.cycle=2'); expect(a.ev('anyDirty()')).toBe(true);
   });
-  it('phases never carry a week, whatever the file says', () => {
-    const d = parse(blank({ cycle: 2, rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'P', rhythms: ['r'], weeks: [1], slots: [{ day: 0, start: 600, end: 660, wk: 2 }] }] }));
-    expect(d.phases[0]).not.toHaveProperty('weeks'); expect(d.phases[0].slots[0]).not.toHaveProperty('wk');
+  it('R-CYC-16 phases carry weeks with the rules of events: a per-repetition phase drops its pattern, weeks beyond the cycle go', () => {
+    const ph = o => ({ id: 'p', title: 'P', rhythms: ['r'], ...o });
+    const d = parse(blank({ cycle: 2, rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [ph({ weeks: [1], slots: [{ day: 0, start: 600, end: 660, wk: 2 }, { day: 1, start: 600, end: 660 }, { day: 2, start: 600, end: 660, wk: 3 }] }), ph({ id: 'q', weeks: [2, 9], slots: [{ day: 0, start: 600, end: 660 }] }), ph({ id: 'z', weeks: [1, 2], slots: [{ day: 0, start: 600, end: 660 }] })] }));
+    expect(d.phases[0]).not.toHaveProperty('weeks'); expect(d.phases[0].slots.map(x => x.wk)).toEqual([2, 1]); expect(d.phases[1].weeks).toEqual([2]); expect(d.phases[2]).not.toHaveProperty('weeks');
+  });
+  it('R-CYC-16 at a cycle of one week a phase keeps no weeks; a phase left without occurrences is dropped', () => {
+    const d = parse(blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'P', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660, wk: 1 }] }, { id: 'q', title: 'Q', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660, wk: 2 }] }] }));
+    expect(d.phases).toHaveLength(1); expect(d.phases[0].slots[0]).not.toHaveProperty('wk');
   });
 });
 

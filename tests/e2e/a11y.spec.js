@@ -86,6 +86,14 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
       const r = await new AxeBuilder({ page }).include("#agDlg").withTags(["wcag2a", "wcag2aa"]).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + " " + n.target + " " + n.failureSummary))).toEqual([]);
     });
   }
+  test('R-CYC-16 the phase dialog with its Weeks row and a week for every time adds no accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, weekInfo: [{}, { name: 'Nights', color: '#8e4ec6' }], rhythms: [{ id: 'r', name: 'Shifts', visible: true }],
+      phases: [{ id: 'p', title: 'Shift', desc: '', color: '#a1662f', rhythms: ['r'], slots: [{ day: 0, start: 360, end: 840, wk: 1 }, { day: 0, start: 1260, end: 1440, wk: 2 }] }, { id: 'q', title: 'Quiet', desc: '', color: '#607d8b', rhythms: ['r'], weeks: [2], slots: [{ day: 0, start: 480, end: 720 }] }] }));
+    await page.evaluate(() => { setWeek(2); openDlg(S.phases[0]); }); await expect(page.locator('#fWk')).toBeVisible();
+    let r = await new AxeBuilder({ page }).include('#dlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+    await page.evaluate(() => { document.getElementById('dlg').close(); openDlg(S.phases[1]); }); await expect(page.locator('#fWk .chips')).toBeVisible();
+    r = await new AxeBuilder({ page }).include('#dlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+  });
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

@@ -51,6 +51,8 @@ export const household = {
     { id: 'ph-lunch', title: 'Lunch', desc: 'Kitchen closed after', color: '#e8912d', rhythms: ['r-normal', 'r-holiday'],
       slots: [0, 1, 2, 3, 4].map(day => ({ day, start: 720, end: 780 })) },
     { id: 'ph-sleep', title: 'Sleep', desc: '', color: '#3f51b5', rhythms: ['r-normal'], slots: [{ day: 6, start: 0, end: 420 }, { day: 6, start: 1320, end: 1440 }] },
+    { id: 'ph-quiet', title: 'Quiet hours', desc: 'Dad sleeps after night shifts', color: '#607d8b', weeks: [2], rhythms: ['r-normal'], slots: [{ day: 5, start: 480, end: 720 }] },
+    { id: 'ph-shift', title: 'Shift', desc: '', color: '#a1662f', rhythms: ['r-normal'], slots: [{ day: 0, start: 360, end: 840, wk: 1 }, { day: 0, start: 1320, end: 1440, wk: 2 }] },
   ],
   phaseOpacity: 0.45,
   cycle: 2,
@@ -75,6 +77,7 @@ const ADDED = {
   8: h => ({ ...h, types: h.types.map(({ visible, ...t }) => t) }),   // the activity type's eye (R-TYP-04)
   9: ({ cycle, ...h }) => ({ ...h, events: h.events.filter(e => !['e-swim', 'e-cook', 'e-dad'].includes(e.id)) }),   // the cycle of weeks (R-CYC-14) and Away (R-EVT-24)
   10: ({ weekInfo, ...h }) => h,   // the weeks' names, descriptions and colours (R-CYC-17)
+  11: h => ({ ...h, phases: h.phases.filter(p => !['ph-quiet', 'ph-shift'].includes(p.id)) }),   // the weeks of phases (R-CYC-16)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

@@ -78,6 +78,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[8] = [...SHAPES[7], '.types[].visible'].sort();   // 8: the activity type's eye (R-TYP-04)
   SHAPES[9] = [...SHAPES[8], '.cycle', '.events[].away', '.events[].weeks', '.events[].slots[].wk'].sort();   // 9: the cycle of weeks (R-CYC-14) and Away (R-EVT-24)
   SHAPES[10] = [...SHAPES[9], '.weekInfo', '.weekInfo[].color', '.weekInfo[].desc', '.weekInfo[].name'].sort();   // 10: the weeks' names, descriptions and colours (R-CYC-17)
+  SHAPES[11] = [...SHAPES[10], '.phases[].weeks', '.phases[].slots[].wk'].sort();   // 11: the weeks of phases (R-CYC-16)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));

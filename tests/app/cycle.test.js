@@ -78,10 +78,56 @@ describe('R-CYC-07 Each week of the cycle shows, lays out and finds only its own
   });
 });
 
-describe('R-CYC-16 Rhythms stay weekly: every week of the cycle shows the same phases', () => {
-  it('a phase is drawn in each week of the cycle, at the same place', () => {
+describe('R-CYC-16 Phases have weeks like events: a rhythm can differ per week of the cycle (shift work)', () => {
+  const rh = [{ id: 'r', name: 'R', visible: true }];
+  const ph = (o = {}) => ({ id: 'p', title: 'Night shift', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [sl(1, 1260, 1440)], ...o });
+  const phx = (a, d) => a.qa(`.day[data-d="${d}"] .phx`).length, lipT = a => a.qa('.lane .lip').map(l => l.textContent);
+  it('a phase without weeks is drawn in each week of the cycle, at the same place', () => {
     const a = fresh(blank({ cycle: 3, rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Lunch', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [sl(1, 720, 780)] }] }));
     [1, 2, 3].forEach(w => { week(a, w); expect(a.qa('.day[data-d="1"] .phx')).toHaveLength(1); expect(a.qa('.lane .lip').length).toBeGreaterThan(0); });
+  });
+  it('a phase with a week pattern is drawn only in its weeks; its lip says which weeks', () => {
+    const a = fresh(blank({ cycle: 3, rhythms: rh, phases: [ph({ weeks: [2] })] }));
+    expect([1, 2, 3].map(w => { week(a, w); return phx(a, 1); })).toEqual([0, 1, 0]); week(a, 2); expect(a.q('.lane .lip').title).toContain('Week 2');
+  });
+  it('a phase with different times per week draws each time in its own week, and lips group only within the week', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(1, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
+    expect(a.qa('.day[data-d="0"] .phx').map(x => x.style.top)).toEqual([a.ev('(360-vs()*60)/60*HH+"px"')]); expect(lipT(a)).toEqual(['Shift']);
+    week(a, 2); expect(phx(a, 0)).toBe(1); expect(phx(a, 1)).toBe(0); expect(a.q('.lane .lip').title).toContain('21:00');
+  });
+  it('the phase dialog has the Weeks row and Different per week, with its own tooltip, and saves weeks like an event', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph()] })); a.ev("editMode='phases';render();openDlg(S.phases[0])");
+    expect(a.q('#fWk').style.display).toBe(''); expect(a.q('#fWk b').title).toContain('this phase'); const ch = a.qa('#fWk .chips input');
+    ch[0].checked = false; ch[0].dispatchEvent(new a.w.Event('change')); a.q('#fOk').click(); expect(a.ev('S.phases[0].weeks')).toEqual([2]);
+    a.ev('openDlg(S.phases[0])'); a.q('#fPw').checked = true; a.q('#fPw').onchange(); expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
+    expect(a.q('#fDays .dr:not(.off) button.wkc').textContent).toBe('2'); a.q('#fOk').click(); expect(a.ev('JSON.stringify(S.phases[0])')).toContain('"wk":2'); expect(a.ev('S.phases[0].weeks')).toBeUndefined();
+  });
+  it('dragging a phase with its own week moves it along the cycle; Sunday of week 1 goes to Monday of week 2', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ slots: [sl(6, 600, 660, { wk: 1 })] })] })); a.ev("editMode='phases';render()");
+    a.ev('S.phases[0].slots.forEach(s=>shiftDay(s,1));render()'); expect(a.ev('JSON.stringify(S.phases[0].slots[0])')).toContain('"day":0'); expect(a.ev('S.phases[0].slots[0].wk')).toBe(2);
+  });
+  it('the rhythm agenda names a pattern\'s weeks and gives different times per week a section each', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] }), ph({ id: 'q', title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
+    const h = a.ev('rhythmAgendaHTML(S.rhythms[0])'); expect(h).toContain('Week 2'); expect((h.match(/class="pwk"/g) || []).length).toBe(2); expect(h).toContain('06:00–14:00'); expect(h).toContain('21:00–00:00');
+  });
+  it('lengthening to a multiple in step extends the weeks of phases too; shrinking lists phases and can move them into a rhythm per week', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] }), ph({ id: 'q', title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
+    a.ev('setCycle(4,true)'); expect(a.ev('S.phases[0].weeks')).toEqual([2, 4]); expect(a.ev('S.phases[1].slots.map(s=>s.wk)')).toEqual([1, 3, 2, 4]);
+    a.ev('shrinkCycle(1)'); expect(a.dlgText()).toContain('Night shift'); expect(a.dlgText()).toContain('events and phases');
+    a.qa('#xDlg input[type=radio]')[1].click(); a.click('Apply');
+    expect(a.ev('S.rhythms.map(r=>r.name)')).toEqual(['R', 'Week 2', 'Week 3', 'Week 4']); expect(a.ev('S.rhythms.slice(1).every(r=>!r.visible)')).toBe(true);
+    expect(a.ev('S.phases.filter(p=>p.rhythms[0]==="r").map(p=>p.title)')).toEqual(['Shift']); expect(a.ev('S.phases.every(p=>!p.weeks&&p.slots.every(s=>!s.wk))')).toBe(true);
+  });
+  it('inserting a workspace whose phases use weeks beyond the cycle asks first, like events', () => {
+    const a = fresh(blank({ rhythms: rh })); const src = JSON.stringify(blank({ cycle: 2, rhythms: [{ id: 'x', name: 'Shifts', visible: true }], phases: [ph({ rhythms: ['x'], weeks: [2] })] }));
+    a.ev(`openImport({name:'W',data:parseData(${src})},'file')`); a.qa('#xDlg input[type=radio]')[1].click(); a.click('Import');
+    return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.click('Apply'); return sleep(5); })
+      .then(() => { expect(a.ev('S.cycle')).toBe(2); expect(a.ev('S.phases.at(-1).weeks')).toEqual([2]); });
+  });
+  it('transferring a rhythm into a workspace with a shorter cycle asks first, like a schedule', () => {
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] })] })); a.ev("addWorkspace&&0;WS.push(newWs('Other',parseData({schedules:[{id:'s',name:'S'}],events:[]}),false))");
+    a.ev("doTransfer('rhythm',S.rhythms[0],WS.at(-1),false)"); return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.qa('#xDlg input[type=radio]')[1].click(); a.click('Apply'); return sleep(5); })
+      .then(() => { expect(a.ev('WS.at(-1).data.phases.length')).toBe(0); expect(a.ev('WS.at(-1).data.rhythms.map(r=>r.name)')).toEqual(['R']); });
   });
 });
 
@@ -447,8 +493,8 @@ describe('R-CYC-13 Inserting or transferring events whose weeks lie beyond the c
   });
   it('otherwise it offers to lengthen the cycle (the default), remove those occurrences, or keep them in a schedule per week', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a);
-    expect(a.dlgText()).toContain('Some of the events arriving (2) happen in weeks beyond this workspace\'s cycle (2 weeks)');
-    expect(a.qa('#xDlg .radios label').map(l => l.textContent.trim())).toEqual(["Make this workspace's cycle 4 weeks long", 'Remove what happens in those weeks', 'Move it into a schedule of its own for each of those weeks (as week 1), to keep it']);
+    expect(a.dlgText()).toContain('Some of the events or phases arriving (2) happen in weeks beyond this workspace\'s cycle (2 weeks)');
+    expect(a.qa('#xDlg .radios label').map(l => l.textContent.trim())).toEqual(["Make this workspace's cycle 4 weeks long", 'Remove what happens in those weeks', 'Move it into a schedule (for phases, a rhythm) of its own for each of those weeks (as week 1), to keep it']);
     expect(a.q('#xDlg input[name=icm]:checked').value).toBe('len');
   });
   it('lengthening to a multiple keeps the workspace\'s own rhythm and the arriving weeks as they are, in one undo step', async () => {
