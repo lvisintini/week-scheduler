@@ -1,6 +1,6 @@
 // Cycles of several weeks on the screen (docs/requirements/cycle.md): what each week of the cycle draws and finds.
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, dragFrom, workspace, sleep } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, dragFrom, workspace, sleep, pointer } from '../helpers/app.js';
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
 const week = (a, w) => a.ev(`curWk=${w};render()`);
@@ -742,3 +742,47 @@ describe('R-CYC-18 Rota turns: how many times each person is responsible over th
     expect(b.q('#fTuL').textContent).toBe('Turnos'); expect(b.q('#fTu').textContent).toContain('turnos en el ciclo');
   });
 });
+
+describe('R-CYC-20 The weeks of a cycle can be reordered; everything in a week moves with it, and today stays today', () => {
+  const data = () => blank({ cycle: 3, weekInfo: [{ name: 'A' }, { name: 'B', color: '#8e4ec6' }, { name: 'C', desc: 'third' }], rhythms: [{ id: 'r', name: 'R', visible: true }],
+    phases: [{ id: 'p', title: 'Quiet', desc: '', color: '#607d8b', rhythms: ['r'], weeks: [2], slots: [sl(5, 480, 720)] }],
+    events: [ev1({ id: 'pat', weeks: [1, 3], slots: [sl(0, 600, 660)] }), ev1({ id: 'per', slots: [sl(1, 600, 660, { wk: 1 }), sl(2, 600, 660, { wk: 2 }), sl(3, 600, 660, { wk: 3 })] })] });
+  const rows = a => a.qa('#xDlg .cywr'), grips = a => a.qa('#xDlg .cywr .grip');
+  const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
+  const state = a => a.ev('JSON.stringify([S.events[0].weeks,S.events[1].slots.map(s=>s.wk),S.phases[0].weeks,S.weekInfo.map(w=>w.name)])');
+  it('each week of the dialog has a grip with a name and a tooltip, and a note explains what moves', () => {
+    const a = fresh(data()); openCycleDlg(a); expect(grips(a)).toHaveLength(3); expect(grips(a)[1].getAttribute('aria-label')).toBe('Move week 2');
+    expect(grips(a)[0].title).toContain('order of the weeks'); expect(a.dlgText()).toContain('Today stays the week you are in');
+  });
+  it('the arrow keys move a week with its name, colour and description, and the row says which week it was', () => {
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown');
+    expect(rows(a).map(r => [r.querySelector('.cywn').textContent, r.querySelector('.cyname').value])).toEqual([['Week 1 (was week 2)', 'B'], ['Week 2 (was week 1)', 'A'], ['Week 3', 'C']]);
+    expect(a.d.activeElement.getAttribute('aria-label')).toBe('Move week 2');
+  });
+  it('dragging a grip moves the week too', () => {
+    const a = fresh(data()); openCycleDlg(a); grips(a)[2].onpointerdown({ button: 0, preventDefault() {} }); pointer(a, 'pointermove', { x: 10, y: -500 }); pointer(a, 'pointerup', { x: 10, y: -500 });
+    expect(rows(a).map(r => r.querySelector('.cyname').value)).toEqual(['C', 'A', 'B']);
+  });
+  it('Apply renumbers week patterns, the week of every time, phases and the week names, in one undo step', () => {
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown'); a.click('Apply');
+    expect(JSON.parse(state(a))).toEqual([[2, 3], [2, 1, 3], [1], ['B', 'A', 'C']]);
+    a.toolbar('undo').click(); expect(JSON.parse(state(a))).toEqual([[1, 3], [1, 2, 3], [2], ['A', 'B', 'C']]);
+    a.toolbar('redo').click(); expect(JSON.parse(state(a))).toEqual([[2, 3], [2, 1, 3], [1], ['B', 'A', 'C']]);
+  });
+  it('today\'s week and the shown week follow their content; undo and redo move them back and forth', () => {
+    const a = fresh(data()); a.ev('setAnchor(2);curWk=2;render()'); openCycleDlg(a); key(grips(a)[1], 'ArrowUp'); a.click('Apply');
+    expect(a.ev('[todayWk(),curWk]')).toEqual([1, 1]); expect(a.q('.wkb').textContent).toBe('W1'); expect(a.qa('.day[data-d="5"] .phx')).toHaveLength(1);
+    a.toolbar('undo').click(); expect(a.ev('[todayWk(),curWk]')).toEqual([2, 2]); a.toolbar('redo').click(); expect(a.ev('[todayWk(),curWk]')).toEqual([1, 1]);
+  });
+  it('without a known today\'s week nothing is remembered; a plain change of names is still a single step', () => {
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[2], 'ArrowUp'); a.click('Apply'); expect(a.ev('prefs.lvAnchor[curId]')).toBeUndefined(); expect(a.ev('undoSt.length')).toBe(1);
+  });
+  it('the grips are hidden while the length changes; an order made before is applied first, then the new length', () => {
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown'); chooseLen(a, 4); expect(grips(a)).toHaveLength(0);
+    a.click('Apply'); expect(a.ev('S.cycle')).toBe(4); expect(a.ev('S.events[0].weeks')).toEqual([2, 3]); expect(a.ev('undoSt.length')).toBe(2);
+  });
+  it('in Spanish the grips and the note are translated', () => {
+    const b = openApp({ languages: ['es'] }); setData(b, data()); openCycleDlg2(b); expect(b.qa('#xDlg .cywr .grip')[0].getAttribute('aria-label')).toBe('Mover la semana 1');
+  });
+});
+const openCycleDlg2 = a => { a.q('.wsbtn').click(); a.qa('.omenu .oi').find(b => b.textContent.includes('Semanas del ciclo')).click(); };
