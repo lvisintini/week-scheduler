@@ -30,7 +30,7 @@ describe('R-STAT-01 Opening the statistics dialog', () => {
   });
   it('the dialog and its explanation are translated', () => {
     const a = fresh(blank({ people }), { languages: ['es'] }); a.ev('openStats()'); expect(a.dlgTitle()).toBe('Estadísticas'); expect(a.dlgText()).toContain('Solo cuentan los horarios visibles');
-    expect(a.dlgButtons()).toEqual(['Copiar tabla', 'Descargar CSV', 'Imprimir', 'Cerrar']);
+    expect(a.qa('#xDlg .btns button').map(b => b.textContent)).toEqual(['Copiar tabla', 'Descargar CSV', 'Imprimir', 'Cerrar']);
   });
 });
 
@@ -84,12 +84,12 @@ describe('R-STAT-02 How the week is counted', () => {
 describe('R-STAT-03 What the dialog shows', () => {
   const week = () => fresh(blank({ people, types, events: [at('s', 0, 0, 480, 'A', { type: 'ts' }), at('w', 0, 540, 1020, 'A', { type: 'tw' }), at('f', 0, 1020, 1080, 'A', { type: 'tf' }), at('x', 1, 600, 630, 'A'), at('b', 0, 600, 660, 'B', { type: 'tw' })] }));
   it('a 168-hour bar shows the activity types in list order in their colours, then "No type", then "Not planned"', () => {
-    const a = week(); a.ev('openStats("A")'); const r = a.qa('#xDlg .stwk rect');
-    expect(r.map(x => x.getAttribute('fill') || x.getAttribute('class'))).toEqual(['#3f51b5', '#2fa66a', '#12a5b5', '#9aa0a6', 'stnp']);
-    expect(r[0].querySelector('title').textContent).toBe('Sleep 8:00'); expect(+r[0].getAttribute('width')).toBeCloseTo(480 / W * 1000, 3);
+    const a = week(); a.ev('openStats("A")'); const r = a.qa('#xDlg .stwk > span');
+    expect(r.map(x => x.className || x.style.background)).toEqual(['rgb(63, 81, 181)', 'rgb(47, 166, 106)', 'rgb(18, 165, 181)', 'rgb(154, 160, 166)', 'stnp']);
+    expect(r[0].title).toBe('Sleep 8:00'); expect(parseFloat(r[0].style.width)).toBeCloseTo(480 / W * 100, 3);
   });
   it('seven day bars show each day stacked by type, labelled with the day', () => {
-    const a = week(); a.ev('openStats("A")'); expect(a.qa('#xDlg .stday text').map(t => t.textContent)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+    const a = week(); a.ev('openStats("A")'); expect(a.qa('#xDlg .stday text:not(.stv)').map(t => t.textContent)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     expect(a.qa('#xDlg .stday rect title').map(t => t.textContent)).toContain('Monday: Work 8:00');
   });
   it('the table lists hours, % of the week and % of planned time for each type with time, then the totals', () => {
@@ -113,7 +113,7 @@ describe('R-STAT-03 What the dialog shows', () => {
   });
   it('"Everyone" shows one 168-hour bar per person with their planned hours, and a legend of the types used', () => {
     const a = week(); a.ev('openStats()'); const sel = a.q('#xDlg select'); sel.value = '*'; sel.onchange();
-    expect(a.qa('#xDlg .stp .stn').map(n => n.textContent)).toEqual(['Ann', 'Bob']); expect(a.qa('#xDlg .stp b').map(b => b.textContent)).toEqual(['17:30', '1:00']);
+    expect(a.qa('#xDlg .stp .stn').map(n => n.textContent)).toEqual(['Ann', 'Bob']); expect(a.qa('#xDlg .stp > b').map(b => b.textContent)).toEqual(['17:30', '1:00']);
     expect(a.qa('#xDlg .stleg span').map(s => s.textContent)).toEqual(['Sleep', 'Work', 'Free time', 'No type', 'Not planned']);
   });
 });
@@ -198,5 +198,98 @@ describe('R-PPL-03 R-EVT-16 R-STAT-02 External people and on-call involvement in
   it('on-call involvement does not count, even with "Include time as involved person" on; normal involvement does', () => {
     const a = fresh(blank({ people: ppl, events: [ev1({ id: 'c', oncall: true, involved: ['A'], slots: [{ day: 0, start: 600, end: 720, person: 'X' }] }), ev1({ id: 'm', involved: ['A'], slots: [{ day: 1, start: 600, end: 660, person: 'B' }] })] }));
     expect(stats(a, 'A', true).planned).toBe(60); expect(stats(a, 'B', true).planned).toBe(60);
+  });
+});
+
+const unit = (a, label) => a.qa('#xDlg .stu button').find(b => b.textContent === label).click();
+const chip = (a, name) => a.qa('#xDlg .stty button').find(b => b.textContent === name);
+const tbl = a => a.qa('#xDlg .sttab tbody tr').map(r => [...r.children].map(c => c.textContent.trim()));
+const day = () => fresh(blank({ people, types, events: [at('s', 0, 0, 480, 'A', { type: 'ts' }), at('w', 0, 540, 1020, 'A', { type: 'tw' }), at('f', 0, 1020, 1080, 'A', { type: 'tf' }), at('x', 1, 600, 630, 'A')] }));
+
+describe('R-STAT-05 The figures can be shown as hours, % of the week or % of the planned time', () => {
+  it('a three-way switch Hours | % of week | % of planned sits in the bar, Hours by default, with an explanatory tooltip', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const g = a.q('#xDlg .stbar .stu');
+    expect([...g.children].map(b => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([['Hours', 'true'], ['% of week', 'false'], ['% of planned', 'false']]);
+    expect(g.getAttribute('role')).toBe('group'); expect(g.title).toContain('168-hour week');
+  });
+  it('% of week labels the bar parts with their share of the 168 hours; % of planned with their share of the planned time', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const labels = () => a.qa('#xDlg .stwk > span b').map(b => b.textContent);
+    expect(labels()).toEqual(['8:00', '8:00', '150:30']);
+    unit(a, '% of week'); expect(labels()).toEqual(['5 %', '5 %', '90 %']);
+    unit(a, '% of planned'); expect(labels()).toEqual(['46 %', '46 %']); expect(a.q('#xDlg .stwk .stnp').title).toBe('Not planned 150:30');
+  });
+  it('the tooltips keep the hours and add the percentage', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); unit(a, '% of planned'); expect(a.q('#xDlg .stwk > span').title).toBe('Sleep 8:00 (46 %)');
+  });
+  it('the day bars follow the unit: share of the day, or of that day\'s planned time, and the day total as a share of the week\'s planned time', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const tot = () => a.qa('#xDlg .stday .stdt').map(t => t.textContent);
+    expect(tot()).toEqual(['17:00', '0:30']); unit(a, '% of week'); expect(tot()).toEqual(['71 %', '2 %']); unit(a, '% of planned'); expect(tot()).toEqual(['97 %', '3 %']);
+    expect(a.qa('#xDlg .stday .stv:not(.stdt)').map(t => t.textContent)).toEqual(['47 %', '47 %']);
+  });
+  it('the table keeps its hours and percent columns whatever the unit', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const before = tbl(a); unit(a, '% of planned'); expect(tbl(a)).toEqual(before);
+  });
+  it('with a cycle the week columns use the unit, and the cycle total is left out in a percent unit', () => {
+    const a = fresh(blank({ cycle: 2, people, types, events: [ev1({ id: 'o', weeks: [1], type: 'tw', slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'e', type: 'ts', slots: [{ day: 1, start: 600, end: 660, person: 'A' }] })] }));
+    a.ev('stU="h";stW="avg";openStats("A")'); unit(a, '% of planned');
+    expect(a.qa('#xDlg .sttab thead th').map(t => t.textContent)).toEqual(['Activity type', 'Hours', '% of week', '% of planned', 'W1', 'W2', 'Average']);
+    expect(tbl(a)[0]).toEqual(['Sleep', '1:00', '1 %', '50 %', '33 %', '100 %', '50 %']); expect(tbl(a).find(r => r[0] === 'Not planned').slice(-3)).toEqual(['–', '–', '–']);
+    const r = a.ev('statsRows("A",true)'); expect(r[0].slice(-3)).toEqual(['W1 (% of planned)', 'W2 (% of planned)', 'Average (% of planned)']);
+  });
+  it('Everyone shows each person\'s planned time as a share of the week in a percent unit', () => {
+    const a = day(); a.ev('stU="h";openStats("*")'); unit(a, '% of planned'); expect(a.qa('#xDlg .stp > b').map(b => b.textContent)).toEqual(['10 %', '0 %']);
+  });
+  it('the unit is remembered while the page is open', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); unit(a, '% of week'); a.click('Close'); a.ev('openStats("A")');
+    expect(a.q('#xDlg .stu button.on').textContent).toBe('% of week');
+  });
+});
+
+describe('R-STAT-06 The bars are labelled with their figures', () => {
+  it('the 168-hour bar is drawn in HTML so its labels are not stretched, and only parts at least 4 % wide carry a label', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const r = a.qa('#xDlg .stwk > span');
+    expect(a.q('#xDlg .stwk').tagName).toBe('DIV'); expect(a.q('#xDlg .stwk').getAttribute('role')).toBe('img');
+    expect(r.map(x => !!x.querySelector('b'))).toEqual([true, true, false, false, true]);
+  });
+  it('a part with flexible time keeps its hatching over the flexible share', () => {
+    const a = fresh(blank({ people, types, events: [ev1({ type: 'tw', slots: [{ day: 0, start: 600, end: 720, person: 'A', flex: true }, { day: 1, start: 600, end: 720, person: 'A' }] })] }));
+    a.ev('stU="h";openStats("A")'); expect(a.q('#xDlg .stwk .sth').style.width).toBe('50%');
+  });
+  it('day bar parts tall enough carry their value, in black or white for contrast', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); const v = a.qa('#xDlg .stday .stv:not(.stdt)');
+    expect(v.map(t => t.textContent)).toEqual(['8:00', '8:00']); expect(v[0].getAttribute('style')).toMatch(/fill:#(fff|000)/);
+  });
+  it('the printed statistics keep the labels', () => {
+    const a = day(); a.ev('stU="h";openStats("A")'); a.click('Print'); expect(a.w.__printed).toContain('<b>8:00</b>'); expect(a.w.__printed).toContain('class="stv stdt"');
+  });
+});
+
+describe('R-STAT-07 The activity types shown can be filtered inside the statistics dialog', () => {
+  it('a row of chips lists every activity type and No type, all shown at first, with a tooltip saying it is independent of the sidebar', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); expect(a.qa('#xDlg .stty button').map(b => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([['Sleep', 'true'], ['Work', 'true'], ['Free time', 'true'], ['No type', 'true']]);
+    expect(a.q('#xDlg .stty .tip').title).toContain('independent of the eyes');
+  });
+  it('filtered-out types become one grey Filtered out part after the shown types, so Not planned stays the same', () => {
+    const a = day(); a.ev('stU="h";stHide.clear();openStats("A")'); chip(a, 'Sleep').click(); chip(a, 'Free time').click();
+    expect(a.qa('#xDlg .stwk > span').map(x => x.className || x.title)).toEqual(['Work 8:00', 'No type 0:30', 'stf', 'stnp']);
+    expect(a.q('#xDlg .stwk .stf').title).toBe('Filtered out 9:00'); expect(tbl(a).map(r => r[0])).toEqual(['Work', 'No type', 'Filtered out (2 type(s))', 'Planned', 'Not planned']);
+    expect(tbl(a).find(r => r[0] === 'Not planned')[1]).toBe('150:30'); expect(tbl(a)[0][3]).toBe('46 %');
+  });
+  it('the filter does not touch the eyes of the activity types in the sidebar, and the sidebar eyes do not touch it', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); expect(a.ev('S.types.map(t=>t.visible!==false)')).toEqual([true, true, true]);
+    a.ev('S.types[0].visible=false'); a.click('Close'); a.ev('openStats("A")'); expect(chip(a, 'Sleep').getAttribute('aria-pressed')).toBe('true');
+  });
+  it('Show all brings every type back; the filter is remembered while the page is open', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); a.click('Close'); a.ev('openStats("A")');
+    expect(chip(a, 'Work').getAttribute('aria-pressed')).toBe('false'); a.click('Show all'); expect(a.q('#xDlg .stwk .stf')).toBeNull();
+  });
+  it('Everyone, its legend, the copied table and the CSV merge the filtered types the same way', () => {
+    const a = day(); a.ev('stHide.clear();openStats("*")'); chip(a, 'Sleep').click(); chip(a, 'Work').click();
+    expect(a.qa('#xDlg .stleg span').map(s => s.textContent)).toEqual(['Free time', 'No type', 'Filtered out', 'Not planned']);
+    const r = a.ev('statsRows("*",true)'); expect(r[0].slice(0, 6)).toEqual(['Person', 'Free time', 'No type', 'Filtered out (2 type(s))', 'Planned', 'Not planned']); expect(r[1][3]).toBe('16.00');
+  });
+  it('the chips and the new labels are translated', () => {
+    const a = fresh(blank({ people, types }), { languages: ['es'] }); a.ev('stHide.clear();openStats("A")');
+    expect(a.q('#xDlg .stty .stth').textContent).toContain('Tipos de actividad que se muestran'); expect(a.qa('#xDlg .stu button').map(b => b.textContent)).toEqual(['Horas', '% de la semana', '% de lo planificado']);
   });
 });

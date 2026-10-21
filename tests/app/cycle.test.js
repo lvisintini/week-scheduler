@@ -634,7 +634,8 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
   it('printouts name the week and carry its colour; statistics name the weeks in the list, table, CSV and the Everyone view', () => {
     const a = fresh(data()); week(a, 2); a.ev('printSchedule()'); expect(a.w.__printed).toContain("Week 2 · At Dad's"); expect(a.w.__printed).toContain('class="wkh"');
     a.ev('stW="avg";openStats("A")'); expect(a.qa('#xDlg select').flatMap(s => [...s.options].map(o => o.textContent))).toContain("Week 2 · At Dad's");
-    expect(a.q('#xDlg .sttab thead').textContent).toContain("W2 At Dad's"); expect(a.q('#xDlg .sttab thead .wkchip')).not.toBeNull();
+    const th = a.qa('#xDlg .sttab thead th').find(t => t.textContent.startsWith('W2')); expect(th.textContent).toBe('W2ⓘ'); expect(th.querySelector('.wkchip')).not.toBeNull();
+    expect(th.querySelector('.tip').title).toBe("Week 2 · At Dad's: From Friday pickup"); expect(th.querySelector('.tip').getAttribute('aria-label')).toBe("Week 2 · At Dad's: From Friday pickup");
     expect(a.ev('statsRows("*",true)[0]')).toContain("Planned W2 At Dad's");
   });
   it('Live View names the week in the day header and asks for today\'s week by name', () => {
