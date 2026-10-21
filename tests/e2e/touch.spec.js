@@ -175,11 +175,12 @@ test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, th
     expect(bs[2].y + bs[2].height).toBeLessThanOrEqual(v.height - 10); await expect(page.locator('.sbtop .gear')).toBeHidden();
     await page.locator('.sbtop .help').tap(); await expect(page.locator('#xDlg')).toBeVisible();
   });
-  test('open, the drawer is about 354 px wide with the title on one line and ? · ⚙ · Live View · ‹ on the line below', async ({ page }) => {
+  test('open, the drawer is about 354 px wide with the computer\'s top row: favicon, title, ? · ⚙ · ‹, and no Live View button', async ({ page }) => {
     await page.locator('.sbtop .xpand').tap(); const sb = await page.locator('#sb').boundingBox(); expect(Math.abs(sb.width - Math.min(page.viewportSize().width * 0.9, 360))).toBeLessThan(2);
-    const t = await page.locator('.sbtop .ttl').boundingBox(); expect(t.height).toBeLessThan(26);
-    const bs = []; for (const s of ['.sbtop .help', '.sbtop .gear', '#lvR', '.sbtop .xpand']) bs.push(await page.locator(s).boundingBox());
-    expect(bs.every(b => b.y > t.y + t.height - 1)).toBe(true); expect(bs.map(b => b.x)).toEqual([...bs.map(b => b.x)].sort((x, y) => x - y));
+    const f = await page.locator('.sbtop .fav').boundingBox(), t = await page.locator('.sbtop .ttl').boundingBox(); expect(f.x).toBeLessThan(t.x);
+    const bs = []; for (const s of ['.sbtop .help', '.sbtop .gear', '.sbtop .xpand']) bs.push(await page.locator(s).boundingBox());
+    expect(bs.every(b => b.x > t.x && b.y < t.y + t.height && b.y + b.height > t.y)).toBe(true); expect(bs.map(b => b.x)).toEqual([...bs.map(b => b.x)].sort((x, y) => x - y));
+    await expect(page.locator('#lvR')).toBeHidden(); await expect(page.locator('.lvrow')).toBeHidden();
   });
   test('the day view fills the width; Week turns Fit width off and the 110 px columns scroll sideways; a day turns it back on', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const v = page.viewportSize();
@@ -189,11 +190,27 @@ test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, th
     expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.scrollWidth > w.clientWidth + 100; })).toBe(true);
     await page.locator('.dh .foc').nth(2).tap(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => prefs.fitWP)).toBe(true);
   });
-  test('in the When tab, tapping a day chip shows that day as a card; unticked days take no room and nothing scrolls sideways', async ({ page }) => {
+  test('in the When tab "+ Add a time" adds an open card for the day chosen, ✕ removes one, a tap opens another; nothing scrolls sideways', async ({ page }) => {
     await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
-    await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2);
-    await page.locator('#fDayCh label', { hasText: 'Fr' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(3); await expect(page.locator('#fDays .dr').nth(4).locator('.dn')).toHaveText('Friday');
+    await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2); await expect(page.locator('#fDays .dr.open')).toHaveCount(0);
+    await page.locator('#fAddT').tap(); const m = await page.locator('.addm').boundingBox(); expect(m.y).toBeGreaterThanOrEqual(0); expect(m.x + m.width).toBeLessThanOrEqual(page.viewportSize().width);
+    await page.locator('.addm .addd .oi', { hasText: 'Friday' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(3);
+    const fri = page.locator('#fDays .dr').nth(4); await expect(fri).toHaveClass(/open/); await expect(fri.locator('.dn')).toHaveText('Friday'); await expect(fri.locator('select').first()).toBeVisible();
+    await page.locator('#fDays .dr').nth(2).locator('.sum').tap(); await expect(page.locator('#fDays .dr.open')).toHaveCount(1); await expect(fri.locator('select').first()).toBeHidden();
+    await page.locator('#fDays .dr').nth(2).locator('.rx').tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2);
     for (const r of await page.locator('#fDays .dr:visible').all()) { const b = await r.boundingBox(); expect(b.x).toBeGreaterThanOrEqual(0); expect(b.x + b.width).toBeLessThanOrEqual(page.viewportSize().width); }
-    await page.locator('#fOk').tap(); expect((await slots(page)).map(s => s.day)).toEqual([0, 2, 4]);
+    await page.locator('#fOk').tap(); expect((await slots(page)).map(s => s.day)).toEqual([0, 4]);
+  });
+});
+
+test.describe('R-GRID-12 Live View controls on a phone', () => {
+  test('in Live View only the stop button floats; after a manual scroll Now floats above it and brings the now line back', async ({ page }) => {
+    await seed(page, blank({ events: [ev()] })); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
+    await expect(page.locator('.sbtop .help')).toBeHidden(); await expect(page.locator('.sbtop .xpand')).toBeHidden(); await expect(page.locator('#lvF')).toBeHidden(); await expect(page.locator('#lvR')).toBeVisible();
+    expect(await page.locator('#lvR').evaluate(b => [getComputedStyle(b).backgroundColor, getComputedStyle(b).color])).toEqual(['rgb(229, 52, 45)', 'rgb(255, 255, 255)']);   // a red stop button
+    await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); });
+    await expect(page.locator('#lvF')).toBeVisible(); const n = await page.locator('#lvF').boundingBox(), s = await page.locator('#lvR').boundingBox(); expect(n.y + n.height).toBeLessThanOrEqual(s.y + 1);
+    await page.locator('#lvF').tap(); await expect(page.locator('#lvF')).toBeHidden();
+    await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.sbtop .help')).toBeVisible(); await expect(page.locator('.sbtop .xpand')).toBeVisible();
   });
 });

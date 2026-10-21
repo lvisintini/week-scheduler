@@ -28,6 +28,12 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await expect(page.locator('#lvR')).toBeVisible(); ratchet(await scan(page), {});
     await page.locator('.sbtop .xpand').click(); await expect(page.locator('#sb')).not.toHaveClass(/collapsed/); ratchet(await scan(page), {});
   });
+  test('R-UI-07 on a phone the folded and open day cards, the Add a time menu, and the floating Live View controls add no serious accessibility violation', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 851 }); await openApp(page, { prefs: { collapsed: true } }); await seed(page, blank({ people: [person()], events: [ev({ slots: [{ day: 0, start: 600, end: 660, person: '' }, { day: 2, start: 600, end: 660, person: '' }] })] }));
+    await page.evaluate(() => openDlg(S.events[0])); await page.locator('.dtabs button', { hasText: 'When' }).click(); ratchet(await scan(page), {});
+    await page.locator('#fDays .dr').first().locator('.sum').click(); ratchet(await scan(page), {}); await page.locator('#fAddT').click(); ratchet(await scan(page), {});
+    await page.keyboard.press('Escape'); await page.locator('#fCancel').click(); await page.locator('#lvR').click(); ratchet(await scan(page), {});
+  });
   test('R-UI-14 on a phone each tab of the full-screen event dialog has no serious accessibility violation', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 }); await openApp(page); await seed(page, blank({ people: [person()], events: [ev()] }));
     await page.evaluate(() => openDlg(S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();

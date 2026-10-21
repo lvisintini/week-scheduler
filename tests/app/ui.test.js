@@ -23,8 +23,8 @@ describe('R-UI-01 Everything lives in a collapsible, resizable sidebar', () => {
 });
 
 describe('R-UI-02 Sidebar layout, top to bottom', () => {
-  it('top row: favicon, title, help, settings and collapse (plus the rail\'s Live View button, shown only when collapsed)', () => {
-    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.className.includes('lvr') ? ':lvr' : c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar', 'button:lvr']);
+  it('top row: favicon, title, help, settings and collapse (plus Live View and its Now, which float on a closed phone sidebar only)', () => {
+    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.className.includes('lvr') ? ':lvr' : c.className.includes('lvnow') ? ':lvnow' : c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar', 'button:lvr', 'button:lvnow']);
     expect(top.querySelector('.ttl').textContent).toBe('Weekly Schedules');
   });
   it('a bullet appears after the title while anything is unsaved', () => {
@@ -186,14 +186,14 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
     expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBox', 'fBg', 'fAw']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24)
   });
-  it('the day table has a header row: Days, Start, End, Performed by, With, Colour, Timing', () => {
-    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
+  it('the day table has a header row: Days, (Week, shown only with different times per week), Start, End, Performed by, With, Colour, Timing', () => {
+    const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Week', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
     expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
   });
   it('a day row holds its day (with the week button of R-CYC-08), times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
-    const r = dialog().qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.children[0].querySelector('.wkc')).not.toBeNull();
-    expect([...r.children].filter(c => !c.classList.contains('cl')).map(c => c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
-      .toEqual(['day', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
+    const r = dialog().qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.querySelector('.wcell .wkc')).not.toBeNull();
+    expect([...r.children].filter(c => !c.classList.contains('cl') && !c.classList.contains('rx')).map(c => c.classList.contains('wcell') ? 'week' : c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
+      .toEqual(['day', 'week', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
   });
   it('the day rows and the further-time lines share one grid (each line a subgrid box), so their columns line up with the header', () => {
     const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dhd,#fDays{display:contents}');
@@ -211,16 +211,27 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('on narrow screens the label column folds away (labels above their fields); on a phone each ticked day is a card with labelled fields', () => {
     const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/);
-    expect(css).toContain('@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fDayCh{display:flex;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
+    expect(css).toContain('@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
+  });
+  it('R-CYC-08 with different times per week the week has a column and a header of its own; on a phone card it reads Week [1] – Monday', () => {
+    const a = openApp(); setData(a, blank({ cycle: 2, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', wk: 2 }] })] })); a.ev('openDlg(S.events[0])');
+    const css = a.d.querySelector('style').textContent; expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
+    expect(css).toContain('#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}'); expect(css).toContain('#paneQ.pw{--dc:auto auto minmax(68px,1fr)');
+    const r = a.qa('#fDays .dr')[0]; expect(r.children[1].classList.contains('wcell')).toBe(true); expect(r.querySelector('.wcell .wkc').textContent).toBe('2'); expect(r.querySelector('.wcell .wkw').textContent).toBe('Week');
+    expect(r.querySelector('.dcell .wkc')).toBeNull(); expect(css).toContain(".wcell::after{content:'–'}"); a.ev("setLang('es')"); expect(r.querySelector('.wcell .wkw').textContent).toBe('Semana');
+  });
+  it('a darker 2 px line separates the days and a thin line the times of one day', () => {
+    const css = dialog().d.querySelector('style').textContent; expect(css).toContain('.dr:not(.dx){border-top:2px solid color-mix(in srgb,var(--fg) 25%,transparent)}.dr.dx{border-top:1px solid var(--line)}');
   });
   it('the buttons are Delete, Copy…, Cancel, Save in that order', () => { expect(dialog().qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']); });
 });
 
-describe('R-UI-13 R-UI-01 A phone gets floating buttons and a two-line drawer header; the computer keeps its row', () => {
+describe('R-UI-13 R-UI-01 A phone gets floating buttons; its drawer has the computer\'s top row', () => {
   const rules = a => [...a.d.styleSheets[0].cssRules].filter(r => r.media && /max-width: ?600px/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
   const rule = (a, sel) => rules(a).find(r => r.selectorText === sel);
   it('the top row reads favicon, title, help, settings and the chevron, in that order, on every screen', () => {
-    const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr']);
+    const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow']);
+    const b = openApp({ phone: true }); expect(rules(b).some(r => /^aside:not\(\.collapsed\)/.test(r.selectorText || '') && r.selectorText !== 'aside:not(.collapsed)' && !r.selectorText.includes('#sbBack'))).toBe(false);   // a phone draws the same open row
   });
   it('closed on a phone, the sidebar floats at the bottom-left as ? · Live View · › (no gear), so the grid has the whole width', () => {
     const a = openApp({ phone: true }), r = rule(a, 'aside.collapsed');
@@ -228,10 +239,17 @@ describe('R-UI-13 R-UI-01 A phone gets floating buttons and a two-line drawer he
     expect(['aside.collapsed .sbtop .help', 'aside.collapsed .lvr', 'aside.collapsed .sbtop .xpand'].map(s => rule(a, s).style.order)).toEqual(['1', '2', '3']);
     expect(rule(a, 'aside.collapsed .gear').style.display).toBe('none'); expect(rule(a, 'aside.collapsed .sbtop .eye').style.getPropertyValue('border-radius')).toBe('50%');
   });
-  it('open on a phone, the drawer is up to 360 px wide and its top row has the title on one line and ? · ⚙ · Live View · ‹ below', () => {
+  it('open on a phone, the drawer is up to 360 px wide with the computer\'s top row and no Live View button; the Tools Live View row is hidden', () => {
     const a = openApp({ phone: true }); expect(rules(a).find(r => r.selectorText === 'aside:not(.collapsed)').style.width).toMatch(/^min\(90vw, ?360px\)$/);
-    expect(rule(a, 'aside:not(.collapsed) .ttl').style.getPropertyValue('white-space')).toBe('nowrap'); expect(rule(a, 'aside:not(.collapsed) .sbtop').style.getPropertyValue('flex-wrap')).toBe('wrap');
-    expect(['aside:not(.collapsed) .sbtop .help', 'aside:not(.collapsed) .gear', 'aside:not(.collapsed) .lvr', 'aside:not(.collapsed) .sbtop .xpand'].map(s => rule(a, s).style.order)).toEqual(['1', '2', '3', '4']);
+    expect([...a.d.styleSheets[0].cssRules].find(r => r.selectorText === 'aside .sbtop .lvr,aside .sbtop .lvnow').style.display).toBe('none'); expect(rule(a, '#sbin .lvrow').style.display).toBe('none');
+  });
+  it('in Live View on a phone only the stop button floats, with Now above it after a manual scroll', () => {
+    const a = openApp({ phone: true }); expect(rule(a, 'aside.collapsed.lv .sbtop .help,aside.collapsed.lv .sbtop .xpand').style.display).toBe('none');
+    expect(rule(a, 'aside.collapsed.lv.paused .lvnow').style.display).toBe('inline-flex'); expect(rule(a, 'aside.collapsed.lv.paused .lvnow').style.order).toBe('1');
+    a.q('#lvR').click(); expect(a.q('#sb').classList.contains('lv')).toBe(true); expect(a.q('#sb').classList.contains('paused')).toBe(false);
+    a.ev("livePaused=true;updLive()"); expect(a.q('#sb').classList.contains('paused')).toBe(true); expect(a.q('#lvF').getAttribute('aria-label')).toBe('Now');
+    a.q('#lvF').click(); expect(a.ev('livePaused')).toBe(false); expect(a.q('#sb').classList.contains('paused')).toBe(false);
+    a.q('#lvR').click(); expect(a.q('#sb').classList.contains('lv')).toBe(false);
   });
 });
 
