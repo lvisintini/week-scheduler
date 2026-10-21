@@ -30,12 +30,12 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     expect((await slots(page))[0]).toMatchObject({ start: 600, end: 720 });
   });
   test('swiping vertically scrolls the grid and neither creates nor moves anything', async ({ page }) => {
-    await seed(page, blank({ events: [ev()] })); const a = await pt(page, 1, 900); await swipe(page, a, 0, -250);
+    await seed(page, blank({ events: [ev()] })); const a = await pt(page, 1, 600); await swipe(page, a, 0, -250);   // on screen at the phone's 100 px per hour
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(20);
     await expect(page.locator('#dlg')).toBeHidden(); expect((await slots(page))[0]).toMatchObject({ day: 0, start: 600 });
   });
   test('swiping horizontally scrolls the days sideways', async ({ page }) => {
-    await seed(page, blank({ events: [ev()] })); const a = await pt(page, 1, 900); await swipe(page, a, -200, 0);
+    await seed(page, blank({ events: [ev()] })); const a = await pt(page, 1, 600); await swipe(page, a, -200, 0);
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollLeft)).toBeGreaterThan(20); await expect(page.locator('#dlg')).toBeHidden();
   });
   test('a swipe that starts on an event scrolls instead of moving the event', async ({ page }) => {
@@ -149,5 +149,19 @@ test.describe('R-REP-02 The day copy menu on a phone', () => {
     expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
     await m.locator('.oi', { hasText: 'The days above' }).tap(); await page.locator('#fOk').tap();
     expect((await slots(page)).map(s => [s.day, s.start])).toEqual([[0, 720], [2, 720], [4, 600]]);
+  });
+});
+
+test.describe('R-GRID-07 R-GRID-12 A phone shows about 7 hours, and leaving Live View keeps the day', () => {
+  test('rows are 100 px per hour by default, so a one-hour event is a finger-sized box that a tap opens', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660)] })] })); await page.evaluate(() => setFocus(0));
+    expect(await page.evaluate(() => HH)).toBe(100); const b = await page.locator('.ev').boundingBox(); expect(b.height).toBeGreaterThan(95);
+    const hours = await page.evaluate(() => document.getElementById('wrap').clientHeight / HH); expect(hours).toBeGreaterThan(5); expect(hours).toBeLessThan(10);
+    await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); await expect(page.locator('#dlg')).toBeVisible();
+  });
+  test('tapping the Live View Mode pill leaves Live View for the day view of the day it showed', async ({ page }) => {
+    await seed(page, blank()); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
+    const d = await page.evaluate(() => focusD); await page.locator('#lvPill').tap();
+    await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => focusD)).toBe(d);
   });
 });

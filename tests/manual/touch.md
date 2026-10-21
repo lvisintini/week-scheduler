@@ -27,7 +27,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 14 | Open the sidebar's **Tools** section and tap **Live View** | Today's day is shown read-only, with the now line a third of the way down (R-GRID-12) | | |
 | 15 | In Live View, tap a box | A bubble appears at your tap, and it fades out after a minute. Tapping empty space closes it | | |
 | 16 | In Live View, swipe to scroll, then wait a minute | **Now** appears while you scroll. A minute after your last swipe, the view returns to the now line by itself | | |
-| 17 | Tap the red **Live View Mode** pill | Back to the week | | |
+| 17 | Tap the red **Live View Mode** pill | Back to the day view of the day Live View showed, not the week (R-GRID-12) | | |
 | 18 | Rotate the phone | The grid refits, and nothing is lost | | |
 | 19 | Long-press an event the way you would right-click it | No browser menu appears; the long press starts a move as in step 5. Copy is only in the event dialog's **Copy…** button (R-TOUCH-01, known) | | |
 | 20 | Reload the page | It opens on **today's day view** with the sidebar closed, even if you left it open (R-UI-13) | | |
@@ -39,6 +39,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 26 | In a workspace with a cycle of 2 weeks (workspace menu → *Weeks in the cycle…*), tap the **W1** button in the grid's top-left corner and choose *Week 2*; then, in the day view on Sunday, swipe left | The menu opens beside the button and the grid shows week 2; the swipe shows *Monday · W1* (the cycle wraps) | | |
 | 27 | Tap an event; tap **When**, scroll the days, then tap **More**; clear the title and tap **Save** | The dialog fills the screen with no grip bar; the tabs and the Delete/Copy/Cancel/Save row stay put while the days scroll; Save without a title goes back to **Event** with a red dot on it (R-UI-14) | | |
 | 28 | Open Settings (gear), then a day's agenda (day name) | Both fill the screen with Close always visible (R-UI-14) | | |
+| 29 | Open the app with a fresh browser profile (or tap *Reset zoom*) and look at the day view | About 7 hours fill the screen (100 px per hour, *Fit height* off); a one-hour event is easy to tap open (R-GRID-07) | | |
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says

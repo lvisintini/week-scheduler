@@ -146,6 +146,17 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
   const tick = (a, label, on) => { const c = box(a, label); c.checked = on; c.dispatchEvent(new a.w.Event('change')); };
   const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY));
   const wrapH = (a, h) => Object.defineProperty(a.q('#wrap'), 'clientHeight', { configurable: true, get: () => h });
+  it('a phone has its own row height: Fit height off at 100 px per hour by default, kept apart from the computer setting', () => {
+    const a = fresh(blank(), { phone: true }); a.q('.sbtop .xpand').click(); expect(a.ev('HH')).toBe(100);
+    expect(box(a, 'Fit height').checked).toBe(false); expect(slider(a, 'Row height').disabled).toBe(false); expect(slider(a, 'Row height').value).toBe('100');
+    const s = slider(a, 'Row height'); s.value = '80'; s.dispatchEvent(new a.w.Event('input')); expect(a.ev('HH')).toBe(80);
+    expect([stored(a).rowHP, stored(a).rowH ?? 48, stored(a).fitH ?? true]).toEqual([80, 48, true]);
+    tick(a, 'Fit height', true); expect([stored(a).fitHP, stored(a).fitH ?? true]).toEqual([true, true]);
+    a.qa('#sbin .zreset')[0].click(); expect([stored(a).rowHP, stored(a).fitHP]).toEqual([100, false]); expect(a.ev('HH')).toBe(100);
+    expect(a.q('#sbin .zreset').title).toContain('100 px per hour');
+    const b = openApp({ phone: true, storage: { [PREFS_KEY]: JSON.stringify({ rowH: 30, fitH: true, rowHP: 500 }) } }); expect(b.ev('[HH,prefs.rowHP,prefs.fitHP]')).toEqual([120, 120, false]);
+    const c = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 60, fitH: false, rowHP: 90 }) } }); expect(c.ev('HH')).toBe(60);
+  });
   it('by default both Fit boxes are ticked, their two sliders are disabled and the text size slider is enabled', () => {
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
     expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);
@@ -402,7 +413,12 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     const a = fresh(); at(a, 2, 23, 59); start(a); at(a, 3, 0, 0); a.ev('liveTick()'); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['3']);
     const b = fresh(); b.ev('prefs.hideWeekend=true;render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
   });
-  it('the Live View Mode pill, Stop Live View and Esc each leave it for the week; Esc under a dialog does not', () => {
+  it('on a phone the pill and Esc leave it for the day view of the day it showed, not the week, which is too wide', () => {
+    const a = fresh(day(), { phone: true }); at(a, 2, 10, 0); a.q('#lvR').click(); expect(a.ev('[live,focusD]')).toEqual([true, 2]);
+    pill(a).click(); expect(a.ev('[live,focusD]')).toEqual([false, 2]); expect(a.qa('.day')).toHaveLength(1); expect(a.q('#grid').classList.contains('lv')).toBe(false);
+    a.q('#lvR').click(); a.key('Escape'); expect(a.ev('[live,focusD]')).toEqual([false, 2]); expect(a.q('.dh.fo')).not.toBeNull();
+  });
+  it('the Live View Mode pill, Stop Live View and Esc each leave it for the week on a computer; Esc under a dialog does not', () => {
     const a = fresh(); at(a, 2, 10, 0); start(a); pill(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(btn(a).textContent).toBe('Live View');
     start(a); btn(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
     start(a); a.ev('openSettings()'); a.key('Escape'); expect(a.ev('live')).toBe(true); a.ev("document.getElementById('xDlg').close()"); a.key('Escape'); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);

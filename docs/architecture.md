@@ -52,7 +52,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-EVT-24: `isAway`, `awayHits`, `.bgs.aw`, `.awov`, `.awl`, `#fAw`
 - R-GRID-03: `wj`, `--weh`
 - R-GRID-06: `DAY2`, `nr`
-- R-GRID-07: `.zsub`, `fitted`
+- R-GRID-07: `.zsub`, `fitted`, `RH`/`FH` (the row-height prefs keys in use: `rowHP`/`fitHP` on a phone)
 - R-GRID-11: `.foc`, `focusD`, `.dh.fo`, `.prv`, `.nxt`, `stepFocus`, `.wk`, `printDay`, `days = [focusD]`
 - R-GRID-12: `.lvrow`, `lvin`, `LV_SLACK`, `LV_PEEK`, `lvTime`, `lvOpen`, `lvDraw`, `.lvstem`, `liveTick`, `liveBusy`, `liveTop`, `LV_BACK`, `lvRet`, `liveBack`
 - R-NST-01: `nestPick`, `pplOf`
