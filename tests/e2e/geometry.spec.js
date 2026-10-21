@@ -512,3 +512,13 @@ test.describe('R-REP-02 The day copy menu in a real browser', () => {
     await page.locator('#fOk').click(); expect((await slots(page)).map(s => [s.day, s.start])).toEqual([[0, 600], [2, 720], [4, 720]]);
   });
 });
+
+test.describe('R-CYC-17 The week colour as drawn by a real browser', () => {
+  test('a 4 px band in the week colour under every day header, the switcher filled with it; nothing for an uncoloured week', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, weekInfo: [{ name: 'Home' }, { name: "At Dad's", color: '#8e4ec6' }], events: [ev()] }));
+    expect(await page.locator('.dh').first().evaluate(h => getComputedStyle(h).boxShadow)).toBe('none');
+    await page.evaluate(() => setWeek(2));
+    const shadows = await page.locator('.dh').evaluateAll(hs => hs.map(h => getComputedStyle(h).boxShadow)); expect(shadows.every(s => s === 'rgb(142, 78, 198) 0px -4px 0px 0px inset')).toBe(true);
+    const b = await page.locator('.wkb').evaluate(x => [getComputedStyle(x).backgroundColor, getComputedStyle(x).color]); expect(b).toEqual(['rgb(142, 78, 198)', 'rgb(255, 255, 255)']);
+  });
+});

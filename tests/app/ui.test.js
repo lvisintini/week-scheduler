@@ -437,13 +437,14 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
     dl.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: 300, clientY: 110, button: 0, bubbles: true, cancelable: true })); pointer(a, 'pointermove', { x: 100, y: 300 }); pointer(a, 'pointerup', { x: 100, y: 300 });
     a.q('#dGrip').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); expect(dl.classList.contains('moved')).toBe(false); expect(dl.style.top).toBe('');
   });
-  it('Settings, Help, Statistics and Copy fill the screen on a phone; small dialogs such as Weeks in the cycle stay floating', () => {
+  it('Settings, Help, Statistics, Copy and Weeks in the cycle fill the screen on a phone; small dialogs such as the Live View week question stay floating', () => {
     const a = open({ phone: true }); a.q('#fCancel').click();
     a.ev('openSettings()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
     a.ev('openHelp()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
     a.ev('openStats("A")'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
     a.ev('openCopy(S.events[0])'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
-    a.ev('openCycle()'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
+    a.ev('openCycle()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
+    a.ev('askLiveWeek(()=>{})'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
     const ph = [...a.d.styleSheets[0].cssRules].filter(r => r.media).flatMap(r => [...r.cssRules]).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');
     expect(ph.style.width).toBe('100vw'); expect(ph.style.height).toBe('100dvh');
   });

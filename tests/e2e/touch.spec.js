@@ -126,12 +126,13 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
     for (const b of await page.locator('.dtabs button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('.dtabs button', { hasText: 'More' }).tap(); await expect(page.locator('#fSch')).toBeVisible(); await expect(page.locator('#paneQ')).toBeHidden();
   });
-  test('Settings, Statistics and the day agenda fill the screen; Weeks in the cycle stays a floating window', async ({ page }) => {
+  test('Settings, Statistics, the day agenda and Weeks in the cycle fill the screen; the Live View week question stays a floating window', async ({ page }) => {
     await seed(page, blank({ people: [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }] }));
     await page.evaluate(() => openSettings()); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
     await page.evaluate(() => openStats('A')); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
     await page.evaluate(() => openAgenda(0)); await fills(page, '#agDlg'); await page.evaluate(() => document.getElementById('agDlg').close());
-    await page.evaluate(() => openCycle()); const b = await page.locator('#xDlg').boundingBox(); expect(b.width).toBeLessThan(page.viewportSize().width); expect(b.height).toBeLessThan(page.viewportSize().height / 2);
+    await page.evaluate(() => openCycle()); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
+    await page.evaluate(() => { S.cycle = 2; askLiveWeek(() => {}); }); const b = await page.locator('#xDlg').boundingBox(); expect(b.width).toBeLessThan(page.viewportSize().width); expect(b.height).toBeLessThan(page.viewportSize().height / 2);
   });
   test('opening a repetition from the grid shows it in the When tab, scrolled into view and pulsing', async ({ page }) => {
     await seed(page, many()); await page.evaluate(() => openDlg(S.events[0], null, S.events[0].slots[6]));

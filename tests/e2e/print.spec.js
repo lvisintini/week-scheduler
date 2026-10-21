@@ -80,3 +80,14 @@ test.describe('R-CYC-12 Printing every week of the cycle', () => {
     await page.evaluate(() => printSchedule()); await page.emulateMedia({ media: 'print' }); expect(await page.locator('#pr .wkb').evaluate(e => getComputedStyle(e).display)).toBe('none');
   });
 });
+
+test.describe('R-CYC-17 A coloured week in print', () => {
+  test('the printed title names the week and has a band in its colour, printed exactly, and the grid keeps the band under its headers', async ({ page }) => {
+    await seed(page, blank({ cycle: 2, weekInfo: [{}, { name: "At Dad's", color: '#8e4ec6' }], events: [ev()] }));
+    await page.evaluate(() => { curWk = 2; render(); printSchedule(); }); await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('#pr h1')).toHaveText("Weekly schedule — Week 2 · At Dad's");
+    const s = await page.locator('#pr h1').evaluate(h => { const c = getComputedStyle(h); return [c.borderBottomWidth, c.borderBottomColor, c.printColorAdjust || c.webkitPrintColorAdjust]; });
+    expect(s).toEqual(['4px', 'rgb(142, 78, 198)', 'exact']);
+    expect(await page.locator('#pr .dh').first().evaluate(h => getComputedStyle(h).boxShadow)).toContain('rgb(142, 78, 198)');
+  });
+});

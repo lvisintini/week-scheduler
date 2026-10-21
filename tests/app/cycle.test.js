@@ -1,6 +1,6 @@
 // Cycles of several weeks on the screen (docs/requirements/cycle.md): what each week of the cycle draws and finds.
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, dragFrom, workspace } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, dragFrom, workspace, sleep } from '../helpers/app.js';
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
 const week = (a, w) => a.ev(`curWk=${w};render()`);
@@ -565,5 +565,92 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
   });
   it('the app offers no helper that assigns turns', () => {
     const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate|Turns/);
+  });
+});
+
+describe('R-CYC-17 Each week of a cycle can have a name, a description and a colour', () => {
+  const info = [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday pickup', color: '#8e4ec6' }];
+  const data = (o = {}) => blank({ cycle: 2, weekInfo: info, people, events: [ev1({ id: 'w2', title: 'Swim', weeks: [2], slots: [sl(0, 600, 660, { person: 'A' })] })], ...o });
+  const wi = a => JSON.parse(a.ev('JSON.stringify(S.weekInfo)'));
+  const rows = a => a.qa('#xDlg .cywr');
+  const typeIn = (a, k, cls, v) => { const i = rows(a)[k].querySelector('.cy' + cls); i.value = v; i.dispatchEvent(new a.w.Event('input')); };
+  it('import keeps names, descriptions and hex colours, trims and caps them, drops anything else and trailing empty weeks', () => {
+    const p = x => fresh().ev(`parseData(${JSON.stringify(blank({ cycle: 3, weekInfo: x }))}).weekInfo`);
+    expect(p([{ name: '  At home  ', desc: 'x'.repeat(400), color: '#ABC', bad: 1 }, { name: 5, color: 'red' }, {}])).toEqual([{ name: 'At home', desc: 'x'.repeat(300), color: '#aabbcc' }]);
+    expect(p([{}, { name: 'n'.repeat(60) }, { color: '#112233' }, { name: 'week 4 of a 3-week cycle' }])).toEqual([{}, { name: 'n'.repeat(40) }, { color: '#112233' }]);
+    expect(p('nonsense')).toEqual([]); expect(fresh().ev(`parseData(${JSON.stringify(blank({ weekInfo: info }))}).weekInfo`)).toEqual([]);   // a 1-week cycle has none
+  });
+  it('it is stored only when something is set, counts as an unsaved change and is undoable', () => {
+    const a = fresh(blank({ cycle: 2 })); expect('weekInfo' in a.ev('buildFile()')).toBe(false); a.ev('cw().lb=keyOf(S)');
+    openCycleDlg(a); typeIn(a, 1, 'name', "At Dad's"); a.click('Apply'); expect(wi(a)).toEqual([{}, { name: "At Dad's" }]);
+    expect(a.ev('buildFile()').weekInfo).toEqual([{}, { name: "At Dad's" }]); expect(a.ev('anyDirty()')).toBe(true);
+    a.ev('undo()'); expect(wi(a)).toEqual([]); expect(a.ev('anyDirty()')).toBe(false);
+  });
+  it('the cycle dialog has a row per week: colour swatch (with a clear button), name and description, all named for screen readers', () => {
+    const a = fresh(data()); openCycleDlg(a); expect(rows(a)).toHaveLength(2); expect(a.q('#xDlg').classList.contains('full')).toBe(true);
+    const r = rows(a)[1]; expect(r.querySelector('.cywn').textContent).toBe('Week 2'); expect(r.querySelector('.cyname').value).toBe("At Dad's"); expect(r.querySelector('.cydesc').value).toBe('From Friday pickup');
+    expect(r.querySelector('.cysw').getAttribute('aria-label')).toBe('Week 2: colour (#8e4ec6). Click to choose it'); expect(r.querySelector('.cyname').getAttribute('aria-label')).toBe('Week 2: name');
+    r.querySelector('.cyclr').click(); expect(r.querySelector('.cysw').classList.contains('none')).toBe(true); a.click('Apply'); expect(wi(a)[1]).toEqual({ name: "At Dad's", desc: 'From Friday pickup' });
+    const b = fresh(data()); openCycleDlg(b); chooseLen(b, 1); expect(rows(b)).toHaveLength(0);
+  });
+  it('Cancel changes nothing; editing the weeks without changing the length is one undo step', () => {
+    const a = fresh(data()); openCycleDlg(a); typeIn(a, 0, 'name', 'Home'); a.click('Cancel'); expect(wi(a)[0].name).toBe('At home');
+    openCycleDlg(a); typeIn(a, 0, 'desc', 'School week'); a.click('Apply'); expect(wi(a)[0]).toEqual({ name: 'At home', desc: 'School week', color: '#2fa66a' }); a.ev('undo()'); expect(wi(a)[0].desc).toBeUndefined();
+  });
+  it('doubling the cycle in step repeats the names and colours (week 3 = week 1); unticking leaves the new weeks blank; shrinking drops the weeks that go', async () => {
+    let a = fresh(data()); openCycleDlg(a); chooseLen(a, 4); expect(rows(a)[2].querySelector('.cyname').value).toBe('At home'); a.click('Apply');
+    expect(wi(a).map(w => w.name)).toEqual(['At home', "At Dad's", 'At home', "At Dad's"]);
+    a = fresh(data()); openCycleDlg(a); chooseLen(a, 4); const cb = a.q('#xDlg .cyext input'); cb.checked = false; cb.dispatchEvent(new a.w.Event('change'));
+    expect(rows(a)[2].querySelector('.cyname').value).toBe(''); typeIn(a, 3, 'name', 'Exams'); a.click('Apply'); expect(wi(a).map(w => w.name)).toEqual(['At home', "At Dad's", undefined, 'Exams']);
+    a = fresh(data()); openCycleDlg(a); chooseLen(a, 3); a.click('Apply'); expect(wi(a)).toEqual(info);
+    a = fresh(data({ events: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); expect(wi(a)).toEqual([]);
+    a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.click('Apply'); expect(a.ev('S.cycle')).toBe(1); expect(wi(a)).toEqual([]);
+  });
+  it('the week switcher is filled with the week colour, its tooltip names the week, and the menu shows chips, names and descriptions', () => {
+    const a = fresh(data()); week(a, 2); const b = a.q('.dh.c .wkb');
+    expect(b.textContent).toBe('W2'); expect(b.classList.contains('col')).toBe(true); expect(b.style.background).toMatch(/#8e4ec6|rgb\(142, 78, 198\)/);
+    expect(b.getAttribute('aria-label')).toBe("Week 2 of 2 is shown. Choose another week of the cycle · At Dad's: From Friday pickup");
+    b.click(); const items = a.qa('.omenu .oi'); expect(items[0].textContent).toBe('Week 1 · At home'); expect(items[1].querySelector('.wkchip')).not.toBeNull();
+    expect(items[1].querySelector('.wkd').textContent).toBe('From Friday pickup');
+    const c = fresh(blank({ cycle: 2 })); expect(c.q('.dh.c .wkb').classList.contains('col')).toBe(false);
+  });
+  it('the grid gets a band in the shown week colour under the day headers, and none without a colour', () => {
+    const a = fresh(data()); const g = a.q('#grid'); expect(g.classList.contains('wkband')).toBe(true); expect(g.style.getPropertyValue('--wkc')).toBe('#2fa66a');
+    week(a, 2); expect(g.style.getPropertyValue('--wkc')).toBe('#8e4ec6');
+    const b = fresh(data({ weekInfo: [{ name: 'No colour' }] })); expect(b.q('#grid').classList.contains('wkband')).toBe(false);
+    const c = fresh(blank({ weekInfo: info })); expect(c.q('#grid').classList.contains('wkband')).toBe(false);   // a 1-week workspace shows none of it
+  });
+  it('the event dialog colours the Weeks chips and the week of each time, and names the weeks', () => {
+    const a = fresh(data()); a.ev('openDlg(S.events[0])'); const ch = a.qa('#fWk .chips label');
+    expect(ch.map(l => l.textContent)).toEqual(['Week 1 · At home', "Week 2 · At Dad's"]); expect(ch[1].classList.contains('wcol')).toBe(true); expect(ch[1].title).toBe("Week 2 · At Dad's: From Friday pickup");
+    a.q('#fPw').checked = true; a.q('#fPw').onchange(); const wb = a.q('#fDays .dr button.wkc'); expect(wb.textContent).toBe('2'); expect(wb.style.background).toMatch(/#8e4ec6|rgb\(142, 78, 198\)/);
+    wb.click(); expect(a.qa('.cmenu .oi').map(x => x.textContent)).toEqual(['Week 1 · At home', "Week 2 · At Dad's"]);
+  });
+  it('the hover card and the agenda show the weeks with their chips and names', () => {
+    const a = fresh(data()); week(a, 2); expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain('class="wkchip"'); expect(a.ev('peekHTML(piecesAt(0,630,true))')).toContain("Week 2 · At Dad&#39;s");
+    expect(a.q('.ev').getAttribute('aria-label')).toContain("Week 2 · At Dad's"); a.ev('openAgenda(0)'); expect(a.q('#agBody').innerHTML).toContain('class="wkchip"');
+    expect(a.q('#agBody h1').textContent).toContain("Monday — Week 2 · At Dad's"); expect(a.q('#agBody h1').classList.contains('wkh')).toBe(true);
+  });
+  it('printouts name the week and carry its colour; statistics name the weeks in the list, table, CSV and the Everyone view', () => {
+    const a = fresh(data()); week(a, 2); a.ev('printSchedule()'); expect(a.w.__printed).toContain("Week 2 · At Dad's"); expect(a.w.__printed).toContain('class="wkh"');
+    a.ev('stW="avg";openStats("A")'); expect(a.qa('#xDlg select').flatMap(s => [...s.options].map(o => o.textContent))).toContain("Week 2 · At Dad's");
+    expect(a.q('#xDlg .sttab thead').textContent).toContain("W2 At Dad's"); expect(a.q('#xDlg .sttab thead .wkchip')).not.toBeNull();
+    expect(a.ev('statsRows("*",true)[0]')).toContain("Planned W2 At Dad's");
+  });
+  it('Live View names the week in the day header and asks for today\'s week by name', () => {
+    const a = fresh(data()); a.ev('setLive(true)'); expect([...a.q('#xDlg select').options].map(o => o.textContent)).toEqual(['Week 1 · At home', "Week 2 · At Dad's"]);
+    a.click('Start Live View'); expect(a.q('.dh:not(.c)').textContent).toMatch(/· W\d (At home|At Dad's)$/);
+  });
+  it('an insert or transfer that lengthens the cycle keeps the target\'s own weeks, repeated when the new length is a multiple (R-CYC-13)', () => {
+    const run = (n0, srcN) => fresh().ev(`(()=>{const d={cycle:${n0},weekInfo:[{name:'A'},{name:'B',color:'#112233'}],events:[]};placeWeeks(d,[{id:'x',weeks:[${n0 + 1}],slots:[{day:0,start:600,end:660}]}],${srcN},'len');return d.weekInfo})()`);
+    expect(run(2, 4)).toEqual([{ name: 'A' }, { name: 'B', color: '#112233' }, { name: 'A' }, { name: 'B', color: '#112233' }]);
+    expect(run(2, 3)).toEqual([{ name: 'A' }, { name: 'B', color: '#112233' }]);
+  });
+  it('leaving out personal details removes the week descriptions and keeps their names', () => {
+    const a = fresh(data()); const f = a.ev('anonymised(buildFile())'); expect(f.weekInfo).toEqual([{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", color: '#8e4ec6' }]);
+  });
+  it('Spanish names the weeks and translates the dialog', () => {
+    const a = fresh(data()); a.ev("setLang('es')"); a.ev('openCycle()'); expect(rows(a)[1].querySelector('.cyname').getAttribute('aria-label')).toBe('Semana 2: nombre');
+    expect(a.q('#xDlg .cyh').textContent).toBe('Las semanas'); a.click('Cancelar'); week(a, 2); expect(a.q('.dh.c .wkb').textContent).toBe('S2');
   });
 });

@@ -62,6 +62,12 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ cycle: 3, events: [ev({ weeks: [1] })] })); ratchet(await scan(page), {});
     await page.locator('.wkb').click(); const r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
+  test('R-CYC-17 the Weeks in the cycle dialog with its week rows, and the week menu with coloured weeks, add no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, weekInfo: [{ name: 'Home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday', color: '#f5c518' }], events: [ev()] }));
+    await page.evaluate(() => setWeek(2)); ratchet(await scan(page), {});
+    await page.locator('.wkb').click(); let r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+    await page.keyboard.press('Escape'); await page.evaluate(() => openCycle()); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+  });
   test('R-CYC-08 R-EVT-24 the event dialog with its Weeks row, the week of every time and Drawn as adds no serious accessibility violation', async ({ page }) => {
     await openApp(page); await seed(page, blank({ cycle: 2, people: [person()], events: [ev({ slots: [{ day: 0, start: 600, end: 660, person: 'p1', wk: 1 }, { day: 0, start: 600, end: 660, person: '', wk: 2 }] })] }));
     await page.evaluate(() => openDlg(S.events[0])); ratchet(await scan(page), {});

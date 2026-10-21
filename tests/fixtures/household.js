@@ -54,6 +54,7 @@ export const household = {
   ],
   phaseOpacity: 0.45,
   cycle: 2,
+  weekInfo: [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday school pickup to Sunday evening', color: '#8e4ec6' }],
 };
 
 /** The second workspace of the browser-memory sample: almost empty. */
@@ -73,6 +74,7 @@ const ADDED = {
   7: h => ({ ...h, events: h.events.map(e => ({ ...e, slots: e.slots.map(({ col, ...sl }) => col === undefined || col === 't' ? sl : { ...sl, col }) })) }),   // the activity type's colour (R-EVT-22)
   8: h => ({ ...h, types: h.types.map(({ visible, ...t }) => t) }),   // the activity type's eye (R-TYP-04)
   9: ({ cycle, ...h }) => ({ ...h, events: h.events.filter(e => !['e-swim', 'e-cook', 'e-dad'].includes(e.id)) }),   // the cycle of weeks (R-CYC-14) and Away (R-EVT-24)
+  10: ({ weekInfo, ...h }) => h,   // the weeks' names, descriptions and colours (R-CYC-17)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 
@@ -81,10 +83,10 @@ export const prefsSample = {
   w: 320, collapsed: true, showEarly: true, clock12: true, hideWeekend: true, theme: 'dark', rowH: 60, colW: 150, fitW: false, fitH: false, txt: 120,
   secSch: true, secPpl: true, secTyp: true, secRh: true, secZoom: true, secExt: false,
   hlNoType: true, colBy: 't', secTools: true, lanesFix: true,
-  lvAnchor: { 'ws-family': '2026-10-05' },
+  lvAnchor: { 'ws-family': '2026-10-05' }, rowHP: 80, fitHP: true,
 };
 // Settings added to the sample after folder v<n> was written (they are back at their defaults in that folder and every older one).
-const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools', 'lanesFix']], [9, ['lvAnchor']]];   // Tools (R-UI-11, R-EVT-23); today's week per workspace (R-CYC-05)
+const PREFS_AFTER = [[8, ['hlNoType', 'colBy', 'secTools', 'lanesFix']], [9, ['lvAnchor', 'rowHP', 'fitHP']]];   // Tools (R-UI-11, R-EVT-23); today's week per workspace (R-CYC-05); a phone's own row height (R-GRID-07)
 // Settings retired after folder v<n> was written: that folder and every older one still hold them (no longer read, but kept in prefs).
 const PREFS_RETIRED = [[8, { side: false, sideFix: true }]];   // side by side can no longer be turned off (R-EVT-10/13)
 
