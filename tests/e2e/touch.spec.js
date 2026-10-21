@@ -43,9 +43,15 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(20);
     expect((await slots(page))[0]).toMatchObject({ day: 0, start: 600, end: 660 }); await expect(page.locator('#dlg')).toBeHidden();
   });
-  test('a long press never pops up the browser or copy menu, and no hover card appears', async ({ page }) => {
+  test('R-TOUCH-02 a long press lifted without moving opens the app\'s Copy list (never the browser\'s menu), and no hover card appears', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const a = await pt(page, 0, 630); await touch(page, [a, { x: a.x, y: a.y + 1 }], { hold: 700 });
-    await expect(page.locator('.omenu')).toHaveCount(0); await expect(page.locator('#peek')).toBeHidden();
+    await expect(page.locator('.omenu .oh')).toHaveText('Copy event…'); await expect(page.locator('#peek')).toBeHidden(); await expect(page.locator('#dlg')).toBeHidden();
+    await page.locator('.omenu .oi').tap(); await expect(page.locator('#xDlg h3')).toHaveText('Copy event: Event');
+  });
+  test('R-TOUCH-02 a locked event is copied by touch the same way, and nothing is created', async ({ page }) => {
+    await seed(page, blank({ schedules: [{ id: 's1', name: 'S1', color: '#3b6df0', opacity: 1, locked: true, visible: true }], events: [ev()] }));
+    const a = await pt(page, 0, 630); await touch(page, [a, { x: a.x + 1, y: a.y }], { hold: 700 });
+    await expect(page.locator('.omenu .oi')).toHaveCount(1); await expect(page.locator('#dlg')).toBeHidden();
   });
   test('tapping where events overlap offers the list to choose from', async ({ page }) => {
     await seed(page, blank({ events: [ev({ id: 'a', title: 'A' }), ev({ id: 'b', title: 'B', slots: [slot(0, 630, 700)] })] })); const p = await pt(page, 0, 650); await page.touchscreen.tap(p.x, p.y);

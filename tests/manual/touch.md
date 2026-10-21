@@ -29,7 +29,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 16 | In Live View, swipe to scroll, then wait a minute | **Now** appears while you scroll. A minute after your last swipe, the view returns to the now line by itself | | |
 | 17 | Tap the red **Live View Mode** pill | Back to the day view of the day Live View showed, not the week (R-GRID-12) | | |
 | 18 | Rotate the phone | The grid refits, and nothing is lost | | |
-| 19 | Long-press an event the way you would right-click it | No browser menu appears; the long press starts a move as in step 5. Copy is only in the event dialog's **Copy…** button (R-TOUCH-01, known) | | |
+| 19 | Long-press an event and lift your finger **without moving**; pick it in the list. Then lock its schedule (⋯ → Lock) and do the same | No browser menu appears. The app's *Copy event…* list opens, and picking the event opens its Copy dialog. A locked event is copied the same way and nothing new is created (R-TOUCH-02) | | |
 | 20 | Reload the page | It opens on **today's day view** with the sidebar closed, even if you left it open (R-UI-13) | | |
 | 21 | In the day view, swipe left, then right | The next day, then back. A swipe from the very edge of the screen is left to the browser | | |
 | 22 | Tap **Week**, then tap a short day name (*Mo*, *Tu*…) | That day's view opens (R-GRID-06) | | |

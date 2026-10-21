@@ -22,7 +22,7 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `lanes.md` | R-EVT-09, 10, 13, 18, 23 |
 | `repetitions.md` | R-REP-01…07 |
 | `nesting.md` | R-NST-01…05 |
-| `interaction.md` | R-SEL-01…03, R-TOUCH-01 |
+| `interaction.md` | R-SEL-01…03, R-TOUCH-01…02 |
 | `cycle.md` | R-CYC-01…18 |
 | `schedules.md` | R-SCH-01…05 |
 | `people.md` | R-PPL-01…04 |
