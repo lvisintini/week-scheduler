@@ -59,6 +59,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-NST-02: `insetPos`, `NI`, `nestFirst`
 - R-NST-03: `nestCarry`, `carryMove`
 - R-PHS-08: `defaultRhythm()`
+- R-PRN-04: `agendaHTML` (`one`, `phs`, `blocks`, `outs`), `.aph`, `.apg`, `.ae`
 - R-PHS-10: `fitLips`, `lipK`, `.lip.s0`/`.s1`/`.s2`, `.lbg[data-fs]`
 - R-PPL-01: `slotVisible`
 - R-PPL-03: `.extb`, `ourPeople()`

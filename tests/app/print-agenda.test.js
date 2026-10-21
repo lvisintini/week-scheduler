@@ -108,3 +108,30 @@ describe('R-PRN-03 Print day view (one day on a page)', () => {
     const a = fresh(data()); agenda(a, 6); a.q('#agPrint2').click(); expect(a.q('#pr .dh.wj')).toBeNull();
   });
 });
+
+describe('R-PRN-04 With a rhythm shown, the day agenda lists the events under the phases of that day', () => {
+  const ph = (id, title, start, end, o = {}) => ({ id, title, desc: '', color: '#2fa66a', rhythms: ['r'], slots: [{ day: 0, start, end }], ...o });
+  const data = (o = {}) => blank({ rhythms: [{ id: 'r', name: 'Normal', visible: true }],
+    phases: [ph('m', 'Morning', 480, 720, { desc: 'Work and school' }), ph('e', 'Early morning', 300, 480), ph('n', 'Noon', 720, 840), ph('t', 'Tuesday only', 600, 700, { slots: [{ day: 1, start: 600, end: 700 }] })],
+    events: [ev1({ id: 'a', title: 'School run', slots: [{ day: 0, start: 450, end: 495, person: '' }] }), ev1({ id: 'b', title: 'Lunch', slots: [{ day: 0, start: 750, end: 780, person: '' }] }),
+      ev1({ id: 'c', title: 'Night shift', slots: [{ day: 0, start: 1320, end: 1380, person: '' }] }), ev1({ id: 'd', title: 'Early swim', slots: [{ day: 0, start: 240, end: 270, person: '' }] })], ...o });
+  const outline = b => [...b.querySelectorAll('.aph, .ai .atl, .ae')].map(x => (x.classList.contains('aph') ? '# ' : '') + x.textContent.trim());
+  it('the phases of the day are headings in start order, with their times; the events go under the phase they start in', () => {
+    const b = agenda(fresh(data()));
+    expect(outline(b)).toEqual(['# Outside the rhythm', 'Early swim', '# Early morning 05:00–08:00', 'School run', '# Morning 08:00–12:00', '(nothing)', '# Noon 12:00–14:00', 'Lunch', '# Outside the rhythm', 'Night shift']);
+  });
+  it('a heading carries the phase colour and its description as a tooltip; an empty phase says (nothing)', () => {
+    const h = agenda(fresh(data())).querySelectorAll('.aph')[2]; expect(h.getAttribute('style')).toContain('--c:#2fa66a'); expect(h.title).toBe('Work and school');
+  });
+  it('overlapping phases each list an event that starts in both', () => {
+    const b = agenda(fresh(data({ phases: [ph('m', 'Morning', 480, 720), ph('w', 'Work', 540, 1020)], events: [ev1({ title: 'Standup', slots: [{ day: 0, start: 600, end: 615, person: '' }] })] })));
+    expect(outline(b)).toEqual(['# Morning 08:00–12:00', 'Standup', '# Work 09:00–17:00', 'Standup']);
+  });
+  it('without a rhythm shown the agenda is the plain list in time order, as before', () => {
+    const a = fresh(data()); a.ev('S.rhythms[0].visible=false;render()'); expect(outline(agenda(a))).toEqual(['Early swim', 'School run', 'Lunch', 'Night shift']);
+  });
+  it('the printed agenda keeps the headings, and they are translated', () => {
+    const a = fresh(data(), { languages: ['es'] }); agenda(a); expect(a.q('#agBody .aph').textContent).toBe('Fuera del ritmo'); a.ev('$("agDlg").close()');
+    const b = fresh(data()); agenda(b); b.q('#agPrint').click(); expect(b.w.__printed).toContain('class="aph"'); expect(b.w.__printed).toContain('Early morning');
+  });
+});

@@ -77,6 +77,15 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     const m = await page.evaluate(() => [...document.querySelectorAll('#xDlg .stwk > span')].filter(s => s.querySelector('b')).map(s => { const a = s.getBoundingClientRect(), b = s.querySelector('b').getBoundingClientRect(); return { h: b.height, inside: b.left >= a.left - 0.5 && b.right <= a.right + 0.5, fs: getComputedStyle(s).fontSize }; }));
     expect(m.length).toBe(2); for (const x of m) { expect(x.inside).toBe(true); expect(x.h).toBeLessThan(18); expect(x.fs).toBe('11px'); }
   });
+  for (const theme of ['light', 'dark']) {
+    test(`R-PRN-04 the day agenda with phase headings adds no accessibility violation (${theme} theme)`, async ({ page }) => {
+      const ph = (id, title, start, end, color) => ({ id, title, desc: '', color, rhythms: ['r'], slots: [{ day: 0, start, end }] });
+      await openApp(page, { prefs: { theme } }); await seed(page, blank({ rhythms: [{ id: 'r', name: 'Normal', visible: true }], phases: [ph('a', 'Morning', 480, 720, '#f2c94c'), ph('b', 'Noon', 720, 840, '#1d2330'), ph('c', 'Evening', 1080, 1260, '#3b6df0')],
+        events: [ev({ title: 'Standup', slots: [{ day: 0, start: 540, end: 555, person: '' }] }), ev({ id: 'e2', title: 'Late', slots: [{ day: 0, start: 1300, end: 1330, person: '' }] })] }));
+      await page.evaluate(() => openAgenda(0)); await expect(page.locator('#agBody .aph').first()).toBeVisible();
+      const r = await new AxeBuilder({ page }).include("#agDlg").withTags(["wcag2a", "wcag2aa"]).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + " " + n.target + " " + n.failureSummary))).toEqual([]);
+    });
+  }
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

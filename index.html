@@ -268,7 +268,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .pg{margin-top:6px}.pt{margin-left:18px;font-variant-numeric:tabular-nums}
 #pr .grid.one{width:560px;zoom:1}
 .pm{font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.5}
-.ai{display:flex;gap:12px;border-left:5px solid;padding:6px 10px;margin:8px 0;background:var(--bg);border-radius:6px;break-inside:avoid}
+.ai{display:flex;gap:12px;border-left:5px solid;padding:6px 10px;margin:8px 0;background:var(--bg);border-radius:6px;break-inside:avoid}.aph{display:flex;gap:8px;align-items:baseline;margin:14px 0 2px;padding:3px 8px;border-radius:5px;background:color-mix(in srgb,var(--c) 22%,transparent);border-left:5px solid var(--c);break-after:avoid}.aph span{font-variant-numeric:tabular-nums}.aph.out{--c:var(--line);background:none}.apg{margin-left:14px}.ae{margin:4px 0 6px;color:var(--mut);font-style:italic}
 .at{width:140px;flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums}
 .atl{font-weight:600;font-size:15px}.am{font-size:12px;color:var(--mut);margin-top:2px}.ad{margin-top:4px;white-space:pre-wrap}
 #agBody{max-height:60vh;overflow:auto;margin-bottom:6px}
@@ -390,7 +390,7 @@ anonTitle:'Leave out personal details',anonTip:'People become "Person 1", "Perso
 protWarn:'Give the password to the other person by a different route than the link or file (for example by phone). Keep it safe: without it the data cannot be recovered.',protMakeLink:'Create link',protSaveFile:'Save file',anonPerson:'Person',sharePw:'Password:',shareCopyPw:'Copy password',
 pwTitle:'Password needed',pwAsk:'This is password-protected. Enter the password to open it.',pwShow:'Show password',pwOpen:'Open',pwWrong:'Wrong password, or the data has been altered.',pwWorking:'Checking…',
 pcApply:'Apply',pcCancel:'Cancel',ovTitle:'Several events here — pick one',unsaved:'unsaved changes',
-agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',
+agTitle:'{d} — agenda',schShown:'Schedules shown:',pplShown:'People shown:',none2:'none',noPpl:'(no people defined)',nothing:'Nothing scheduled.',agOut:'Outside the rhythm',agNone:'(nothing)',
 resp:'Responsible:',withl:'With:',byl:'By:',schl:'Schedules:',printTitle:'Weekly schedule',sched1:'Routine',
 cyMenu:'Weeks in the cycle…',cyTitle:'Weeks in the cycle',cyBody:'How many weeks this workspace repeats over. Events happen every week unless you choose their weeks in the event dialog (Weeks). A rota whose turns change is better kept as one event: whoever set it as the owner, the people in it as involved, the rules in the description.',cyLen:'Repeat every',cyW1:'1 week',cyWn:'{n} weeks',cyApply:'Apply',
 cyExtend:'Keep chosen weeks in step: repeat their events, names and colours in the new weeks (week 1 also in week {a}…), so “every other week” stays every other week',cyWkH:'The weeks',cyWkNote:'Optional: a short name shown next to the week number, a longer description shown in tooltips and the week menu, and a colour that marks the week on the grid, in the event dialog, prints and statistics.',cyWkCol:'Week {n}: colour ({c}). Click to choose it',cyNoCol:'none',cyWkClr:'Week {n}: no colour',cyNamePh:'Name, e.g. At Dad\'s',cyDescPh:'Description, e.g. Night shifts from Monday',cyWkName:'Week {n}: name',cyWkDesc:'Week {n}: description',cyOdd:'Events of chosen weeks keep their week numbers: “every other week” cannot be kept in a cycle of {n} weeks.',cyDone:'The cycle now has {n} weeks',cyDone1:'Every week is the same again (a cycle of one week)',
@@ -459,7 +459,7 @@ anonTitle:'Omitir datos personales',anonTip:'Las personas pasan a ser "Persona 1
 protWarn:'Dale la contraseña a la otra persona por un medio distinto al del enlace o archivo (por ejemplo por teléfono). Guárdala bien: sin ella no se pueden recuperar los datos.',protMakeLink:'Crear enlace',protSaveFile:'Guardar archivo',anonPerson:'Persona',sharePw:'Contraseña:',shareCopyPw:'Copiar contraseña',
 pwTitle:'Se necesita contraseña',pwAsk:'Esto está protegido con contraseña. Escríbela para abrirlo.',pwShow:'Mostrar contraseña',pwOpen:'Abrir',pwWrong:'Contraseña incorrecta, o los datos han sido alterados.',pwWorking:'Comprobando…',
 pcApply:'Aplicar',pcCancel:'Cancelar',ovTitle:'Varios eventos aquí — elige uno',unsaved:'cambios sin guardar',
-agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',
+agTitle:'{d} — agenda',schShown:'Horarios mostrados:',pplShown:'Personas mostradas:',none2:'ninguno',noPpl:'(sin personas definidas)',nothing:'Nada programado.',agOut:'Fuera del ritmo',agNone:'(nada)',
 resp:'Responsable:',withl:'Con:',byl:'Por:',schl:'Horarios:',printTitle:'Horario semanal',sched1:'Rutina',
 cyMenu:'Semanas del ciclo…',cyTitle:'Semanas del ciclo',cyBody:'Cada cuántas semanas se repite este espacio de trabajo. Los eventos ocurren todas las semanas salvo que elijas sus semanas en el diálogo del evento (Semanas). Una rotación cuyos turnos cambian se lleva mejor como un solo evento: quien la organiza como titular, las personas que participan como implicadas y las reglas en la descripción.',cyLen:'Repetir cada',cyW1:'1 semana',cyWn:'{n} semanas',cyApply:'Aplicar',
 cyExtend:'Mantener el ritmo de las semanas elegidas: repetir sus eventos, nombres y colores en las semanas nuevas (la semana 1 también en la {a}…), para que «una semana sí y otra no» siga igual',cyWkH:'Las semanas',cyWkNote:'Opcional: un nombre corto que se muestra junto al número de la semana, una descripción más larga que se muestra en las descripciones emergentes y en el menú de semanas, y un color que marca la semana en la cuadrícula, en el diálogo del evento, al imprimir y en las estadísticas.',cyWkCol:'Semana {n}: color ({c}). Haz clic para elegirlo',cyNoCol:'ninguno',cyWkClr:'Semana {n}: sin color',cyNamePh:'Nombre, p. ej. Con papá',cyDescPh:'Descripción, p. ej. Turnos de noche desde el lunes',cyWkName:'Semana {n}: nombre',cyWkDesc:'Semana {n}: descripción',cyOdd:'Los eventos de semanas elegidas conservan sus números de semana: «una semana sí y otra no» no se puede mantener en un ciclo de {n} semanas.',cyDone:'El ciclo tiene ahora {n} semanas',cyDone1:'Todas las semanas vuelven a ser iguales (un ciclo de una semana)',
@@ -1708,8 +1708,7 @@ function metaLine(){
 function agendaHTML(di){
   const items=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>({e,s,q})))).sort((x,y)=>x.q.a-y.q.a||x.q.b-y.q.b);
   let h=wkH1(L('agTitle',{d:DAYS[di]+wkSuf()}))+metaLine();const nm=nestOfDay(di,true);
-  if(!items.length)h+=`<p>${esc(L('nothing'))}</p>`;
-  items.forEach(({e,s,q})=>{
+  const one=({e,s,q})=>{let h='';
     const bits=[];
     if(q.p)bits.push(`<i>${esc(L('contFrom',{d:DAYS[s.day],t:fmt(s.start)}))}</i>`);
     const ty=tyOf(e);if(ty)bits.push(tyTag(ty));if(wkNote(e,s))bits.push(wkNoteH(e,s));if(e.bg)bits.push(esc(L('bgNote')));if(isAway(e))bits.push(esc(L('awNote')));awayOf(e,s,q).forEach(x=>bits.push('⚠ '+esc(awayLine(x))));const sq=sqOf(e,s,q.p);if(sq)bits.push('⚠ '+esc(sqLine(sq)));if(s.flex)bits.push(esc(L('flexNote')));if(s.fs||s.fe)bits.push(esc(edgeNote(s)));
@@ -1721,7 +1720,17 @@ function agendaHTML(di){
     if(overlapSet(e).has(s))bits.push('⚠ '+esc(L('ovTip')));
     const tt=q.p?`${fmt(0)}–${fmt(q.b)}`:`${fmt(s.start)}–${fmtEnd(s.end)}`;
     h+=`<div class="ai" style="border-left-color:${esc(colOf(e,s))}"><div class="at">${tt}</div><div class="ab"><div class="atl">${esc(e.title)}</div><div class="am">${bits.join(' &nbsp;·&nbsp; ')}</div>${e.desc?`<div class="ad">${esc(e.desc)}</div>`:''}</div></div>`;
-  });
+    return h;
+  };
+  // with a rhythm shown, its phases of the day are headings, in start order, each with the events that start in it (R-PRN-04)
+  const phs=S.phases.filter(phVis).flatMap(p=>p.slots.filter(s=>s.day===di&&inWk(p,s,{p:0,day:di})).map(s=>({p,s}))).sort((x,y)=>x.s.start-y.s.start||x.s.end-y.s.end);
+  if(!phs.length){h+=items.length?items.map(one).join(''):`<p>${esc(L('nothing'))}</p>`;return h}
+  const inPh=(it,x)=>it.q.a>=x.s.start&&it.q.a<x.s.end,blocks=phs.map(x=>({t:x.s.start,x,its:items.filter(it=>inPh(it,x))}));
+  // events that start outside every phase: one "Outside the rhythm" group per gap between phase starts, at its place in time
+  const outs=new Map();items.filter(it=>!phs.some(x=>inPh(it,x))).forEach(it=>{const k=phs.filter(x=>x.s.start<=it.q.a).length;if(!outs.has(k))outs.set(k,{t:it.q.a,its:[]});outs.get(k).its.push(it)});
+  [...blocks,...outs.values()].sort((a,b)=>a.t-b.t||(a.x?-1:1)).forEach(b=>{
+    h+=b.x?`<div class="aph" style="--c:${esc(b.x.p.color)}"${b.x.p.desc?` title="${esc(b.x.p.desc)}"`:''}><b>${esc(b.x.p.title)}</b> <span>${fmt(b.x.s.start)}–${fmtEnd(b.x.s.end)}</span></div>`:`<div class="aph out"><b>${esc(L('agOut'))}</b></div>`;
+    h+=`<div class="apg">${b.its.length?b.its.map(one).join(''):`<p class="ae">${esc(L('agNone'))}</p>`}</div>`});
   return h;
 }
 let agDay=0;
