@@ -189,7 +189,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .phx .pl{position:relative;display:block;font-size:calc(11px * var(--ts,1));font-weight:600;padding:2px 6px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .phx.sel{box-shadow:inset 0 0 0 3px var(--acc)}
 .lip{position:absolute;left:0;right:0;border-radius:7px 0 0 7px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;z-index:3;cursor:default}
-.lip span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;padding:2px 0}
+.lip span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;padding:2px 0}.lip.s1{font-size:8px}.lip.s2{font-size:7px}.lip.s0 span{display:none}
 .phmode .lip{cursor:grab}
 .phmode .ev{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}.phmode .ov{opacity:.3!important}
 .wrap.phm{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 45%,transparent)}
@@ -1748,7 +1748,7 @@ function printDay(di){doPrint(dayPage(di),false)}
 function dayPage(di){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
   [...c.children].forEach(ch=>{if(ch.classList.contains('times')||ch.classList.contains('c'))return;if(ch.dataset.d!==String(di))ch.remove()});
-  c.querySelectorAll('.lane .lbg').forEach(b=>{const l=document.createElement('div');l.className='lip';l.style.cssText=`top:${b.style.top};height:${b.style.height};background:${b.dataset.col};color:${ink(b.dataset.col)}`;const s=document.createElement('span');s.textContent=b.dataset.title;l.append(s);b.replaceWith(l)});
+  c.querySelectorAll('.lane .lbg').forEach(b=>{const l=document.createElement('div');l.className=('lip '+(b.dataset.fs||'')).trim();l.style.cssText=`top:${b.style.top};height:${b.style.height};background:${b.dataset.col};color:${ink(b.dataset.col)}`;const s=document.createElement('span');s.textContent=b.dataset.title;l.append(s);b.replaceWith(l)});
   c.querySelectorAll('.dh.wj').forEach(h=>h.classList.remove('wj'));
   c.style.gridTemplateColumns='52px 1fr';c.style.minWidth='0';c.classList.add('one');
   const w=el('div');w.innerHTML=wkH1(DAYS[di]+wkSuf())+metaLine();w.append(c);return w;
@@ -2020,6 +2020,7 @@ function render(){
   const lanePos=(x,v)=>{if(v.n<2)return;const l1=v.l1??v.l;x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + (100% - 6px - var(--gut,0px)) * ${v.l/v.n})`;x.style.right='auto';x.style.width=`calc((100% - 6px - var(--gut,0px)) * ${(l1-v.l+1)/v.n} - ${l1<v.n-1?2:0}px)`};
   // a nested box (R-NST-02) sits inside its host's lanes, indented on the left by NI px (also in a single-lane column)
   const insetPos=(x,v)=>{const l1=v.l1??v.l,w='(100% - 6px - var(--gut,0px))';if(v.n>1)x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + ${w} * ${v.l/v.n} + ${NI}px)`;x.style.right='auto';x.style.width=`calc(${w} * ${(l1-v.l+1)/v.n} - ${(l1<v.n-1?2:0)+NI}px)`};
+  const lipK=new Map();   // the lip of each group of identical phases, for its bands (R-PHS-10)
   const phByCol=days.map(di=>vsel?S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di)):[]);
   days.forEach((di,k)=>{
     const dw=el('div','dw',g);dw.dataset.d=di;
@@ -2039,12 +2040,12 @@ function render(){
       }
       if(!(k>0&&phByCol[k-1].some(y=>y.key===x.key))){
         let n=1;while(k+n<days.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
-        const lp=el('div','lip',ln);lp.style.cssText=`top:${top}px;height:${h}px;background:${esc(p.color)};color:${ink(p.color)}`;
+        const lp=el('div','lip'+(h<12?' s0':''),ln);lp.style.cssText=`top:${top}px;height:${h}px;background:${esc(p.color)};color:${ink(p.color)}`;lipK.set(x.key,lp);   // too short for any text: none (R-PHS-10)
         el('span','',lp).textContent=p.title;
         lp.title=p.title+'\n'+(n>1?DAYS[di].slice(0,3)+'–'+DAYS[days[k+n-1]].slice(0,3)+' ':'')+range+(p.desc?'\n'+p.desc:'');
         lp.onpointerdown=ev=>{if(editMode==='phases'&&!ev.button){ev.stopPropagation();press(ev,e2=>grab(e2,{e:p,s,i,piece:0},'move'),p2=>tapOpen(p2,p))}};
       }else{
-        const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.phaseOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;
+        const lb=el('div','lbg',ln);lb.style.top=top+'px';lb.style.height=h+'px';lb.style.background=p.color;lb.style.opacity=S.phaseOpacity;lb.dataset.title=p.title;lb.dataset.col=p.color;lb._lip=lipK.get(x.key);
       }
     });
     el('div','gl',col);
@@ -2153,7 +2154,7 @@ function render(){
       });
     });
   });
-  fitAll(fitList);
+  fitAll(fitList);fitLips(g);
   drawNow();
   const hi=hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
   hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
@@ -2221,6 +2222,12 @@ function fitAll(list){
   const m2=list.map((d,i)=>m1[i]&&m1[i].mv?fitMeasure(d):m1[i]);list.forEach((d,i)=>fitApply(d,m2[i]));
 }
 function fitBox(d){fitAll([d])}
+// lip text that does not fit its phase gets smaller, 8 px and then 7 px, before it is cut short (R-PHS-10); every lip is measured before any of them changes
+function fitLips(g){
+  let ls=[...g.querySelectorAll('.lip:not(.s0)')];
+  for(const c of ['s1','s2']){ls=ls.filter(l=>{const sp=l.firstElementChild;return sp&&sp.scrollHeight>sp.clientHeight+1});ls.forEach(l=>l.classList.add(c))}
+  g.querySelectorAll('.lbg').forEach(b=>{if(b._lip)b.dataset.fs=['s0','s1','s2'].filter(c=>b._lip.classList.contains(c)).join(' ')});   // a printed day view draws its lip from the band
+}
 /* hover peek card (mouse only) */
 let peekT=null,peekKey='';
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}

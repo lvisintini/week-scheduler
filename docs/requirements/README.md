@@ -28,7 +28,7 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `people.md` | R-PPL-01…04 |
 | `types.md` | R-TYP-01…05 |
 | `stats.md` | R-STAT-01…07 |
-| `phases.md` | R-PHS-01…09 |
+| `phases.md` | R-PHS-01…10 |
 | `ui.md` | R-UI-01…13 |
 | `data.md` | R-DATA-01…09, the workspace data shape |
 | `sharing.md` | R-SHARE-01…07 |

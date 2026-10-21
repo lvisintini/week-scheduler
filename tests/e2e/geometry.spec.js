@@ -48,6 +48,27 @@ test.describe('R-PHS-04 Phase labels sit flush against the day column in a real 
   });
 });
 
+test.describe('R-PHS-10 Lip text gets smaller for short phases, and disappears when there is no room at all', () => {
+  const short = () => blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [
+    { id: 'a', title: 'Afternoon', desc: '', color: '#2fa66a', rhythms: ['r'], slots: [{ day: 0, start: 840, end: 1080 }] },
+    { id: 'b', title: 'Lunch break', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 720, end: 765 }] },
+    { id: 'c', title: 'Tea', desc: '', color: '#e8912d', rhythms: ['r'], slots: [{ day: 0, start: 1095, end: 1110 }, { day: 1, start: 1095, end: 1110 }] }] });
+  const lips = page => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.dw[data-d="0"] .lip')].map(l => { const sp = l.firstElementChild;
+    return [sp.textContent, { fs: getComputedStyle(l).fontSize, cls: l.className, shown: getComputedStyle(sp).display !== 'none', fits: sp.scrollHeight <= sp.clientHeight + 1 }]; })));
+  test('a long phase keeps 10 px text; a phase too short for it gets 8 or 7 px text before any of it is cut', async ({ page }) => {
+    await openApp(page, { prefs: { rowH: 48 } }); await seed(page, short()); const l = await lips(page);
+    expect(l.Afternoon.fs).toBe('10px'); expect(l.Afternoon.fits).toBe(true);
+    expect(['8px', '7px']).toContain(l['Lunch break'].fs); expect(l['Lunch break'].cls).toContain('s1');
+    expect(l['Lunch break'].fits || l['Lunch break'].cls.includes('s2')).toBe(true);
+  });
+  test('a lip under 12 px tall shows no text (the tooltip still names it); a printed day view sizes its lips at the print scale', async ({ page }) => {
+    await openApp(page, { prefs: { rowH: 40 } }); await seed(page, short()); const l = await lips(page);
+    expect(l.Tea.cls).toContain('s0'); expect(l.Tea.shown).toBe(false); expect(await page.locator('.dw[data-d="0"] .lip.s0').getAttribute('title')).toContain('Tea');
+    const printed = await page.evaluate(() => { const c = dayPage(1); return [...c.querySelectorAll('.lip')].map(x => x.className + ':' + x.textContent); });
+    expect(printed).toEqual(['lip s1 s2:Tea']);   // printed at 48 px an hour: 12 px tall, the smallest text; drawn from Tuesday's band, which takes the classes of its group's lip
+  });
+});
+
 test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
   test.beforeEach(async ({ page }) => { await openApp(page, { prefs: { rowH: 120, colW: 260 } }); await seed(page, blank({ events: [ev()] })); });
   test('after scrolling down and right, the time column, day headers and corner cell stay where they were', async ({ page }) => {
