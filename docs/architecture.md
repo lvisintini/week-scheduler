@@ -84,6 +84,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-UI-10: `.dgrip`, `dlgPlace`, `moved`
 - R-UI-11: `.noty`, `NOTY`
 - R-UI-12: `dlgJump`, `.dr.pulse`
+- R-CYC-18: `turnsOf`, `tuSum`, `stRotas`, `statsTurnsHTML`, `statsTurnsRows`, `updTurns`, `#fTu`/`#fTuL`, `.sttu`
 - R-CYC-17: `wiNorm`, `wiResize`, `wkLabel`, `wkChip`, `.wkchip`, `#grid.wkband`, `.wkh`, `.cywr`
 - R-UI-13 (phone layout pass): the floating rail and the two-line drawer header (CSS block after `.sbtop .eye`), `WK`/`FWK`/`phoneFit` (a phone's width follows the view), the phone cards: `cardHead` (the `.sum` header button with `.dn` title and `.sm` summary), `cardOpen` (one open), `cardSums` (from `updWarn`), `addPop`/`#fAddT` (+ Add a time), `rmFirst`/`.rx` (✕ on a day's first time), the labels `.cl` (made in `rowCtl`, translated in `rowTexts`); `wcell`/`.wkw` (the week's own cell and the Week column `.dhd>.wkh`); `.dr.alt` (day bands; `.dr` is a subgrid); the floating Live View Now `#lvF` (`#sb.lv`, `#sb.paused` from `updLive`)
 - R-UI-14: `.dtabs`, `.dpane`, `dlgTab`, `dTabs`, `dErr`, `dJump`, `#xDlg.full`

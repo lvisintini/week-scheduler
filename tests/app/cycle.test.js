@@ -564,7 +564,8 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
     const a = fresh(d); expect(a.qa('.ov').length).toBeGreaterThan(0);
   });
   it('the app offers no helper that assigns turns', () => {
-    const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate|Turns/);
+    const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate/);
+    expect([...a.d.querySelectorAll('#dlg button, #dlg select option')].map(b => b.textContent).filter(t => /turn|rota/i.test(t))).toEqual([]);   // turns are only counted (R-CYC-18)
   });
 });
 
@@ -653,5 +654,45 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
   it('Spanish names the weeks and translates the dialog', () => {
     const a = fresh(data()); a.ev("setLang('es')"); a.ev('openCycle()'); expect(rows(a)[1].querySelector('.cyname').getAttribute('aria-label')).toBe('Semana 2: nombre');
     expect(a.q('#xDlg .cyh').textContent).toBe('Las semanas'); a.click('Cancelar'); week(a, 2); expect(a.q('.dh.c .wkb').textContent).toBe('S2');
+  });
+});
+
+describe('R-CYC-18 Rota turns: how many times each person is responsible over the cycle', () => {
+  const three = [...people, person({ id: 'C', name: 'Cat', color: '#0000c0' })];
+  const rota = (o = {}) => ev1({ id: 'r', title: 'Cook', slots: [sl(0, 1080, 1140, { person: 'A', wk: 1 }), sl(1, 1080, 1140, { person: 'B', wk: 1 }), sl(0, 1080, 1140, { person: 'B', wk: 2 }), sl(1, 1080, 1140, { person: 'B', wk: 2 })], ...o });
+  const turns = (a, i = 0) => a.ev(`(t=>t&&Object.fromEntries(t))(turnsOf(S.events[${i}]))`);
+  it('a per-week rota counts each person\'s turns per week; a pattern counts a repetition once in each of its weeks', () => {
+    const a = fresh(blank({ cycle: 2, people, events: [rota(), ev1({ id: 'p', weeks: [1, 2], slots: [sl(0, 600, 660, { person: 'A' }), sl(2, 600, 660, { person: 'B' }), sl(4, 600, 660, { person: 'B' })] })] }));
+    expect(turns(a)).toEqual({ A: [1, 0], B: [1, 2] }); expect(turns(a, 1)).toEqual({ A: [1, 1], B: [2, 2] });
+  });
+  it('an event with one responsible person, or a rota kept as owner plus involved people, has no turns', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [sl(0, 600, 660, { person: 'A' }), sl(1, 600, 660, { person: 'A' })] }), ev1({ id: 'o', owner: 'A', involved: ['B'], slots: [sl(0, 600, 660, { person: 'A', fo: true })] })] }));
+    expect(turns(a)).toBeNull(); expect(turns(a, 1)).toBeNull();
+  });
+  it('the event dialog shows the turns under Who and updates them while the table is edited', () => {
+    const a = fresh(blank({ cycle: 2, people: three, events: [rota()] })); a.ev('openDlg(S.events[0])');
+    expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 3 turns in the cycle'); expect(a.q('#fTu').title).toBe('Week 1: Ann 1 · Bob 1\nWeek 2: Ann 0 · Bob 2'); expect(a.q('#fTuL').style.display).toBe('');
+    const ps = a.qa('#fDays .dr select.ev-only').find(s => s.value === 'B'); ps.value = 'C'; ps.onchange(); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 2 · Cat 1 turns in the cycle');
+  });
+  it('the dialog hides the line when fewer than two people have turns, and says "a week" with a one-week cycle', () => {
+    const a = fresh(blank({ people, events: [ev1({ slots: [sl(0, 600, 660, { person: 'A' })] }), ev1({ id: 't', slots: [sl(0, 600, 660, { person: 'A' }), sl(1, 600, 660, { person: 'B' })] })] }));
+    a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').style.display).toBe('none'); expect(a.q('#fTuL').style.display).toBe('none'); a.ev('$("dlg").close()');
+    a.ev('openDlg(S.events[1])'); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 1 turns a week'); expect(a.q('#fTuL').title).toContain('has no turns to count');
+  });
+  it('the statistics list a person\'s rotas with their turns per week, their total and all turns', () => {
+    const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('openStats("A")');
+    expect(a.q('#xDlg .sttuh').textContent).toContain('Turns in rotas');
+    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent))).toEqual([['Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Cook', '1', '0', '1', '4']]);
+  });
+  it('Everyone shows a rota per row and a column per person; the CSV and Copy table carry the same block', () => {
+    const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('openStats("*")');
+    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent))).toEqual([['Rota', 'Ann', 'Bob', 'All turns'], ['Cook', '1', '3', '4']]);
+    expect(a.ev('statsRows("*",true)').slice(-2)).toEqual([['Rota', 'Ann', 'Bob', 'All turns'], ['Cook', 1, 3, 4]]);
+    expect(a.ev('statsRows("A",true)').slice(-2)).toEqual([['Person', 'Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Ann', 'Cook', 1, 0, 1, 4]]);
+  });
+  it('rotas of hidden schedules are not counted, and the turn labels are translated', () => {
+    const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('S.schedules[0].visible=false;openStats("A")'); expect(a.q('#xDlg .sttu')).toBeNull();
+    const b = openApp({ languages: ['es'] }); setData(b, blank({ cycle: 2, people, events: [rota()] })); b.ev('openDlg(S.events[0])');
+    expect(b.q('#fTuL').textContent).toBe('Turnos'); expect(b.q('#fTu').textContent).toContain('turnos en el ciclo');
   });
 });

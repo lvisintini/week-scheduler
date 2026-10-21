@@ -60,10 +60,10 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await page.locator('#xDlg select').selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
   for (const theme of ['light', 'dark']) {
-    test(`R-STAT-05 R-STAT-06 R-STAT-07 the statistics with labelled bars, a percent unit, a type filter and named weeks add no accessibility violation (${theme} theme)`, async ({ page }) => {
+    test(`R-STAT-05 R-STAT-06 R-STAT-07 R-CYC-18 the statistics with labelled bars, a percent unit, a type filter, named weeks and rota turns add no accessibility violation (${theme} theme)`, async ({ page }) => {
       const types = [{ id: 'ts', name: 'Sleep', color: '#3f51b5', icon: 'moon' }, { id: 'tw', name: 'Work', color: '#f2c94c', icon: 'work' }];
-      await openApp(page, { prefs: { theme } }); await seed(page, blank({ cycle: 2, weekInfo: [{ name: 'At home' }, { name: "At Dad's", desc: 'From Friday', color: '#8e4ec6' }], people: [person()], types,
-        events: [ev({ id: 's', type: 'ts', slots: [0, 1, 2, 3, 4, 5, 6].map(day => ({ day, start: 0, end: 480, person: 'p1' })) }), ev({ id: 'w', type: 'tw', weeks: [1], slots: [0, 1, 2, 3, 4].map(day => ({ day, start: 540, end: 1020, person: 'p1' })) })] }));
+      await openApp(page, { prefs: { theme } }); await seed(page, blank({ cycle: 2, weekInfo: [{ name: 'At home' }, { name: "At Dad's", desc: 'From Friday', color: '#8e4ec6' }], people: [person(), person({ id: 'p2', name: 'Bob', color: '#0060c0' })], types,
+        events: [ev({ id: 'r', title: 'Cook', slots: [{ day: 0, start: 1080, end: 1140, person: 'p1', wk: 1 }, { day: 0, start: 1080, end: 1140, person: 'p2', wk: 2 }] }), ev({ id: 's', type: 'ts', slots: [0, 1, 2, 3, 4, 5, 6].map(day => ({ day, start: 0, end: 480, person: 'p1' })) }), ev({ id: 'w', type: 'tw', weeks: [1], slots: [0, 1, 2, 3, 4].map(day => ({ day, start: 540, end: 1020, person: 'p1' })) })] }));
       await page.locator('.tbar button').nth(6).click(); await expect(page.locator('#xDlg .stwk b').first()).toBeVisible();
       let r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
       await page.locator('#xDlg .stu button', { hasText: '% of planned' }).click(); await page.locator('#xDlg .stty button', { hasText: 'Work' }).click();
