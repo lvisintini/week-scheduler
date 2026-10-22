@@ -20,29 +20,34 @@ async function deriveKey(pw,salt,iter){
   const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw.normalize('NFKC')),'PBKDF2',false,['deriveKey']);
   return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 }
-async function encryptBytes(plain,pw){   // blob = [1][iterations u32][salt 16][iv 12][ciphertext+tag]; the header is authenticated too
-  const head=new Uint8Array(33),salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
-  head[0]=1;new DataView(head.buffer).setUint32(1,PBKDF2_ITER);head.set(salt,5);head.set(iv,21);
-  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:head},await deriveKey(pw,salt,PBKDF2_ITER),plain));
+// k: a key derived once and reused, {key, salt, iter} (browser memory, R-DATA-11): same layout, so the passphrase alone opens the blob too
+const newKey=async pw=>{const salt=crypto.getRandomValues(new Uint8Array(16));return {key:await deriveKey(pw,salt,PBKDF2_ITER),salt,iter:PBKDF2_ITER}};
+const keyFor=async(pw,blob)=>{if(blob[0]>1)throw new Error('newer');if(!sealedOk(blob))throw new Error('format');const iter=new DataView(blob.buffer,blob.byteOffset).getUint32(1);
+  if(iter<100000||iter>2000000)throw new Error('format');const salt=blob.slice(5,21);return {key:await deriveKey(pw,salt,iter),salt,iter}};
+async function encryptBytes(plain,pw,k){   // blob = [1][iterations u32][salt 16][iv 12][ciphertext+tag]; the header is authenticated too
+  const head=new Uint8Array(33),iv=crypto.getRandomValues(new Uint8Array(12));if(!k)k=await newKey(pw);
+  head[0]=1;new DataView(head.buffer).setUint32(1,k.iter);head.set(k.salt,5);head.set(iv,21);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:head},k.key,plain));
   const out=new Uint8Array(33+ct.length);out.set(head);out.set(ct,33);return out;
 }
 const sealedOk=b=>b.length>=50&&b[0]===1;   // the shape of an encrypted blob, checked before asking for its password
-async function decryptBytes(blob,pw){
+async function decryptBytes(blob,pw,k){   // k: a ready key, only for blobs sealed with it (another salt: the passphrase was changed elsewhere)
   if(blob[0]>1)throw new Error('newer');   // a later encryption layout
   if(!sealedOk(blob))throw new Error('format');
   const iter=new DataView(blob.buffer,blob.byteOffset).getUint32(1);
   if(iter<100000||iter>2000000)throw new Error('format');   // refuse absurd work factors from crafted data
-  const head=blob.slice(0,33),key=await deriveKey(pw,blob.slice(5,21),iter);
+  if(k&&(k.iter!==iter||blob.slice(5,21).some((x,i)=>x!==k.salt[i])))throw new Error('salt');
+  const head=blob.slice(0,33),key=k?k.key:await deriveKey(pw,blob.slice(5,21),iter);
   try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:blob.slice(21,33),additionalData:head},key,blob.slice(33)))}catch(e){throw new Error('password')}
 }
 async function deflate(bytes){const cs=new CompressionStream('deflate-raw'),wr=cs.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
-async function seal(obj,pw){   // JSON -> (deflate) -> encrypt
+async function seal(obj,pw,k){   // JSON -> (deflate) -> encrypt
   const json=new TextEncoder().encode(JSON.stringify(obj));let flag=0,data=json;
   if(typeof CompressionStream!=='undefined'){flag=1;data=await deflate(json)}
-  const inner=new Uint8Array(1+data.length);inner[0]=flag;inner.set(data,1);return encryptBytes(inner,pw);
+  const inner=new Uint8Array(1+data.length);inner[0]=flag;inner.set(data,1);return encryptBytes(inner,pw,k);
 }
-async function unseal(blob,pw){
-  const inner=await decryptBytes(blob,pw);let data=inner.slice(1);
+async function unseal(blob,pw,k){
+  const inner=await decryptBytes(blob,pw,k);let data=inner.slice(1);
   if(inner[0]===1)data=await inflate(data);else if(inner[0]>1)throw new Error('newer');else if(inner[0]!==0)throw new Error('format');
   if(data.length>2e6)throw new Error('big');
   return JSON.parse(new TextDecoder().decode(data));
@@ -148,19 +153,78 @@ async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file
   toast(L('savedFile'));renderSide();
 }
 function loadMem(){  // reverts the current workspace to its saved copy in browser memory
-  const st=readStore();if(st&&verOf(st)>FMT){alert(L('memNewer'));return}
-  const e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===curId);
-  if(!e){toast(L('noMem'));return}
-  try{const d=parseData(migrate(e,verOf(st)));hist();S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
+  return withStore(st=>{
+    if(st&&verOf(st)>FMT){alert(L('memNewer'));return}
+    const e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===curId);
+    if(!e){toast(L('noMem'));return}
+    try{const d=parseData(migrate(e,verOf(st)));hist();S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
+  });
 }
 function restart(){
   if(anyDirty()&&!confirm(L('confRestart')))return;
-  loadStore();selK=null;editMode='events';render();toast(L('restarted'));
+  return withStore(st=>{loadStore(st);selK=null;editMode='events';render();toast(L('restarted'))});
 }
+const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}memKey=null;prefs.lvAnchor=Object.create(null);savePrefs()};
 function clearMem(){
   if(!confirm(L('confClear')))return;
-  try{localStorage.removeItem(WKEY)}catch(e){}
-  prefs.lvAnchor=Object.create(null);savePrefs();initDefault();selK=null;editMode='events';render();toast(L('clearedMem'));
+  eraseMem();initDefault();selK=null;editMode='events';render();toast(L('clearedMem'));
+}
+/* ---------- R-DATA-11: a passphrase for browser memory ---------- */
+const pwInput=(body,lab,ac)=>{const l=el('label','pwl',body);el('span','',l).textContent=L(lab);const i=el('input','',l);i.type='password';i.autocomplete=ac;return i};
+const pwShowBox=(body,ins)=>{const sl=el('label','sopt',body),sc=el('input','',sl);sc.type='checkbox';sl.append(' '+L('prShow'));sc.onchange=()=>ins.forEach(i=>{i.type=sc.checked?'text':'password'});return sc};
+// the plain store, if pw opens the protected one this page has open (another tab may have changed it: 'tab')
+async function storeWith(pw){
+  const st=readStore();if(!isSealed(st)||!memKey)throw new Error('tab');
+  const blob=unb64u(st.sealed),k=await keyFor(pw,blob),plain=await unseal(blob,null,k);
+  if(k.salt.some((x,i)=>x!==memKey.salt[i]))throw new Error('tab');return plain;
+}
+async function protectMem(pw){   // seals what is stored, or an empty store, so that the protection is kept
+  const st=readStore();if(st&&verOf(st)>FMT)throw new Error('newer');if(isSealed(st)||memKey)throw new Error('tab');
+  memKey=await newKey(pw);
+  try{await writeStore(st||{version:FMT,current:curId,workspaces:[]})}catch(e){memKey=null;throw e}
+}
+async function changePass(old,pw){const plain=await storeWith(old),k=await newKey(pw),k0=memKey;memKey=k;try{await writeStore(plain)}catch(e){memKey=k0;throw e}}
+async function unprotectMem(old){const plain=await storeWith(old);memKey=null;localStorage.setItem(WKEY,JSON.stringify(plain))}
+// mode 'on': protect; 'change': the current passphrase and a new one; 'off': the current one, to store it readable again
+function openPassphrase(mode){
+  const body=el('div');el('p','',body).textContent=L({on:'prBody',change:'chBody',off:'unBody'}[mode]);
+  const cur=mode!=='on'?pwInput(body,'prCur','current-password'):null,p1=mode!=='off'?pwInput(body,'prNew','new-password'):null,p2=p1&&pwInput(body,'prAgain','new-password');
+  const ins=[cur,p1,p2].filter(Boolean),sc=pwShowBox(body,ins);
+  if(p1){const sg=el('button','',body);sg.type='button';sg.textContent=L('prSuggest');sg.onclick=()=>{p1.value=p2.value=genPassword();sc.checked=true;sc.onchange()}}
+  if(mode==='on')el('p','plainwarn',body).textContent=L('prWarn');
+  const msg=el('div','err',body);msg.setAttribute('role','alert');
+  const go=async()=>{
+    const v=p1&&p1.value.trim();if(p1&&v.length<8){msg.textContent=L('prShort');return}if(p1&&v!==p2.value.trim()){msg.textContent=L('prDiff');return}
+    msg.textContent=L('pwWorking');
+    try{if(mode==='on')await protectMem(v);else if(mode==='change')await changePass(cur.value.trim(),v);else await unprotectMem(cur.value.trim());
+      $('xDlg').close();toast(L({on:'protOn',change:'chDone',off:'unDone'}[mode]));renderSide()}
+    catch(e){const m=e&&e.message;msg.textContent=L(m==='password'?'prWrong':m==='newer'?'memNewerSave':m==='tab'||m==='salt'?'memTab':'memFail')}
+  };
+  ins.forEach(i=>{i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}});
+  xdlg({title:L({on:'prTitle',change:'chTitle',off:'unTitle'}[mode]),body,buttons:[{label:L({on:'prOk',change:'chOk',off:'unOk'}[mode]),cls:mode==='off'?'d':'p',fn:()=>{go();return false}},{label:L('cancel'),dismiss:true}]});
+  setTimeout(()=>ins[0].focus(),0);
+}
+// the page cannot go on without the passphrase, except by erasing browser memory; onOpen gets the plain store (null after erasing)
+function askUnlock(onOpen){
+  const st=readStore();if(!isSealed(st)){onOpen(st);return}   // (another tab removed the protection meanwhile)
+  const body=el('div');el('p','',body).textContent=L('ulBody');
+  const pw=pwInput(body,'ulPass','current-password');pwShowBox(body,[pw]);
+  const msg=el('div','err',body);msg.setAttribute('role','alert');
+  const er=el('button','ulerase',body);er.type='button';er.textContent=L('ulErase');
+  let fin=false;const finish=plain=>{fin=true;$('xDlg').close();setTimeout(()=>onOpen(plain),0)};
+  er.onclick=()=>{if(!confirm(L('ulEraseConf')))return;eraseMem();toast(L('clearedMem'));finish(null)};
+  const go=async()=>{
+    msg.textContent=L('pwWorking');
+    try{const cur=readStore();if(!isSealed(cur)){finish(cur);return}const blob=unb64u(cur.sealed),k=await keyFor(pw.value.trim(),blob),plain=await unseal(blob,null,k);memKey=k;finish(plain)}
+    catch(e){msg.textContent=L(e&&e.message==='password'?'ulWrong':'badFile')}
+  };
+  pw.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
+  xdlg({title:L('ulTitle'),body,keep:true,buttons:[{label:L('pwOpen'),cls:'p',fn:()=>{go();return false}}],onDismiss:()=>{if(!fin)setTimeout(()=>askUnlock(onOpen),0)}});
+  setTimeout(()=>pw.focus(),0);
+}
+function lockNow(){   // drops the key and the data from this page; the passphrase opens them again
+  if(anyDirty()&&!confirm(L('lockConf')))return;
+  memKey=null;initDefault();selK=null;editMode='events';render();askUnlock(st=>{loadStore(st);render()});
 }
 window.addEventListener('beforeunload',e=>{if(anyDirty()){e.preventDefault();e.returnValue=''}});
 // Settings have no version (none = 1): a key never changes its meaning, unknown or missing values fall back to the defaults (R-DATA-08)

@@ -6,7 +6,6 @@
 
 ## Parked
 - **[P]** Real-device testing of the touch gestures on **iOS Safari** (`tests/manual/touch.md`; Android Chrome passed the steps before step 19 changed).
-- **[P]** Locking browser memory with a passphrase (R-DATA-02; deliberately postponed **[U]**).
 - **[P]** ES modules for the code in `js/` (real `import`/`export` boundaries), once the mutable state (`S`, `WS`, `prefs`, `curWk`, `focusD`, `live`…) is gathered into one object and the test bridge (`a.ev`) reaches it there; today the files are classic scripts sharing one global scope (`docs/architecture.md`).
 - **[P]** **Calendar exports: iCal (`.ics`) and Google Calendar** **[U]**. To discuss first, because both meet existing decisions:
   - **Dates:** calendars need real dates, and the app holds none but today's week, remembered per browser (R-GRID-01, R-CYC-01/05). The export could start from the anchor this browser keeps for Live View (the Monday of a week 1, R-CYC-05), and ask for one when it is not known. Events would become weekly recurring events (`RRULE:FREQ=WEEKLY`, `INTERVAL=n` for the weeks of a cycle).

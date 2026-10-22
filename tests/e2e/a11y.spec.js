@@ -19,6 +19,14 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup' })] }));
     ratchet(await scan(page), {});
   });
+  test('R-DATA-11 the passphrase dialogs (protect, the Data tab while protected, unlock) have no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person()], events: [ev()] })); await page.evaluate(() => saveMem('all'));
+    const data = async () => { await page.evaluate(() => openSettings()); await page.locator('#xDlg .stabs button', { hasText: 'Data' }).click(); };
+    await data(); await page.locator('#xDlg button', { hasText: 'Passphrase…' }).click(); ratchet(await scan(page), {});
+    const [p1, p2] = await page.locator('#xDlg .pwl input').all(); await p1.fill('correct horse battery'); await p2.fill('correct horse battery'); await page.locator('#xDlg button', { hasText: 'Protect' }).click();
+    await expect(page.locator('#toast')).toHaveText('Browser memory is now protected'); await data(); ratchet(await scan(page), {});
+    await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); ratchet(await scan(page), {});
+  });
   test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
     ratchet(await scan(page), {});

@@ -57,6 +57,15 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
   });
 });
 
+// protected browser memory (R-DATA-11) exists from format 14 on: each frozen sample still opens with its passphrase
+describe.each(versions.filter(v => fs.existsSync(path.join(FIX, 'v' + v, 'store-protected.json'))))('R-DATA-08 R-DATA-11 Protected browser memory of format version %i opens with its passphrase', v => {
+  it(`the protected browser memory of version ${v} asks for its passphrase, then loads both workspaces unchanged and not marked unsaved`, async () => {
+    const text = read(v, 'store-protected.json'), a = openApp({ storage: { [WS_KEY]: text } }); expect(a.dlgTitle()).toBe('Browser memory is protected');
+    a.q('#xDlg .pwl input').value = FIXTURE_PASSWORD; a.click('Open'); await waitFor(() => !a.dlgOpen() && a.ev('WS.length') === 2);
+    expect(a.ev('WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(loaded(a)).toMatchObject(householdAt(v)); expect(a.ev('anyDirty()')).toBe(false); expect(a.storage()[WS_KEY]).toBe(text);
+  }, 20000);
+});
+
 describe('R-DATA-08 The current format is frozen: changing it needs a new version number and sample files', () => {
   // The stored keys of each published version. A change here means: raise FMT in index.html, add MIG[FMT-1],
   // update tests/fixtures/household.js and run `node tests/fixtures/make.mjs` (docs/requirements/data.md, R-DATA-08).
@@ -81,6 +90,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[11] = [...SHAPES[10], '.phases[].weeks', '.phases[].slots[].wk'].sort();   // 11: the weeks of phases (R-CYC-16)
   SHAPES[12] = [...SHAPES[11], '.events[].turns'].sort();   // 12: whether an event counts turns (R-CYC-18)
   SHAPES[13] = [...SHAPES[12], '.color', '.desc'].sort();   // 13: the workspace's colour and description (R-DATA-10)
+  SHAPES[14] = SHAPES[13];   // 14: same keys; browser memory may be protected with a passphrase (R-DATA-11)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));

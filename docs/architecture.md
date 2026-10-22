@@ -7,14 +7,14 @@ The app is static files served as they are (no build): `index.html` (markup, the
 |---|---|
 | `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
 | `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
-| `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
-| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem` |
+| `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
+| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal` with an optional reused key, `newKey`/`keyFor`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem`/`eraseMem`, the passphrase of browser memory (`askUnlock`, `openPassphrase`, `protectMem`/`changePass`/`unprotectMem`, `lockNow`) |
 | `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
 | `js/stats.js` | statistics (`personStats`, `openStats`, turns), agendas and printing |
 | `js/sidebar.js` | `renderSide` and the sidebar menus |
 | `js/grid.js` | `render`, pointer and touch interactions, the peek card, zoom, dragging |
 | `js/dialog.js` | the event/phase dialog (`openDlg`, the day table) and the copy dialog |
-| `js/main.js` | wiring and startup (runs last) |
+| `js/main.js` | wiring and startup (runs last): a protected browser memory asks `askUnlock` first, then `afterStore` (today's week, Live View, a shared link) |
 
 The test harness (`tests/helpers/app.js`) gives jsdom one document with `app.css` and each script inlined in this order (one `<script>` per file, as a browser runs them); `tests/e2e/serve.js` serves exactly these files, like GitHub Pages.
 
@@ -56,6 +56,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-CYC-13: `askCycle`, `placeWeeks`
 - R-DATA-02: `buildFile`, `parseWorkspace`
 - R-DATA-03: `openImport`, `pickReplace`, `confirmReplace`, `adoptWs`
+- R-DATA-11: `memKey`, `isSealed`, `withStore`, `writeStore`, `newKey`/`keyFor`, `askUnlock`, `afterStore`, `openPassphrase`, `protectMem`, `changePass`, `unprotectMem`, `lockNow`, `eraseMem`, `.pwl`, `.ulerase`, `help21`
 - R-DATA-10: `openWorkspaces`, `orderWs`, `prefs.wsOrder`, `rowGrip` (shared with the cycle dialog), `.wsr`, `.wsbtn.wscol`/`--wsc`
 - R-DATA-04: `openTransfer`, `askPeople`, `carryEvents` (shared by a schedule's transfer and a single event's copy/move in `openCopy`), `openPeopleCopy`
 - R-EVT-03: `fitMove`

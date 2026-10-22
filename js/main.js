@@ -42,11 +42,15 @@ if(phone())prefs.collapsed=true;   // a phone starts with the drawer closed, wha
 $('sbBack').onclick=()=>{prefs.collapsed=true;savePrefs();applyPrefs();renderSide()};
 applyPrefs();applyTheme();
 if(window.ResizeObserver){let rt;new ResizeObserver(()=>{if(!prefs[FWK()]&&!prefs[FH()])return;clearTimeout(rt);rt=setTimeout(zoomRender,80)}).observe($('wrap'))}
-loadStore();
-curWk=todayWk()||1;   // the page opens on today's week when this browser knows it (R-CYC-05)
-if(prefs.live&&todayWk()!=null){live=true;focusD=today()}   // live view is remembered per browser (R-GRID-12)
-else if(phone())focusD=today();   // a phone opens on today's day view (R-UI-13)
-phoneFit();
-setLang(lang);
-if(prefs.live&&todayWk()==null&&!/data=/.test(location.hash))askLiveWeek(()=>setLive(true),()=>{prefs.live=false;savePrefs()});   // a cycle whose week this browser does not know yet (R-CYC-05)
-handleShareLink();window.addEventListener('hashchange',handleShareLink);
+function afterStore(){   // once the workspaces are there: today's week, Live View, a shared link
+  curWk=todayWk()||1;   // the page opens on today's week when this browser knows it (R-CYC-05)
+  if(prefs.live&&todayWk()!=null){live=true;focusD=today()}   // live view is remembered per browser (R-GRID-12)
+  else if(phone())focusD=today();   // a phone opens on today's day view (R-UI-13)
+  phoneFit();
+  setLang(lang);
+  if(prefs.live&&todayWk()==null&&!/data=/.test(location.hash))askLiveWeek(()=>setLive(true),()=>{prefs.live=false;savePrefs()});   // a cycle whose week this browser does not know yet (R-CYC-05)
+  handleShareLink();window.addEventListener('hashchange',handleShareLink);
+}
+{const st=readStore();   // protected browser memory first asks for its passphrase, over an empty grid (R-DATA-11); a newer one is refused (R-DATA-09)
+  if(isSealed(st)&&verOf(st)<=FMT){initDefault();setLang(lang);askUnlock(p=>{loadStore(p);afterStore()})}
+  else{loadStore(st);afterStore()}}

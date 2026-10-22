@@ -55,7 +55,7 @@ This file holds only what applies to every task. The full specification is in `d
 - No inline `<script>` and no inline event handlers (`on…=` attributes, `javascript:` links) anywhere: the policy allows only the app's own files (`script-src 'self'`), so they would not run. Handlers are set from the scripts (`el.onclick = …`).
 - The Content-Security-Policy `<meta>` is deliberate: any new resource type (fonts, images from URLs, workers, network calls) needs a deliberate CSP change. After edits, check the browser console for "Refused to…" messages.
 - Imported data (files, links, the browser store) goes through `migrate()` and then `parseData()`, the single place that validates it (hex colours only, length caps, the `LIM` import limits).
-- Links are always encrypted with a password; files are encrypted unless the user deliberately picks *Unencrypted*.
+- Links are always encrypted with a password; files are encrypted unless the user deliberately picks *Unencrypted*; browser memory is encrypted when the user protects it with a passphrase (R-DATA-11).
 
 ### Data format and view state (details: `docs/requirements/data.md`)
 - Any change to what is stored, even a new optional field, raises `FMT` and adds a `MIG` step, following the procedure in R-DATA-08. The sample files in `tests/fixtures/v<N>/` are never edited or regenerated.

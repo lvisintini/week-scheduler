@@ -81,6 +81,7 @@ const ADDED = {
   11: h => ({ ...h, phases: h.phases.filter(p => !['ph-quiet', 'ph-shift'].includes(p.id)) }),   // the weeks of phases (R-CYC-16)
   12: h => ({ ...h, events: h.events.map(({ turns, ...e }) => e) }),   // whether an event counts turns (R-CYC-18)
   13: ({ color, desc, ...h }) => h,   // the workspace's colour and description (R-DATA-10)
+  14: h => h,   // browser memory protected with a passphrase (R-DATA-11); a workspace is unchanged
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

@@ -105,8 +105,8 @@ function renderSide(){
   const tbtn=(icon,tip,fn,id,cls)=>{const b=el('button',cls||'',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
   tbtn(ICON_PLUS,L(editMode==='phases'?'addPhT':'addEvT'),()=>openDlg(null),null,'p');
   tbtn(ICON_UNDO,L('undoTip'),undo,'undoB');tbtn(ICON_REDO,L('redoTip'),redo,'redoB');updUR();
-  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('cancel'),dismiss:true}]}));
-  tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L('toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,buttons:[{label:L(memKey?'toMemP':'toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,buttons:[{label:L(memKey?'toMemP':'toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
   tbtn(ICON_PRINT,L('printTip'),ev=>{const one=()=>focusD!=null?printDay(focusD):printSchedule();   // prints what is on screen
     if(cyc()<2)return one();rowMenu(ev.currentTarget,(m,mi)=>{mi(ICON_PRINT,allWk?L('prView'):L('prThis',{n:curWk}),one);mi(ICON_PRINT,L('prAll'),printAll)})});   // with a cycle: this week or every week (R-CYC-12)
   tbtn(ICON_STATS,L('stTip'),()=>openStats());

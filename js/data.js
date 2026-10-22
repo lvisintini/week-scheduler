@@ -38,7 +38,7 @@ function redo(){if(!redoSt.length)return;selK=null;const x=redoSt.pop();undoSt.p
 /* Data format (R-DATA-08): FMT is the version of a workspace record (files, links, each workspace in browser memory; the store wrapper
    carries the same number). Raise it on ANY change to what is stored, even an added field (an older app would drop it and then save),
    add MIG[FMT-1] and a folder of sample files under tests/fixtures/. Data newer than FMT is refused, never half-read (R-DATA-09). */
-const FMT=13;
+const FMT=14;
 const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON before parseData. Never delete one.
   1:j=>j,   // 2 added event.nest (R-NST-01); version-1 data has none
   2:j=>j,   // 3 added event.bg (R-EVT-19); version-2 data has none
@@ -64,6 +64,7 @@ const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON
   10:j=>j,   // 11 added the weeks of phases (phase.weeks, phase slot.wk; R-CYC-16); version-10 data has none: every phase is every week
   11:j=>j,   // 12 added event.turns, whether an event counts turns (R-CYC-18); version-11 data has none: automatic
   12:j=>j,   // 13 added a workspace's color and desc (R-DATA-10); version-12 data has none
+  13:j=>j,   // 14 added browser memory protected with a passphrase (R-DATA-11); a workspace record is unchanged
 };
 const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
 function migrate(j,v,to=FMT,steps=MIG){   // raw record of version v -> current version (to/steps: for tests only)
@@ -128,35 +129,48 @@ function defaultTypes(){
 function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],types:defaultTypes(),...defaultRhythm(),phaseOpacity:.3,cycle:1,weekInfo:[]}}
 function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);WS=[w];curId=w.id;S=w.data;undoSt=w.undo;redoSt=w.redo}
 /* ---------- workspaces: several named data sets in browser memory ---------- */
-const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};
+const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};   // as stored: plain, protected or newer
 const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
+// R-DATA-11: browser memory may be protected with a passphrase, {version, sealed:<base64url blob of the plain store>} under the same key.
+// The key is derived when it is opened and lives only in this page (memKey, {key,salt,iter}); every save reuses it with a new IV.
+let memKey=null;
+const isSealed=st=>!!st&&typeof st.sealed==='string';
+// runs fn with the plain store (null when nothing is stored; a newer one as it is, for its own checks). When another tab has protected,
+// unprotected or re-protected browser memory since this page opened it, nothing is read or written: the page has to be reloaded
+function withStore(fn){
+  const st=readStore();
+  if(st&&verOf(st)>FMT)return fn(st);
+  if(st&&isSealed(st)!==!!memKey){alert(L('memTab'));return}
+  if(!isSealed(st))return fn(st);
+  return unseal(unb64u(st.sealed),null,memKey).then(fn,e=>alert(L(e&&e.message==='salt'?'memTab':'badFile')));
+}
+// the outer version is always this app's, so an older cached page refuses a protected store instead of saving over it (R-DATA-09)
+const writeStore=st=>memKey?seal(st,null,memKey).then(b=>localStorage.setItem(WKEY,JSON.stringify({version:FMT,sealed:b64u(b)}))):localStorage.setItem(WKEY,JSON.stringify(st));
 const pickData=d=>{const wi=wiNorm(d.weekInfo,d.cycle||1);return {...(d.color?{color:d.color}:{}),...(d.desc?{desc:d.desc}:{}),schedules:d.schedules,people:d.people,types:d.types,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity,...(d.cycle>1?{cycle:d.cycle}:{}),...(wi.length?{weekInfo:wi}:{})}};
 const wsEntry=w=>({id:w.id,name:w.name,...pickData(wsData(w))});
 function buildFile(){syncWs();const w=cw();return {version:FMT,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
 const parseWorkspace=(j,fallbackName)=>{j=migrate(j,verOf(j));return {id:j.id?String(j.id):null,name:String(j.name||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)}};
 const memNewer=()=>{const st=readStore();return !!st&&verOf(st)>FMT};   // browser memory written by a newer app: never read or overwritten (R-DATA-09)
-function loadStore(){  // fills WS from browser memory; falls back to the default workspace
+function loadStore(st=readStore()){  // fills WS from the plain store of browser memory; falls back to the default workspace
   try{
-    const st=readStore();
+    if(st&&verOf(st)>FMT){alert(L('memNewer'));throw 0}   // also a protected one (R-DATA-11), which has no list outside
     if(!st||!Array.isArray(st.workspaces)||!st.workspaces.length)throw 0;
-    if(verOf(st)>FMT){alert(L('memNewer'));throw 0}
     WS=st.workspaces.map(e=>{const d=parseData(migrate(e,verOf(st))),w=newWs(String(e.name||L('wsDefault')).slice(0,200),d,false);if(e.id)w.id=String(e.id);w.lb=keyOf(d);return w});orderWs();
     curId=WS.some(w=>w.id===st.current)?st.current:WS[0].id;
     const w=cw();S=w.data;undoSt=w.undo;redoSt=w.redo;
   }catch(e){initDefault()}
 }
-function saveMem(scope){
+function saveMem(scope){   // synchronous for plain browser memory; a promise when it is protected (R-DATA-11)
   syncWs();
   if(memNewer()){alert(L('memNewerSave'));return}
-  try{
-    let st=readStore();if(!st||!Array.isArray(st.workspaces))st={version:FMT,workspaces:[]};
+  return withStore(st=>{try{
+    if(!st||!Array.isArray(st.workspaces))st={version:FMT,workspaces:[]};
     if(scope==='all')st={version:FMT,current:curId,workspaces:WS.map(wsEntry)};
     else{const sv=verOf(st);st.workspaces=st.workspaces.map(x=>{const {version,...r}=migrate(x,sv);return r});st.version=FMT;   // the other stored workspaces move to the current format too
       const e=wsEntry(cw()),i=st.workspaces.findIndex(x=>x.id===e.id);if(i>=0)st.workspaces[i]=e;else st.workspaces.push(e);st.current=curId}
-    localStorage.setItem(WKEY,JSON.stringify(st));
-    (scope==='all'?WS:[cw()]).forEach(w=>{w.lb=keyOf(wsData(w))});
-    toast(L('savedMem'));renderSide();
-  }catch(e){toast(L('memFail'))}
+    const ks=(scope==='all'?WS:[cw()]).map(w=>[w,keyOf(wsData(w))]),done=()=>{ks.forEach(([w,k])=>{w.lb=k});toast(L('savedMem'));renderSide()};   // what was saved, even if it changes meanwhile
+    const p=writeStore(st);if(p)return p.then(done,()=>toast(L('memFail')));done();
+  }catch(e){toast(L('memFail'))}});
 }
 function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
   if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)

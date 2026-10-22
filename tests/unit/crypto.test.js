@@ -97,3 +97,23 @@ describe('R-SHARE-02 "Leave out personal details" (anonymised)', () => {
     expect(es.ev(`anonymised(${JSON.stringify(rich)}).people[0].name`)).toBe('Persona 1');
   });
 });
+
+describe('R-DATA-11 A key derived once seals browser memory in the file layout, with a new IV on every save', { timeout: 20000 }, () => {
+  // seals OBJ twice with one key from newKey(); returns both blobs and the decryptions with the key and with the passphrase alone
+  const run = () => ev(`(async()=>{const k=await newKey(${JSON.stringify(PASSWORD)}),a=await seal(${JSON.stringify(OBJ)},null,k),b=await seal(${JSON.stringify(OBJ)},null,k);
+    return {a:Array.from(a),b:Array.from(b),withKey:await unseal(a,null,k),withPw:await unseal(b,${JSON.stringify(PASSWORD)})}})()`);
+  it('both the reused key and the passphrase alone open what it sealed', async () => {
+    const r = await run(); expect(r.withKey).toEqual(OBJ); expect(r.withPw).toEqual(OBJ);
+  });
+  it('two saves with the same key share the salt and iterations but never the IV or the ciphertext', async () => {
+    const { a, b } = await run(); expect(a.slice(0, 21)).toEqual(b.slice(0, 21)); expect(a.slice(21, 33)).not.toEqual(b.slice(21, 33)); expect(a.slice(33)).not.toEqual(b.slice(33));
+  });
+  it('a key refuses a blob sealed with another salt (the passphrase was changed elsewhere) without trying to decrypt it', async () => {
+    const r = await ev(`(async()=>{const k1=await newKey("one passphrase"),k2=await newKey("one passphrase"),b=await seal({x:1},null,k1);try{await unseal(b,null,k2);return 'opened'}catch(e){return e.message}})()`);
+    expect(r).toBe('salt');
+  });
+  it('keyFor reads the salt and iterations from a sealed blob and rejects crafted work factors', async () => {
+    const blob = await seal(); expect(await ev(`keyFor(${JSON.stringify(PASSWORD)},Uint8Array.from(${JSON.stringify(Array.from(blob))})).then(k=>k.iter)`)).toBe(600000);
+    const bad = Uint8Array.from(blob); new DataView(bad.buffer).setUint32(1, 5); expect(await message(ev(`keyFor("x",Uint8Array.from(${JSON.stringify(Array.from(bad))}))`))).toBe('format');
+  });
+});

@@ -40,8 +40,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with twenty tips, among them focusing on a day, nested activities, background events, live view and Away (R-EVT-24)', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(20); expect(a.qa('#xDlg li')[19].textContent).toMatch(/Drawn as: Away/); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
+  it('the Help button opens a "How to use" dialog with twenty-one tips, among them focusing on a day, nested activities, background events, live view, Away (R-EVT-24) and the passphrase (R-DATA-11)', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(21); expect(a.qa('#xDlg li')[20].textContent).toMatch(/Passphrase… protects what this browser saves/); expect(a.qa('#xDlg li')[19].textContent).toMatch(/Drawn as: Away/); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
   });
 });
 

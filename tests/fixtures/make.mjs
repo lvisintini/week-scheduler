@@ -18,6 +18,7 @@ setData(a, household);
 a.ev("(()=>{const w=cw();w.id='ws-family';curId=w.id;w.name='Family week';const g=newWs('Grandparents',parseData(" + JSON.stringify(grandparents) + "),false);g.id='ws-gp';WS.push(g)})()");
 const out = {};
 a.ev("saveMem('all')"); out['store.json'] = a.storage()[WS_KEY];
+if (a.ev('typeof protectMem') === 'function') { await a.ev(`protectMem(${JSON.stringify(FIXTURE_PASSWORD)})`); out['store-protected.json'] = a.storage()[WS_KEY]; await a.ev(`unprotectMem(${JSON.stringify(FIXTURE_PASSWORD)})`); }   // R-DATA-11, from format 14
 a.ev('saveFile(null,false)'); out['workspace.json'] = await waitFor(() => a.w.__file);
 a.w.__file = undefined; a.ev(`saveFile(${JSON.stringify(FIXTURE_PASSWORD)},false)`); out['encrypted.json'] = await waitFor(() => a.w.__file);
 a.ev(`openShare(${JSON.stringify(FIXTURE_PASSWORD)},false)`); out['link.txt'] = (await waitFor(() => a.q('#xDlg textarea'))).value;

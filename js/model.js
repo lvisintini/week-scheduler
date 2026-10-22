@@ -367,7 +367,7 @@ function xdlg(o){
   const bt=el('div','btns',d);
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
     x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
-  d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};
+  d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};d.oncancel=o.keep?e=>e.preventDefault():null;   // keep: Escape does not close it
   if(!d.open)d.showModal();
 }
 let setTab='viewH';   // last Settings tab shown (kept while the page is open)
@@ -388,6 +388,11 @@ function openSettings(){
   [['restart','restartTip',restart,''],['clear','clearTip',clearMem,'d']].forEach(([lb,tp,fn,cls])=>{
     const r=el('div','sopt',dt),b=el('button',cls,r);b.textContent=L(lb);b.style.cssText='flex:0 0 140px';b.onclick=()=>{$('xDlg').close();fn()};
     el('small','',r).textContent=L(tp)});
+  // a passphrase for browser memory (R-DATA-11); each opens its own dialog once Settings has closed
+  if(memKey)el('small','note',dt).textContent=L('protState');
+  (memKey?[['chPass','chPassTip',()=>openPassphrase('change'),''],['lockNow','lockTip',lockNow,''],['unprot','unprotTip',()=>openPassphrase('off'),'d']]:[['protB','protTip',()=>openPassphrase('on'),'']]).forEach(([lb,tp,fn,cls])=>{
+    const r=el('div','sopt',dt),b=el('button',cls,r);b.textContent=L(lb);b.style.cssText='flex:0 0 140px';b.onclick=()=>{$('xDlg').close();setTimeout(fn,0)};
+    el('small','',r).textContent=L(tp)});
   const ui=sec('uiH');el('small','note',ui).textContent=L('viewNote');
   {const tw=el('div','sopt col',ui),tb=el('span','',tw);tb.innerHTML=`<b>${esc(L('setTheme'))}</b><small>${esc(L('themeTip'))}</small>`;
    const sg=el('div','seg theme',tw);sg.setAttribute('role','group');sg.setAttribute('aria-label',L('setTheme'));
@@ -402,6 +407,6 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=20;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=21;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }
