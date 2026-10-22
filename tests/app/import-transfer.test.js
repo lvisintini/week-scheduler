@@ -278,3 +278,25 @@ describe('R-DATA-04 Copying or moving a single event to another workspace', () =
     const a = setup(); a.ev("lang='es';applyStatic&&applyStatic()"); copyDlg(a); expect(a.q('#xDlg select').options[0].textContent).toBe('Home (este espacio de trabajo)');
   });
 });
+
+describe('R-DATA-04 Copying people to another workspace', () => {
+  const setup = () => {
+    const a = fresh(); setData(a, blank({ people: [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cleaner', color: '#8e4ec6', external: true })] }));
+    a.ev("cw().name='Home';const t=newWs('Work',defaultData(),true);t.data.people=[{id:'tB',name:'BOB',color:'#123456',visible:true}];WS.push(t);render()"); return a;
+  };
+  const rows = a => a.qa('#xDlg .pcl label').map(l => [l.textContent.trim(), l.querySelector('input').checked, l.querySelector('input').disabled]);
+  it('a person\'s menu offers Copy to workspace…, which lists everyone with this person ticked and names already there greyed out', () => {
+    const a = setup(); a.qa('#sbin .sec')[1].querySelectorAll('.sch')[0].querySelectorAll('button.eye')[1].click();
+    a.qa('.omenu .oi').find(b => b.textContent.trim() === 'Copy to workspace…').click(); expect(a.dlgTitle()).toBe('Copy people to another workspace');
+    expect(rows(a)).toEqual([['Ann', true, false], ['Bob · already there', false, true], ['Cleaner (external)', false, false]]);
+  });
+  it('Copy adds the ticked people with their colour and external mark, as one undo step in the target', () => {
+    const a = setup(); a.ev('openPeopleCopy(S.people[0])'); a.qa('#xDlg .pcl input')[2].click(); a.click('Copy');
+    expect(a.ev('WS[1].data.people.map(q=>[q.name,q.color,!!q.external])')).toEqual([['BOB', '#123456', false], ['Ann', '#e5484d', false], ['Cleaner', '#8e4ec6', true]]);
+    expect(a.ev('WS[1].undo.length')).toBe(1); expect(a.ev('S.people.length')).toBe(3);
+  });
+  it('with nothing left to copy it says so; with one workspace it asks for a second one first', () => {
+    const a = setup(); a.ev('openPeopleCopy(S.people[0])'); a.qa('#xDlg .pcl input')[0].click(); a.click('Copy'); expect(a.toast()).toContain('Nobody to copy');
+    const b = fresh(); setData(b, blank({ people: [person()] })); b.ev('openPeopleCopy(S.people[0])'); expect(b.toast()).toContain('Create a second workspace first');
+  });
+});

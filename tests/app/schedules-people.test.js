@@ -152,8 +152,8 @@ describe('R-PPL-01 The People list works like the schedule list', () => {
     const a = withPeople(); const input = peopleRows(a)[0].querySelector('input[type=text]'); input.value = 'Anna'; input.onchange(); expect(a.ev('S.people[0].name')).toBe('Anna');
     a.toolbar('undo').click(); expect(a.ev('S.people[0].name')).toBe('Ann');
   });
-  it('the people menu offers Colour…, Statistics…, External (not one of us) and Delete', () => {
-    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Statistics…', 'External (not one of us)', 'Delete']);
+  it('the people menu offers Colour…, Statistics…, External (not one of us), Copy to workspace… and Delete', () => {
+    const a = withPeople(); moreBtn(peopleRows(a)[0]).click(); expect(menu(a)).toEqual(['Colour…', 'Statistics…', 'External (not one of us)', 'Copy to workspace…', 'Delete']);
   });
   it('deleting a person asks for confirmation and removes them from every event (responsible and involved)', () => {
     const a = fresh(blank({ people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ involved: ['A', 'B'], slots: [{ day: 0, start: 600, end: 660, person: 'A' }] })] }));
@@ -211,7 +211,7 @@ describe('R-PPL-03 External people (someone from outside the household/workplace
     expect(peopleRows(a)[0].querySelector('.extb')).toBeNull(); expect(peopleRows(a)[1].querySelector('.extb').getAttribute('aria-label')).toBe('External (not one of us)');
   });
   it('the menu of an external person has no Statistics… entry', () => {
-    const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); expect(menu(a)).toEqual(['Colour…', 'External (not one of us)', 'Delete']);
+    const a = ppl(); a.ev('S.people[1].external=true;render()'); moreBtn(peopleRows(a)[1]).click(); expect(menu(a)).toEqual(['Colour…', 'External (not one of us)', 'Copy to workspace…', 'Delete']);
   });
   it('in the event dialog external people can perform a day (marked) but can never own the event or be offered as involved people', () => {
     const a = ppl(); a.ev('S.people[1].external=true;render();openDlg()');

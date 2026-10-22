@@ -370,6 +370,18 @@ function openTransfer(kind,obj){
   mk('copy','trCopy',true);const rm=mk('move','trMove',false);
   xdlg({title:L('trTitle')+': '+(obj.name||obj.title),full:true,body,buttons:[{label:L('trGo'),cls:'p',fn:()=>{const tw=WS.find(w=>w.id===sel.value),mv=rm.checked;setTimeout(()=>doTransfer(kind,obj,tw,mv),0)}},{label:L('cancel'),dismiss:true}]});
 }
+// R-DATA-04: people copied to another workspace (name, colour, external mark); a name the target already has is shown and skipped. Copy only.
+function openPeopleCopy(q){
+  const others=WS.filter(w=>w.id!==curId);if(!others.length){toast(L('trNeed'));return}
+  const body=el('div');el('label','',body).textContent=L('trTarget');const sel=el('select','',body);fillSel(sel,others.map(w=>[w.id,w.name]));sel.setAttribute('aria-label',L('trTarget'));
+  el('div','partgh',body).textContent=L('pcWho');const list=el('div','partg pcl',body),pick=new Set([q.id]);
+  const tw=()=>WS.find(w=>w.id===sel.value),there=p=>tw().data.people.some(x=>x.name.toLowerCase()===p.name.toLowerCase());
+  const draw=()=>{list.innerHTML='';S.people.forEach(p=>{const l=el('label','',list),i=el('input','',l),t=there(p);i.type='checkbox';i.checked=pick.has(p.id)&&!t;i.disabled=t;
+    l.append(' '+p.name+(p.external?' ('+L('extSuf')+')':'')+(t?' · '+L('pcThere'):''));i.onchange=()=>{i.checked?pick.add(p.id):pick.delete(p.id)}})};
+  sel.onchange=draw;draw();
+  xdlg({title:L('pcTitle'),full:true,body,buttons:[{label:L('cpDo'),cls:'p',fn:()=>{const t=tw(),ps=S.people.filter(p=>pick.has(p.id)&&!there(p));if(!ps.length){toast(L('pcNone'));return}
+    pushUndoWs(t);ps.forEach(p=>t.data.people.push({id:uid(),name:p.name,color:p.color,visible:true,...(p.external?{external:true}:{})}));render();toast(L('pcDone',{n:ps.length,w:t.name}))}},{label:L('cancel'),dismiss:true}]});
+}
 function askPeople(src,tw,pids,cb){
   const body=el('div');el('p','note',body).textContent=L('mapBody',{t:tw.name});
   const rows=pids.map(pid=>{const q=src.people.find(x=>x.id===pid),r=el('div','mrow',body);el('span','',r).innerHTML=pIcon(q)+esc(q.name);

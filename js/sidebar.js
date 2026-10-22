@@ -30,6 +30,7 @@ function perMenu(anchor,q){rowMenu(anchor,(m,mi)=>{
   mi(chip(q.color),L('mColor'),()=>pickColor(anchor,q.color,v=>{hist();q.color=v;render()}));
   if(!q.external)mi(ICON_STATS,L('stMenu'),()=>openStats(q.id));
   mi(q.external?ICON_CHECK:'<span class="ic" style="margin:0"></span>',L('mExt'),()=>{hist();if(q.external)delete q.external;else q.external=true;render()});m.lastChild.title=L('extTip');
+  mi(ICON_WS,L('pcMenu'),()=>openPeopleCopy(q));   // R-DATA-04
   mi('<span class="ic" style="margin:0">'+ICON_USER+'</span>',L('mDelete'),()=>delPerson(q),'d');
 })}
 function iconMenu(anchor,t){rowMenu(anchor,(m,mi,close)=>{
