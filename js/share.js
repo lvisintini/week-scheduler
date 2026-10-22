@@ -81,6 +81,21 @@ function askPassword(blob,onOpen,onCancel){   // ask for the password of an encr
   xdlg({title:L('pwTitle'),body,buttons:[{label:L('pwOpen'),cls:'p',fn:()=>{go();return false}},{label:L('cancel'),dismiss:true}],onDismiss:onCancel});
   setTimeout(()=>pw.focus(),0);
 }
+// what to include (R-SHARE-08): everything, or chosen schedules and rhythms, and only some people's activities. ics: the calendar export,
+// which has no phases (no Rhythms list) and is no copy of the workspace (its own summary, R-SHARE-09). inc() = null for everything
+function incPicker(body,ics){
+  const inc={sch:new Set(S.schedules.map(s=>s.id)),rh:new Set(S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
+  const pb=el('div','partbox',body);el('div','parth',pb).textContent=L('partH');
+  const ps=el('div','seg partsel',pb),pl=el('div','partl',pb),sum=el('p','note partsum',pb);
+  [[false,'partAll'],[true,'partPick']].forEach(([v,k])=>{const b=el('button','',ps);b.type='button';b.textContent=L(k);b.onclick=()=>{part=v;drawPart()}});
+  const grp=(title,list,set,tip)=>{if(!list.length)return;const g=el('div','partg',pl),h=el('div','partgh',g);h.textContent=L(title);if(tip){const t=el('span','tip',h);t.textContent=' ⓘ';t.title=L(tip)}
+    list.forEach(([id,name])=>{const l=el('label','',g),i=el('input','',l);i.type='checkbox';i.checked=set.has(id);l.append(' '+name);i.onchange=()=>{i.checked?set.add(id):set.delete(id);drawPart()}})};
+  const drawPart=()=>{[...ps.children].forEach((b,i)=>{b.classList.toggle('on',(i===1)===part);b.setAttribute('aria-pressed',String((i===1)===part))});pl.innerHTML='';pl.hidden=!part;sum.hidden=!part;
+    if(!part)return;grp('partSch',S.schedules.map(s=>[s.id,s.name]),inc.sch);if(!ics)grp('partRh',S.rhythms.map(r=>[r.id,r.name]),inc.rh);grp('partPpl',S.people.map(q=>[q.id,q.name]),inc.ppl,'partPplTip');
+    const f=partOf(buildFile(),inc);sum.textContent=ics?L('icsSum',{e:f.events.length,te:S.events.length}):L('partSum',{e:f.events.length,te:S.events.length,p:f.phases.length,tp:S.phases.length})+' '+L('partNote')};
+  drawPart();
+  return {sum,inc:()=>part?inc:null};
+}
 function openProtect(kind){   // options + password for a link or file; files may also be saved unencrypted (links never)
   const cry=hasCrypto();if(!cry&&kind==='link'){alert(L('noCrypto'));return}
   let plain=!cry;
@@ -93,17 +108,7 @@ function openProtect(kind){   // options + password for a link or file; files ma
   }
   el('p','',plainBox).textContent=L('plainWarn');
   const al=el('label','sopt',body),ac=el('input','',al),asp=el('span','',al);ac.type='checkbox';asp.innerHTML=`<b>${esc(L('anonTitle'))}</b><small>${esc(L('anonTip'))}</small>`;
-  // what to include (R-SHARE-08): everything, or chosen schedules and rhythms, and only some people's activities
-  const inc={sch:new Set(S.schedules.map(s=>s.id)),rh:new Set(S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
-  const pb=el('div','partbox',body);el('div','parth',pb).textContent=L('partH');
-  const ps=el('div','seg partsel',pb),pl=el('div','partl',pb),sum=el('p','note partsum',pb);
-  [[false,'partAll'],[true,'partPick']].forEach(([v,k])=>{const b=el('button','',ps);b.type='button';b.textContent=L(k);b.onclick=()=>{part=v;drawPart()}});
-  const grp=(title,list,set,tip)=>{if(!list.length)return;const g=el('div','partg',pl),h=el('div','partgh',g);h.textContent=L(title);if(tip){const t=el('span','tip',h);t.textContent=' ⓘ';t.title=L(tip)}
-    list.forEach(([id,name])=>{const l=el('label','',g),i=el('input','',l);i.type='checkbox';i.checked=set.has(id);l.append(' '+name);i.onchange=()=>{i.checked?set.add(id):set.delete(id);drawPart()}})};
-  const drawPart=()=>{[...ps.children].forEach((b,i)=>{b.classList.toggle('on',(i===1)===part);b.setAttribute('aria-pressed',String((i===1)===part))});pl.innerHTML='';pl.hidden=!part;sum.hidden=!part;
-    if(!part)return;grp('partSch',S.schedules.map(s=>[s.id,s.name]),inc.sch);grp('partRh',S.rhythms.map(r=>[r.id,r.name]),inc.rh);grp('partPpl',S.people.map(q=>[q.id,q.name]),inc.ppl,'partPplTip');
-    const f=partOf(buildFile(),inc);sum.textContent=L('partSum',{e:f.events.length,te:S.events.length,p:f.phases.length,tp:S.phases.length})+' '+L('partNote')};
-  drawPart();
+  const ip=incPicker(body),sum=ip.sum;
   body.append(pwBox);el('label','',pwBox).textContent=L('protPw');
   const row=el('div','row',pwBox),pw=el('input','',row),nb=el('button','',row);
   pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.setAttribute('aria-label',L('protPw'));   // its label above is not tied to it
@@ -112,7 +117,7 @@ function openProtect(kind){   // options + password for a link or file; files ma
   el('p','note',pwBox).textContent=L('protWarn');
   upd();if(kind==='link')plainBox.hidden=true;
   xdlg({title:L(kind==='link'?'shareTitle':'saveFileTitle'),body,buttons:[{label:L(kind==='link'?'protMakeLink':'protSaveFile'),cls:'p',fn:()=>{
-    const anon=ac.checked,ic=part?inc:null;if(ic){const f=partOf(buildFile(),ic);if(!f.events.length&&!f.phases.length){sum.textContent=L('partNone');return false}}
+    const anon=ac.checked,ic=ip.inc();if(ic){const f=partOf(buildFile(),ic);if(!f.events.length&&!f.phases.length){sum.textContent=L('partNone');return false}}
     if(plain){setTimeout(()=>saveFile(null,anon,ic),0);return}
     const p=pw.value.trim();if(p.length<20){msg.textContent=L('protShort');return false}
     setTimeout(()=>kind==='link'?openShare(p,anon,ic):saveFile(p,anon,ic),0)}},{label:L('cancel'),dismiss:true}]});
@@ -164,7 +169,7 @@ function restart(){
   if(anyDirty()&&!confirm(L('confRestart')))return;
   return withStore(st=>{loadStore(st);selK=null;editMode='events';render();toast(L('restarted'))});
 }
-const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}memKey=null;prefs.lvAnchor=Object.create(null);savePrefs()};
+const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}memKey=null;prefs.lvAnchor=Object.create(null);prefs.icsLast=Object.create(null);savePrefs()};
 function clearMem(){
   if(!confirm(L('confClear')))return;
   eraseMem();initDefault();selK=null;editMode='events';render();toast(L('clearedMem'));

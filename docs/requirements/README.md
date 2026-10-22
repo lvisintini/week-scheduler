@@ -31,7 +31,7 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `phases.md` | R-PHS-01…10 |
 | `ui.md` | R-UI-01…13 |
 | `data.md` | R-DATA-01…11, the workspace data shape |
-| `sharing.md` | R-SHARE-01…08 |
+| `sharing.md` | R-SHARE-01…09 |
 | `security.md` | R-SEC-01…05 |
 | `printing-i18n.md` | R-PRN-01…04, R-I18N-01…02 |
 

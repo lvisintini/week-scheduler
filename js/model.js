@@ -8,6 +8,7 @@ const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
 const WK=()=>phone()?'colWP':'colW',FWK=()=>phone()?'fitWP':'fitW';
 const phoneFit=()=>{if(phone()&&prefs.fitWP!==(focusD!=null)){prefs.fitWP=focusD!=null;savePrefs()}};
 {const o=prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
+{const o=prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
 prefs.wsOrder=Array.isArray(prefs.wsOrder)?prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
 prefs.hlNoType=prefs.hlNoType===true;prefs.lanesFix=prefs.lanesFix===true;if(prefs.colBy!=='t'&&prefs.colBy!=='p')prefs.colBy='';   // Tools (R-UI-11)
 const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(prefs))}catch(e){}};
@@ -272,20 +273,21 @@ setInterval(()=>{drawNow();liveTick()},30000);
 let live=false,livePaused=false,liveTop=-1,liveWant=0,ptrHeld=false,lvRet=null;   // liveTop: the scroll position live view last set; liveWant: the one it aimed for
 const LV_BACK=60000;   // a manual scroll pauses following for this long
 const today=()=>(new Date().getDay()+6)%7;
-/* Today's week of the cycle (R-CYC-05), the one date the app keeps: the first Live View of a workspace with a cycle asks which week today
+/* Today's week of the cycle (R-CYC-05), one of the two dates the app keeps (the other: the last calendar export, R-SHARE-09): the first Live View of a workspace with a cycle asks which week today
    is in, and the answer is remembered in this browser as an anchor, the Monday of a week 1 (local date YYYY-MM-DD), in prefs.lvAnchor by
    workspace id; never in the data, files or links. The week is worked out from today's date, so midnight, Sunday and a tablet that slept
    for days need nothing more. Days are counted as days since 1970 of the local date (clock changes cannot move them). */
 const ymd=d=>Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
 const dnum=t=>{const [y,m,d]=t.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)};
 const thisMon=()=>ymd(new Date())-today();
-const todayWk=()=>{if(cyc()<2)return 1;const t=prefs.lvAnchor[curId];if(!t)return null;const n=cyc(),k=Math.floor((thisMon()-dnum(t))/7);return (k%n+n)%n+1};   // null: not known in this browser
+const wkAt=dn=>{if(cyc()<2)return 1;const t=prefs.lvAnchor[curId];if(!t)return null;const n=cyc(),k=Math.floor((dn-(dn+3)%7-dnum(t))/7);return (k%n+n)%n+1};   // the week of the cycle of local day dn (1 Jan 1970 was a Thursday); null: not known in this browser
+const todayWk=()=>wkAt(ymd(new Date()));
 const liveWk=()=>todayWk()||1;
 function setAnchor(w){prefs.lvAnchor[curId]=new Date((thisMon()-(w-1)*7)*864e5).toISOString().slice(0,10);savePrefs()}
-function askLiveWeek(onYes,onNo){   // which week of the cycle is today in? (R-CYC-05)
-  const body=el('div');el('p','',body).textContent=L('lwBody');
+function askLiveWeek(onYes,onNo,o={}){   // which week of the cycle is today in? (R-CYC-05); o.body, o.btn: the calendar export asks it too (R-SHARE-09)
+  const body=el('div');el('p','',body).textContent=L(o.body||'lwBody');
   const row=el('label','cyrow',body);row.append(L('lwToday')+' ');const sel=el('select','',row);fillSel(sel,[...Array(cyc()).keys()].map(k=>[k+1,wkLabel(k+1)]));sel.value=curWk;
-  xdlg({title:L('lwTitle'),body,onDismiss:onNo,buttons:[{label:L(live?'lwSet':'lwStart'),cls:'p',fn:()=>{setAnchor(+sel.value);onYes()}},{label:L('cancel'),dismiss:true}]});
+  xdlg({title:L('lwTitle'),body,onDismiss:onNo,buttons:[{label:L(o.btn||(live?'lwSet':'lwStart')),cls:'p',fn:()=>{setAnchor(+sel.value);onYes()}},{label:L('cancel'),dismiss:true}]});
 }
 const liveBusy=()=>ptrHeld||!!document.querySelector('dialog[open],.omenu');   // never move under a dialog, a menu or a held pointer (drag)
 function liveScroll(){
@@ -407,6 +409,6 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=21;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=22;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }

@@ -24,6 +24,7 @@ A dependency-free weekly planner: static files (`index.html`, `app.css`, `js/`) 
 - Icons for people (in their colour) and schedules; calendar favicon
 - Workspaces: several independent schedules sets, import (new / insert / replace an existing one), and copy or move schedules, rhythms and phases between them
 - Save / load in browser memory, as a JSON file (password-encrypted by default, or unencrypted if you choose so) or as a password-protected link (AES-256; the data travels inside the URL fragment)
+- **Calendar export** (Save… → Calendar file): an `.ics` file for Google Calendar, Apple Calendar or Outlook, from a date you choose (and until one, if you like), with optional reminders; best imported into a new calendar of its own. It is an export only, not a backup
 - Optionally protect browser memory with a passphrase (Settings → Data): what the browser saves is encrypted and the passphrase is asked when the page opens
 
 ## Use

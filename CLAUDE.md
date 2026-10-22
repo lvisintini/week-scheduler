@@ -33,7 +33,7 @@ This file holds only what applies to every task. The full specification is in `d
 | phases and rhythms | `docs/requirements/phases.md` |
 | sidebar, Settings, dialogs, Tools, theme, icons, phone layout | `docs/requirements/ui.md` |
 | workspaces, browser storage, the data format and its upgrades, prefs | `docs/requirements/data.md` |
-| files, links, encryption | `docs/requirements/sharing.md` |
+| files, links, encryption, the calendar export (.ics) | `docs/requirements/sharing.md` |
 | CSP, escaping, import limits, hosting | `docs/requirements/security.md` |
 | printing, agendas, translations | `docs/requirements/printing-i18n.md` |
 | what the app is for | `docs/requirements/product.md` |
@@ -51,7 +51,7 @@ This file holds only what applies to every task. The full specification is in `d
 
 ### Security and escaping (details: `docs/requirements/security.md`)
 - Every piece of user-controlled text put into `innerHTML`/`insertAdjacentHTML` goes through `esc()`; prefer `textContent`/DOM properties.
-- Nothing leaves the device: no `eval`, `new Function`, `document.write`, `fetch`/XHR/WebSocket/`sendBeacon`/`window.open`, cookies or third-party code. Only the two documented `localStorage` keys are written; the only `Blob`s are the JSON export and the statistics CSV.
+- Nothing leaves the device: no `eval`, `new Function`, `document.write`, `fetch`/XHR/WebSocket/`sendBeacon`/`window.open`, cookies or third-party code. Only the two documented `localStorage` keys are written; the only `Blob`s are the JSON export, the statistics CSV and the calendar file (R-SHARE-09).
 - No inline `<script>` and no inline event handlers (`on…=` attributes, `javascript:` links) anywhere: the policy allows only the app's own files (`script-src 'self'`), so they would not run. Handlers are set from the scripts (`el.onclick = …`).
 - The Content-Security-Policy `<meta>` is deliberate: any new resource type (fonts, images from URLs, workers, network calls) needs a deliberate CSP change. After edits, check the browser console for "Refused to…" messages.
 - Imported data (files, links, the browser store) goes through `migrate()` and then `parseData()`, the single place that validates it (hex colours only, length caps, the `LIM` import limits).

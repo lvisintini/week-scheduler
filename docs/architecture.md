@@ -8,7 +8,8 @@ The app is static files served as they are (no build): `index.html` (markup, the
 | `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
 | `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
 | `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
-| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal` with an optional reused key, `newKey`/`keyFor`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem`/`eraseMem`, the passphrase of browser memory (`askUnlock`, `openPassphrase`, `protectMem`/`changePass`/`unprotectMem`, `lockNow`) |
+| `js/share.js` | what to include (`incPicker`, `partOf`, `shareOf`), links (`inflate`), encryption (`seal`/`unseal` with an optional reused key, `newKey`/`keyFor`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem`/`eraseMem`, the passphrase of browser memory (`askUnlock`, `openPassphrase`, `protectMem`/`changePass`/`unprotectMem`, `lockNow`) |
+| `js/ics.js` | the calendar export (R-SHARE-09): `icsText` (a workspace record → the `.ics` text; pure), `icsFold`, `icsEsc`, `openIcs` (the dialog), `saveIcs` (the download) |
 | `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
 | `js/stats.js` | statistics (`personStats`, `openStats`, turns), agendas and printing |
 | `js/sidebar.js` | `renderSide` and the sidebar menus |
@@ -48,7 +49,7 @@ Implementation names that the requirement files describe in words (functions, va
 
 - R-CYC-03: `normWk`
 - R-CYC-04: `curWk`, `.wkb`, `wkMenu`
-- R-CYC-05: `todayWk`, `liveWk`, `setAnchor`, `askLiveWeek`, `prefs.lvAnchor`
+- R-CYC-05: `todayWk`, `wkAt` (the week of any date, also used by the calendar export), `liveWk`, `setAnchor`, `askLiveWeek` (optional texts, for the calendar export), `prefs.lvAnchor`
 - R-CYC-06: `inWk`, `prevWk`, `ivs`
 - R-CYC-08: `#fWk`, `#fPw`, `.wkc`, `setPW`
 - R-CYC-09: `shiftDay`, `sameDay`
@@ -93,7 +94,8 @@ Implementation names that the requirement files describe in words (functions, va
 - R-SHARE-03: `genPassword`
 - R-SHARE-04: `seal`, `unseal`
 - R-SHARE-07: `plainWarn`, `buildFile`
-- R-SHARE-08: `partOf`, `shareOf`, `.partbox`/`.partsel`/`.partl`/`.partsum` in `openProtect`
+- R-SHARE-08: `partOf`, `shareOf`, `incPicker` (`.partbox`/`.partsel`/`.partl`/`.partsum`, shared by `openProtect` and `openIcs`)
+- R-SHARE-09: `openIcs`, `icsText`, `icsFold`, `icsEsc`, `saveIcs`, `wkAt`, `prefs.icsLast`, `.icsteps`, `.icsrow`, `.icswk`, `.icslast`
 - R-STAT-01: `openStats`, `stP`, `stInv`
 - R-STAT-02: `personStats`
 - R-STAT-04: `cellSafe`

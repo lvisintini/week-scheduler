@@ -173,7 +173,8 @@ function saveMem(scope){   // synchronous for plain browser memory; a promise wh
   }catch(e){toast(L('memFail'))}});
 }
 function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
-  if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)
+  if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}
+  if(target==='ics'){setTimeout(openIcs,0);return}   // a calendar file: an export, not a save (R-SHARE-09)   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)
   if(WS.length<2){saveMem('all');return}   // with a single workspace "current" and "all" are the same, and saving all also drops deleted workspaces from the store
   setTimeout(()=>xdlg({title:L('scopeTitle'),body:`<p>${esc(L('scopeBody'))}</p>`,buttons:[{label:L('scopeCur',{n:cw().name}),cls:'p',fn:()=>saveMem('current')},{label:L('scopeAll',{n:WS.length}),fn:()=>saveMem('all')},{label:L('cancel'),dismiss:true}]}),0);
 }
@@ -205,7 +206,7 @@ function duplicateWorkspace(){syncWs();const w=newWs(uniqueName(cw().name+L('wsC
 function deleteWorkspace(){
   if(WS.length<2){toast(L('wsLast'));return}
   if(!confirm(L('confWs',{n:cw().name})))return;
-  delete prefs.lvAnchor[curId];savePrefs();const i=WS.indexOf(cw());WS.splice(i,1);const nx=WS[Math.min(i,WS.length-1)];curId=nx.id;S=nx.data;undoSt=nx.undo||[];redoSt=nx.redo||[];selK=null;render();
+  delete prefs.lvAnchor[curId];delete prefs.icsLast[curId];savePrefs();const i=WS.indexOf(cw());WS.splice(i,1);const nx=WS[Math.min(i,WS.length-1)];curId=nx.id;S=nx.data;undoSt=nx.undo||[];redoSt=nx.redo||[];selK=null;render();
 }
 /* the cycle of weeks (R-CYC-01/10): its length is data. Lengthening keeps every-week events every week; going to a multiple can repeat the
    events of chosen weeks in the new weeks, so their rhythm stays (week 1 of 2 → weeks 1 and 3 of 4). Shrinking asks first (shrinkCycle). */

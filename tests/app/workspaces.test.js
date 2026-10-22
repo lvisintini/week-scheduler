@@ -65,8 +65,8 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
 });
 
 describe('R-DATA-02 Saving to browser memory: one workspace or all', () => {
-  it('the Save dialog offers browser memory, a JSON file and a shareable link', () => {
-    const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Cancel']);
+  it('the Save dialog offers browser memory, a JSON file, a shareable link and the calendar export', () => {
+    const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Calendar file (export only)', 'Cancel']);
   });
   it('with one workspace "Browser memory" saves at once, without a question, and confirms with a toast', () => {
     const a = fresh(); a.chooseSave('Browser memory'); expect(a.toast()).toBe('Saved to browser memory'); expect(store(a).workspaces).toHaveLength(1);

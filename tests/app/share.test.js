@@ -20,8 +20,8 @@ const decrypt = (a, b64) => a.ev(`unseal(unb64u(${JSON.stringify(b64)}),${JSON.s
 const dataOf = link => link.split('#data=e1.')[1];
 
 describe('R-SHARE-01 Links are always password-protected; files are by default', () => {
-  it('the Save dialog has no plain (unencrypted) export option', () => {
-    const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Cancel']);
+  it('the Save dialog has no plain (unencrypted) copy of the workspace: besides it, only the calendar export (R-SHARE-09)', () => {
+    const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Calendar file (export only)', 'Cancel']);
   });
   it('the link dialog explains the protection and only offers "Create link" and Cancel (no way to skip the password)', async () => {
     const a = fresh(); await protectDialog(a, 'link'); expect(footer(a)).toEqual(['Create link', 'Cancel']); expect(a.dlgText()).toMatch(/always password-protected/);
@@ -34,8 +34,8 @@ describe('R-SHARE-01 Links are always password-protected; files are by default',
   it('an empty password is refused', async () => {
     const a = fresh(); await protectDialog(a, 'file'); setPw(a, ''); a.click('Save file'); expect(a.q('#xDlg .err').textContent).toBe('The password must be at least 20 characters long.'); expect(a.w.__file).toBeUndefined();
   });
-  it('only two places create a downloadable file: the JSON file export and the statistics CSV', () => {
-    expect((html.match(/new Blob\(/g) || []).length).toBe(2); expect(html).toMatch(/async function saveFile[\s\S]*?new Blob/); expect(html).toMatch(/const csv=\(\)=>[^\n]*new Blob/);
+  it('R-SHARE-09 only three places create a downloadable file: the JSON file export, the statistics CSV and the calendar file', () => {
+    expect((html.match(/new Blob\(/g) || []).length).toBe(3); expect(html).toMatch(/async function saveFile[\s\S]*?new Blob/); expect(html).toMatch(/const csv=\(\)=>[^\n]*new Blob/); expect(html).toMatch(/function saveIcs[^\n]*\n[^\n]*new Blob\(\[text\],\{type:'text\/calendar'\}\)/);
   });
   it('an encrypted file never contains the data in the clear (no readable text in the file)', async () => {
     const a = fresh(); const text = await makeFile(a); expect(text).not.toMatch(/Granny|Doctor|4711|Care/);
