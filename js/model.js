@@ -8,6 +8,7 @@ const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
 const WK=()=>phone()?'colWP':'colW',FWK=()=>phone()?'fitWP':'fitW';
 const phoneFit=()=>{if(phone()&&prefs.fitWP!==(focusD!=null)){prefs.fitWP=focusD!=null;savePrefs()}};
 {const o=prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
+prefs.wsOrder=Array.isArray(prefs.wsOrder)?prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
 prefs.hlNoType=prefs.hlNoType===true;prefs.lanesFix=prefs.lanesFix===true;if(prefs.colBy!=='t'&&prefs.colBy!=='p')prefs.colBy='';   // Tools (R-UI-11)
 const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(prefs))}catch(e){}};
 function applyTheme(){const h=document.documentElement;if(prefs.theme==='light'||prefs.theme==='dark')h.dataset.theme=prefs.theme;else delete h.dataset.theme}

@@ -5,7 +5,6 @@
 2. The parked items below.
 
 ## Parked
-- **[P]** (Done: workspaces, import dialog, transfers.) Possible follow-ups: copy/move individual *events* and *people* between workspaces; a workspace-name line in printouts; exporting only selected items.
 - **[P]** Align the end-time select labels with the compact notation (drop "Day after next": `00:00` end of start day, `00:15 (Next day)` … `23:45 (Next day)`, `00:00 (Next day)`) (R-REP-04).
 - **[P]** Real-device testing of the touch gestures on **iOS Safari** (`tests/manual/touch.md`; Android Chrome passed the steps before step 19 changed).
 - **[P]** Locking browser memory with a passphrase (R-DATA-02; deliberately postponed **[U]**).

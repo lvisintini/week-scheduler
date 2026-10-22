@@ -56,6 +56,7 @@ export const household = {
   ],
   phaseOpacity: 0.45,
   cycle: 2,
+  color: '#2fa66a', desc: 'Our home routine',
   weekInfo: [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday school pickup to Sunday evening', color: '#8e4ec6' }],
 };
 
@@ -79,6 +80,7 @@ const ADDED = {
   10: ({ weekInfo, ...h }) => h,   // the weeks' names, descriptions and colours (R-CYC-17)
   11: h => ({ ...h, phases: h.phases.filter(p => !['ph-quiet', 'ph-shift'].includes(p.id)) }),   // the weeks of phases (R-CYC-16)
   12: h => ({ ...h, events: h.events.map(({ turns, ...e }) => e) }),   // whether an event counts turns (R-CYC-18)
+  13: ({ color, desc, ...h }) => h,   // the workspace's colour and description (R-DATA-10)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

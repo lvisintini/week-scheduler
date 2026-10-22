@@ -56,6 +56,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-CYC-13: `askCycle`, `placeWeeks`
 - R-DATA-02: `buildFile`, `parseWorkspace`
 - R-DATA-03: `openImport`, `pickReplace`, `confirmReplace`, `adoptWs`
+- R-DATA-10: `openWorkspaces`, `orderWs`, `prefs.wsOrder`, `rowGrip` (shared with the cycle dialog), `.wsr`, `.wsbtn.wscol`/`--wsc`
 - R-DATA-04: `openTransfer`, `askPeople`, `carryEvents` (shared by a schedule's transfer and a single event's copy/move in `openCopy`), `openPeopleCopy`
 - R-EVT-03: `fitMove`
 - R-EVT-05: `fitMeasure`, `fitMove`, `fitApply`, `.clipped`

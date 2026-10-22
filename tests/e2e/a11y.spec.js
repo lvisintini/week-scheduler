@@ -116,6 +116,15 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await openApp(page); await seed(page, blank({ people: [person(), person({ id: 'p2', name: 'Bob', color: '#0060c0', external: true })] })); await page.evaluate(() => { WS.push(newWs('Work', defaultData(), true)); openPeopleCopy(S.people[0]); });
     await expect(page.locator('#xDlg .pcl')).toBeVisible(); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
   });
+  for (const theme of ['light', 'dark']) {
+    test(`R-DATA-10 the Workspaces dialog, and the workspace menu with colours and descriptions, add no accessibility violation (${theme} theme)`, async ({ page }) => {
+      await openApp(page, { prefs: { theme } }); await seed(page, blank({ events: [ev()] }));
+      await page.evaluate(() => { S.color = '#2fa66a'; S.desc = 'Our routine'; WS.push(newWs('Work', defaultData(), true)); render(); });
+      await page.locator('.wsbtn').click(); let r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
+      await page.locator('.omenu .oi', { hasText: 'Workspaces…' }).click(); await expect(page.locator('#xDlg .wsr')).toHaveCount(2);
+      r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
+    });
+  }
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

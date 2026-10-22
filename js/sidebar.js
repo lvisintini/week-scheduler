@@ -3,6 +3,17 @@
 function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
 function sbtn(parent,label,tip,fn,cls,icon){const b=el('button',cls||'',parent);if(icon)b.innerHTML=icon;b.append(label);b.title=tip;b.onclick=fn;return b}
 function h2(parent,text,tip){const h=el('h2','',parent);h.append(text+' ');if(tip){const t=el('span','tip',h);t.textContent='ⓘ';t.title=tip}return h}
+// a dialog row's grip (drag it, or focus it and use the arrow keys): rows() = the rows that can be reordered, move(from,to) reorders and redraws
+function rowGrip(r,k,rows,move,tip,lbl){
+  const g=el('button','grip',r);g.type='button';g.innerHTML=ICON_GRIP;g.title=g.__t=tip;g.setAttribute('aria-label',lbl);
+  g.onkeydown=ev=>{const d=ev.key==='ArrowUp'?-1:ev.key==='ArrowDown'?1:0;if(!d)return;ev.preventDefault();move(k,k+d)};
+  g.onpointerdown=ev=>{if(ev.button)return;ev.preventDefault();const rs=rows();let to=k;r.classList.add('dragging');
+    const clear=()=>rs.forEach(x=>x.classList.remove('dropb','dropa'));
+    const mv=e=>{let i=rs.findIndex(x=>{const b=x.getBoundingClientRect();return e.clientY<b.top+b.height/2});if(i<0)i=rs.length;to=i>k?i-1:i;clear();if(to!==k)(rs[i]||rs.at(-1)).classList.add(rs[i]?'dropb':'dropa')};
+    const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);clear();r.classList.remove('dragging');move(k,to)};
+    document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)};
+  return g;
+}
 function rowMenu(anchor,build){
   document.querySelectorAll('.omenu').forEach(x=>x.remove());
   const m=el('div','omenu',document.body);
@@ -85,7 +96,8 @@ function renderSide(){
    const nb=el('button','eye lvnow',top);nb.id='lvF';nb.type='button';nb.innerHTML=ICON_NOW;nb.onclick=liveBack;updLive()}   // a phone: Live View and its Now float (R-GRID-12)   // Live View one tap away on the collapsed rail (R-GRID-12)
   const body=el('div','sbbody',sb);
   const wb=el('button','wsbtn',body);wb.innerHTML=`<span class="ic">${ICON_WS}</span><span class="wsn"></span><span class="chev">${ICON_CD}</span>`;
-  wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip');wb.onclick=()=>wsMenu(wb);
+  wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip')+(S.desc?'\n'+S.desc:'');wb.onclick=()=>wsMenu(wb);
+  if(S.color){wb.classList.add('wscol');wb.style.setProperty('--wsc',S.color)}   // the workspace's colour (R-DATA-10)
   const sg=el('div','seg',body);
   [['events','modeEv'],['phases','modePh']].forEach(([m,k])=>{const b=el('button',editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
     b.onclick=()=>{if(editMode===m)return;editMode=m;selK=null;if(m==='phases'&&S.rhythms.length&&!vrhythm())S.rhythms[0].visible=true;render()}});

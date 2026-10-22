@@ -10,7 +10,7 @@ const absD=s=>((s.wk||1)-1)*7+s.day;
 function shiftDay(s,dD){if(!s.wk){s.day=((s.day+dD)%7+7)%7;return}const n=cyc()*7,x=((absD(s)+dD)%n+n)%n;s.wk=Math.floor(x/7)+1;s.day=x%7}
 const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
 let WS=[],curId=null,undoSt=[],redoSt=[],nowOn=true,skipSide=false;
-const keyOf=d=>JSON.stringify({cycle:d.cycle||1,weekInfo:wiNorm(d.weekInfo,d.cycle||1),schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
+const keyOf=d=>JSON.stringify({wsc:d.color||'',wsd:d.desc||'',cycle:d.cycle||1,weekInfo:wiNorm(d.weekInfo,d.cycle||1),schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
 const dataKey=()=>keyOf(S);
 const cw=()=>WS.find(w=>w.id===curId);
 const wsData=w=>w.id===curId?S:w.data;
@@ -38,7 +38,7 @@ function redo(){if(!redoSt.length)return;selK=null;const x=redoSt.pop();undoSt.p
 /* Data format (R-DATA-08): FMT is the version of a workspace record (files, links, each workspace in browser memory; the store wrapper
    carries the same number). Raise it on ANY change to what is stored, even an added field (an older app would drop it and then save),
    add MIG[FMT-1] and a folder of sample files under tests/fixtures/. Data newer than FMT is refused, never half-read (R-DATA-09). */
-const FMT=12;
+const FMT=13;
 const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON before parseData. Never delete one.
   1:j=>j,   // 2 added event.nest (R-NST-01); version-1 data has none
   2:j=>j,   // 3 added event.bg (R-EVT-19); version-2 data has none
@@ -63,6 +63,7 @@ const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON
   9:j=>j,   // 10 added weekInfo, the name, description and colour of each week of the cycle (R-CYC-17); version-9 data has none
   10:j=>j,   // 11 added the weeks of phases (phase.weeks, phase slot.wk; R-CYC-16); version-10 data has none: every phase is every week
   11:j=>j,   // 12 added event.turns, whether an event counts turns (R-CYC-18); version-11 data has none: automatic
+  12:j=>j,   // 13 added a workspace's color and desc (R-DATA-10); version-12 data has none
 };
 const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
 function migrate(j,v,to=FMT,steps=MIG){   // raw record of version v -> current version (to/steps: for tests only)
@@ -109,7 +110,8 @@ function parseData(j,strict){
     rhythms,
     phases:arr(j.phases).map(v=>({...item(v),rhythms:arr(v.rhythms).map(String),...(Array.isArray(v.weeks)?{weeks:v.weeks}:{}),slots:lim(v.slots,LIM.slots).map(x=>({...slot(x,1440,false),...(x.wk!=null?{wk:x.wk}:{})}))})).map(p=>normWk(p,cyc)).filter(p=>p&&p.slots.length),   // phases have weeks like events (R-CYC-16)
     phaseOpacity:j.phaseOpacity==null?.3:clamp(+j.phaseOpacity||.3,.05,1),
-    cycle:cyc,weekInfo:wiNorm(j.weekInfo,cyc)
+    cycle:cyc,weekInfo:wiNorm(j.weekInfo,cyc),
+    ...(normHex(j.color)?{color:normHex(j.color)}:{}),...(typeof j.desc==='string'&&j.desc.trim()?{desc:j.desc.trim().slice(0,300)}:{})   // the workspace's colour and description (R-DATA-10)
   };
 }
 function defaultRhythm(){
@@ -128,7 +130,7 @@ function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);WS=[w];c
 /* ---------- workspaces: several named data sets in browser memory ---------- */
 const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};
 const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
-const pickData=d=>{const wi=wiNorm(d.weekInfo,d.cycle||1);return {schedules:d.schedules,people:d.people,types:d.types,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity,...(d.cycle>1?{cycle:d.cycle}:{}),...(wi.length?{weekInfo:wi}:{})}};
+const pickData=d=>{const wi=wiNorm(d.weekInfo,d.cycle||1);return {...(d.color?{color:d.color}:{}),...(d.desc?{desc:d.desc}:{}),schedules:d.schedules,people:d.people,types:d.types,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity,...(d.cycle>1?{cycle:d.cycle}:{}),...(wi.length?{weekInfo:wi}:{})}};
 const wsEntry=w=>({id:w.id,name:w.name,...pickData(wsData(w))});
 function buildFile(){syncWs();const w=cw();return {version:FMT,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
 const parseWorkspace=(j,fallbackName)=>{j=migrate(j,verOf(j));return {id:j.id?String(j.id):null,name:String(j.name||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)}};
@@ -138,7 +140,7 @@ function loadStore(){  // fills WS from browser memory; falls back to the defaul
     const st=readStore();
     if(!st||!Array.isArray(st.workspaces)||!st.workspaces.length)throw 0;
     if(verOf(st)>FMT){alert(L('memNewer'));throw 0}
-    WS=st.workspaces.map(e=>{const d=parseData(migrate(e,verOf(st))),w=newWs(String(e.name||L('wsDefault')).slice(0,200),d,false);if(e.id)w.id=String(e.id);w.lb=keyOf(d);return w});
+    WS=st.workspaces.map(e=>{const d=parseData(migrate(e,verOf(st))),w=newWs(String(e.name||L('wsDefault')).slice(0,200),d,false);if(e.id)w.id=String(e.id);w.lb=keyOf(d);return w});orderWs();
     curId=WS.some(w=>w.id===st.current)?st.current:WS[0].id;
     const w=cw();S=w.data;undoSt=w.undo;redoSt=w.redo;
   }catch(e){initDefault()}
@@ -164,6 +166,25 @@ function saveTo(target){   // files and links always hold just the current works
 function addWorkspace(){
   const n=prompt(L('pWs'),uniqueName(L('wsDefault'),WS.map(w=>w.name)));if(!n)return;
   syncWs();const w=newWs(uniqueName(n.trim().slice(0,200),WS.map(x=>x.name)),defaultData(),true);WS.push(w);switchWs(w.id);
+}
+// R-DATA-10: every workspace in one list: its place in this browser's order (grip), its colour, name and description; Apply changes them together.
+// Colour and description are workspace data (an undo step in each workspace that changes); the name is the workspace's own, as with Rename
+function openWorkspaces(){
+  syncWs();const rows=WS.map(w=>({w,name:w.name,color:w.data.color||'',desc:w.data.desc||''}));
+  const body=el('div');el('p','note',body).textContent=L('wsMgNote');const wb=el('div','cywk',body);
+  const mv=(i,j)=>{if(i===j||j<0||j>=rows.length)return;const [x]=rows.splice(i,1);rows.splice(j,0,x);draw();const g=wb.querySelectorAll('.wsr .grip')[j];if(g)g.focus()};
+  const draw=()=>{wb.innerHTML='';rows.forEach((x,k)=>{const r=el('div','cywr wsr',wb);
+    rowGrip(r,k,()=>[...wb.querySelectorAll('.wsr')],mv,L('wsMgGrip'),L('wsMgGripLbl',{n:x.name}));
+    const sw=el('button','swatch cysw',r),cl=el('button','cyclr',r);sw.type=cl.type='button';cl.textContent='✕';
+    const setSw=()=>{sw.style.background=x.color;sw.classList.toggle('none',!x.color);cl.disabled=!x.color;const t=L('wsMgCol',{n:x.name,c:x.color||L('cyNoCol')});sw.title=sw.__t=t;sw.setAttribute('aria-label',t);const u=L('wsMgClr',{n:x.name});cl.title=cl.__t=u;cl.setAttribute('aria-label',u)};
+    sw.onclick=()=>pickColor(sw,x.color||PAL[k%PAL.length],c=>{x.color=c;setSw()});cl.onclick=()=>{x.color='';setSw()};setSw();
+    const tx=(key,max,ph,lab)=>{const i=el('input','cy'+key,r);i.type='text';i.maxLength=max;i.value=x[key];i.placeholder=L(ph);i.setAttribute('aria-label',L(lab,{n:x.name}));i.oninput=()=>{x[key]=i.value}};
+    tx('name',200,'wsMgNamePh','wsMgName');tx('desc',300,'wsMgDescPh','wsMgDesc')})};
+  draw();
+  xdlg({title:L('wsMgTitle'),full:true,body,buttons:[{label:L('cyApply'),cls:'p',fn:()=>{
+    rows.forEach(x=>{const w=x.w,nm=x.name.trim().slice(0,200)||w.name,d=x.desc.trim().slice(0,300);w.name=nm;
+      if(x.color!==(w.data.color||'')||d!==(w.data.desc||'')){pushUndoWs(w);if(x.color)w.data.color=x.color;else delete w.data.color;if(d)w.data.desc=d;else delete w.data.desc}});
+    WS=rows.map(x=>x.w);prefs.wsOrder=WS.map(w=>w.id);savePrefs();S=cw().data;render()}},{label:L('cancel'),dismiss:true}]});
 }
 function renameWorkspace(){const n=prompt(L('pWs'),cw().name);if(!n)return;cw().name=n.trim().slice(0,200);render()}
 function duplicateWorkspace(){syncWs();const w=newWs(uniqueName(cw().name+L('wsCopySuffix'),WS.map(x=>x.name)),JSON.parse(JSON.stringify(S)),false),t=prefs.lvAnchor[curId];if(t){prefs.lvAnchor[w.id]=t;savePrefs()}WS.push(w);switchWs(w.id)}   // the copy keeps today's week
@@ -218,13 +239,7 @@ function openCycle(){
     }};
   // a week's grip: drag it, or focus it and use the arrow keys; the row's name, colour and description go with it
   const mvRow=(i,j)=>{if(i===j||j<0||j>=n0)return;[wi,ord].forEach(a=>{const [x]=a.splice(i,1);a.splice(j,0,x)});upd();const g=wb.querySelectorAll('.cywr .grip')[j];if(g)g.focus()};
-  const gripRow=(r,k)=>{const g=el('button','grip',r);g.type='button';g.innerHTML=ICON_GRIP;g.title=g.__t=L('cyGripTip');g.setAttribute('aria-label',L('cyGripLbl',{n:k+1}));
-    g.onkeydown=ev=>{const d=ev.key==='ArrowUp'?-1:ev.key==='ArrowDown'?1:0;if(!d)return;ev.preventDefault();mvRow(k,k+d)};
-    g.onpointerdown=ev=>{if(ev.button)return;ev.preventDefault();const rows=[...wb.querySelectorAll('.cywr')].slice(0,n0);let to=k;r.classList.add('dragging');
-      const clear=()=>rows.forEach(x=>x.classList.remove('dropb','dropa'));
-      const mv=e=>{let i=rows.findIndex(x=>{const b=x.getBoundingClientRect();return e.clientY<b.top+b.height/2});if(i<0)i=rows.length;to=i>k?i-1:i;clear();if(to!==k)(rows[i]||rows.at(-1)).classList.add(rows[i]?'dropb':'dropa')};
-      const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);clear();r.classList.remove('dragging');mvRow(k,to)};
-      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)}};
+  const gripRow=(r,k)=>rowGrip(r,k,()=>[...wb.querySelectorAll('.cywr')].slice(0,n0),mvRow,L('cyGripTip'),L('cyGripLbl',{n:k+1}));
   const upd=()=>{const n=+sel.value,mul=n0>1&&n>n0&&n%n0===0;ext.style.display=(used||cur.length)&&mul?'':'none';et.textContent=' '+L('cyExtend',{a:1+n0});
     note.textContent=used&&n0>1&&n>n0&&!mul?L('cyOdd',{n}):'';
     for(let k=n0;k<4;k++)if(!touched.has(k))wi[k]=mul&&cb.checked?{...wi[k%n0]}:{};   // the new weeks repeat the old ones when kept in step
@@ -302,9 +317,12 @@ function wkMenu(anchor){rowMenu(anchor,(m,mi)=>{
   if(!live){mi((allWk?ICON_CHECK:'<span class="ic" style="margin:0"></span>'),L('wkAllM'),()=>setAllWk(true));m.lastElementChild.title=L('wkAllMTip');   // R-CYC-19
     el('hr','',m);mi(ICON_WEEK,L('cyMenu'),openCycle)}
 })}
+// R-DATA-10: the order of the workspaces is this browser's (prefs.wsOrder: ids); unknown ones keep their place after the known ones
+function orderWs(){const o=prefs.wsOrder||[],at=w=>{const i=o.indexOf(w.id);return i<0?1e9:i};WS=WS.map((w,i)=>[w,i]).sort((a,b)=>at(a[0])-at(b[0])||a[1]-b[1]).map(x=>x[0])}
 function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
-  WS.forEach(w=>mi(w.id===curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>',w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id)));
-  el('hr','',m);
+  WS.forEach(w=>{const d=wsData(w);mi((w.id===curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+(d.color?`<i class="wkchip" style="background:${esc(d.color)}"></i>`:''),w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id));
+    if(d.desc){const b=m.lastElementChild;b.title=d.desc;el('small','wkd',b).textContent=d.desc}});   // its colour and description (R-DATA-10)
+  el('hr','',m);mi(ICON_WS,L('wsMg'),()=>setTimeout(openWorkspaces,0));
   mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_WS,L('wsRename'),renameWorkspace);mi(ICON_WS,L('wsDup'),duplicateWorkspace);mi(ICON_WEEK,L('cyMenu'),openCycle);mi(ICON_WS,L('wsDel'),deleteWorkspace,'d');
 })}
 /* import: files and links share one dialog (new workspace / insert / replace matching); nothing is ever merged */

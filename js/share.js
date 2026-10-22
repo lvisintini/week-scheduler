@@ -46,7 +46,7 @@ async function unseal(blob,pw){
   if(data.length>2e6)throw new Error('big');
   return JSON.parse(new TextDecoder().decode(data));
 }
-const anonymised=f=>{const c=JSON.parse(JSON.stringify(f));c.people.forEach((q,i)=>{q.name=L('anonPerson')+' '+(i+1)});c.events.forEach(e=>{e.desc=''});c.phases.forEach(x=>{x.desc=''});(c.weekInfo||[]).forEach(w=>{delete w.desc});return c};   // week names stay, like titles (R-CYC-17)
+const anonymised=f=>{const c=JSON.parse(JSON.stringify(f));c.people.forEach((q,i)=>{q.name=L('anonPerson')+' '+(i+1)});c.events.forEach(e=>{e.desc=''});c.phases.forEach(x=>{x.desc=''});(c.weekInfo||[]).forEach(w=>{delete w.desc});delete c.desc;return c};   // the workspace's description goes too, its colour stays (R-DATA-10)   // week names stay, like titles (R-CYC-17)
 // R-SHARE-08: only part of a workspace. inc = {sch, rh, ppl}: the schedules and rhythms to include and, when ppl is not empty, only the times those
 // people perform or are involved in. People and activity types: only those still used. A new id, so it never stands for the whole workspace.
 function partOf(f,inc){

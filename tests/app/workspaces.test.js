@@ -14,7 +14,7 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
     const a = fresh(); expect(names(a)).toEqual(['Workspace']); expect(a.q('.wsbtn .wsn').textContent).toBe('Workspace');
   });
   it('the switcher menu lists the workspaces and offers New, Rename, Duplicate, the cycle of weeks and Delete (R-CYC-01)', () => {
-    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'New workspace…', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
+    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'Workspaces…', 'New workspace…', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
   });
   it('the current workspace is marked with a tick in the menu', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
@@ -184,5 +184,41 @@ describe('R-DATA-06 View settings belong to the browser, not to the workspace da
   it('the sidebar width and collapsed state, and the collapsed sections, are remembered too', () => {
     const a = fresh(); a.ev('prefs.w=333;prefs.collapsed=true;prefs.secPpl=true;savePrefs()'); const b = openApp({ storage: a.storage() });
     expect(b.ev('prefs.w')).toBe(333); expect(b.q('#sb').classList.contains('collapsed')).toBe(true); expect(b.ev('prefs.secPpl')).toBe(true);
+  });
+});
+
+describe('R-DATA-10 Workspaces have a colour and a description, and this browser keeps their order', () => {
+  const threeWs = () => { const a = fresh(); a.ev("addWorkspace();WS[1].name='Work';const t=newWs('Club',defaultData(),true);WS.push(t);switchWs(WS[0].id);cw().name='Home'"); return a; };
+  const dlg = a => { openMenu(a); menuClick(a, 'Workspaces…'); return a.sleep(5); };
+  const rows = a => a.qa('#xDlg .wsr');
+  const type = (i, v) => { i.value = v; i.oninput(); };
+  it('the workspace menu opens Workspaces…, a row per workspace with a grip, a colour, a name and a description', async () => {
+    const a = threeWs(); await dlg(a); expect(a.dlgTitle()).toBe('Workspaces'); expect(rows(a)).toHaveLength(3);
+    const r = rows(a)[1]; expect(r.querySelector('.grip').getAttribute('aria-label')).toBe('Move Work'); expect(r.querySelector('.cyname').value).toBe('Work');
+    expect(r.querySelector('.cydesc').getAttribute('aria-label')).toBe('Work: description'); expect(r.querySelector('.cysw').classList.contains('none')).toBe(true);
+  });
+  it('Apply renames, sets colours and descriptions (an undo step in each changed workspace) and saves the order in this browser', async () => {
+    const a = threeWs(); await dlg(a); const r = rows(a);
+    type(r[0].querySelector('.cydesc'), 'Our routine'); type(r[1].querySelector('.cyname'), 'Office'); const up = i => rows(a)[i].querySelector('.grip').onkeydown({ key: 'ArrowUp', preventDefault() {} }); up(2); up(1);   // Club to the top
+    a.click('Apply'); expect(names(a)).toEqual(['Club', 'Home', 'Office']); expect(a.ev('S.desc')).toBe('Our routine'); expect(a.ev('undoSt.length')).toBe(1); expect(a.ev('WS[2].undo.length')).toBe(0);
+    expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).wsOrder).toEqual(a.ev('WS.map(w=>w.id)')); expect(a.ev('isDirty()')).toBe(true);
+    a.ev('undo()'); expect(a.ev('S.desc')).toBeUndefined();
+  });
+  it('the order survives a reload of browser memory; workspaces it does not know go last', () => {
+    const a = threeWs(); a.ev("saveMem('all');prefs.wsOrder=[WS[2].id,WS[0].id];savePrefs();loadStore();render()"); expect(names(a)).toEqual(['Club', 'Home', 'Work']);
+  });
+  it('the colour marks the workspace button, the menu and printouts; the description is the button\'s tooltip and is shown in the menu', () => {
+    const a = threeWs(); a.ev("hist();S.color='#e5484d';S.desc='Our routine';render()");
+    expect(a.q('.wsbtn').classList.contains('wscol')).toBe(true); expect(a.q('.wsbtn').title).toContain('Our routine');
+    openMenu(a); const b = a.qa('.omenu .oi')[0]; expect(b.querySelector('.wkchip')).not.toBeNull(); expect(b.querySelector('.wkd').textContent).toBe('Our routine');
+    a.ev('printSchedule()'); expect(a.w.__printed).toContain('class="wkchip" style="background:#e5484d"');
+  });
+  it('colour and description travel in files; parsing keeps a hex colour and a trimmed text only; anonymised copies drop the description', () => {
+    const a = threeWs(); a.ev("S.color='#e5484d';S.desc='  Our routine  '"); expect(a.ev('buildFile().color')).toBe('#e5484d');
+    expect(a.ev("JSON.stringify(parseData({schedules:[],events:[],color:'red;x',desc:'  hi  '}))")).toContain('"desc":"hi"'); expect(a.ev("parseData({schedules:[],events:[],color:'red;x'}).color")).toBeUndefined();
+    expect(a.ev('anonymised(buildFile()).desc')).toBeUndefined(); expect(a.ev('anonymised(buildFile()).color')).toBe('#e5484d');
+  });
+  it('the Workspaces dialog and its menu item are translated into Spanish', async () => {
+    const a = threeWs(); a.ev("lang='es'"); openMenu(a); menuClick(a, 'Espacios de trabajo…'); await a.sleep(5); expect(a.dlgTitle()).toBe('Espacios de trabajo');
   });
 });
