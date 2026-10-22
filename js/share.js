@@ -118,7 +118,7 @@ async function openShare(pw,anon,inc){
   const body=el('div');el('p','note',body).textContent=L('shareBody');
   const ta=el('textarea','',body);ta.readOnly=true;ta.rows=5;ta.value=link;ta.style.cssText='width:100%;margin-top:8px;font-size:11px;word-break:break-all';ta.onfocus=()=>ta.select();
   const pr=el('p','',body);pr.append(L('sharePw')+' ');const code=el('b','',pr);code.textContent=pw;code.style.cssText='font-family:monospace;user-select:all';
-  const info=[L('shareLen',{n:link.length}),L('protWarn')];if(location.protocol==='file:')info.push(L('shareFile'));if(link.length>8000)info.push(L('shareLong'));
+  const info=[L('shareLen',{n:link.length}),L('protWarn')];if(link.length>8000)info.push(L('shareLong'));
   el('p','note',body).textContent=info.join(' ');
   const copy=(txt,i)=>{const b=$('xDlg').querySelectorAll('.btns button')[i],done=()=>{if(b)b.textContent=L('shareCopied')};
     const fb=()=>{const t=el('textarea','',body);t.value=txt;t.select();try{document.execCommand('copy');done()}catch(e){}t.remove()};

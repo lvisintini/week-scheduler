@@ -119,8 +119,8 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   it('the link contains none of the readable data', async () => {
     const a = fresh(); expect(await makeLink(a)).not.toMatch(/Granny|Doctor|4711/);
   });
-  it('the dialog shows the link length and, when the app is opened from a local file, says the link only works on this computer', async () => {
-    const a = fresh({ url: 'file:///home/me/index.html' }); await makeLink(a); expect(a.dlgText()).toMatch(/\d+ characters\./); expect(a.dlgText()).toContain('only works on this computer');
+  it('the dialog shows the link length and no note about local files, even at a file:// address (opening from disk is not supported)', async () => {
+    const a = fresh({ url: 'file:///home/me/index.html' }); await makeLink(a); expect(a.dlgText()).toMatch(/\d+ characters\./); expect(a.dlgText()).not.toMatch(/local file|only works on this computer/);
   });
   it('very long links (over 8,000 characters) come with a warning', async () => {
     const a = openApp(); const noise = () => Array.from({ length: 5000 }, () => String.fromCharCode(33 + Math.floor(Math.random() * 90))).join('');
@@ -163,8 +163,8 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
     const a = fresh(); const data = dataOf(await makeLink(a)); const broken = data.slice(0, -6) + (data.at(-6) === 'A' ? 'B' : 'A') + data.slice(-5);
     const b = openApp({ url: 'https://app.test/#data=e1.' + broken }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open'); await waitFor(() => /altered/.test(b.dlgText()));
   });
-  it('a link opened in a browser without Web Crypto says that encryption is not available', async () => {
-    const b = openApp({ url: 'https://app.test/#data=e1.AAAA', crypto: false }); await b.sleep(10); expect(b.toast()).toContain('Encryption is not available here');
+  it('a link opened in a browser without Web Crypto says that encryption is not available and to use https', async () => {
+    const b = openApp({ url: 'https://app.test/#data=e1.AAAA', crypto: false }); await b.sleep(10); expect(b.toast()).toBe('Encryption is not available here. Use a modern browser, and open the app over https.');
   });
   it('a link pasted into an already running page (hash change) is handled too', async () => {
     const a = fresh(); const link = await makeLink(a); const b = openApp(); b.w.location.hash = '#data=e1.' + dataOf(link); await waitFor(() => b.dlgTitle() === 'Password needed');
