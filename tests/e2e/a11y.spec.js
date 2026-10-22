@@ -70,6 +70,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
       r = await new AxeBuilder({ page }).include('.typop').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); await page.keyboard.press('Escape');
       r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
       await page.locator('#xDlg select').first().selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
+      await page.locator('#xDlg .tuadd').click(); await expect(page.locator('.tupop')).toBeVisible(); r = await new AxeBuilder({ page }).include('.tupop').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
     });
   }
   test('R-STAT-06 the labels of the 168-hour bar are drawn at their normal size, inside their part', async ({ page }) => {

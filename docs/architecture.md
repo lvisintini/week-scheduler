@@ -86,7 +86,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-UI-10: `.dgrip`, `dlgPlace`, `moved`
 - R-UI-11: `.noty`, `NOTY`
 - R-UI-12: `dlgJump`, `.dr.pulse`
-- R-CYC-18: `turnsOf`, `tuSum`, `stRotas`, `statsTurnsHTML`, `statsTurnsRows`, `updTurns`, `#fTu`/`#fTuL`, `.sttu`
+- R-CYC-18: `turnsOf` (mode: `event.turns`), `tuSum`, `stRotas`, `statsTurnsHTML` (✕ `.tux`, `.tuadd`), `setTurns`, `tuAddPop` (`.tupop`), `statsTurnsRows`, `updTurns`, `#fTuM`/`#fTu`/`#fTuL`, `.sttu`
 - R-CYC-16: `wksOf` (phases too), `normAll`, `moveWeeks` (a rhythm per removed week), `placeWeeks` (events and phases), `wkRowTipPh`, `.pwk` (rhythm agenda)
 - R-CYC-19: `allWk`/`setAllWk`, `cols` in `render()` (week-day columns, `curWk` set per column), `gk` (week-keyed `laneMap`/`gutMap`/`nestMap`/`sqMap`), `atCol` (from `colAt` and the column handlers), `aD` in `startDrag`, `withWk`/`oneWeek`, `agWk`, `.dh.wkbd`, `.wks`
 - R-CYC-20: `reorderWeeks`, `wkFollow`, undo entries `{s, wp}` (`undo`/`redo`), the cycle dialog's `ord`/`mvRow`/`gripRow`, `.cywr .grip`

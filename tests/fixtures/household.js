@@ -39,9 +39,9 @@ export const household = {
       slots: [{ day: 0, start: 1080, end: 1200, person: 'p-lucia' }] },
     { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
       slots: [{ day: 5, start: 600, end: 720, person: '' }, { day: 5, start: 900, end: 960, person: '' }] },
-    { id: 'e-swim', title: 'Swimming', desc: '', color: '#3b6df0', weeks: [1], schedules: ['s-home'], involved: [],
+    { id: 'e-swim', title: 'Swimming', desc: '', color: '#3b6df0', weeks: [1], turns: true, schedules: ['s-home'], involved: [],
       slots: [{ day: 6, start: 1260, end: 1500, person: 'p-lucia' }] },
-    { id: 'e-cook', title: 'Cooking', desc: 'Swap turns in the family chat', color: '#e5484d', owner: 'p-ann', schedules: ['s-home'], involved: [],
+    { id: 'e-cook', title: 'Cooking', desc: 'Swap turns in the family chat', color: '#e5484d', owner: 'p-ann', turns: false, schedules: ['s-home'], involved: [],
       slots: [{ day: 0, start: 1080, end: 1140, person: 'p-ann', wk: 1, fo: true }, { day: 0, start: 1080, end: 1140, person: 'p-luis', wk: 2 }, { day: 3, start: 1080, end: 1140, person: 'p-luis', wk: 1 }] },
     { id: 'e-dad', title: "At Dad's", desc: '', color: '#8e4ec6', away: true, weeks: [2], schedules: ['s-home'], involved: ['p-lucia'],
       slots: [{ day: 4, start: 1020, end: 2880, person: '' }, { day: 6, start: 0, end: 1080, person: '' }] },
@@ -78,6 +78,7 @@ const ADDED = {
   9: ({ cycle, ...h }) => ({ ...h, events: h.events.filter(e => !['e-swim', 'e-cook', 'e-dad'].includes(e.id)) }),   // the cycle of weeks (R-CYC-14) and Away (R-EVT-24)
   10: ({ weekInfo, ...h }) => h,   // the weeks' names, descriptions and colours (R-CYC-17)
   11: h => ({ ...h, phases: h.phases.filter(p => !['ph-quiet', 'ph-shift'].includes(p.id)) }),   // the weeks of phases (R-CYC-16)
+  12: h => ({ ...h, events: h.events.map(({ turns, ...e }) => e) }),   // whether an event counts turns (R-CYC-18)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

@@ -611,7 +611,7 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
   });
   it('the app offers no helper that assigns turns', () => {
     const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate/);
-    expect([...a.d.querySelectorAll('#dlg button, #dlg select option')].map(b => b.textContent).filter(t => /turn|rota/i.test(t))).toEqual([]);   // turns are only counted (R-CYC-18)
+    expect([...a.d.querySelectorAll('#dlg button, #dlg select:not(#fTuM) option')].map(b => b.textContent).filter(t => /turn|rota/i.test(t))).toEqual([]);   // turns are only counted (R-CYC-18)
   });
 });
 
@@ -720,19 +720,19 @@ describe('R-CYC-18 Rota turns: how many times each person is responsible over th
     expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 3 turns in the cycle'); expect(a.q('#fTu').title).toBe('Week 1: Ann 1 · Bob 1\nWeek 2: Ann 0 · Bob 2'); expect(a.q('#fTuL').style.display).toBe('');
     const ps = a.qa('#fDays .dr select.ev-only').find(s => s.value === 'B'); ps.value = 'C'; ps.onchange(); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 2 · Cat 1 turns in the cycle');
   });
-  it('the dialog hides the line when fewer than two people have turns, and says "a week" with a one-week cycle', () => {
+  it('the dialog shows no counts when fewer than two people have turns (Automatic), and says "a week" with a one-week cycle', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [sl(0, 600, 660, { person: 'A' })] }), ev1({ id: 't', slots: [sl(0, 600, 660, { person: 'A' }), sl(1, 600, 660, { person: 'B' })] })] }));
-    a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').style.display).toBe('none'); expect(a.q('#fTuL').style.display).toBe('none'); a.ev('$("dlg").close()');
+    a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').textContent).toBe(''); expect(a.q('#fTuM').value).toBe(''); a.ev('$("dlg").close()');
     a.ev('openDlg(S.events[1])'); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 1 turns a week'); expect(a.q('#fTuL').title).toContain('has no turns to count');
   });
   it('the statistics list a person\'s rotas with their turns per week, their total and all turns', () => {
     const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('openStats("A")');
     expect(a.q('#xDlg .sttuh').textContent).toContain('Turns in rotas');
-    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent))).toEqual([['Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Cook', '1', '0', '1', '4']]);
+    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent.replace('✕', '')))).toEqual([['Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Cook', '1', '0', '1', '4']]);
   });
   it('Everyone shows a rota per row and a column per person; the CSV and Copy table carry the same block', () => {
     const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('openStats("*")');
-    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent))).toEqual([['Rota', 'Ann', 'Bob', 'All turns'], ['Cook', '1', '3', '4']]);
+    expect(a.qa('#xDlg .sttu tr').map(r => [...r.children].map(c => c.textContent.replace('✕', '')))).toEqual([['Rota', 'Ann', 'Bob', 'All turns'], ['Cook', '1', '3', '4']]);
     expect(a.ev('statsRows("*",true)').slice(-2)).toEqual([['Rota', 'Ann', 'Bob', 'All turns'], ['Cook', 1, 3, 4]]);
     expect(a.ev('statsRows("A",true)').slice(-2)).toEqual([['Person', 'Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Ann', 'Cook', 1, 0, 1, 4]]);
   });
@@ -840,5 +840,52 @@ describe('R-CYC-19 All weeks side by side: every week of the cycle in one row, c
   });
   it('in Spanish the menu item and the corner button are translated', () => {
     const b = openApp({ languages: ['es'] }); setData(b, data()); b.ev('setAllWk(true)'); expect(b.q('.wkb').textContent).toBe('S1–2'); expect(b.q('.dh[data-w="2"]').textContent).toContain('· S2');
+  });
+});
+
+describe('R-CYC-18 Choosing which events count turns: automatic, always or never, from the event dialog and the statistics', () => {
+  const rota = (o = {}) => ev1({ id: 'r', title: 'Cook', slots: [sl(0, 1080, 1140, { person: 'A' }), sl(1, 1080, 1140, { person: 'B' })], ...o });
+  const solo = (o = {}) => ev1({ id: 's', title: 'Bins', slots: [sl(2, 1200, 1215, { person: 'A' }), sl(5, 1200, 1215, { person: 'A' })], ...o });
+  const rows = a => a.qa('#xDlg .sttu tbody tr').map(r => r.cells[0].textContent.replace('✕', ''));
+  it('the data keeps the mark only as true or false; absent means automatic', () => {
+    const a = fresh(blank({ people, events: [rota({ turns: false }), solo({ turns: true }), ev1({ id: 'x', turns: 'yes' })] }));
+    expect(a.ev('S.events.map(e=>e.turns)')).toEqual([false, true, undefined]);
+  });
+  it('never takes an automatic rota out; always counts an event that only one person does', () => {
+    const a = fresh(blank({ people, events: [rota({ turns: false }), solo({ turns: true })] }));
+    expect(a.ev('turnsOf(S.events[0])')).toBeNull(); expect(a.ev('Object.fromEntries(turnsOf(S.events[1]))')).toEqual({ A: [2] });
+  });
+  it('the event dialog chooses Automatic, Count turns or Don\'t count, shows the counts while it applies and saves the mark', () => {
+    const a = fresh(blank({ people, events: [solo()] })); a.ev('openDlg(S.events[0])'); const m = a.q('#fTuM');
+    expect([...m.options].map(o => o.textContent)).toEqual(['Automatic (two or more people)', 'Count turns', "Don't count"]); expect(m.getAttribute('aria-label')).toBe('Count turns');
+    expect(a.q('#fTu').textContent).toBe(''); m.value = 'y'; m.onchange(); expect(a.q('#fTu').textContent).toBe('Ann 2 turns a week');
+    a.q('#fOk').click(); expect(a.ev('S.events[0].turns')).toBe(true);
+    a.ev('openDlg(S.events[0])'); expect(a.q('#fTuM').value).toBe('y'); a.q('#fTuM').value = ''; a.q('#fOk').click(); expect(a.ev('"turns" in S.events[0]')).toBe(false);
+  });
+  it('Don\'t count hides the counts of a rota in the dialog', () => {
+    const a = fresh(blank({ people, events: [rota()] })); a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').textContent).toContain('Ann 1 · Bob 1');
+    a.q('#fTuM').value = 'n'; a.q('#fTuM').onchange(); expect(a.q('#fTu').textContent).toBe(''); a.q('#fOk').click(); expect(a.ev('S.events[0].turns')).toBe(false);
+  });
+  it('in the statistics ✕ leaves a rota out, as an undoable change that marks the workspace unsaved', () => {
+    const a = fresh(blank({ people, events: [rota(), solo()] })); a.ev('saveMem("all");openStats("*")'); expect(rows(a)).toEqual(['Cook']);
+    const x = a.q('#xDlg .sttu .tux'); expect(x.getAttribute('aria-label')).toBe('Leave Cook out of the turns'); x.click();
+    expect(a.q('#xDlg .sttu')).toBeNull(); expect(a.dlgText()).toContain('No rotas yet.'); expect(a.ev('[S.events[0].turns,isDirty()]')).toEqual([false, true]);
+    a.ev('undo()'); expect(a.ev('"turns" in S.events[0]')).toBe(false);
+  });
+  it('Add an event… lists the other events one per line and adds the one picked; one left out says so and can come back', () => {
+    const a = fresh(blank({ people, events: [rota({ turns: false }), solo(), ev1({ id: 'z', title: 'Away', away: true, slots: [sl(0, 0, 60, { person: 'A' })] })] })); a.ev('openStats("A")');
+    a.q('#xDlg .tuadd').click(); expect(a.qa('.tupop .oi').map(b => b.textContent)).toEqual(['Bins', 'Cookleft out']); expect(a.q('.tupop .oh').textContent).toBe('Count the turns of');
+    a.qa('.tupop .oi')[0].click(); expect(a.q('.tupop')).toBeNull(); expect(rows(a)).toEqual(['Bins']); expect(a.ev('S.events[1].turns')).toBe(true);
+    a.q('#xDlg .tuadd').click(); a.qa('.tupop .oi')[0].click(); expect(a.ev('S.events[0].turns')).toBe(true);
+  });
+  it('when every event counts, the list says so; the buttons are not printed', () => {
+    const a = fresh(blank({ people, events: [rota()] })); a.ev('openStats("*")'); a.q('#xDlg .tuadd').click();
+    expect(a.q('.tupop .oi').textContent).toBe('Every event already counts its turns'); expect(a.q('.tupop .oi').disabled).toBe(true);
+    expect(a.d.querySelector('style').textContent).toContain('#pr .tip,#pr .tux,#pr .tuadd{display:none}');
+  });
+  it('the turns of a person with no rota say so, and the new labels are translated', () => {
+    const a = fresh(blank({ people, events: [solo()] })); a.ev('openStats("B")'); expect(a.dlgText()).toContain('Bob takes no turns in a rota.');
+    const b = openApp({ languages: ['es'] }); setData(b, blank({ people, events: [solo()] })); b.ev('openDlg(S.events[0])');
+    expect([...b.q('#fTuM').options].map(o => o.textContent)).toEqual(['Automático (dos o más personas)', 'Contar turnos', 'No contar']);
   });
 });
