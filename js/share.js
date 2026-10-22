@@ -5,7 +5,7 @@ const unb64u=str=>{str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%
 async function inflate(bytes){
   const ds=new DecompressionStream('deflate-raw'),wr=ds.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});
   const rd=ds.readable.getReader(),chunks=[];let n=0;
-  for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;if(n>2e6)throw new Error('too big');chunks.push(value)}
+  for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;if(n>2e6)throw new Error('big');chunks.push(value)}
   const out=new Uint8Array(n);let o=0;chunks.forEach(c=>{out.set(c,o);o+=c.length});return out;
 }
 /* ---------- encryption (Web Crypto): PBKDF2-SHA256 -> AES-256-GCM. Links and exported files are always password-protected ---------- */
@@ -26,9 +26,10 @@ async function encryptBytes(plain,pw){   // blob = [1][iterations u32][salt 16][
   const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:head},await deriveKey(pw,salt,PBKDF2_ITER),plain));
   const out=new Uint8Array(33+ct.length);out.set(head);out.set(ct,33);return out;
 }
+const sealedOk=b=>b.length>=50&&b[0]===1;   // the shape of an encrypted blob, checked before asking for its password
 async function decryptBytes(blob,pw){
   if(blob[0]>1)throw new Error('newer');   // a later encryption layout
-  if(blob.length<50||blob[0]!==1)throw new Error('format');
+  if(!sealedOk(blob))throw new Error('format');
   const iter=new DataView(blob.buffer,blob.byteOffset).getUint32(1);
   if(iter<100000||iter>2000000)throw new Error('format');   // refuse absurd work factors from crafted data
   const head=blob.slice(0,33),key=await deriveKey(pw,blob.slice(5,21),iter);
@@ -133,6 +134,7 @@ async function handleShareLink(){
   if(!m||m[1]!=='1'||!hasCrypto()){clean();toast(L(hasCrypto()?'linkBad':'noCrypto'));return}
   let blob;try{blob=unb64u(raw.slice(3))}catch(e){clean();toast(L('linkBad'));return}
   if(blob[0]>1){clean();toast(L('newer'));return}
+  if(!sealedOk(blob)){clean();toast(L('linkBad'));return}   // empty or truncated: no point asking for a password
   askPassword(blob,obj=>{
     clean();let w;try{w=parseWorkspace(obj,L('wsShared'))}catch(e){toast(L(errKey(e,'linkBad')));return}
     if(!memGet()&&WS.length===1&&!isDirty()){adoptWs(w,'link');toast(L('linkLoaded'));return}

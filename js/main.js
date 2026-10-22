@@ -14,6 +14,7 @@ $('file').onchange=async e=>{
     if(!hasCrypto()){alert(L('noCrypto'));return}
     let blob;try{blob=unb64u(String(j.data))}catch(_){alert(L('badFile'));return}
     if(blob[0]>1){alert(L('newer'));return}
+    if(!sealedOk(blob)){alert(L('badFile'));return}
     askPassword(blob,show);return;
   }
   show(j);

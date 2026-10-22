@@ -73,10 +73,10 @@ describe('R-SHARE-04 Encryption (AES-256-GCM with a PBKDF2 key)', () => {
     expect(await unseal(blob, PASSWORD, plain)).toEqual(OBJ);
     expect(await unseal(blob, PASSWORD, app)).toEqual(OBJ);
   });
-  it('a decompression bomb (tiny encrypted data that expands past 2 MB) is refused', async () => {
+  it('a decompression bomb (tiny encrypted data that expands past 2 MB) is refused as too big', async () => {
     const blob = await ev(`(async()=>{const z=await deflate(new Uint8Array(3e6));const i=new Uint8Array(1+z.length);i[0]=1;i.set(z,1);return Array.from(await encryptBytes(i,${JSON.stringify(PASSWORD)}))})()`);
     expect(blob.length).toBeLessThan(20000);
-    expect(await message(unseal(Uint8Array.from(blob)))).toBe('too big');
+    expect(await message(unseal(Uint8Array.from(blob)))).toBe('big');
   });
   it('the password is normalised, so visually identical Unicode spellings work', async () => {
     const composed = 'caf\u00e9-caf\u00e9-caf\u00e9-caf\u00e9-caf\u00e9', decomposed = 'cafe\u0301-cafe\u0301-cafe\u0301-cafe\u0301-cafe\u0301';

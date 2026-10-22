@@ -151,8 +151,13 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   it.each([['#data=e1.@@@@'], ['#data=plain-old-link'], ['#data=e0.AAAA'], ['#data=ex.AAAA']])('a damaged or unknown link %s is refused with a message and cleaned from the address', async hash => {
     const b = openApp({ url: 'https://app.test/' + hash }); await b.sleep(10); expect(b.toast()).toBe('The shared link is invalid or damaged.'); expect(b.w.location.hash).toBe(''); expect(b.dlgOpen()).toBe(false);
   });
-  it('a link with an empty payload still asks for a password and then reports that it is not a valid save', async () => {
-    const b = openApp({ url: 'https://app.test/#data=e1.' }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open'); await waitFor(() => /not a valid schedule save file/.test(b.dlgText()));
+  it.each([['#data=e1.'], ['#data=e1.AQ'], ['#data=e1.AQAJJ8AAAAAAAAAAAAAAAAAAAAAAAAAA']])('a link with an empty or truncated payload %s is refused at once, without asking for a password', async hash => {
+    const b = openApp({ url: 'https://app.test/' + hash }); await b.sleep(10); expect(b.toast()).toBe('The shared link is invalid or damaged.'); expect(b.dlgOpen()).toBe(false); expect(b.w.location.hash).toBe('');
+  });
+  it('a link that decompresses past 2 MB (a decompression bomb) says it is too big, not that it is invalid', async () => {
+    const a = openApp(); const blob = await a.ev(`(async()=>{const z=await deflate(new Uint8Array(3e6));const i=new Uint8Array(1+z.length);i[0]=1;i.set(z,1);return b64u(await encryptBytes(i,${JSON.stringify(PASSWORD)}))})()`);
+    const b = openApp({ url: 'https://app.test/#data=e1.' + blob }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open');
+    await waitFor(() => /too many items/.test(b.dlgText())); expect(b.dlgText()).not.toMatch(/not a valid/); expect(b.ev('S.events.length')).toBe(0);
   });
   it('a damaged encrypted link asks for the password but then says the data was altered', async () => {
     const a = fresh(); const data = dataOf(await makeLink(a)); const broken = data.slice(0, -6) + (data.at(-6) === 'A' ? 'B' : 'A') + data.slice(-5);
@@ -195,14 +200,18 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
     b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => text }], value: '' } }); await waitFor(() => b.dlgTitle() === 'Password needed');
     b.q('#xDlg input').value = 'wrong'; b.click('Open'); await waitFor(() => /Wrong password/.test(b.dlgText())); expect(b.ev('S.events.length')).toBe(0);
   });
+  it.each([[''], ['AQ']])('an encrypted file whose data is empty or truncated (%j) is refused at once as not valid, without asking for a password', async data => {
+    const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => JSON.stringify({ format: 'weekly-schedules-encrypted', version: 1, data }) }], value: '' } });
+    await waitFor(() => b.log.alerts.length); expect(b.log.alerts[0]).toContain('not a valid schedule save file'); expect(b.dlgOpen()).toBe(false);
+  });
   it('plain JSON files from earlier versions can still be opened (only creating them is gone)', async () => {
     const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'old.json', text: async () => JSON.stringify(workspace()) }], value: '' } }); await b.sleep(30); expect(b.dlgTitle()).toBe('Import'); expect(b.dlgText()).toContain('Test workspace');
   });
-  it('an encrypted file whose layout byte is damaged (0) is refused after the password step', async () => {
+  it('an encrypted file whose layout byte is damaged (0) is refused at once, without asking for a password', async () => {
     const a = fresh(); const f = JSON.parse(await makeFile(a)); const bytes = Buffer.from(f.data.replace(/-/g, '+').replace(/_/g, '/'), 'base64'); bytes[0] = 0;
     f.data = bytes.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => JSON.stringify(f) }], value: '' } }); await waitFor(() => b.dlgTitle() === 'Password needed');
-    b.q('#xDlg input').value = PASSWORD; b.click('Open'); await waitFor(() => /not a valid schedule save file/.test(b.dlgText()));
+    const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => JSON.stringify(f) }], value: '' } });
+    await waitFor(() => b.log.alerts.length); expect(b.log.alerts[0]).toContain('not a valid schedule save file'); expect(b.dlgOpen()).toBe(false);
   });
   it('an encrypted file opened without Web Crypto explains why it cannot be read', async () => {
     const a = fresh(); const text = await makeFile(a); const b = openApp({ crypto: false });

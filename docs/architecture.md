@@ -8,7 +8,7 @@ The app is static files served as they are (no build): `index.html` (markup, the
 | `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
 | `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
 | `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
-| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem` |
+| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem` |
 | `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
 | `js/stats.js` | statistics (`personStats`, `openStats`, turns), agendas and printing |
 | `js/sidebar.js` | `renderSide` and the sidebar menus |
