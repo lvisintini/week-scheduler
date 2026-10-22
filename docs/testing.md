@@ -10,7 +10,7 @@
 - `tests/e2e/` real browser: geometry (sticky, scrollbars, lips flush, zoom, fit), real mouse/keyboard interaction, phone touch, downloads/links/clipboard in two browser profiles, print to PDF, CSP enforcement, performance budgets, accessibility ratchet. `tests/e2e/serve.js` serves `index.html` on http://localhost:4173 (a secure context).
 - `tests/helpers/app.js` jsdom harness (the page with `app.css` and each `js/` file inlined in `index.html`'s order; `rawHtml` is `index.html` as served, `scriptFiles` the scripts' list): `openApp`, `setData`, `dragFrom`, `createDrag`, `fillDialog`, fake column geometry (`.day` n spans x 100n..100n+100, top 0), stubbed dialogs/crypto/downloads/clipboard/print.
 - `tests/fixtures/` frozen sample files of every published data format (`v<N>/`), the sample household (`household.js`) and the generator (`make.mjs`), see R-DATA-08; read by `tests/app/compat.test.js`.
-- `tests/manual/touch.md`: the checklist for real phones (Android Chrome, iOS Safari), 26 steps with the expected result, for what the touch emulation can't prove. The app is on GitHub Pages at https://lvisintini.github.io/week-scheduler/ (serves `main`).
+- `tests/manual/touch.md`: the checklist for real phones (Android Chrome, iOS Safari), 34 steps with the expected result, for what the touch emulation can't prove. The app is on GitHub Pages at https://lvisintini.github.io/week-scheduler/ (serves `main`).
 - `tests/requirements.test.js` traceability + description quality.
 
 ## Rules
