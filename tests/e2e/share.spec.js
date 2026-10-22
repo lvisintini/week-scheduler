@@ -47,6 +47,19 @@ test.describe('R-SHARE-06 Encrypted JSON files, downloaded and opened for real',
   });
 });
 
+test.describe('R-SHARE-08 A partial file, downloaded and opened for real', () => {
+  test('a file with only the chosen schedule opens in another profile with only that schedule, its events and the people they use', async ({ page, browser }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#00a000' })], schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', color: '#e5484d' })],
+      events: [ev({ id: 'h', title: 'Dinner', schedules: ['s1'], slots: [slot(0, 1080, 1140, 'A')] }), ev({ id: 'w', title: 'Office', schedules: ['s2'], slots: [slot(0, 540, 1020, 'B')] })] }));
+    await startProtect(page, 'file'); await page.locator('#xDlg .partsel button', { hasText: 'Choose…' }).click();
+    await page.locator('#xDlg .partg label', { hasText: 'Work' }).locator('input').uncheck(); await expect(page.locator('#xDlg .partsum')).toContainText('1 of 2 events');
+    await page.locator('#xDlg input[type=text]').fill(PASSWORD); const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), dialogButton(page, 'Save file').click()]);
+    const { ctx, page: other } = await visitor(browser); await openApp(other); await other.locator('#file').setInputFiles(await dl.path());
+    await other.locator('#xDlg input[type=password]').fill(PASSWORD); await dialogButton(other, 'Open').click(); await dialogButton(other, 'Import').click();
+    const d = await data(other); expect(d.schedules.map(s => s.name)).toEqual(['Home']); expect(d.events.map(e => e.title)).toEqual(['Dinner']); expect(d.people.map(q => q.name)).toEqual(['Ann']); await ctx.close();
+  });
+});
+
 test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', () => {
   test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, rich()); });
   test('the link has the data only in the part after #, and shows the password that was set', async ({ page }) => {

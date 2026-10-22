@@ -101,6 +101,13 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await page.evaluate(() => setAllWk(true)); await expect(page.locator('#grid .day')).toHaveCount(14);
     ratchet(await scan(page), {});
   });
+  for (const theme of ['light', 'dark']) {
+    test(`R-SHARE-08 the save dialog with What to include and its Choose… lists adds no accessibility violation (${theme} theme)`, async ({ page }) => {
+      await openApp(page, { prefs: { theme } }); await seed(page, blank({ people: [person()], rhythms: [{ id: 'r', name: 'R', visible: true }], events: [ev({ title: 'Standup' })] }));
+      await toolbar(page, 'save').click(); await page.locator('#xDlg .btns button', { hasText: 'JSON file' }).click(); await page.locator('#xDlg .partsel button', { hasText: 'Choose…' }).click();
+      await expect(page.locator('#xDlg .partl')).toBeVisible(); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
+    });
+  }
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

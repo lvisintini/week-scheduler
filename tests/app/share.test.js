@@ -244,3 +244,57 @@ describe('R-SHARE-07 Unencrypted JSON files, only when chosen, with a clear warn
     expect(a.q('#xDlg .encsel button.on').textContent).toBe('Encrypted (recommended)');
   });
 });
+
+describe('R-SHARE-08 A file or link can hold only part of a workspace: chosen schedules and rhythms, and only some people\'s activities', () => {
+  const fam = () => { const a = openApp(); setData(a, blank({
+    people: [person({ id: 'K', name: 'Kid' }), person({ id: 'M', name: 'Mum', color: '#00a000' }), person({ id: 'X', name: 'Nobody uses me', color: '#0000a0' })],
+    types: [{ id: 'ts', name: 'School', color: '#3b6df0', icon: 'work' }, { id: 'tw', name: 'Job', color: '#e5484d', icon: 'work' }],
+    schedules: [sched({ id: 'h', name: 'Home' }), sched({ id: 'w', name: 'Work', color: '#e5484d' })],
+    events: [ev1({ id: 'sc', title: 'School run', type: 'ts', schedules: ['h'], slots: [{ day: 0, start: 480, end: 510, person: 'M' }, { day: 1, start: 480, end: 510, person: 'M', inv: ['K'] }] }),
+      ev1({ id: 'jb', title: 'Office', type: 'tw', schedules: ['w'], slots: [{ day: 0, start: 540, end: 1020, person: 'M' }] }),
+      ev1({ id: 'bt', title: 'Both', schedules: ['h', 'w'], involved: ['K'], slots: [{ day: 2, start: 600, end: 660, person: 'M' }] })],
+    rhythms: [{ id: 'r1', name: 'School days', visible: true }, { id: 'r2', name: 'Holidays', visible: false }],
+    phases: [{ id: 'p1', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }] }, { id: 'p2', title: 'Late', desc: '', color: '#2fa66a', rhythms: ['r2'], slots: [{ day: 0, start: 600, end: 660 }] }] }));
+    a.ev('cw().name="Family"'); return a; };
+  const choose = a => a.qa('#xDlg .partsel button')[1].click();
+  const box = (a, group, name) => a.qa('#xDlg .partg').find(g => g.querySelector('.partgh').textContent.startsWith(group)).querySelectorAll('label').values().find(l => l.textContent.trim() === name).querySelector('input');
+  const untick = (a, group, name, v = false) => { const i = box(a, group, name); i.checked = v; i.dispatchEvent(new a.w.Event('change')); };
+  const plainFile = async a => { a.qa('#xDlg .encsel button')[1].click(); a.click('Save file'); await waitFor(() => a.w.__file); return JSON.parse(a.w.__file); };
+  it('the dialog asks what to include, Everything by default; Choose… lists the schedules, the rhythms and the people', async () => {
+    const a = fam(); await protectDialog(a, 'file'); expect(a.q('#xDlg .parth').textContent).toBe('What to include');
+    expect(a.qa('#xDlg .partsel button').map(b => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([['Everything', 'true'], ['Choose…', 'false']]); expect(a.q('#xDlg .partl').hidden).toBe(true);
+    choose(a); expect(a.qa('#xDlg .partgh').map(h => h.textContent.trim())).toEqual(['Schedules', 'Rhythms', 'Only the activities of ⓘ']);
+    expect(a.q('#xDlg .partsum').textContent).toContain('3 of 3 events, 2 of 2 phases');
+  });
+  it('unticked schedules and rhythms stay out, with their events and phases; an event in two schedules keeps the ticked one', async () => {
+    const a = fam(); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Work'); untick(a, 'Rhythms', 'Holidays');
+    expect(a.q('#xDlg .partsum').textContent).toContain('2 of 3 events, 1 of 2 phases'); const f = await plainFile(a);
+    expect(f.schedules.map(s => s.name)).toEqual(['Home']); expect(f.events.map(e => [e.title, e.schedules])).toEqual([['School run', ['h']], ['Both', ['h']]]);
+    expect(f.rhythms.map(r => r.name)).toEqual(['School days']); expect(f.phases.map(p => p.title)).toEqual(['Lunch']);
+  });
+  it('only the activities of the people ticked: the times they perform or are involved in', async () => {
+    const a = fam(); await protectDialog(a, 'file'); choose(a); untick(a, 'Only the activities of', 'Kid', true); const f = await plainFile(a);
+    expect(f.events.map(e => [e.title, e.slots.map(s => s.day)])).toEqual([['School run', [1]], ['Both', [2]]]);
+  });
+  it('only the people and activity types still used travel; the file gets a new id and keeps the name', async () => {
+    const a = fam(); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Work'); const f = await plainFile(a);
+    expect(f.people.map(q => q.name)).toEqual(['Kid', 'Mum']); expect(f.types.map(t => t.name)).toEqual(['School']); expect(f.name).toBe('Family'); expect(f.id).not.toBe(a.ev('cw().id'));
+  });
+  it('a partial copy is not a backup: the workspace stays unsaved to file; Everything still is one', async () => {
+    const a = fam(); a.ev('cw().lf=null'); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Work'); await plainFile(a); expect(a.ev('cw().lf')).toBeNull();
+    a.w.__file = undefined; await protectDialog(a, 'file'); await plainFile(a); expect(a.ev('cw().lf===keyOf(S)')).toBe(true);
+  });
+  it('it combines with Leave out personal details, and works for links too', async () => {
+    const a = fam(); await protectDialog(a, 'link'); setPw(a, PASSWORD); tick(a); choose(a); untick(a, 'Schedules', 'Work'); a.click('Create link');
+    const link = (await waitFor(() => a.q('#xDlg textarea'))).value; const f = await decrypt(a, dataOf(link));
+    expect(f.people.map(q => q.name)).toEqual(['Person 1', 'Person 2']); expect(f.schedules.map(s => s.name)).toEqual(['Home']);
+  });
+  it('nothing left to share is refused with a message', async () => {
+    const a = fam(); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Home'); untick(a, 'Schedules', 'Work'); untick(a, 'Rhythms', 'School days'); untick(a, 'Rhythms', 'Holidays');
+    a.qa('#xDlg .encsel button')[1].click(); a.click('Save file'); expect(a.q('#xDlg .partsum').textContent).toContain('Nothing to share'); expect(a.w.__file).toBeUndefined();
+  });
+  it('the choice is translated', async () => {
+    const a = openApp({ languages: ['es'] }); setData(a, rich()); a.toolbar('save').click(); a.click('Archivo JSON'); await a.sleep(10);
+    expect(a.qa('#xDlg .partsel button').map(b => b.textContent)).toEqual(['Todo', 'Elegir…']);
+  });
+});

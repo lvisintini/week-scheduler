@@ -91,6 +91,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-SHARE-03: `genPassword`
 - R-SHARE-04: `seal`, `unseal`
 - R-SHARE-07: `plainWarn`, `buildFile`
+- R-SHARE-08: `partOf`, `shareOf`, `.partbox`/`.partsel`/`.partl`/`.partsum` in `openProtect`
 - R-STAT-01: `openStats`, `stP`, `stInv`
 - R-STAT-02: `personStats`
 - R-STAT-04: `cellSafe`

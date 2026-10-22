@@ -47,6 +47,20 @@ async function unseal(blob,pw){
   return JSON.parse(new TextDecoder().decode(data));
 }
 const anonymised=f=>{const c=JSON.parse(JSON.stringify(f));c.people.forEach((q,i)=>{q.name=L('anonPerson')+' '+(i+1)});c.events.forEach(e=>{e.desc=''});c.phases.forEach(x=>{x.desc=''});(c.weekInfo||[]).forEach(w=>{delete w.desc});return c};   // week names stay, like titles (R-CYC-17)
+// R-SHARE-08: only part of a workspace. inc = {sch, rh, ppl}: the schedules and rhythms to include and, when ppl is not empty, only the times those
+// people perform or are involved in. People and activity types: only those still used. A new id, so it never stands for the whole workspace.
+function partOf(f,inc){
+  const c=JSON.parse(JSON.stringify(f)),pin=p=>!inc.ppl.size||inc.ppl.has(p);c.id=uid();
+  c.schedules=c.schedules.filter(s=>inc.sch.has(s.id));
+  c.events=c.events.map(e=>{e.schedules=e.schedules.filter(id=>inc.sch.has(id));if(!e.schedules.length)return null;
+    if(inc.ppl.size)e.slots=e.slots.filter(s=>pin(s.person)||(s.inv||e.involved).some(pin));return e.slots.length?e:null}).filter(Boolean);
+  c.rhythms=c.rhythms.filter(r=>inc.rh.has(r.id));
+  c.phases=c.phases.map(p=>{p.rhythms=p.rhythms.filter(id=>inc.rh.has(id));return p.rhythms.length?p:null}).filter(Boolean);
+  const used=new Set();c.events.forEach(e=>{if(e.owner)used.add(e.owner);e.involved.forEach(i=>used.add(i));e.slots.forEach(s=>{if(s.person)used.add(s.person);(s.inv||[]).forEach(i=>used.add(i))})});
+  c.people=c.people.filter(q=>used.has(q.id));const ty=new Set(c.events.map(e=>e.type).filter(Boolean));c.types=c.types.filter(t=>ty.has(t.id));
+  return c;
+}
+const shareOf=(inc,anon)=>{let f=buildFile();if(inc)f=partOf(f,inc);return anon?anonymised(f):f};   // what a file or link holds
 function askPassword(blob,onOpen,onCancel){   // ask for the password of an encrypted file/link, retry on mistakes
   const body=el('div');el('p','',body).textContent=L('pwAsk');
   const pw=el('input','',body);pw.type='password';pw.autocomplete='off';pw.style.cssText='width:100%;margin-top:8px';
@@ -73,6 +87,17 @@ function openProtect(kind){   // options + password for a link or file; files ma
   }
   el('p','',plainBox).textContent=L('plainWarn');
   const al=el('label','sopt',body),ac=el('input','',al),asp=el('span','',al);ac.type='checkbox';asp.innerHTML=`<b>${esc(L('anonTitle'))}</b><small>${esc(L('anonTip'))}</small>`;
+  // what to include (R-SHARE-08): everything, or chosen schedules and rhythms, and only some people's activities
+  const inc={sch:new Set(S.schedules.map(s=>s.id)),rh:new Set(S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
+  const pb=el('div','partbox',body);el('div','parth',pb).textContent=L('partH');
+  const ps=el('div','seg partsel',pb),pl=el('div','partl',pb),sum=el('p','note partsum',pb);
+  [[false,'partAll'],[true,'partPick']].forEach(([v,k])=>{const b=el('button','',ps);b.type='button';b.textContent=L(k);b.onclick=()=>{part=v;drawPart()}});
+  const grp=(title,list,set,tip)=>{if(!list.length)return;const g=el('div','partg',pl),h=el('div','partgh',g);h.textContent=L(title);if(tip){const t=el('span','tip',h);t.textContent=' ⓘ';t.title=L(tip)}
+    list.forEach(([id,name])=>{const l=el('label','',g),i=el('input','',l);i.type='checkbox';i.checked=set.has(id);l.append(' '+name);i.onchange=()=>{i.checked?set.add(id):set.delete(id);drawPart()}})};
+  const drawPart=()=>{[...ps.children].forEach((b,i)=>{b.classList.toggle('on',(i===1)===part);b.setAttribute('aria-pressed',String((i===1)===part))});pl.innerHTML='';pl.hidden=!part;sum.hidden=!part;
+    if(!part)return;grp('partSch',S.schedules.map(s=>[s.id,s.name]),inc.sch);grp('partRh',S.rhythms.map(r=>[r.id,r.name]),inc.rh);grp('partPpl',S.people.map(q=>[q.id,q.name]),inc.ppl,'partPplTip');
+    const f=partOf(buildFile(),inc);sum.textContent=L('partSum',{e:f.events.length,te:S.events.length,p:f.phases.length,tp:S.phases.length})+' '+L('partNote')};
+  drawPart();
   body.append(pwBox);el('label','',pwBox).textContent=L('protPw');
   const row=el('div','row',pwBox),pw=el('input','',row),nb=el('button','',row);
   pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.setAttribute('aria-label',L('protPw'));   // its label above is not tied to it
@@ -81,13 +106,14 @@ function openProtect(kind){   // options + password for a link or file; files ma
   el('p','note',pwBox).textContent=L('protWarn');
   upd();if(kind==='link')plainBox.hidden=true;
   xdlg({title:L(kind==='link'?'shareTitle':'saveFileTitle'),body,buttons:[{label:L(kind==='link'?'protMakeLink':'protSaveFile'),cls:'p',fn:()=>{
-    const anon=ac.checked;if(plain){setTimeout(()=>saveFile(null,anon),0);return}
+    const anon=ac.checked,ic=part?inc:null;if(ic){const f=partOf(buildFile(),ic);if(!f.events.length&&!f.phases.length){sum.textContent=L('partNone');return false}}
+    if(plain){setTimeout(()=>saveFile(null,anon,ic),0);return}
     const p=pw.value.trim();if(p.length<20){msg.textContent=L('protShort');return false}
-    setTimeout(()=>kind==='link'?openShare(p,anon):saveFile(p,anon),0)}},{label:L('cancel'),dismiss:true}]});
+    setTimeout(()=>kind==='link'?openShare(p,anon,ic):saveFile(p,anon,ic),0)}},{label:L('cancel'),dismiss:true}]});
 }
-async function openShare(pw,anon){
+async function openShare(pw,anon,inc){
   let link;
-  try{const f=buildFile();link=location.href.split('#')[0]+'#data=e1.'+b64u(await seal(anon?anonymised(f):f,pw))}catch(e){toast(L('shareFail'));return}
+  try{link=location.href.split('#')[0]+'#data=e1.'+b64u(await seal(shareOf(inc,anon),pw))}catch(e){toast(L('shareFail'));return}
   const body=el('div');el('p','note',body).textContent=L('shareBody');
   const ta=el('textarea','',body);ta.readOnly=true;ta.rows=5;ta.value=link;ta.style.cssText='width:100%;margin-top:8px;font-size:11px;word-break:break-all';ta.onfocus=()=>ta.select();
   const pr=el('p','',body);pr.append(L('sharePw')+' ');const code=el('b','',pr);code.textContent=pw;code.style.cssText='font-family:monospace;user-select:all';
@@ -113,10 +139,10 @@ async function handleShareLink(){
     openImport(w,'link');
   },clean);
 }
-async function saveFile(pw,anon){   // pw null = unencrypted (readable) file, chosen explicitly by the user
-  let text;try{const f=anon?anonymised(buildFile()):buildFile();text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}
+async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file, chosen explicitly by the user; inc: only part of it (R-SHARE-08)
+  let text;try{const f=shareOf(inc,anon);text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}
   const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+(pw==null?'':'-encrypted')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  if(!anon)cw().lf=keyOf(S);   // an anonymised copy is not a backup of this workspace
+  if(!anon&&!inc)cw().lf=keyOf(S);   // an anonymised or partial copy is not a backup of this workspace
   toast(L('savedFile'));renderSide();
 }
 function loadMem(){  // reverts the current workspace to its saved copy in browser memory
