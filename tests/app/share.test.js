@@ -293,7 +293,7 @@ describe('R-SHARE-08 A file or link can hold only part of a workspace: chosen sc
     const a = fam(); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Home'); untick(a, 'Schedules', 'Work'); untick(a, 'Rhythms', 'School days'); untick(a, 'Rhythms', 'Holidays');
     a.qa('#xDlg .encsel button')[1].click(); a.click('Save file'); expect(a.q('#xDlg .partsum').textContent).toContain('Nothing to share'); expect(a.w.__file).toBeUndefined();
   });
-  it('the choice is translated', async () => {
+  it('the What to include choice is translated into Spanish', async () => {
     const a = openApp({ languages: ['es'] }); setData(a, rich()); a.toolbar('save').click(); a.click('Archivo JSON'); await a.sleep(10);
     expect(a.qa('#xDlg .partsel button').map(b => b.textContent)).toEqual(['Todo', 'Elegir…']);
   });
