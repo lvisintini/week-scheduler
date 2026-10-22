@@ -66,7 +66,8 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
         events: [ev({ id: 'r', title: 'Cook', slots: [{ day: 0, start: 1080, end: 1140, person: 'p1', wk: 1 }, { day: 0, start: 1080, end: 1140, person: 'p2', wk: 2 }] }), ev({ id: 's', type: 'ts', slots: [0, 1, 2, 3, 4, 5, 6].map(day => ({ day, start: 0, end: 480, person: 'p1' })) }), ev({ id: 'w', type: 'tw', weeks: [1], slots: [0, 1, 2, 3, 4].map(day => ({ day, start: 540, end: 1020, person: 'p1' })) })] }));
       await page.locator('.tbar button').nth(6).click(); await expect(page.locator('#xDlg .stwk b').first()).toBeVisible();
       let r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
-      await page.locator('#xDlg .stu button', { hasText: '% of planned' }).click(); await page.locator('#xDlg .stty button', { hasText: 'Work' }).click();
+      await page.locator('#xDlg .stu button', { hasText: '% of planned' }).click(); await page.locator('#xDlg .sttyb').click(); await page.locator('.typop .oi', { hasText: 'Work' }).click();
+      r = await new AxeBuilder({ page }).include('.typop').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); await page.keyboard.press('Escape');
       r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
       await page.locator('#xDlg select').first().selectOption('*'); r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
     });

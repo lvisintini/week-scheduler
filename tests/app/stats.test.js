@@ -202,7 +202,7 @@ describe('R-PPL-03 R-EVT-16 R-STAT-02 External people and on-call involvement in
 });
 
 const unit = (a, label) => a.qa('#xDlg .stu button').find(b => b.textContent === label).click();
-const chip = (a, name) => a.qa('#xDlg .stty button').find(b => b.textContent === name);
+const chip = (a, name) => { if (!a.q('.typop')) a.q('#xDlg .sttyb').click(); return a.qa('.typop .oi[role=menuitemcheckbox]').find(b => b.textContent === name); };
 const tbl = a => a.qa('#xDlg .sttab tbody tr').map(r => [...r.children].map(c => c.textContent.trim()));
 const day = () => fresh(blank({ people, types, events: [at('s', 0, 0, 480, 'A', { type: 'ts' }), at('w', 0, 540, 1020, 'A', { type: 'tw' }), at('f', 0, 1020, 1080, 'A', { type: 'tf' }), at('x', 1, 600, 630, 'A')] }));
 
@@ -264,10 +264,21 @@ describe('R-STAT-06 The bars are labelled with their figures', () => {
   });
 });
 
-describe('R-STAT-07 The activity types shown can be filtered inside the statistics dialog', () => {
-  it('a row of chips lists every activity type and No type, all shown at first, with a tooltip saying it is independent of the sidebar', () => {
-    const a = day(); a.ev('stHide.clear();openStats("A")'); expect(a.qa('#xDlg .stty button').map(b => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([['Sleep', 'true'], ['Work', 'true'], ['Free time', 'true'], ['No type', 'true']]);
-    expect(a.q('#xDlg .stty .tip').title).toContain('independent of the eyes');
+describe('R-STAT-07 The activity types shown can be filtered inside the statistics dialog, from a list that pops up', () => {
+  const lines = a => a.qa('.typop .oi[role=menuitemcheckbox]').map(b => [b.textContent, b.getAttribute('aria-checked')]);
+  it('one button in the bar says how many types are shown; its tooltip says it is independent of the sidebar', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); const b = a.q('#xDlg .stbar .sttyb');
+    expect(b.textContent).toBe('Activity types: all'); expect(b.getAttribute('aria-haspopup')).toBe('menu'); expect(b.title).toContain('independent of the eyes'); expect(a.q('#xDlg .stty')).toBeNull();
+  });
+  it('it opens a list with one type per line, No type last, all ticked at first, under Show all and Hide all', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); a.q('#xDlg .sttyb').click();
+    expect(lines(a)).toEqual([['Sleep', 'true'], ['Work', 'true'], ['Free time', 'true'], ['No type', 'true']]); expect(a.qa('.typop .tyall').map(b => b.textContent)).toEqual(['Show all', 'Hide all']);
+    expect(a.q('.typop .oi[role=menuitemcheckbox] .ic svg')).not.toBeNull(); expect(a.q('.typop').getAttribute('role')).toBe('menu');
+  });
+  it('ticking lines filters at once and keeps the list open; the button counts the types shown; Esc closes the list', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Sleep').click(); chip(a, 'Free time').click();
+    expect(a.q('.typop')).not.toBeNull(); expect(lines(a).map(l => l[1])).toEqual(['false', 'true', 'false', 'true']); expect(a.q('#xDlg .sttyb').textContent).toBe('Activity types: 2 of 4');
+    a.q('.typop').onkeydown({ key: 'Escape', preventDefault() {}, stopPropagation() {} }); expect(a.q('.typop')).toBeNull();
   });
   it('filtered-out types become one grey Filtered out part after the shown types, so Not planned stays the same', () => {
     const a = day(); a.ev('stU="h";stHide.clear();openStats("A")'); chip(a, 'Sleep').click(); chip(a, 'Free time').click();
@@ -275,21 +286,27 @@ describe('R-STAT-07 The activity types shown can be filtered inside the statisti
     expect(a.q('#xDlg .stwk .stf').title).toBe('Filtered out 9:00'); expect(tbl(a).map(r => r[0])).toEqual(['Work', 'No type', 'Filtered out (2 type(s))', 'Planned', 'Not planned']);
     expect(tbl(a).find(r => r[0] === 'Not planned')[1]).toBe('150:30'); expect(tbl(a)[0][3]).toBe('46 %');
   });
+  it('Hide all and Show all switch every type at once', () => {
+    const a = day(); a.ev('stHide.clear();openStats("A")'); a.q('#xDlg .sttyb').click(); a.qa('.typop .tyall')[1].click();
+    expect(lines(a).every(l => l[1] === 'false')).toBe(true); expect(a.q('#xDlg .sttyb').textContent).toBe('Activity types: 0 of 4');
+    a.qa('.typop .tyall')[0].click(); expect(a.q('#xDlg .stwk .stf')).toBeNull(); expect(a.q('#xDlg .sttyb').textContent).toBe('Activity types: all');
+  });
   it('the filter does not touch the eyes of the activity types in the sidebar, and the sidebar eyes do not touch it', () => {
     const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); expect(a.ev('S.types.map(t=>t.visible!==false)')).toEqual([true, true, true]);
-    a.ev('S.types[0].visible=false'); a.click('Close'); a.ev('openStats("A")'); expect(chip(a, 'Sleep').getAttribute('aria-pressed')).toBe('true');
+    a.ev('S.types[0].visible=false'); a.click('Close'); a.ev('openStats("A")'); expect(chip(a, 'Sleep').getAttribute('aria-checked')).toBe('true');
   });
-  it('Show all brings every type back; the filter is remembered while the page is open', () => {
+  it('the filter is remembered while the page is open', () => {
     const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); a.click('Close'); a.ev('openStats("A")');
-    expect(chip(a, 'Work').getAttribute('aria-pressed')).toBe('false'); a.click('Show all'); expect(a.q('#xDlg .stwk .stf')).toBeNull();
+    expect(a.q('#xDlg .sttyb').textContent).toBe('Activity types: 3 of 4'); expect(chip(a, 'Work').getAttribute('aria-checked')).toBe('false');
   });
   it('Everyone, its legend, the copied table and the CSV merge the filtered types the same way', () => {
     const a = day(); a.ev('stHide.clear();openStats("*")'); chip(a, 'Sleep').click(); chip(a, 'Work').click();
     expect(a.qa('#xDlg .stleg span').map(s => s.textContent)).toEqual(['Free time', 'No type', 'Filtered out', 'Not planned']);
     const r = a.ev('statsRows("*",true)'); expect(r[0].slice(0, 6)).toEqual(['Person', 'Free time', 'No type', 'Filtered out (2 type(s))', 'Planned', 'Not planned']); expect(r[1][3]).toBe('16.00');
   });
-  it('the chips and the new labels are translated', () => {
+  it('the button, the list and the new labels are translated', () => {
     const a = fresh(blank({ people, types }), { languages: ['es'] }); a.ev('stHide.clear();openStats("A")');
-    expect(a.q('#xDlg .stty .stth').textContent).toContain('Tipos de actividad que se muestran'); expect(a.qa('#xDlg .stu button').map(b => b.textContent)).toEqual(['Horas', '% de la semana', '% de lo planificado']);
+    expect(a.q('#xDlg .sttyb').textContent).toBe('Tipos de actividad: todos'); a.q('#xDlg .sttyb').click(); expect(a.q('.typop .oh').textContent).toBe('Tipos de actividad que se muestran');
+    expect(a.qa('.typop .tyall').map(b => b.textContent)).toEqual(['Mostrar todos', 'Ocultar todos']); expect(a.qa('#xDlg .stu button').map(b => b.textContent)).toEqual(['Horas', '% de la semana', '% de lo planificado']);
   });
 });
