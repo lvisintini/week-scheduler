@@ -75,7 +75,8 @@ function openProtect(kind){   // options + password for a link or file; files ma
   const al=el('label','sopt',body),ac=el('input','',al),asp=el('span','',al);ac.type='checkbox';asp.innerHTML=`<b>${esc(L('anonTitle'))}</b><small>${esc(L('anonTip'))}</small>`;
   body.append(pwBox);el('label','',pwBox).textContent=L('protPw');
   const row=el('div','row',pwBox),pw=el('input','',row),nb=el('button','',row);
-  pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.style.cssText='flex:1;font-family:monospace';
+  pw.type='text';pw.value=genPassword();pw.spellcheck=false;pw.autocomplete='off';pw.setAttribute('aria-label',L('protPw'));   // its label above is not tied to it
+  pw.style.cssText='flex:1;font-family:monospace';
   nb.type='button';nb.textContent=L('protNew');const msg=el('div','err',pwBox);nb.onclick=()=>{pw.value=genPassword();msg.textContent=''};
   el('p','note',pwBox).textContent=L('protWarn');
   upd();if(kind==='link')plainBox.hidden=true;
