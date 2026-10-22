@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 import { openApp, seed, blank, ev, slot, person, toolbar, dialogButton, allowClipboard, PASSWORD } from './helpers.js';
 
 const BASE = 'http://localhost:4173';
+// the app's own files, as index.html loads them (R-SEC-01): the page, its stylesheet and its scripts
+const SCRIPTS = [...fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8').matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m => m[1]);
+const OWN = [BASE + '/', BASE + '/app.css', ...SCRIPTS.map(f => BASE + '/' + f)].sort();
 /** Records every network request and every Content-Security-Policy violation the page produces. */
 async function watch(page) {
   const requests = [], consoleErrors = [];
@@ -21,7 +25,7 @@ test.describe('R-SEC-04 A full tour of the app talks to nobody', () => {
     await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'Shareable link').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await dialogButton(page, 'Create link').click(); await expect(page.locator('#xDlg textarea')).toBeVisible({ timeout: 15000 }); await dialogButton(page, 'Copy link').click(); await dialogButton(page, 'Close').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'JSON file').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await Promise.all([page.waitForEvent('download'), dialogButton(page, 'Save file').click()]);
-    const outside = w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:') && !u.startsWith('blob:')); expect(outside).toEqual([]); expect(w.requests.filter(u => u.startsWith(BASE + '/'))).toEqual([BASE + '/']);
+    const outside = w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:') && !u.startsWith('blob:')); expect(outside).toEqual([]); expect([...new Set(w.requests.filter(u => u.startsWith(BASE + '/')))].sort()).toEqual(OWN);
     expect(w.consoleErrors).toEqual([]); expect(await violations(page)).toEqual([]);
   });
   test('only the two documented browser-storage keys are written; no cookies, databases, caches or service workers exist', async ({ page }) => {
@@ -54,9 +58,19 @@ test.describe('R-SEC-01 The Content-Security-Policy is enforced by the browser',
     });
     expect(r).toMatchObject({ fetch: 'blocked', xhr: 'blocked', ws: 'blocked', img: 'blocked', css: 'blocked' }); expect(r.violations).toBeGreaterThanOrEqual(7); expect(seen).toEqual([]); expect(page.url()).toBe(BASE + '/');
   });
-  test('code-from-text is refused: eval and new Function throw (tested from an inline script, as Playwright\'s own evaluate bypasses the policy)', async ({ page }) => {
-    await page.evaluate(() => { const s = document.createElement('script'); s.textContent = "setTimeout(function(){window.__r={ev:(function(){try{eval('1+1');return 'ran'}catch(e){return e.name}})(),fn:(function(){try{return String(new Function('return 1')())}catch(e){return e.name}})()}},0)"; document.body.append(s); });   // runs later, outside Playwright's own call, which would be exempt
+  test('code-from-text is refused: eval and new Function throw (tested from a script file of the site, as Playwright\'s own evaluate bypasses the policy)', async ({ page }) => {
+    await page.route(BASE + '/js/probe.js', route => route.fulfill({ contentType: 'text/javascript', body: "setTimeout(function(){window.__r={ev:(function(){try{eval('1+1');return 'ran'}catch(e){return e.name}})(),fn:(function(){try{return String(new Function('return 1')())}catch(e){return e.name}})()}},0)" }));
+    await page.evaluate(() => { const s = document.createElement('script'); s.src = 'js/probe.js'; document.body.append(s); });   // a file of the site may run ('self'); its eval may not
     await page.waitForFunction(() => window.__r); const r = await page.evaluate(() => window.__r); expect(r).toEqual({ ev: 'EvalError', fn: 'EvalError' });
+  });
+  test('injected code never runs: an inline script, an inline event handler and a javascript: link are refused', async ({ page }) => {
+    const r = await page.evaluate(async () => {
+      const s = document.createElement('script'); s.textContent = 'window.__inl=1'; document.body.append(s);
+      const i = document.createElement('img'); i.setAttribute('onerror', 'window.__h=1'); i.src = 'data:,x'; document.body.append(i);
+      const a = document.createElement('a'); a.href = 'javascript:window.__j=1'; document.body.append(a); a.click();
+      await new Promise(res => setTimeout(res, 400)); return { inl: window.__inl, h: window.__h, j: window.__j, v: window.__csp.filter(x => /script-src/.test(x)).length };
+    });
+    expect(r).toMatchObject({ inl: undefined, h: undefined, j: undefined }); expect(r.v).toBeGreaterThanOrEqual(3);
   });
   test('the page cannot be turned into another page: a base tag and an object/embed load nothing', async ({ page }) => {
     const r = await page.evaluate(async () => { const b = document.createElement('base'); b.href = 'https://example.org/'; document.head.append(b); const o = document.createElement('object'); o.data = 'https://example.org/o'; document.body.append(o); await new Promise(res => setTimeout(res, 300)); return window.__csp.length; });
@@ -75,7 +89,7 @@ test.describe('R-SEC-02 Hostile text in every field never runs in a real browser
     for (const open of [() => page.locator('.dh:not(.c)').first().click(), () => page.locator('#agClose').click(), () => page.evaluate(() => openRhythmAgenda(S.rhythms[0])), () => page.locator('#agClose').click(), () => page.evaluate(() => openDlg(S.events[0])), () => page.locator('#fCancel').click(), () => page.evaluate(() => openCopy(S.events[0])), () => dialogButton(page, 'Cancel').click(), () => page.evaluate(() => printSchedule()), () => page.locator('.wsbtn').click(), () => page.keyboard.press('Escape')]) { await open(); await page.waitForTimeout(40); }
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => ({ pwned: window.__pwned, scripts: document.scripts.length, handlers: document.querySelectorAll('[onerror],[onload],[onmouseover],[onclick]').length, jsLinks: document.querySelectorAll('a[href^="javascript"]').length, badImgs: document.querySelectorAll('img[src="x"]').length, text: document.querySelector('#agBody') ? document.body.textContent.includes('onerror') : false }));
-    expect(r).toMatchObject({ pwned: undefined, scripts: 1, handlers: 0, jsLinks: 0, badImgs: 0 }); expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
+    expect(r).toMatchObject({ pwned: undefined, scripts: SCRIPTS.length, handlers: 0, jsLinks: 0, badImgs: 0 }); expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
     expect(await page.evaluate(t => [...document.querySelectorAll('#sbin input[type=text]')].some(i => i.value === t), payload)).toBe(true);   // …and the text really is there, as plain text
   });
 });

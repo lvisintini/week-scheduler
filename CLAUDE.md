@@ -1,6 +1,6 @@
 # Weekly schedules: instructions for Claude
 
-A single static `index.html` (HTML + CSS + vanilla JS; no libraries, no build, no network requests) that must work opened from disk and on GitHub Pages (https://lvisintini.github.io/week-scheduler/, serves `main`). A repeating Monday–Sunday planner (days are not dates; a workspace may repeat every 1–4 weeks): **workspaces** holding **schedules**, **events** with repetitions, **people**, **activity types** and background **rhythms** made of **phases**. English and Spanish. Phones are for *checking* a schedule (Live View, the day view), not for building one.
+Static files served as they are by GitHub Pages (https://lvisintini.github.io/week-scheduler/, serves `main`): `index.html` (markup), `app.css` and classic scripts in `js/` that share one global scope, loaded in the order of `index.html` (vanilla JS; no libraries, no modules, no build, no network requests). Opening from disk is not supported **[U]**; locally run `npm run serve` (http://localhost:4173). A repeating Monday–Sunday planner (days are not dates; a workspace may repeat every 1–4 weeks): **workspaces** holding **schedules**, **events** with repetitions, **people**, **activity types** and background **rhythms** made of **phases**. English and Spanish. Phones are for *checking* a schedule (Live View, the day view), not for building one.
 
 This file holds only what applies to every task. The full specification is in `docs/requirements/`: read the file for an area before changing it (table below).
 
@@ -37,7 +37,7 @@ This file holds only what applies to every task. The full specification is in `d
 | CSP, escaping, import limits, hosting | `docs/requirements/security.md` |
 | printing, agendas, translations | `docs/requirements/printing-i18n.md` |
 | what the app is for | `docs/requirements/product.md` |
-| where things are in `index.html` | `docs/architecture.md` |
+| where things are in `js/` and `app.css` | `docs/architecture.md` |
 | the tests in detail | `docs/testing.md` |
 | open ideas · known bugs and limits | `docs/parked.md` · `docs/known-issues.md` |
 
@@ -52,6 +52,7 @@ This file holds only what applies to every task. The full specification is in `d
 ### Security and escaping (details: `docs/requirements/security.md`)
 - Every piece of user-controlled text put into `innerHTML`/`insertAdjacentHTML` goes through `esc()`; prefer `textContent`/DOM properties.
 - Nothing leaves the device: no `eval`, `new Function`, `document.write`, `fetch`/XHR/WebSocket/`sendBeacon`/`window.open`, cookies or third-party code. Only the two documented `localStorage` keys are written; the only `Blob`s are the JSON export and the statistics CSV.
+- No inline `<script>` and no inline event handlers (`on…=` attributes, `javascript:` links) anywhere: the policy allows only the app's own files (`script-src 'self'`), so they would not run. Handlers are set from the scripts (`el.onclick = …`).
 - The Content-Security-Policy `<meta>` is deliberate: any new resource type (fonts, images from URLs, workers, network calls) needs a deliberate CSP change. After edits, check the browser console for "Refused to…" messages.
 - Imported data (files, links, the browser store) goes through `migrate()` and then `parseData()`, the single place that validates it (hex colours only, length caps, the `LIM` import limits).
 - Links are always encrypted with a password; files are encrypted unless the user deliberately picks *Unencrypted*.
@@ -62,7 +63,7 @@ This file holds only what applies to every task. The full specification is in `d
 - View state (the eyes of schedules, people, activity types and rhythms, opacities, `prefs`, focus and Live View) is not undoable, not an unsaved change, ignored by `dataKey()` and kept by `restoreState`. Data changes call `hist()` before mutating (drags: `pushUndo(before)`).
 
 ## Architecture (short; the full map is `docs/architecture.md`)
-- Everything is in `index.html`. `S` = the current workspace's data, `WS` = all workspaces, `prefs` = per-browser view settings.
+- The code is in `js/` (which file holds what: `docs/architecture.md`), the styles in `app.css`, the markup and the static dialogs in `index.html`. A new script file goes into `index.html`'s list of `<script src defer>`; a top-level statement that runs at load may only use what earlier files define. `S` = the current workspace's data, `WS` = all workspaces, `prefs` = per-browser view settings.
 - `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar.
 - Time and pieces: `fmt`/`fmtEnd`, `piecesOf` (event → per-day pieces), `coreOf` (flexible start/end), `overlapSet` (the ⚠ of repetitions).
 - A day column's layout: `laneLayout` (or `fixedLayout`), the result in `laneMap`, read by `inLane`; strips via `gutMap`; nesting via `nestPick`.
@@ -83,5 +84,5 @@ This file holds only what applies to every task. The full specification is in `d
 - Every test group is named `R-AREA-nn <what is checked>`; test names say what is expected (at least 25 characters, no duplicates, no `skip`/`only`/`todo`). The console output is the documentation.
 - jsdom has no layout, and `el.onpointerdown = f` is a plain property there, so tests call the handlers directly; anything about sticky, scrolling, real drags or print belongs in `tests/e2e`.
 - Playwright: `page.evaluate` is exempt from the CSP (to test `eval` blocking, inject an inline script); mouse targets must be on screen; touch uses `Input.dispatchTouchEvent` with many small moves (the `touch`/`swipe` helpers).
-- **Negative controls:** after adding tests for a behaviour, temporarily break the behaviour in `index.html` and confirm the tests fail.
+- **Negative controls:** after adding tests for a behaviour, temporarily break the behaviour in the app's code and confirm the tests fail.
 - The accessibility ratchet (`tests/e2e/a11y.spec.js`) is at `{}` on every screen; keep it there.

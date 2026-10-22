@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, sched, ev1, workspace, html, sleep, WS_KEY, PREFS_KEY, PASSWORD } from '../helpers/app.js';
+import { openApp, setData, blank, sched, ev1, workspace, html, rawHtml, scriptFiles, sleep, WS_KEY, PREFS_KEY, PASSWORD } from '../helpers/app.js';
 
 const script = html.slice(html.indexOf('<script>'), html.lastIndexOf('</script>'));
 const markup = html.slice(0, html.indexOf('<script>'));
@@ -7,19 +7,29 @@ const markup = html.slice(0, html.indexOf('<script>'));
 describe('R-SEC-01 Content-Security-Policy confines the page to itself', () => {
   const csp = (html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || '';
   const directive = name => (csp.split(';').map(s => s.trim()).find(s => s.startsWith(name + ' ')) || '');
-  it('a policy is present in the page itself (it travels with the single file)', () => { expect(csp).not.toBe(''); });
+  it('a policy is present in the page itself (a <meta>, since GitHub Pages sets no headers)', () => { expect(csp).not.toBe(''); });
   it.each([['default-src', "'none'"], ['connect-src', "'none'"], ['base-uri', "'none'"], ['form-action', "'none'"], ['img-src', 'data:']])('the policy directive %s allows only %s', (name, value) => {
     expect(directive(name)).toBe(`${name} ${value}`);
   });
-  it('scripts and styles may only be the page\'s own inline code, never other files or addresses', () => {
-    expect(directive('script-src')).toBe("script-src 'unsafe-inline'"); expect(directive('style-src')).toBe("style-src 'unsafe-inline'");
+  it('scripts may only be the app\'s own files (no inline code at all); styles its own stylesheet and style attributes', () => {
+    expect(directive('script-src')).toBe("script-src 'self'"); expect(directive('style-src')).toBe("style-src 'self' 'unsafe-inline'");
+  });
+  it('the page has no inline script and no inline event handlers, which the policy would refuse', () => {
+    expect(rawHtml).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/i); expect(rawHtml).not.toMatch(/\son[a-z]+=/i);
+  });
+  it('the scripts, run one by one in the order of index.html, start the app without a single error', () => {
+    const a = openApp(); expect(a.log.errors).toEqual([]); expect(a.qa('.dh:not(.c)')).toHaveLength(7); expect(a.qa('script')).toHaveLength(scriptFiles.length);
+  });
+  it('it loads only its own files: the stylesheet and the scripts in js/, by relative address', () => {
+    expect([...rawHtml.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map(m => m[1])).toEqual(['app.css']);
+    expect(scriptFiles.length).toBeGreaterThan(1); expect(scriptFiles.every(f => /^js\/[a-z0-9]+\.js$/.test(f))).toBe(true);
   });
   it('eval and similar string-to-code features are not allowed (no unsafe-eval)', () => { expect(csp).not.toContain('unsafe-eval'); });
   it('no network access of any kind is allowed: no fonts, frames, media, workers or objects', () => {
     expect(csp).not.toMatch(/https?:|\*|font-src|frame-src|media-src|worker-src|object-src [^']/);
   });
   it('the page loads nothing from outside: no external scripts, stylesheets, images, frames or links to other sites', () => {
-    expect(markup).not.toMatch(/<script[^>]+src=/i); expect(markup).not.toMatch(/<link[^>]+rel=["']?stylesheet/i); expect(markup).not.toMatch(/(src|href)=["']https?:/i); expect(markup).not.toMatch(/<(iframe|object|embed|frame)\b/i);
+    expect(rawHtml).not.toMatch(/(src|href)=["']?(https?:)?\/\//i); expect(markup).not.toMatch(/(src|href)=["']https?:/i); expect(markup).not.toMatch(/<(iframe|object|embed|frame)\b/i);
   });
   it('web addresses inside the script are only XML namespaces of inline icons, never something that is fetched', () => {
     const urls = [...script.matchAll(/https?:\/\/[^\s'"`)]+/g)].map(m => m[0]); expect(urls.every(u => u.startsWith('http://www.w3.org/'))).toBe(true);
@@ -51,7 +61,7 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
     a.qa('.day')[0].onpointermove({ pointerType: 'mouse', buttons: 0, clientX: a.x(0), clientY: a.y(700) });
     await sleep(420);
     expect(a.w.__pwned).toBeUndefined();
-    expect(a.qa('script')).toHaveLength(1);
+    expect(a.qa('script')).toHaveLength(scriptFiles.length);   // the app's own scripts, nothing injected
     expect(a.qa('[onerror],[onload],[onmouseover],[onclick][data-x]')).toHaveLength(0);
     expect(a.qa('a[href^="javascript"]')).toHaveLength(0);
     expect(a.qa('img[src="x"]')).toHaveLength(0);

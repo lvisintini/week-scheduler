@@ -1,6 +1,6 @@
 # Weekly Schedules
 
-A single-file, dependency-free weekly planner. Open `index.html` in a browser — no build step, no server.
+A dependency-free weekly planner: static files (`index.html`, `app.css`, `js/`) served as they are by GitHub Pages — no build step, no libraries.
 
 ## Features
 - Mon–Sun columns, hourly rows 05:00–24:00 (00:00–05:00 can be toggled on)
@@ -26,7 +26,7 @@ A single-file, dependency-free weekly planner. Open `index.html` in a browser �
 - Save / load in browser memory, as a JSON file (password-encrypted by default, or unencrypted if you choose so) or as a password-protected link (AES-256; the data travels inside the URL fragment)
 
 ## Use
-Open `index.html` (data can be saved in the browser or as JSON), or host with GitHub Pages (Settings → Pages → deploy from `main`, root).
+Use it at https://lvisintini.github.io/week-scheduler/ (GitHub Pages: Settings → Pages → deploy from `main`, root). Locally: `npm run serve` and open http://localhost:4173 (opening `index.html` from disk is not supported). Data can be saved in the browser, as a JSON file or as a link.
 
 ## Save file
 A saved file or link holds one workspace (`version: 8`, `id`, `name`). Links are always encrypted with a password you choose; JSON files are too, unless you deliberately pick *Unencrypted* (the app warns that anyone with the file can then read it). Inside it is plain JSON with: `schedules`, `people`, `types`, `events` (each with `slots`, `involved`, `schedules`, optional `type`, `owner`, `nest`, `bg`; each slot optionally `fo` and `inv`), `rhythms`, `phases`, `phaseOpacity`. See `docs/requirements/data.md` for the schema. Files, links and browser memory saved by any earlier version keep opening (they are upgraded on load); data saved by a *newer* version is refused with a message to reload the page, and is never overwritten.

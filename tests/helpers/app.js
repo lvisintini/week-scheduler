@@ -8,7 +8,13 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '../..');
-export const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+// The app is index.html + app.css + classic scripts in js/ (served as they are; docs/architecture.md). jsdom gets one document with the
+// stylesheet and each script inlined (one <script> per file, in the order of index.html's <script src> tags), so every test sees the same page a browser runs.
+export const rawHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+export const scriptFiles = [...rawHtml.matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m => m[1]);
+export const html = rawHtml
+  .replace('<link rel="stylesheet" href="app.css">', () => '<style>\n' + fs.readFileSync(path.join(ROOT, 'app.css'), 'utf8') + '</style>')
+  .replace(/(<script src="[^"]+" defer><\/script>\n?)+/, () => scriptFiles.map(f => '<script>\n' + fs.readFileSync(path.join(ROOT, f), 'utf8') + '</script>\n').join(''));   // one script per file, as a browser runs them
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const WS_KEY = 'weekly-schedules-workspaces';
 export const PREFS_KEY = 'weekly-schedules-prefs';

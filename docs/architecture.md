@@ -1,4 +1,24 @@
-# Code map (everything is in `index.html`)
+# Code map
+
+## Files
+The app is static files served as they are (no build): `index.html` (markup, the static dialogs, the CSP), `app.css` (all styles; `#pgStyle` in `index.html` is the print page size, set at runtime) and classic scripts in `js/`, loaded with `<script src defer>` in this order. They share **one global scope** (top-level `function`/`const`/`let` of every file are visible to the others), so a function may call one from any file, but a top-level statement that **runs at load** may only use what earlier files define. Not ES modules: module bindings are not globals, and the tests reach the state by name (`a.ev`); modules would first need the mutable state gathered into one object (parked).
+
+| File | Holds |
+|---|---|
+| `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
+| `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
+| `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
+| `js/share.js` | links (`inflate`), encryption (`seal`/`unseal`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem` |
+| `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
+| `js/stats.js` | statistics (`personStats`, `openStats`, turns), agendas and printing |
+| `js/sidebar.js` | `renderSide` and the sidebar menus |
+| `js/grid.js` | `render`, pointer and touch interactions, the peek card, zoom, dragging |
+| `js/dialog.js` | the event/phase dialog (`openDlg`, the day table) and the copy dialog |
+| `js/main.js` | wiring and startup (runs last) |
+
+The test harness (`tests/helpers/app.js`) gives jsdom one document with `app.css` and each script inlined in this order (one `<script>` per file, as a browser runs them); `tests/e2e/serve.js` serves exactly these files, like GitHub Pages.
+
+## Map
 
 - State `S` (data) + `prefs` (view). `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar (skipped while dragging an opacity slider via `skipSide`).
 - Time helpers: `fmt`, `fmtEnd`, `endLabel`, `piecesOf` (event → per-day pieces), `coreOf`/`coreIn`/`fitMg`/`edgeNote` (flexible start/end), `overlapSet` (week-wrapped overlap detection of cores; squeezed-out *Around these times*), `piecesAt/handlesAt` (hit-testing, polymorphic for events/phases via `act()`, `eVis`, `eLock`, `sVis`).
