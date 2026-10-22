@@ -340,7 +340,7 @@ function openCopy(src){
   const isPh=!!src.rhythms,lst=isPh?S.rhythms:S.schedules,mem=isPh?src.rhythms:src.schedules;
   const body=el('div');el('p','note',body).textContent=L('cpNote');
   el('label','',body).textContent=L(isPh?'cpDestR':'cpDest');
-  const sel=el('select','',body);fillSel(sel,lst.map(s=>[s.id,s.name]));
+  const sel=el('select','',body);sel.setAttribute('aria-label',L(isPh?'cpDestR':'cpDest'));fillSel(sel,lst.map(s=>[s.id,s.name]));
   const o=lst.find(s=>!mem.includes(s.id));if(o)sel.value=o.id;
   el('label','',body).textContent=L('cpColor');
   const rd=el('div','radios',body);let pv=src.color;
