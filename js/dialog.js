@@ -337,24 +337,31 @@ $('fDel').onclick=()=>{hist();if(dkind==='phase')S.phases=S.phases.filter(x=>x!=
 $('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
 /* ---------- copy dialog ---------- */
 function openCopy(src){
-  const isPh=!!src.rhythms,lst=isPh?S.rhythms:S.schedules,mem=isPh?src.rhythms:src.schedules;
+  const isPh=!!src.rhythms,mem=isPh?src.rhythms:src.schedules;let lst=isPh?S.rhythms:S.schedules,tw=null;   // tw: another workspace (events only, R-DATA-04)
   const body=el('div');el('p','note',body).textContent=L('cpNote');
+  let wsel=null;if(!isPh&&WS.length>1){el('label','',body).textContent=L('cpWs');wsel=el('select','',body);fillSel(wsel,WS.map(w=>[w.id,w.id===curId?L('cpThis',{n:w.name}):w.name]));wsel.value=curId;wsel.setAttribute('aria-label',L('cpWs'))}
   el('label','',body).textContent=L(isPh?'cpDestR':'cpDest');
-  const sel=el('select','',body);sel.setAttribute('aria-label',L(isPh?'cpDestR':'cpDest'));fillSel(sel,lst.map(s=>[s.id,s.name]));
-  const o=lst.find(s=>!mem.includes(s.id));if(o)sel.value=o.id;
+  const sel=el('select','',body);sel.setAttribute('aria-label',L(isPh?'cpDestR':'cpDest'));   // its label above is not tied to it
+  const fillDest=()=>{tw=wsel&&wsel.value!==curId?WS.find(w=>w.id===wsel.value):null;lst=tw?tw.data.schedules:isPh?S.rhythms:S.schedules;fillSel(sel,lst.map(s=>[s.id,s.name]));
+    const o=!tw&&lst.find(s=>!mem.includes(s.id));if(o)sel.value=o.id;const mv=$('xDlg').querySelectorAll('.btns button')[1];if(mv&&mv.dataset.mv)mv.style.display=tw?'':'none'};
+  fillDest();
   el('label','',body).textContent=L('cpColor');
   const rd=el('div','radios',body);let pv=src.color;
   const modes=[['same','cpSame'],['tweak','cpHue'],['random','cpRandom'],['pick','cpPick']],rad={};
   modes.forEach(([m,k])=>{const l=el('label','',rd),i=el('input','',l);i.type='radio';i.name='cpm';i.value=m;rad[m]=i;l.append(L(k));
     if(m==='pick'){const sw=el('button','swatch',l);sw.type='button';sw.style.cssText='width:44px;height:22px;margin-left:6px;background:'+pv;
       sw.onclick=e=>{e.preventDefault();pickColor(sw,pv,c=>{pv=c;sw.style.background=c;rad.pick.checked=true})}}});
-  const auto=()=>{rad[mem.includes(sel.value)?'tweak':'same'].checked=true};
-  sel.onchange=auto;auto();
-  xdlg({title:L('cpTitle')+': '+src.title,full:true,body,buttons:[
-    {label:L('cpDo'),cls:'p',fn:()=>{
+  const auto=()=>{rad[!tw&&mem.includes(sel.value)?'tweak':'same'].checked=true};
+  sel.onchange=auto;if(wsel)wsel.onchange=()=>{fillDest();auto()};auto();
+  const go=move=>{
       const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
-      const used=(isPh?S.phases:S.events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
+      const used=(isPh?S.phases:(tw?tw.data:S).events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
       const col=mode==='tweak'?shiftColor(src.color,used):mode==='random'?randomColor(used):mode==='pick'?pv:src.color;
-      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?S.phases:S.events).push(c);render();toast(L('copied'))}},
+      if(tw){const t=tw;setTimeout(()=>carryEvents([{...src,color:col}],t,()=>tid,()=>{if(move){pushUndoWs(cw());S.events=S.events.filter(e=>e!==src)}render();toast(L(move?'trMoved':'trDone',{n:t.name}))}),0);return}   // to another workspace (R-DATA-04)
+      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?S.phases:S.events).push(c);render();toast(L('copied'))};
+  xdlg({title:L('cpTitle')+': '+src.title,full:true,body,buttons:[
+    {label:L('cpDo'),cls:'p',fn:()=>go(false)},
+    ...(wsel?[{label:L('cpMove'),fn:()=>go(true)}]:[]),
     {label:L('cancel'),dismiss:true}]});
+  if(wsel){const mv=$('xDlg').querySelectorAll('.btns button')[1];mv.dataset.mv='1';mv.title=L('cpMoveTip');mv.style.display='none'}   // Move: only to another workspace
 }

@@ -108,6 +108,10 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
       await expect(page.locator('#xDlg .partl')).toBeVisible(); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
     });
   }
+  test('R-DATA-04 the copy dialog with a workspace choice adds no accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ events: [ev({ title: 'Dishes' })] })); await page.evaluate(() => { WS.push(newWs('Work', defaultData(), true)); openCopy(S.events[0]); });
+    await page.locator('#xDlg select').first().selectOption({ label: 'Work' }); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
+  });
   test('the dark theme shows no serious accessibility violation either', async ({ page }) => {
     await openApp(page, { prefs: { theme: 'dark' } }); await seed(page, blank({ events: [ev()] }));
     ratchet(await scan(page), {});

@@ -377,23 +377,27 @@ function askPeople(src,tw,pids,cb){
     const same=tw.data.people.find(x=>x.name.toLowerCase()===q.name.toLowerCase());s.value=same?same.id:'__new__';return [pid,s]});
   xdlg({title:L('mapTitle'),full:true,body,buttons:[{label:L('mapCont'),cls:'p',fn:()=>{const map={};rows.forEach(([pid,s])=>map[pid]=s.value);setTimeout(()=>cb(map),0)}},{label:L('cancel'),dismiss:true}]});
 }
+// events of the current workspace carried into workspace tw (R-DATA-04): the people they use are mapped first (askPeople), activity types go by
+// name, weeks beyond tw's cycle are asked about (R-CYC-13). place(td) gives the target schedule's id (creating it when needed); done() runs after
+function carryEvents(evs,tw,place,done){
+  syncWs();const src=S,td=tw.data,ids=new Set();
+  evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));if(e.owner)ids.add(e.owner);e.slots.forEach(s=>{if(s.person)ids.add(s.person);(s.inv||[]).forEach(i=>ids.add(i))})});
+  const pids=[...ids].filter(i=>src.people.some(q=>q.id===i));
+  const run=(map,ch)=>{
+    pushUndoWs(tw);const pm={},inc=[];
+    Object.entries(map).forEach(([pid,v])=>{if(v==='__new__'){const q=src.people.find(x=>x.id===pid),nq={id:uid(),name:q.name,color:q.color,visible:true,...(q.external?{external:true}:{})};td.people.push(nq);pm[pid]=nq.id}else pm[pid]=v});
+    const sid=place(td),tm=mapTypes(src.types.filter(t=>evs.some(e=>e.type===t.id)),td);
+    evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[sid];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);if(c.owner)c.owner=pm[c.owner];if(!c.owner)delete c.owner;c.slots.forEach(sl=>{sl.person=sl.fo?c.owner||'':sl.person?(pm[sl.person]||''):'';if(sl.inv)sl.inv=sl.inv.map(i=>pm[i]).filter(Boolean)});retype(c,tm);inc.push(c)});
+    placeWeeks(td,inc,src.cycle||1,ch);   // weeks beyond the target's cycle (R-CYC-13)
+    done();
+  };
+  askCycle(td,evs,src.cycle||1,ch=>{if(!pids.length)run({},ch);else askPeople(src,tw,pids,m=>run(m,ch))});
+}
 function doTransfer(kind,obj,tw,move){
   syncWs();const src=S,td=tw.data;
   if(kind==='schedule'){
-    const evs=src.events.filter(e=>e.schedules.includes(obj.id)),ids=new Set();
-    evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));if(e.owner)ids.add(e.owner);e.slots.forEach(s=>{if(s.person)ids.add(s.person);(s.inv||[]).forEach(i=>ids.add(i))})});
-    const pids=[...ids].filter(i=>src.people.some(q=>q.id===i));
-    const run=(map,ch)=>{
-      pushUndoWs(tw);const pm={},inc=[];
-      Object.entries(map).forEach(([pid,v])=>{if(v==='__new__'){const q=src.people.find(x=>x.id===pid),nq={id:uid(),name:q.name,color:q.color,visible:true,...(q.external?{external:true}:{})};td.people.push(nq);pm[pid]=nq.id}else pm[pid]=v});
-      const ns={...obj,id:uid(),name:uniqueName(obj.name,td.schedules.map(x=>x.name)),visible:true};td.schedules.push(ns);
-      const tm=mapTypes(src.types.filter(t=>evs.some(e=>e.type===t.id)),td);
-      evs.forEach(e=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.schedules=[ns.id];c.involved=c.involved.map(i=>pm[i]).filter(Boolean);if(c.owner)c.owner=pm[c.owner];if(!c.owner)delete c.owner;c.slots.forEach(sl=>{sl.person=sl.fo?c.owner||'':sl.person?(pm[sl.person]||''):'';if(sl.inv)sl.inv=sl.inv.map(i=>pm[i]).filter(Boolean)});retype(c,tm);inc.push(c)});
-      placeWeeks(td,inc,src.cycle||1,ch);   // weeks beyond the target's cycle (R-CYC-13)
-      if(move){pushUndoWs(cw());removeSchedule(S,obj)}
-      render();toast(L(move?'trMoved':'trDone',{n:tw.name}));
-    };
-    askCycle(td,evs,src.cycle||1,ch=>{if(!pids.length)run({},ch);else askPeople(src,tw,pids,m=>run(m,ch))});
+    carryEvents(src.events.filter(e=>e.schedules.includes(obj.id)),tw,td=>{const ns={...obj,id:uid(),name:uniqueName(obj.name,td.schedules.map(x=>x.name)),visible:true};td.schedules.push(ns);return ns.id},
+      ()=>{if(move){pushUndoWs(cw());removeSchedule(S,obj)}render();toast(L(move?'trMoved':'trDone',{n:tw.name}))});
   }else{
     const phs=src.phases.filter(p=>p.rhythms.includes(obj.id));
     askCycle(td,phs,src.cycle||1,ch=>{   // weeks beyond the target's cycle (R-CYC-13, R-CYC-16)

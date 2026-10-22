@@ -237,3 +237,44 @@ describe('R-PPL-03 External people keep their flag when inserted or copied to an
     expect(a.ev('WS[1].data.people.map(q=>[q.name,!!q.external])')).toEqual([['Cleaner', true]]);
   });
 });
+
+describe('R-DATA-04 Copying or moving a single event to another workspace', () => {
+  const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
+  const setup = (o = {}) => {
+    const a = fresh(); setData(a, blank({ people, types: [{ id: 'tc', name: 'Chore', color: '#a1662f', icon: 'broom' }], events: [ev1({ id: 'm', title: 'Dishes', type: 'tc', involved: ['B'], slots: [{ day: 0, start: 1200, end: 1230, person: 'A' }] }), ev1({ id: 'k', title: 'Keep', slots: [{ day: 1, start: 600, end: 660, person: '' }] })], ...o }));
+    a.ev("cw().name='Home';const t=newWs('Work',defaultData(),true);t.data.people=[{id:'tA',name:'ann',color:'#123456',visible:true}];t.data.schedules[0].name='Office';WS.push(t);render()"); return a;
+  };
+  const copyDlg = a => { a.ev('openCopy(S.events[0])'); };
+  const toWork = a => { const w = a.q('#xDlg select'); w.value = a.ev('WS[1].id'); w.dispatchEvent(new a.w.Event('change')); };
+  const btn = (a, label) => a.qa('#xDlg .btns button').find(b => b.textContent === label);
+  const target = a => a.ev('JSON.parse(JSON.stringify(WS[1].data))');
+  it('with several workspaces the copy dialog first asks for the workspace (this one first); Move shows only for another workspace', () => {
+    const a = setup(); copyDlg(a); const w = a.q('#xDlg select');
+    expect([...w.options].map(o => o.textContent)).toEqual(['Home (this workspace)', 'Work']); expect(w.getAttribute('aria-label')).toBe('Workspace'); expect(btn(a, 'Move').style.display).toBe('none');
+    toWork(a); expect([...a.qa('#xDlg select')[1].options].map(o => o.textContent)).toEqual(['Office']); expect(btn(a, 'Move').style.display).toBe(''); expect(btn(a, 'Move').title).toContain('removed here');
+  });
+  it('with one workspace, and for phases, there is no workspace choice', () => {
+    const a = fresh(); setData(a, blank({ events: [ev1()], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660 }] }] }));
+    a.ev('openCopy(S.events[0])'); expect(a.qa('#xDlg select')).toHaveLength(1); a.ev("WS.push(newWs('Other',defaultData(),true))"); a.ev('openCopy(S.phases[0])'); expect(a.qa('#xDlg select')).toHaveLength(1);
+  });
+  it('Copy carries the event over with the people mapping (same name = that person), its activity type by name, and an undo step there', async () => {
+    const a = setup(); copyDlg(a); toWork(a); a.click('Copy'); await a.sleep(20);
+    expect(a.dlgTitle()).toBe(a.ev("L('mapTitle')")); a.click(a.ev("L('mapCont')")); await a.sleep(20);
+    const t = target(a), e = t.events.find(x => x.title === 'Dishes'); expect(e.slots[0].person).toBe('tA'); expect(t.people.map(q => q.name)).toEqual(['ann', 'Bob']);
+    expect(e.schedules).toEqual([t.schedules[0].id]); expect(t.types.find(x => x.id === e.type).name).toBe('Chore'); expect(a.ev('S.events.length')).toBe(2); expect(a.ev('WS[1].undo.length')).toBe(1);
+  });
+  it('Move removes the event here, as an undoable step in this workspace', async () => {
+    const a = setup(); copyDlg(a); toWork(a); btn(a, 'Move').click(); await a.sleep(20); a.click(a.ev("L('mapCont')")); await a.sleep(20);
+    expect(a.ev('S.events.map(e=>e.title)')).toEqual(['Keep']); expect(target(a).events.some(e => e.title === 'Dishes')).toBe(true); a.ev('undo()'); expect(a.ev('S.events.map(e=>e.title)')).toEqual(['Dishes', 'Keep']);
+  });
+  it('an event using weeks beyond the other workspace\'s cycle asks first, as for schedules', async () => {
+    const a = setup({ cycle: 2, events: [ev1({ id: 'w', title: 'Fortnightly', weeks: [2], slots: [{ day: 0, start: 600, end: 660, person: '' }] })] }); copyDlg(a); toWork(a); a.click('Copy'); await a.sleep(20);
+    expect(a.dlgText()).toContain('events or phases arriving (1)'); a.click(a.ev("L('cyApply')")); await a.sleep(20); expect(target(a).cycle).toBe(2); expect(target(a).events.at(-1).weeks).toEqual([2]);
+  });
+  it('copying within this workspace works as before', () => {
+    const a = setup(); copyDlg(a); a.click('Copy'); expect(a.ev('S.events.length')).toBe(3); expect(a.ev('WS[1].undo.length')).toBe(0);
+  });
+  it('the workspace choice is translated', () => {
+    const a = setup(); a.ev("lang='es';applyStatic&&applyStatic()"); copyDlg(a); expect(a.q('#xDlg select').options[0].textContent).toBe('Home (este espacio de trabajo)');
+  });
+});
