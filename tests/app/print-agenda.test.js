@@ -67,7 +67,7 @@ describe('R-PRN-02 Print schedule (the visible grid on paper)', () => {
   });
   it('lists the schedules and people that are shown, and none that are hidden', () => {
     const a = fresh(blank({ people, schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', visible: false })] })); a.ev('S.people[1].visible=false;render()');
-    const meta = printed(a).querySelector('.pm').textContent; expect(meta).toContain('Home'); expect(meta).not.toContain('Work'); expect(meta).toContain('Ann'); expect(meta).not.toContain('Bob');
+    const meta = printed(a).querySelector('.pm').textContent.split('Schedules shown:')[1]; expect(meta).toContain('Home'); expect(meta).not.toContain('Work'); expect(meta).toContain('Ann'); expect(meta).not.toContain('Bob');
   });
   it('says "none" when everything is hidden and "(no people defined)" when there are no people', () => {
     const a = fresh(blank()); a.ev('S.schedules[0].visible=false;render()'); const meta = printed(a).querySelector('.pm').textContent; expect(meta).toContain('none'); expect(meta).toContain('(no people defined)');
@@ -133,5 +133,16 @@ describe('R-PRN-04 With a rhythm shown, the day agenda lists the events under th
   it('the printed agenda keeps the headings, and they are translated', () => {
     const a = fresh(data(), { languages: ['es'] }); agenda(a); expect(a.q('#agBody .aph').textContent).toBe('Fuera del ritmo'); a.ev('$("agDlg").close()');
     const b = fresh(data()); agenda(b); b.q('#agPrint').click(); expect(b.w.__printed).toContain('class="aph"'); expect(b.w.__printed).toContain('Early morning');
+  });
+});
+
+describe('R-PRN-02 R-PRN-01 Printouts, agendas and printed statistics name the workspace', () => {
+  it('the line at the top starts with the workspace, whose name is the current one', () => {
+    const a = fresh(blank({ people })); a.ev("cw().name='Family week'"); const b = agenda(a); expect(b.querySelector('.pm').textContent.startsWith('Workspace: Family week')).toBe(true);
+    a.ev('printSchedule()'); expect(a.w.__printed).toContain('Workspace:</b> Family week');
+    a.ev('$("agDlg").close();openStats("A")'); a.click('Print'); expect(a.w.__printed).toContain('Workspace:</b> Family week');
+  });
+  it('a workspace name is escaped and the line is translated', () => {
+    const a = fresh(blank(), { languages: ['es'] }); a.ev("cw().name='<b>x</b>'"); const t = agenda(a).querySelector('.pm').innerHTML; expect(t).toContain('Espacio de trabajo:'); expect(t).toContain('&lt;b&gt;x&lt;/b&gt;');
   });
 });

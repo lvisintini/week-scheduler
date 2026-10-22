@@ -226,7 +226,7 @@ function openStats(pid){
 /* agenda / print */
 function metaLine(){
   const sch=S.schedules.filter(s=>s.visible).map(sTag),ppl=S.people.filter(q=>q.visible).map(q=>pIcon(q)+esc(q.name));
-  return `<div class="pm"><b>${esc(L('schShown'))}</b> ${sch.join(' &nbsp; ')||esc(L('none2'))}<br><b>${esc(L('pplShown'))}</b> ${S.people.length?(ppl.join(' &nbsp; ')||esc(L('none2'))):esc(L('noPpl'))}</div>`;
+  return `<div class="pm"><b>${esc(L('wsShown'))}</b> ${esc(cw().name)}<br><b>${esc(L('schShown'))}</b> ${sch.join(' &nbsp; ')||esc(L('none2'))}<br><b>${esc(L('pplShown'))}</b> ${S.people.length?(ppl.join(' &nbsp; ')||esc(L('none2'))):esc(L('noPpl'))}</div>`;
 }
 function agendaHTML(di){
   const items=S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>({e,s,q})))).sort((x,y)=>x.q.a-y.q.a||x.q.b-y.q.b);
