@@ -216,6 +216,38 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
   });
 });
 
+describe('R-REP-06 R-EVT-15 Dragging a core edge of a repeating flexible event changes that margin on every repetition that has it', () => {
+  const flex = (fs = [30, 30, 30]) => fresh(blank({ events: [ev1({ slots: [0, 2, 4].map((d, k) => ({ ...slot(d, 540, 1020), ...(fs[k] ? { fs: fs[k] } : {}), fe: 15 })) })] }));
+  const top = a => a.q('.day[data-d="0"] .ev');
+  const drag = (a, to = 600, o = {}) => dragFrom(a, top(a), { col: 0, min: 570 }, { col: 0, min: to }, { target: top(a)._cs, ...o });
+  it('every repetition\'s latest start moves by the same minutes, and the outer times stay', async () => {
+    const a = flex(); await drag(a); expect(slots(a).map(s => [s.start, s.end, s.fs, s.fe])).toEqual([[540, 1020, 60, 15], [540, 1020, 60, 15], [540, 1020, 60, 15]]);
+  });
+  it('repetitions with a different margin change by the same amount, and one without that margin is left alone', async () => {
+    const a = flex([30, 60, 0]); await drag(a, 615); expect(slots(a).map(s => s.fs)).toEqual([75, 105, undefined]);
+  });
+  it('removing the dragged margin removes it on repetitions where the same shift reaches zero, and keeps longer ones', async () => {
+    const a = flex([30, 60, 30]); await drag(a, 520); expect(slots(a).map(s => s.fs)).toEqual([undefined, 30, undefined]);
+  });
+  it('with Shift only the grabbed repetition changes and no toast appears', async () => {
+    const a = flex(); await drag(a, 600, { shift: true }); expect(slots(a).map(s => s.fs)).toEqual([60, 30, 30]); expect(toastButtons(a)).toEqual([]);
+  });
+  it('after an all-repetitions edge drag the toast offers "Only this day" and "Undo"', async () => {
+    const a = flex(); await drag(a); expect(a.toast()).toContain('Applied to all 3 repetitions'); expect(toastButtons(a)).toEqual(['Only this day', 'Undo']);
+  });
+  it('"Only this day" keeps the new margin on the grabbed repetition and puts the others back', async () => {
+    const a = flex(); await drag(a); toastBtn(a, 'Only this day').click(); expect(slots(a).map(s => s.fs)).toEqual([60, 30, 30]);
+  });
+  it('"Undo" in the toast puts every margin back', async () => {
+    const a = flex(); await drag(a); toastBtn(a, 'Undo').click(); expect(slots(a).map(s => s.fs)).toEqual([30, 30, 30]);
+  });
+  it('a smaller core that now overlaps another repetition is reported with the overlap warning', async () => {
+    const a = fresh(blank({ events: [ev1({ slots: [{ ...slot(0, 540, 720), fe: 60 }, slot(0, 690, 780)] })] }));
+    const b = a.q('.day[data-d="0"] .ev'); expect(a.ev('overlapSet(S.events[0]).size')).toBe(0);
+    await dragFrom(a, b, { col: 0, min: 659 }, { col: 0, min: 705 }, { target: b._ce, shift: true }); expect(slots(a)[0].fe).toBe(15); expect(a.toast()).toContain('⚠');
+  });
+});
+
 describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift changes one', () => {
   it('moving one repetition moves every repetition by the same number of days and minutes', async () => {
     const a = three(); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 1, min: 690 });

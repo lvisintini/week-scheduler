@@ -248,6 +248,33 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   });
 });
 
+test.describe('R-EVT-15 The edges of a flexible event\'s core can be dragged with a real mouse', () => {
+  test.beforeEach(async ({ page }) => {
+    await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] })] }));
+  });
+  const scrollTo = (page, m) => page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * HH - 150; }, m);
+  const drag = async (page, from, to) => { await scrollTo(page, from); const a = await pt(page, 0, from), b = await pt(page, 0, to); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(a.x, (a.y + b.y) / 2, { steps: 4 }); await page.mouse.move(b.x, b.y, { steps: 4 }); await page.mouse.up(); };
+  const hitAt = async (page, m) => { await scrollTo(page, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e.classList.contains('rz') ? [...e.classList].join(' ') : e.closest('.ev') ? 'box' : e.className; }, [p.x, p.y]); };
+  test('the handles lie on the core\'s own edges, inside the solid box, with a resize cursor', async ({ page }) => {
+    const core = await boxOf(page.locator('.ev')), cs = await boxOf(page.locator('.rz.cs')), ce = await boxOf(page.locator('.rz.ce'));
+    expect(Math.abs(cs.y - core.y)).toBeLessThan(1); expect(Math.abs(ce.y + ce.height - (core.y + core.height))).toBeLessThan(1.5);
+    expect(cs.height).toBeGreaterThan(5); expect(cs.x).toBeGreaterThanOrEqual(core.x - 1); expect(cs.x + cs.width).toBeLessThanOrEqual(core.x + core.width + 1);
+    expect(await page.locator('.rz.cs').evaluate(e => getComputedStyle(e).cursor)).toBe('ns-resize');
+    expect(await hitAt(page, 572)).toBe('rz cs'); expect(await hitAt(page, 1002)).toBe('rz ce'); expect(await hitAt(page, 700)).toBe('box');
+  });
+  test('dragging the top edge of the core changes the latest start and redraws the core there', async ({ page }) => {
+    await drag(page, 572, 630); expect((await slots(page))[0]).toMatchObject({ start: 540, end: 1020, fs: 90, fe: 15 });
+    const core = await boxOf(page.locator('.ev')), mt = await boxOf(page.locator('.mg.t')); expect(Math.abs(mt.y + mt.height - core.y)).toBeLessThan(1.5);
+  });
+  test('dragging the bottom edge of the core changes the earliest finish', async ({ page }) => {
+    await drag(page, 1002, 960); expect((await slots(page))[0]).toMatchObject({ start: 540, end: 1020, fs: 30, fe: 60 });
+  });
+  test('the middle of the box still moves the event and the outer handle still resizes it, margins kept', async ({ page }) => {
+    await drag(page, 700, 760); expect((await slots(page))[0]).toMatchObject({ start: 600, end: 1080, fs: 30, fe: 15 });
+    await drag(page, 1077, 1137); expect((await slots(page))[0]).toMatchObject({ start: 600, end: 1140, fs: 30, fe: 15 });
+  });
+});
+
 test.describe('R-GRID-12 Live View in a real browser', () => {
   const busy = () => blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),

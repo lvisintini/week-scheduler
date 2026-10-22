@@ -131,8 +131,11 @@ function render(){
       d.setAttribute('aria-label',info.join(', '));
       const rz=(!it.cont||it.piece)&&!lk&&editMode==='events'?el('div','rz',col):null;
       if(rz){rz.style.top=(mb||!core?px(it.end):parseFloat(d.style.top)+parseFloat(d.style.height))+'px';pos(rz,v);d._rz=rz}
-      if(!lk&&editMode==='events')d.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=rz&&rz===ev.target?'resize':'move';press(ev,e2=>grab(e2,it,md),p2=>tapOpen(p2,e))};
-      if(rz)rz.onpointerdown=d.onpointerdown;
+      // the core's own edges, where a margin is beside them: dragging one changes that margin (R-EVT-15); each at most half the core, so both fit
+      const eh=[];if(core&&!lk&&editMode==='events')[['fs',it.cs,it.cs===it.c0],['fe',it.ce,it.ce===it.c1]].forEach(([k,y,whole])=>{if(!whole||coreEdge(s,{p:it.piece,a:it.start,b:it.end},k)!==y)return;
+        const h=el('div','rz '+(k==='fs'?'cs':'ce'),col);h.style.top=px(y)+'px';h.style.maxHeight=(px(it.ce)-px(it.cs))/2+'px';pos(h,v);h.title=h.__t=L(k==='fs'?'csTip':'ceTip');h._k=k;d['_'+(k==='fs'?'cs':'ce')]=h;eh.push(h)});
+      if(!lk&&editMode==='events')d.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=rz&&rz===ev.target?'resize':ev.target._k&&eh.includes(ev.target)?ev.target._k:'move';press(ev,e2=>grab(e2,it,md),p2=>tapOpen(p2,e))};
+      if(rz)rz.onpointerdown=d.onpointerdown;eh.forEach(h=>{h.onpointerdown=d.onpointerdown});
       mgs.forEach(([,m])=>{m.onpointerdown=d.onpointerdown;m._ev=d});d._mg=mgs.map(x=>x[1]);
     }
     bgs.forEach(it=>{
@@ -306,18 +309,21 @@ function withPrintScale(fn){
   try{render();return fn()}finally{printMode=false;render();skipSide=false;w.scrollTop=st;w.scrollLeft=sl}
 }
 const handlesAt=(di,m,fx)=>nestFirst(act().filter(e=>eVis(e)&&!eLock(e)).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&(q.p===1||s.end<=1440)&&q.b-rzMin()<=m&&m<q.b&&inWk(e,s,q)&&sVis(e,s)&&inLane(e,i,q.p,fx,di)).map(q=>({e,s,i,piece:q.p})))));
+// the core edges under the pointer (R-EVT-15): k = 'fs' (the top of a core with a start margin) or 'fe' (the bottom of one with an end margin)
+const edgesAt=(di,m,fx,k)=>nestFirst(act().filter(e=>eVis(e)&&!eLock(e)&&!e.rhythms).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>{if(q.day!==di||isBg(e,s)||!inWk(e,s,q)||!sVis(e,s)||!inLane(e,i,q.p,fx,di))return false;
+  const x=coreEdge(s,q,k);return x!=null&&(k==='fs'?x<=m&&m<x+rzMin():x-rzMin()<=m&&m<x)}).map(q=>({e,s,i,piece:q.p})))));
 // a long press released without moving (touch): the right-click list of what is under the finger, to copy it (R-TOUCH-02); false when nothing is there
 function touchCopy(ev,x,y,di,m,fx){if(ev.pointerType!=='touch')return false;const its=piecesAt(di,m,true,fx);if(!its.length)return false;overlapMenu(x,y,its,openCopy,L('ctxCopy'));return true}
 function grab(ev,it,mode){
   const col=colAt(ev.clientX),cDay=+col.dataset.d,m=minAt(col,ev.clientY),fx=fxAt(col,ev.clientX);
-  const cands=mode==='resize'?handlesAt(cDay,m,fx):piecesAt(cDay,m,false,fx);
+  const cands=mode==='resize'?handlesAt(cDay,m,fx):mode==='fs'||mode==='fe'?edgesAt(cDay,m,fx,mode):piecesAt(cDay,m,false,fx);
   const sel=selK&&cands.find(c=>c.e.id===selK.id&&c.i===selK.i);
   if(sel){startDrag(ev,sel,mode);return}
   if(cands.length>1){
     ev.preventDefault();const x0=ev.clientX,y0=ev.clientY;
     const off=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)};
     const mv=p=>{if(Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;off();
-      overlapMenu(p.clientX,p.clientY,cands,(e,it)=>{selK={id:e.id,i:it.i};render();toast(L('selHint',{t:e.title+' · '+DAYS[it.s.day].slice(0,3)+' '+fmt(it.s.start)+'–'+fmtEnd(it.s.end)}))},L(mode==='resize'?'pickResize':'pickMove'),false)};
+      overlapMenu(p.clientX,p.clientY,cands,(e,it)=>{selK={id:e.id,i:it.i};render();toast(L('selHint',{t:e.title+' · '+DAYS[it.s.day].slice(0,3)+' '+fmt(it.s.start)+'–'+fmtEnd(it.s.end)}))},L(mode==='resize'?'pickResize':mode==='move'?'pickMove':'pickEdge'),false)};
     const up=p=>{off();if(touchCopy(ev,p.clientX,p.clientY,cDay,m,fx))return;const items=itemsAt(cDay,m,fx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e,null,items[0].s)};
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
   }
@@ -337,7 +343,7 @@ function carryMove(cs,hs,ho,only){   // hs/ho: the host's slots now / before the
   cs.forEach((c,k)=>{if(to[k]&&(isAdv(c.ev.slots)||!c.ev.slots.some(x=>x!==c.s&&sameDay(at(x),to[k]))))Object.assign(c.s,to[k])});   // an event with at most one time per day keeps it that way
 }
 function startDrag(ev,it,mode){
-  const e=it.s,owner=it.e,pc=it.piece||0;ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
+  const e=it.s,owner=it.e,pc=it.piece||0,edge=mode==='fs'||mode==='fe';ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
   const col=colAt(ev.clientX),cDay=+col.dataset.d,cW=curWk,cMin=minAt(col,ev.clientY),cFx=fxAt(col,ev.clientX),off=cMin+1440*pc-e.start,dur=e.end-e.start;
   const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
   const ovB=overlapSet(owner,orig).size,carry=mode==='move'&&!owner.rhythms?nestCarry(owner):[];
@@ -349,9 +355,11 @@ function startDrag(ev,it,mode){
     const aD=allWk&&mode==='move'?((curWk-cW)*7+cd-cDay):null;
     if(mode==='move'){t.day=(cd-pc+7)%7;t.start=Math.max(0,Math.min(1425,MAXEND-dur,snapM(m+1440*pc-off)));t.end=t.start+dur;
       if(aD!=null&&o0.wk){const x={day:o0.day,wk:o0.wk};shiftDay(x,aD);t.day=x.day;t.wk=x.wk}}
-    else{let rel=(cd-o0.day+7)%7;rel=rel>1?(rel===6?0:1):rel;t.end=Math.max(o0.start+SNAP,Math.min(MAXEND,snapM(m+1440*rel)))}
+    else{let rel=(cd-o0.day+7)%7;rel=rel>1?(rel===6?0:1):rel;const x=snapM(m+1440*rel);if(edge)t.mg=setMg({...o0},mode,mode==='fs'?x-o0.start:o0.end-x)[mode]||0;else t.end=Math.max(o0.start+SNAP,Math.min(MAXEND,x))}
     owner.slots.forEach((s,i)=>Object.assign(s,orig[i]));
-    if(!multi||single){
+    // a core edge: the margin on that side; with all repetitions, each one that has that margin changes by the same minutes (R-EVT-15, R-REP-06)
+    if(edge){if(!multi||single)setMg(e,mode,t.mg);else{const dM=t.mg-(o0[mode]||0);owner.slots.forEach((s,i)=>{if(orig[i][mode])setMg(s,mode,orig[i][mode]+dM)})}}
+    else if(!multi||single){
       if(mode==='move'&&!adv&&owner.slots.some(x=>x!==e&&sameDay(x,{...e,...t})))Object.assign(t,{day:o0.day,...(o0.wk?{wk:o0.wk}:{})});
       Object.assign(e,t);if(!owner.rhythms)fitMg(e);
     }else{
@@ -375,7 +383,7 @@ function startDrag(ev,it,mode){
         {label:L('rpOnly'),fn:()=>{
           if(undoSt.length!==mark||!act().includes(owner))return;
           owner.slots=orig.map(x=>({...x}));const s=owner.slots[idx];
-          if(mode==='move'){if(adv||!owner.slots.some(x=>x!==s&&sameDay(x,{...s,...fin})))Object.assign(s,{day:fin.day,...(fin.wk?{wk:fin.wk}:{})});s.start=fin.start;s.end=fin.end}else{s.end=fin.end;fitMg(s)}
+          if(mode==='move'){if(adv||!owner.slots.some(x=>x!==s&&sameDay(x,{...s,...fin})))Object.assign(s,{day:fin.day,...(fin.wk?{wk:fin.wk}:{})});s.start=fin.start;s.end=fin.end}else if(edge)setMg(s,mode,fin.mg);else{s.end=fin.end;fitMg(s)}
           carryMove(carry,owner.slots,orig,idx);render()}},undoBtn]);
     }else if(warn)toast('⚠ '+L('rpWarn'),[undoBtn]);
   };

@@ -102,7 +102,7 @@ aside.collapsed .help{display:none}
 .ev .r1 .tm{flex:0 0 auto;white-space:nowrap;opacity:.95}
 .ev .r2{display:flex;flex-wrap:wrap;gap:0 8px;opacity:.95}.ev .r2 .wi{margin-left:auto;text-align:right}.ev .r2 .tm{white-space:nowrap}
 /* resize handles live in the day column, above every box, so an overlapping box drawn later can never cover another one's bottom edge */
-.rz{position:absolute;left:3px;right:calc(3px + var(--gut,0px));height:7px;transform:translateY(-100%);cursor:ns-resize;z-index:6}.rz.ph{left:0;right:0}
+.rz{position:absolute;left:3px;right:calc(3px + var(--gut,0px));height:7px;transform:translateY(-100%);cursor:ns-resize;z-index:6}.rz.ph{left:0;right:0}.rz.cs{transform:none}
 /* background activities by external people (R-EVT-17): slim strips in a gutter on the right of the day column, outside every lane */
 .bgs{position:absolute;width:14px;border-radius:0 6px 6px 0;background:var(--c);cursor:grab;box-shadow:0 1px 2px #0003;overflow:hidden;display:flex;justify-content:center;box-sizing:border-box}.bgs.locked{pointer-events:none;cursor:default}
 .bgs span{writing-mode:vertical-rl;font-size:10px;font-weight:600;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;padding:3px 0;pointer-events:none}

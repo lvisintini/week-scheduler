@@ -895,6 +895,80 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
   });
 });
 
+describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes its margins, not its times', () => {
+  const work = (sl = {}, o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15, ...sl }], ...o });
+  const slot0 = a => a.ev('JSON.parse(JSON.stringify(S.events[0].slots[0]))');
+  const box = a => a.q('.day[data-d="0"] .ev');
+  it('a core with a start margin gets a handle at its top, one with an end margin at its bottom, each inside the core box', () => {
+    const a = fresh(blank({ people, events: [work()] })), b = box(a), y = m => (m - 300) / 60 * 48;
+    expect(b._cs.classList.contains('cs')).toBe(true); expect(parseFloat(b._cs.style.top)).toBeCloseTo(y(570), 1);
+    expect(b._ce.classList.contains('ce')).toBe(true); expect(parseFloat(b._ce.style.top)).toBeCloseTo(y(1005), 1);
+    expect(cssRule(a, '.rz.cs').style.transform).toBe('none'); expect(b._rz).not.toBe(b._ce);
+    expect(b._cs.parentNode).toBe(b.parentNode); expect(b._cs.dataset.lane ?? '').toBe(b.dataset.lane ?? '');
+  });
+  it('each handle explains what dragging it changes, in English and in Spanish', () => {
+    const a = fresh(blank({ people, events: [work()] })); expect(box(a)._cs.title).toBe('Drag to change how late it may start (flexible start)'); expect(box(a)._ce.title).toBe('Drag to change how early it may finish (flexible end)');
+    a.ev('setLang("es")'); expect(box(a)._cs.title).toBe('Arrastra para cambiar hasta qué hora puede empezar (inicio flexible)'); expect(box(a)._ce.title).toBe('Arrastra para cambiar desde qué hora puede terminar (fin flexible)');
+  });
+  it('only the sides that have a margin get a handle, and plain or "around these times" events get none', () => {
+    const only = sl => { const a = fresh(blank({ people, events: [work(sl)] })); return [!!box(a)._cs, !!box(a)._ce]; };
+    expect(only({ fe: 0 })).toEqual([true, false]); expect(only({ fs: 0 })).toEqual([false, true]); expect(only({ fs: 0, fe: 0 })).toEqual([false, false]);
+    expect(only({ fs: 0, fe: 0, flex: true })).toEqual([false, false]); expect(fresh(blank({ people, events: [work({ fs: 0, fe: 0 })] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
+  });
+  it('no core handles on locked events, in Phases mode or on background and Away strips', () => {
+    expect(fresh(blank({ people, schedules: [sched({ locked: true })], events: [work()] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
+    const p = fresh(blank({ people, events: [work()] })); p.ev("editMode='phases';render()"); expect(p.qa('.rz.cs, .rz.ce')).toHaveLength(0);
+    expect(fresh(blank({ people, events: [work({}, { bg: true })] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
+    expect(fresh(blank({ people, events: [work({}, { away: true })] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
+  });
+  it('the handles are resize handles (.rz), so Live View hides them like the outer one', () => {
+    const a = fresh(blank({ people, events: [work()] })); expect(box(a)._cs.classList.contains('rz')).toBe(true); expect(box(a)._ce.classList.contains('rz')).toBe(true);
+    expect(cssRule(a, '#grid.lv .rz').style.display).toBe('none');
+  });
+  it('dragging the top handle changes the latest start and keeps the outer times', async () => {
+    const a = fresh(blank({ people, events: [work()] })); const b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 600 }, { target: b._cs });
+    expect(slot0(a)).toMatchObject({ start: 540, end: 1020, fs: 60, fe: 15 }); expect(parseFloat(box(a).style.top)).toBeCloseTo((600 - 300) / 60 * 48, 1);
+  });
+  it('dragging the bottom handle changes the earliest finish and keeps the outer times', async () => {
+    const a = fresh(blank({ people, events: [work()] })); const b = box(a); await dragFrom(a, b, { col: 0, min: 1004 }, { col: 0, min: 960 }, { target: b._ce });
+    expect(slot0(a)).toMatchObject({ start: 540, end: 1020, fs: 30, fe: 60 });
+  });
+  it('dragging a handle onto the outer edge removes that margin, and its handle goes with it', async () => {
+    const a = fresh(blank({ people, events: [work()] })); let b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 500 }, { target: b._cs });
+    expect(slot0(a).fs).toBeUndefined(); expect(box(a)._cs).toBeUndefined();
+    b = box(a); await dragFrom(a, b, { col: 0, min: 1004 }, { col: 0, min: 1100 }, { target: b._ce }); expect(slot0(a).fe).toBeUndefined(); expect(box(a)._ce).toBeUndefined();
+    expect(slot0(a)).toMatchObject({ start: 540, end: 1020 });
+  });
+  it('the core never drops below 15 minutes, whichever handle is dragged across it', async () => {
+    const a = fresh(blank({ people, events: [work()] })); let b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 1015 }, { target: b._cs });
+    expect(slot0(a)).toMatchObject({ fs: 450, fe: 15 }); b = box(a); await dragFrom(a, b, { col: 0, min: 1004 }, { col: 0, min: 560 }, { target: b._ce });
+    expect(slot0(a)).toMatchObject({ fs: 450, fe: 15 });
+  });
+  it('a short core keeps both handles, each at most half of its height', () => {
+    const a = fresh(blank({ people, events: [work({ fs: 450, fe: 15 })] })), b = box(a), h = parseFloat(b.style.height);
+    expect(parseFloat(b._cs.style.maxHeight)).toBeLessThanOrEqual(h / 2 + 1); expect(parseFloat(b._ce.style.maxHeight)).toBeLessThanOrEqual(h / 2 + 1);
+  });
+  it('past midnight the edge is dragged in the piece it lies in (an end margin on the next day)', async () => {
+    const a = fresh(blank({ people, events: [work({ day: 0, start: 1320, end: 1860, fs: 0, fe: 60 })] }));
+    const b = a.q('.day[data-d="1"] .ev'); expect(b._ce).toBeDefined(); expect(a.q('.day[data-d="0"] .ev')._ce).toBeUndefined();
+    await dragFrom(a, b, { col: 1, min: 359 }, { col: 1, min: 330 }, { target: b._ce }); expect(slot0(a)).toMatchObject({ start: 1320, end: 1860, fe: 90 });
+  });
+  it('a core that starts at midnight after a start margin has its top handle on the next day', () => {
+    const a = fresh(blank({ people, events: [work({ day: 0, start: 1380, end: 1860, fs: 60, fe: 0 })] }));
+    a.ev('prefs.showEarly=true;render()'); const b = a.q('.day[data-d="1"] .ev'); expect(b._cs).toBeDefined(); expect(parseFloat(b._cs.style.top)).toBe(0);
+  });
+  it('an edge drag is one undo step, and a click on a handle without moving opens the event', async () => {
+    const a = fresh(blank({ people, events: [work()] })); let b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 630 }, { target: b._cs }); expect(slot0(a).fs).toBe(90);
+    a.ev('undo()'); expect(slot0(a).fs).toBe(30); b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 570 }, { target: b._cs, move: false }); expect(dlgOpen(a)).toBe(true);
+  });
+  it('where two cores share an edge under the pointer, a chooser asks which one to change', async () => {
+    const two = [work(), work({ person: 'B' }, { id: 'w2', title: 'Work too', color: '#2fa66a' })];
+    const a = fresh(blank({ people, events: two }), {}); a.ev('prefs.lanesFix=false;render()');
+    const cands = a.ev('edgesAt(0,575,null,"fs").map(c=>c.e.id)'); expect(cands).toEqual(['w', 'w2']);
+    expect(a.ev('edgesAt(0,575,null,"fe").length')).toBe(0); expect(a.ev('edgesAt(0,1000,null,"fe").length')).toBe(2);
+  });
+});
+
 describe('R-EVT-16 Involved people only on call: available, not busy', () => {
   const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
   const ann = (o = {}) => ev1({ id: 'a', title: 'Homework', slots: [{ day: 0, start: 600, end: 720, person: 'A' }], ...o });

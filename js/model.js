@@ -61,6 +61,11 @@ function fitMg(s){   // keep at least 15 minutes of core: shrink the end margin 
   if(over>0){const d=Math.min(fe,over);fe-=d;fs=Math.max(0,fs-(over-d))}
   if(fs>0)s.fs=fs;else delete s.fs;if(fe>0)s.fe=fe;else delete s.fe;return s;
 }
+function setMg(s,k,v){   // k = 'fs' or 'fe': set that margin, keeping 15 minutes of core; 0 removes it
+  v=Math.max(0,Math.min(v,s.end-s.start-(s[k==='fs'?'fe':'fs']||0)-SNAP));if(v>0)s[k]=v;else delete s[k];return s;
+}
+// where the core of a repetition starts ('fs') or ends ('fe') within piece q, when that edge has a margin beside it and lies in q (R-EVT-15)
+const coreEdge=(s,q,k)=>{if(s.flex||!s[k])return null;const x=coreOf(s)[k==='fs'?0:1]-1440*q.p;return x>=q.a&&x<=q.b?x:null};
 const coreIn=(s,q)=>{const o=q.p*1440,[c0,c1]=coreOf(s);return [Math.max(q.a,c0-o),Math.min(q.b,c1-o)]};   // core within a piece; empty when [0] >= [1]
 const fmtMg=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'');
 const edgeNote=s=>[s.fs&&L('fsNote',{a:fmtEnd(s.start),b:fmtEnd(s.start+s.fs)}),s.fe&&L('feNote',{a:fmtEnd(s.end-s.fe),b:fmtEnd(s.end)})].filter(Boolean).join(' · ');

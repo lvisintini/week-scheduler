@@ -29,6 +29,11 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     await touch(page, [a, { x: a.x, y: (a.y + b.y) / 2 }, b], { hold: 550 });
     expect((await slots(page))[0]).toMatchObject({ start: 600, end: 720 });
   });
+  test('R-EVT-15 a long press on the top edge of a flexible event\'s core and a drag changes its latest start', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ slots: [{ ...slot(0, 540, 780), fs: 30 }] })] })); const a = await pt(page, 0, 575), b = await pt(page, 0, 630);
+    await touch(page, [a, { x: a.x, y: (a.y + b.y) / 2 }, b], { hold: 550 });
+    expect((await slots(page))[0]).toMatchObject({ start: 540, end: 780, fs: 90 });
+  });
   test('swiping vertically scrolls the grid and neither creates nor moves anything', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const a = await pt(page, 1, 600); await swipe(page, a, 0, -250);   // on screen at the phone's 100 px per hour
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(20);
