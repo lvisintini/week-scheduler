@@ -22,7 +22,7 @@ const qa=s=>[...document.querySelectorAll(s)];
 const pad=n=>String(n).padStart(2,'0');
 const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
 const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
-const endLabel=m=>m<1440||MAXEND===1440?fmt(m):fmt(m)+' '+L(m>=2880?'day2':'nextDay');
+const endLabel=m=>fmtEnd(m);   // the End list says what boxes, agendas and tooltips say: midnight closes its day, later ends carry (Next day) (R-REP-04)
 const hourLabel=h=>prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
 const vs=()=>prefs.showEarly?0:5;
 const pvis=id=>{const p=S.people.find(x=>x.id===id);return !!p&&p.visible};

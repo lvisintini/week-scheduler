@@ -16,13 +16,21 @@ describe('R-GRID-05 Midnight is shown as 00:00 and never as 24:00', () => {
 });
 
 describe('R-REP-04 End times: select labels and compact displays', () => {
-  it('end-time options run …23:45, 00:00 (Next day), 00:15 (Next day) … 23:45 (Next day), 00:00 (Day after next)', () => {
+  it('end-time options run …23:45, 00:00 (the midnight closing the start day), 00:15 (Next day) … 23:45 (Next day), 00:00 (Next day)', () => {
     ev('MAXEND=2880');
     expect(ev('endLabel(1425)')).toBe('23:45');
-    expect(ev('endLabel(1440)')).toBe('00:00 (Next day)');
+    expect(ev('endLabel(1440)')).toBe('00:00');
     expect(ev('endLabel(1455)')).toBe('00:15 (Next day)');
     expect(ev('endLabel(2865)')).toBe('23:45 (Next day)');
-    expect(ev('endLabel(2880)')).toBe('00:00 (Day after next)');
+    expect(ev('endLabel(2880)')).toBe('00:00 (Next day)');
+  });
+  it('every label of the End list is exactly what boxes, agendas and tooltips show for that end (one notation, no "Day after next")', () => {
+    ev('MAXEND=2880'); expect(ev('[...Array(192).keys()].map(k=>(k+1)*15).every(m=>endLabel(m)===fmtEnd(m))')).toBe(true);
+    expect(ev('[...Array(192).keys()].some(k=>/after/i.test(endLabel((k+1)*15)))')).toBe(false); expect(ev("'day2' in D.en || 'day2' in D.es")).toBe(false);
+  });
+  it('with the AM/PM clock the list reads 11:45 PM, 12:00 AM, 12:15 AM (Next day) … 12:00 AM (Next day)', () => {
+    ev('prefs.clock12=true;MAXEND=2880');
+    expect([1425, 1440, 1455, 2880].map(m => ev(`endLabel(${m})`))).toEqual(['11:45 PM', '12:00 AM', '12:15 AM (Next day)', '12:00 AM (Next day)']); ev('prefs.clock12=false');
   });
   it('for phases (which stay within a day) the end of the day is plain 00:00', () => {
     ev('MAXEND=1440'); expect(ev('endLabel(1440)')).toBe('00:00'); ev('MAXEND=2880');

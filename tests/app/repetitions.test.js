@@ -152,9 +152,16 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
 });
 
 describe('R-REP-03 The end-time list reaches the end of the next day', () => {
-  it('lists 192 end times, from 00:15 to 00:00 (Day after next)', () => {
+  it('lists 192 end times, from 00:15 to 00:00 (Next day), with a plain 00:00 for the midnight closing the start day', () => {
     const a = fresh(blank()); a.toolbar('add').click(); const opts = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options];
-    expect(opts.length).toBe(192); expect(opts[0].textContent).toBe('00:15'); expect(opts.at(-1).textContent).toBe('00:00 (Day after next)'); expect(opts.at(-1).value).toBe('2880');
+    expect(opts.length).toBe(192); expect(opts[0].textContent).toBe('00:15'); expect(opts.at(-1).textContent).toBe('00:00 (Next day)'); expect(opts.at(-1).value).toBe('2880');
+    expect(opts.find(o => o.value === '1440').textContent).toBe('00:00');
+  });
+  it('R-REP-04 the end picked in the list reads the same on the saved box: 22:00–00:00 and 22:00–00:00 (Next day)', () => {
+    for (const end of ['1440', '2880']) {
+      const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'Late', start: '1320', end }); const label = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options].find(o => o.value === end).textContent; save(a);
+      a.ev('prefs.showEarly=true;render()'); expect(a.q('.ev').textContent).toContain('22:00–' + label);
+    }
   });
   it('an end of "01:30 (Next day)" saves an event that ends at minute 1530', () => {
     const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'Night', start: '1320', end: '1530' }); save(a);
