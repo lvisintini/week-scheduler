@@ -184,6 +184,7 @@ export function renderSide(){
      c.id='lvC';c.type='button';c.innerHTML=ICON_NOW+'<span></span>';c.querySelector('span').textContent=L('lvNow');c.title=L('lvNowTip');c.onclick=liveBack;updLive()}
     const tck=(label,tip,get,set)=>{const l=el('label','zck',s6),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=get();el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{set(c.checked);savePrefs();render()};return c};
+    tck('nowLine','nowLineTip',()=>state.prefs.nowLine,v=>{state.prefs.nowLine=v});   // R-GRID-04
     tck('hlNoTy','hlNoTyTip',()=>state.prefs.hlNoType,v=>{state.prefs.hlNoType=v});
     tck('colByT','colByTTip',()=>state.prefs.colBy==='t',v=>{state.prefs.colBy=v?'t':''});   // the two colour modes exclude each other
     tck('colByP','colByPTip',()=>state.prefs.colBy==='p',v=>{state.prefs.colBy=v?'p':''});

@@ -291,9 +291,9 @@ describe('R-CYC-05 Live View asks which week of the cycle today is in, once per 
     const { a, id } = saved(); const b = openApp({ phone: true, now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.ev('[state.live,state.focusD,state.curWk]')).toEqual([false, 2, 2]);
   });
   it('once today\'s week is known, the now line shows only in that week', () => {
-    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); b.ev('state.nowOn=true;drawNow()');
+    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); b.ev('drawNow()');
     expect(b.qa('.day[data-d="2"] .now')).toHaveLength(1); week(b, 1); b.ev('drawNow()'); expect(b.qa('.now')).toHaveLength(0);
-    const c = openApp({ now: on(2), storage: stored(a, {}) }); c.ev('state.nowOn=true;drawNow()'); expect(c.qa('.day[data-d="2"] .now')).toHaveLength(1);   // not known: in whichever week is shown
+    const c = openApp({ now: on(2), storage: stored(a, {}) }); c.ev('drawNow()'); expect(c.qa('.day[data-d="2"] .now')).toHaveLength(1);   // not known: in whichever week is shown
   });
   it('each workspace has its own week: switching while live asks for one it does not know yet', async () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); const first = a.ev('state.curId');

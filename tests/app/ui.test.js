@@ -52,6 +52,9 @@ describe('R-UI-03 Settings dialog', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'UI', 'About']);
     expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Show early hours');
   });
+  it('View no longer holds the now line: that switch is in Tools', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(shown(a)[0].textContent).not.toContain('"now" line'); expect(a.q('.tsec').textContent).toContain('Show the "now" line');
+  });
   it('the UI tab holds the theme and the language (both start from the browser), and View no longer has the theme', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); expect(shown(a)[0].textContent).toContain('Theme'); expect(shown(a)[0].querySelector('select')).not.toBeNull();
     expect(shown(a)[0].querySelectorAll('.seg.theme button')).toHaveLength(3); expect(a.qa('#xDlg .ssec')[0].textContent).not.toContain('Theme');
@@ -352,7 +355,7 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
 
 describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring the week by type or by person', () => {
   it('the Zoom and Tools switches are real checkboxes announced as switches and drawn as sliding toggles', () => {
-    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(6);
+    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(7);
     expect(sw.every(c => c.type === 'checkbox' && c.getAttribute('role') === 'switch')).toBe(true);
     const css = a.q('style').textContent; expect(css).toContain('.zck input{appearance:none;'); expect(css).toContain('.zck input:checked::before{transform:translateX(12px)}');
     expect(css).toContain('.zck input:focus-visible{outline:'); expect(css).toContain('@media(prefers-reduced-motion:reduce){.zck input,.zck input::before{transition:none}}');
@@ -367,9 +370,9 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   const box = (a, label) => [...tools(a).querySelectorAll('label.zck')].find(l => l.textContent === label).querySelector('input');
   const tick = (a, label, v = true) => { const c = box(a, label); c.checked = v; c.onchange(); };
   const col = (a, d) => a.q(`.day[data-d="${d}"] .ev, .day[data-d="${d}"] .bgs`).style.getPropertyValue('--c');
-  it('the section holds the Live View row and four switches, each with an explanatory tooltip, all off at first', () => {
+  it('the section holds the Live View row and five switches, each with an explanatory tooltip: the now line on, the others off at first', () => {
     const a = fresh(week()), t = tools(a); expect(t.querySelector('.lvrow #lvB')).not.toBeNull(); expect(a.q('.sbbody > .lvrow')).toBeNull();
-    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false], ['Fixed lanes, one per person', false]]);
+    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Show the "now" line', true], ['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false], ['Fixed lanes, one per person', false]]);
     expect([...t.querySelectorAll('label.zck')].every(l => l.title.length > 40)).toBe(true); expect(t.querySelector('.tip').title).toContain('Live View');
   });
   it('Live View still starts and stops from its new place', () => {
@@ -395,8 +398,8 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
     expect(a.qa('#fDays .dr')[0].querySelector('.cbtn').getAttribute('aria-label')).toBe('Monday: colour: Own colour (#123456)');
   });
   it('every switch and the folded section are remembered by this browser', () => {
-    const a = fresh(week()); tick(a, 'Highlight events without an activity type'); tick(a, 'Colour by person');
-    const b = openApp({ storage: a.storage() }); expect(b.ev('[state.prefs.hlNoType,state.prefs.colBy]')).toEqual([true, 'p']);
+    const a = fresh(week()); tick(a, 'Highlight events without an activity type'); tick(a, 'Colour by person'); tick(a, 'Show the "now" line', false);
+    const b = openApp({ storage: a.storage() }); expect(b.ev('[state.prefs.hlNoType,state.prefs.colBy,state.prefs.nowLine]')).toEqual([true, 'p', false]);
     tools(b).querySelector('.shbtn').click(); expect(b.ev('state.prefs.secTools')).toBe(true); expect(b.q('#lvB')).toBeNull(); expect(openApp({ storage: b.storage() }).ev('state.prefs.secTools')).toBe(true);
     expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colBy: 'x', hlNoType: 'yes' }) } }).ev('[state.prefs.colBy,state.prefs.hlNoType]')).toEqual(['', false]);
   });
@@ -406,7 +409,7 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   });
   it('the section and its switches are translated', () => {
     const a = fresh(week(), { languages: ['es'] });
-    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona', 'Carriles fijos, uno por persona']);
+    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Mostrar la línea de "ahora"', 'Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona', 'Carriles fijos, uno por persona']);
   });
 });
 

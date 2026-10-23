@@ -14,7 +14,7 @@ export function loadPrefs(){
   {const o=state.prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});state.prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
   {const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
   state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
-  state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
+  state.prefs.nowLine=state.prefs.nowLine!==false;state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
 }
 // a phone-sized window has its own row height (R-GRID-07): 100 px per hour and Fit height off by default, about 7 hours on the screen
 export const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
@@ -278,7 +278,7 @@ export function hiddenInfo(){
   return {wk,er,n:wk+er};
 }
 export function drawNow(){
-  document.querySelectorAll('.now').forEach(n=>n.remove());if(!state.nowOn&&!state.live)return;   // live view always shows the line (R-GRID-12)
+  document.querySelectorAll('.now').forEach(n=>n.remove());if(!state.prefs.nowLine&&!state.live)return;   // live view always shows the line (R-GRID-12)
   const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
   const tw=todayWk();if(tw&&!state.allWk&&tw!==state.curWk)return;   // with today's week known, only in that week (R-CYC-05); all weeks side by side: in its column (R-CYC-19)
   document.querySelectorAll('.day[data-d="'+((d.getDay()+6)%7)+'"]').forEach(col=>{if(state.allWk&&tw&&+col.dataset.w!==tw)return;
@@ -403,7 +403,6 @@ export function openSettings(){
     const s=el('span','',l);s.innerHTML=`<b>${esc(L(label))}</b><small>${esc(L(desc))}</small>`;i.onchange=()=>{set(i.checked);savePrefs();render()};return i};
   const v=sec('viewH');el('small','note',v).textContent=L('viewNote');
   opt(v,'setEarly','earlyTip',()=>state.prefs.showEarly,x=>{state.prefs.showEarly=x;if(!x)$('wrap').scrollTop=0});
-  opt(v,'setNow','nowTip',()=>state.nowOn,x=>{state.nowOn=x});
   opt(v,'setClock','clockTip',()=>state.prefs.clock12,x=>{state.prefs.clock12=x});
   opt(v,'setWE','weTip',()=>state.prefs.hideWeekend,x=>{state.prefs.hideWeekend=x});
   const dt=sec('dataH');

@@ -5,7 +5,7 @@ The app is static files served as they are (no build): `index.html` (markup, the
 
 | File | Holds |
 |---|---|
-| `js/state.js` | `state`: the shared state, data (`S`, `WS`, `curId`, `undoSt`/`redoSt`, `memKey`) and view (`prefs`, `lang`, `curWk`, `allWk`, `focusD`, `selK`, `editMode`, `live`, `livePaused`, `nowOn`, `skipSide`, `printMode`, `HH`, `MAXEND`). The rest of this map writes its fields without `state.` (`curWk` = `state.curWk`) |
+| `js/state.js` | `state`: the shared state, data (`S`, `WS`, `curId`, `undoSt`/`redoSt`, `memKey`) and view (`prefs`, `lang`, `curWk`, `allWk`, `focusD`, `selK`, `editMode`, `live`, `livePaused`, `skipSide`, `printMode`, `HH`, `MAXEND`). The rest of this map writes its fields without `state.` (`curWk` = `state.curWk`) |
 | `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
 | `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
 | `js/data.js` | history (`hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |

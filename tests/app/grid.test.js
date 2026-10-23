@@ -71,7 +71,7 @@ describe('R-GRID-03 Saturday and Sunday: only the header cells have a different 
   });
 });
 
-describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () => {
+describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line (a Tools switch)', () => {
   it('hiding Saturday and Sunday removes both columns and their events from the grid', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 5, start: 600, end: 660, person: '' }] })] }));
     expect(a.qa('.day')).toHaveLength(7); a.ev('state.prefs.hideWeekend=true;render()');
@@ -88,9 +88,11 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () =
     expect(parseFloat(line.style.top)).toBeCloseTo((630 - 300) / 60 * 48, 1);
     expect(a.qa('.now')).toHaveLength(1);
   });
-  it('the now line can be switched off and on again', () => {
-    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); a.ev('state.nowOn=false;drawNow()'); expect(a.qa('.now')).toHaveLength(0);
-    a.ev('state.nowOn=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
+  it('the now line can be switched off and on again from Tools, and this browser remembers the switch', () => {
+    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); const sw = () => [...a.qa('.tsec label.zck')].find(l => l.textContent === 'Show the "now" line').querySelector('input');
+    expect(sw().checked).toBe(true); expect(a.qa('.now')).toHaveLength(1); sw().checked = false; sw().onchange(); expect(a.qa('.now')).toHaveLength(0);
+    const b = openApp({ storage: a.storage() }); freezeClock(b, 2026, 9, 14, 10, 30); b.ev('drawNow()'); expect(b.ev('state.prefs.nowLine')).toBe(false); expect(b.qa('.now')).toHaveLength(0);
+    a.ev('state.prefs.nowLine=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
   });
   it('before 05:00 there is no now line while the early hours are hidden, and there is one when they are shown', () => {
     const a = fresh(); freezeClock(a, 2026, 9, 14, 3, 0); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(0);
@@ -101,7 +103,7 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () =
   });
   it('the Settings dialog offers exactly these view options with explanations', () => {
     const a = fresh(); a.ev('openSettings()');
-    const text = a.dlgText(); ['Show early hours', 'Show the "now" line', 'Use AM/PM clock', 'Hide Saturday and Sunday', 'Theme'].forEach(t => expect(text).toContain(t));
+    const text = a.dlgText(); ['Show early hours', 'Use AM/PM clock', 'Hide Saturday and Sunday', 'Theme'].forEach(t => expect(text).toContain(t)); expect(text).not.toContain('"now" line');
   });
   it('view settings are remembered in the browser (not in the workspace data)', () => {
     const a = fresh(); a.ev('openSettings()');
@@ -400,7 +402,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     at(a, 2, 4, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(0);
   });
   it('the now line is drawn while live even when "Show now line" is switched off', () => {
-    const a = fresh(); at(a, 2, 10, 0); a.ev('state.nowOn=false;render()'); expect(a.qa('.now')).toHaveLength(0); start(a); expect(a.qa('.now')).toHaveLength(1);
+    const a = fresh(); at(a, 2, 10, 0); a.ev('state.prefs.nowLine=false;render()'); expect(a.qa('.now')).toHaveLength(0); start(a); expect(a.qa('.now')).toHaveLength(1);
   });
   it('scrolling by hand pauses it and shows the Now button, which scrolls back at once', () => {
     const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); start(a); scrollBy(a, 900); expect(now(a).style.display).toBe(''); expect(now(a).textContent).toBe('Now');
