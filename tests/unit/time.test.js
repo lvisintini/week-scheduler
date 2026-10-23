@@ -6,18 +6,18 @@ const ev = c => app.ev(c);
 
 describe('R-GRID-05 Midnight is shown as 00:00 and never as 24:00', () => {
   it.each([[0, '00:00'], [1440, '00:00'], [60, '01:00'], [600, '10:00'], [1425, '23:45'], [1500, '01:00']])(
-    'in the 24-hour clock, minute %i is shown as %s', (m, text) => { ev('prefs.clock12=false'); expect(ev(`fmt(${m})`)).toBe(text); });
+    'in the 24-hour clock, minute %i is shown as %s', (m, text) => { ev('state.prefs.clock12=false'); expect(ev(`fmt(${m})`)).toBe(text); });
   it.each([[0, '12:00 AM'], [1440, '12:00 AM'], [720, '12:00 PM'], [780, '1:00 PM'], [60, '1:00 AM'], [1425, '11:45 PM']])(
-    'in the AM/PM clock, minute %i is shown as %s', (m, text) => { ev('prefs.clock12=true'); expect(ev(`fmt(${m})`)).toBe(text); ev('prefs.clock12=false'); });
+    'in the AM/PM clock, minute %i is shown as %s', (m, text) => { ev('state.prefs.clock12=true'); expect(ev(`fmt(${m})`)).toBe(text); ev('state.prefs.clock12=false'); });
   it('hour labels in the time column follow the clock setting', () => {
-    ev('prefs.clock12=false'); expect(ev('hourLabel(13)')).toBe('13:00');
-    ev('prefs.clock12=true'); expect(ev('hourLabel(13)')).toBe('1 PM'); expect(ev('hourLabel(0)')).toBe('12 AM'); ev('prefs.clock12=false');
+    ev('state.prefs.clock12=false'); expect(ev('hourLabel(13)')).toBe('13:00');
+    ev('state.prefs.clock12=true'); expect(ev('hourLabel(13)')).toBe('1 PM'); expect(ev('hourLabel(0)')).toBe('12 AM'); ev('state.prefs.clock12=false');
   });
 });
 
 describe('R-REP-04 End times: select labels and compact displays', () => {
   it('end-time options run …23:45, 00:00 (the midnight closing the start day), 00:15 (Next day) … 23:45 (Next day), 00:00 (Next day)', () => {
-    ev('MAXEND=2880');
+    ev('state.MAXEND=2880');
     expect(ev('endLabel(1425)')).toBe('23:45');
     expect(ev('endLabel(1440)')).toBe('00:00');
     expect(ev('endLabel(1455)')).toBe('00:15 (Next day)');
@@ -25,15 +25,15 @@ describe('R-REP-04 End times: select labels and compact displays', () => {
     expect(ev('endLabel(2880)')).toBe('00:00 (Next day)');
   });
   it('every label of the End list is exactly what boxes, agendas and tooltips show for that end (one notation, no "Day after next")', () => {
-    ev('MAXEND=2880'); expect(ev('[...Array(192).keys()].map(k=>(k+1)*15).every(m=>endLabel(m)===fmtEnd(m))')).toBe(true);
+    ev('state.MAXEND=2880'); expect(ev('[...Array(192).keys()].map(k=>(k+1)*15).every(m=>endLabel(m)===fmtEnd(m))')).toBe(true);
     expect(ev('[...Array(192).keys()].some(k=>/after/i.test(endLabel((k+1)*15)))')).toBe(false); expect(ev("'day2' in D.en || 'day2' in D.es")).toBe(false);
   });
   it('with the AM/PM clock the list reads 11:45 PM, 12:00 AM, 12:15 AM (Next day) … 12:00 AM (Next day)', () => {
-    ev('prefs.clock12=true;MAXEND=2880');
-    expect([1425, 1440, 1455, 2880].map(m => ev(`endLabel(${m})`))).toEqual(['11:45 PM', '12:00 AM', '12:15 AM (Next day)', '12:00 AM (Next day)']); ev('prefs.clock12=false');
+    ev('state.prefs.clock12=true;state.MAXEND=2880');
+    expect([1425, 1440, 1455, 2880].map(m => ev(`endLabel(${m})`))).toEqual(['11:45 PM', '12:00 AM', '12:15 AM (Next day)', '12:00 AM (Next day)']); ev('state.prefs.clock12=false');
   });
   it('for phases (which stay within a day) the end of the day is plain 00:00', () => {
-    ev('MAXEND=1440'); expect(ev('endLabel(1440)')).toBe('00:00'); ev('MAXEND=2880');
+    ev('state.MAXEND=1440'); expect(ev('endLabel(1440)')).toBe('00:00'); ev('state.MAXEND=2880');
   });
   it('compact displays: a plain midnight end shows 00:00 and any later end carries (Next day)', () => {
     expect(ev('fmtEnd(1380)')).toBe('23:00');

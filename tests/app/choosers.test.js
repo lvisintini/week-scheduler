@@ -58,7 +58,7 @@ describe('R-SEL-02 Dragging where things overlap asks which one you mean', () =>
   });
   it('nothing moves while the list is shown', async () => {
     const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true);
-    expect(a.ev('S.events.map(e=>e.slots[0].start)')).toEqual([600, 660]);
+    expect(a.ev('state.S.events.map(e=>e.slots[0].start)')).toEqual([600, 660]);
   });
   it('picking an entry selects exactly that repetition (outlined) and tells you to drag it', async () => {
     const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[1].click();
@@ -67,19 +67,19 @@ describe('R-SEL-02 Dragging where things overlap asks which one you mean', () =>
   it('the selected repetition takes the next drag directly, without asking again', async () => {
     const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[1].click();
     const box = a.q('.ev.sel'); await dragFrom(a, box, { col: 0, min: 690 }, { col: 0, min: 780 });
-    expect(a.qa('.omenu')).toHaveLength(0); expect(a.ev('S.events.map(e=>e.slots[0].start)')).toEqual([600, 750]);
+    expect(a.qa('.omenu')).toHaveLength(0); expect(a.ev('state.S.events.map(e=>e.slots[0].start)')).toEqual([600, 750]);
   });
   it('Escape clears the selection', async () => {
-    const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[0].click(); expect(a.ev('selK')).not.toBeNull();
-    a.key('Escape'); expect(a.ev('selK')).toBeNull(); expect(a.qa('.ev.sel')).toHaveLength(0);
+    const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[0].click(); expect(a.ev('state.selK')).not.toBeNull();
+    a.key('Escape'); expect(a.ev('state.selK')).toBeNull(); expect(a.qa('.ev.sel')).toHaveLength(0);
   });
   it('clicking empty space clears the selection', async () => {
     const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[0].click();
     const col = a.qa('.day')[3]; col.onpointerdown({ button: 0, target: col, clientX: a.x(3), clientY: a.y(600), pointerType: 'mouse', preventDefault() {} });
-    expect(a.ev('selK')).toBeNull();
+    expect(a.ev('state.selK')).toBeNull();
   });
   it('undo clears the selection', async () => {
-    const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[0].click(); a.ev('hist()'); a.toolbar('undo').click(); expect(a.ev('selK')).toBeNull();
+    const a = fresh(blank({ events: [A(), B()] })); await press(a, 0, 690, true); a.qa('.omenu .oi')[0].click(); a.ev('hist()'); a.toolbar('undo').click(); expect(a.ev('state.selK')).toBeNull();
   });
   it('two events whose bottom edges are close together ask which one to resize', async () => {
     const a = fresh(blank({ events: [A({ slots: [slot(0, 600, 720)] }), B({ slots: [slot(0, 660, 724)] })] }));

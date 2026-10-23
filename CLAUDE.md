@@ -63,7 +63,7 @@ This file holds only what applies to every task. The full specification is in `d
 - View state (the eyes of schedules, people, activity types and rhythms, opacities, `prefs`, focus and Live View) is not undoable, not an unsaved change, ignored by `dataKey()` and kept by `restoreState`. Data changes call `hist()` before mutating (drags: `pushUndo(before)`).
 
 ## Architecture (short; the full map is `docs/architecture.md`)
-- The code is in `js/` (which file holds what: `docs/architecture.md`), the styles in `app.css`, the markup and the static dialogs in `index.html`. A new script file goes into `index.html`'s list of `<script src defer>`; a top-level statement that runs at load may only use what earlier files define. `S` = the current workspace's data, `WS` = all workspaces, `prefs` = per-browser view settings.
+- The code is in `js/` (which file holds what: `docs/architecture.md`), the styles in `app.css`, the markup and the static dialogs in `index.html`. A new script file goes into `index.html`'s list of `<script src defer>`; a top-level statement that runs at load may only use what earlier files define. State that several files share is one object, `state` (`js/state.js`): `state.S` = the current workspace's data, `state.WS` = all workspaces, `state.prefs` = per-browser view settings, `state.curWk`, `state.focusD`, `state.live`…; state that one file owns stays a private variable of that file.
 - `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar.
 - Time and pieces: `fmt`/`fmtEnd`, `piecesOf` (event → per-day pieces), `coreOf` (flexible start/end), `overlapSet` (the ⚠ of repetitions).
 - A day column's layout: `laneLayout` (or `fixedLayout`), the result in `laneMap`, read by `inLane`; strips via `gutMap`; nesting via `nestPick`.

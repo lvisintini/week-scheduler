@@ -31,9 +31,9 @@ function schMenu(anchor,s){rowMenu(anchor,(m,mi)=>{
   mi(chip(s.color),L('mColor'),()=>pickColor(anchor,s.color,v=>{hist();s.color=v;render()}));
   const ow=el('div','oi opw',m);ow.title=L('opTip');ow.innerHTML=ICON_OPAC;
   const sl=el('input','',ow);sl.type='range';sl.min=.1;sl.max=1;sl.step=.05;sl.value=s.opacity??1;
-  sl.oninput=()=>{s.opacity=+sl.value;skipSide=true;render();skipSide=false};
+  sl.oninput=()=>{s.opacity=+sl.value;state.skipSide=true;render();state.skipSide=false};
   mi(s.locked?ICON_UNLOCK:ICON_LOCK,L(s.locked?'mUnlock':'mLock'),()=>{hist();s.locked=!s.locked;render()});
-  mi(ICON_EYE,L('mSolo'),()=>{const only=S.schedules.every(x=>x===s?x.visible:!x.visible);S.schedules.forEach(x=>x.visible=only?true:x===s);render()});
+  mi(ICON_EYE,L('mSolo'),()=>{const only=state.S.schedules.every(x=>x===s?x.visible:!x.visible);state.S.schedules.forEach(x=>x.visible=only?true:x===s);render()});
   mi(ICON_WS,L('mTransfer'),()=>openTransfer('schedule',s));
   mi('<span class="ic" style="margin:0">'+ICON_CAL+'</span>',L('mDelete'),()=>delSchedule(s),'d');
 })}
@@ -57,9 +57,9 @@ function tyMenu(anchor,t){rowMenu(anchor,(m,mi)=>{
   mi(tIcon(t.icon),L('mDelete'),()=>delType(t),'d');
 })}
 function delType(t){
-  const lost=S.events.filter(e=>e.type===t.id).length;
+  const lost=state.S.events.filter(e=>e.type===t.id).length;
   if(!confirm(L('confTy',{n:t.name})+(lost?L('confTyLost',{k:lost}):'')))return;hist();
-  S.types=S.types.filter(x=>x!==t);S.events.forEach(e=>{if(e.type===t.id)delete e.type});render();
+  state.S.types=state.S.types.filter(x=>x!==t);state.S.events.forEach(e=>{if(e.type===t.id)delete e.type});render();
 }
 function gripFor(row,list,item,grp=list,tip='gripTip'){   // reorder a sidebar list by dragging the grip (or with the arrow keys while it has focus); grp = the rows shown together (a sub-group of list)
   const g=el('button','grip',row);g.type='button';g.innerHTML=ICON_GRIP;g.title=L(tip);g.setAttribute('aria-label',L('gripLbl',{n:item.name}));g._item=item;
@@ -78,8 +78,8 @@ function gripFor(row,list,item,grp=list,tip='gripTip'){   // reorder a sidebar l
 }
 function secHead(parent,key,count,tipKey,ck,addFn,addTip){
   const h=el('div','sech',parent);
-  const b=el('button','shbtn',h);b.innerHTML=(prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span>`+(count==null?'':`<em>${count}</em>`);
-  b.onclick=()=>{prefs[ck]=!prefs[ck];savePrefs();renderSide()};
+  const b=el('button','shbtn',h);b.innerHTML=(state.prefs[ck]?ICON_CR:ICON_CD)+`<span>${esc(L(key))}</span>`+(count==null?'':`<em>${count}</em>`);
+  b.onclick=()=>{state.prefs[ck]=!state.prefs[ck];savePrefs();renderSide()};
   const tp=el('span','tip',h);tp.textContent='ⓘ';tp.title=L(tipKey);
   if(addFn){const a=el('button','eye',h);a.innerHTML=ICON_PLUS;a.title=L(addTip);a.onclick=addFn}
 }
@@ -90,31 +90,31 @@ function renderSide(){
   const ttl=el('span','ttl',top);ttl.textContent=L('appTitle')+(anyDirty()?' •':'');if(anyDirty())ttl.title=L('unsaved');
   const hb=el('button','eye help',top);hb.innerHTML=ICON_HELP;hb.title=L('helpTip');hb.onclick=openHelp;
   const gb=el('button','eye gear',top);gb.innerHTML=ICON_GEAR;gb.title=L('settings');gb.onclick=openSettings;
-  const cl=el('button','eye xpand',top);cl.innerHTML=prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(prefs.collapsed?'expandTip':'collapseTip');
-  cl.onclick=()=>{prefs.collapsed=!prefs.collapsed;savePrefs();applyPrefs();renderSide()};
-  {const lb=el('button','eye lvr',top);lb.id='lvR';lb.type='button';lb.onclick=()=>setLive(!live);
+  const cl=el('button','eye xpand',top);cl.innerHTML=state.prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(state.prefs.collapsed?'expandTip':'collapseTip');
+  cl.onclick=()=>{state.prefs.collapsed=!state.prefs.collapsed;savePrefs();applyPrefs();renderSide()};
+  {const lb=el('button','eye lvr',top);lb.id='lvR';lb.type='button';lb.onclick=()=>setLive(!state.live);
    const nb=el('button','eye lvnow',top);nb.id='lvF';nb.type='button';nb.innerHTML=ICON_NOW;nb.onclick=liveBack;updLive()}   // a phone: Live View and its Now float (R-GRID-12)   // Live View one tap away on the collapsed rail (R-GRID-12)
   const body=el('div','sbbody',sb);
   const wb=el('button','wsbtn',body);wb.innerHTML=`<span class="ic">${ICON_WS}</span><span class="wsn"></span><span class="chev">${ICON_CD}</span>`;
-  wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip')+(S.desc?'\n'+S.desc:'');wb.onclick=()=>wsMenu(wb);
-  if(S.color){wb.classList.add('wscol');wb.style.setProperty('--wsc',S.color)}   // the workspace's colour (R-DATA-10)
+  wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip')+(state.S.desc?'\n'+state.S.desc:'');wb.onclick=()=>wsMenu(wb);
+  if(state.S.color){wb.classList.add('wscol');wb.style.setProperty('--wsc',state.S.color)}   // the workspace's colour (R-DATA-10)
   const sg=el('div','seg',body);
-  [['events','modeEv'],['phases','modePh']].forEach(([m,k])=>{const b=el('button',editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
-    b.onclick=()=>{if(editMode===m)return;editMode=m;selK=null;if(m==='phases'&&S.rhythms.length&&!vrhythm())S.rhythms[0].visible=true;render()}});
+  [['events','modeEv'],['phases','modePh']].forEach(([m,k])=>{const b=el('button',state.editMode===m?'on':'',sg);b.textContent=L(k);b.title=L('modeTip');
+    b.onclick=()=>{if(state.editMode===m)return;state.editMode=m;state.selK=null;if(m==='phases'&&state.S.rhythms.length&&!vrhythm())state.S.rhythms[0].visible=true;render()}});
   const tb=el('div','tbar',body);
   const tbtn=(icon,tip,fn,id,cls)=>{const b=el('button',cls||'',tb);b.innerHTML=icon;b.title=tip;b.setAttribute('aria-label',tip);b.onclick=fn;if(id)b.id=id};
-  tbtn(ICON_PLUS,L(editMode==='phases'?'addPhT':'addEvT'),()=>openDlg(null),null,'p');
+  tbtn(ICON_PLUS,L(state.editMode==='phases'?'addPhT':'addEvT'),()=>openDlg(null),null,'p');
   tbtn(ICON_UNDO,L('undoTip'),undo,'undoB');tbtn(ICON_REDO,L('redoTip'),redo,'redoB');updUR();
-  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,stack:true,buttons:[{label:L(memKey?'toMemP':'toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('toIcs'),fn:()=>saveTo('ics')},{label:L('cancel'),dismiss:true}]}));
-  tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,stack:true,buttons:[{label:L(memKey?'toMemP':'toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
-  tbtn(ICON_PRINT,L('printTip'),ev=>{const one=()=>focusD!=null?printDay(focusD):printSchedule();   // prints what is on screen
-    if(cyc()<2)return one();rowMenu(ev.currentTarget,(m,mi)=>{mi(ICON_PRINT,allWk?L('prView'):L('prThis',{n:curWk}),one);mi(ICON_PRINT,L('prAll'),printAll)})});   // with a cycle: this week or every week (R-CYC-12)
+  tbtn(ICON_SAVE,L('saveTip'),()=>xdlg({title:L('saveTitle'),body:`<p>${esc(L('saveBody'))}</p>`,stack:true,buttons:[{label:L(state.memKey?'toMemP':'toMem'),cls:'p',fn:()=>saveTo('mem')},{label:L('toFile'),fn:()=>saveTo('file')},{label:L('toLink'),fn:()=>saveTo('link')},{label:L('toIcs'),fn:()=>saveTo('ics')},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_FOLDER,L('loadTip'),()=>xdlg({title:L('loadTitle'),body:`<p>${esc(L('loadBody'))}</p>`,stack:true,buttons:[{label:L(state.memKey?'toMemP':'toMem'),cls:'p',fn:loadMem},{label:L('toFile'),fn:()=>$('file').click()},{label:L('cancel'),dismiss:true}]}));
+  tbtn(ICON_PRINT,L('printTip'),ev=>{const one=()=>state.focusD!=null?printDay(state.focusD):printSchedule();   // prints what is on screen
+    if(cyc()<2)return one();rowMenu(ev.currentTarget,(m,mi)=>{mi(ICON_PRINT,state.allWk?L('prView'):L('prThis',{n:state.curWk}),one);mi(ICON_PRINT,L('prAll'),printAll)})});   // with a cycle: this week or every week (R-CYC-12)
   tbtn(ICON_STATS,L('stTip'),()=>openStats());
   // schedules
   const s1=el('div','sec',body);
-  secHead(s1,'schH',S.schedules.length,'schHTip','secSch',()=>{const n=prompt(L('pSch'));if(!n)return;hist();S.schedules.push({id:uid(),name:n,color:PAL[S.schedules.length%PAL.length],opacity:1,locked:false,visible:true});render()},'addSchTip');
-  if(!prefs.secSch)S.schedules.forEach(s=>{
-    const r=el('div','sch'+(s.visible?'':' off'),s1);gripFor(r,S.schedules,s,S.schedules,'gripSchTip');   // the order: a new event's schedule, lists and printouts (R-SCH-05)
+  secHead(s1,'schH',state.S.schedules.length,'schHTip','secSch',()=>{const n=prompt(L('pSch'));if(!n)return;hist();state.S.schedules.push({id:uid(),name:n,color:PAL[state.S.schedules.length%PAL.length],opacity:1,locked:false,visible:true});render()},'addSchTip');
+  if(!state.prefs.secSch)state.S.schedules.forEach(s=>{
+    const r=el('div','sch'+(s.visible?'':' off'),s1);gripFor(r,state.S.schedules,s,state.S.schedules,'gripSchTip');   // the order: a new event's schedule, lists and printouts (R-SCH-05)
     eyeBtn(r,s.visible,()=>{s.visible=!s.visible;render()});
     iconPicker(r,ICON_CAL,s.color,v=>{hist();s.color=v;render()}).style.opacity=Math.max(.35,s.opacity??1);
     const n=el('input','',r);n.type='text';n.value=s.name;n.setAttribute('aria-label',L('nmSch'));n.onchange=()=>{const v=n.value.trim().slice(0,200)||s.name;if(v!==s.name){hist();s.name=v}render()};
@@ -123,117 +123,117 @@ function renderSide(){
   });
   // people
   const s2=el('div','sec',body);
-  secHead(s2,'pplH',S.people.length,'pplTip','secPpl',()=>{const n=prompt(L('pPer'));if(!n)return;hist();S.people.push({id:uid(),name:n.trim(),color:PAL[S.people.length%PAL.length],visible:true});render()},'addPerTip');
+  secHead(s2,'pplH',state.S.people.length,'pplTip','secPpl',()=>{const n=prompt(L('pPer'));if(!n)return;hist();state.S.people.push({id:uid(),name:n.trim(),color:PAL[state.S.people.length%PAL.length],visible:true});render()},'addPerTip');
   // external people (R-PPL-04) sit in their own sub-group, collapsed by default (prefs.secExt !== false)
-  const ours=ourPeople(),exts=S.people.filter(q=>q.external);
+  const ours=ourPeople(),exts=state.S.people.filter(q=>q.external);
   const pRow=(q,box,grp)=>{
-    const r=el('div','sch'+(q.visible?'':' off'),box);gripFor(r,S.people,q,grp);
+    const r=el('div','sch'+(q.visible?'':' off'),box);gripFor(r,state.S.people,q,grp);
     eyeBtn(r,q.visible,()=>{q.visible=!q.visible;render()});
     iconPicker(r,ICON_USER,q.color,v=>{hist();q.color=v;render()});
     const n=el('input','',r);n.type='text';n.value=q.name;n.setAttribute('aria-label',L('nmPpl'));n.onchange=()=>{const v=n.value.trim().slice(0,200)||q.name;if(v!==q.name){hist();q.name=v}render()};
     if(q.external){const x=el('span','ic extb',r);x.innerHTML=ICON_EXT;x.title=L('mExt');x.setAttribute('aria-label',L('mExt'))}
     const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>perMenu(mb,q);
   };
-  if(!prefs.secPpl){
+  if(!state.prefs.secPpl){
     ours.forEach(q=>pRow(q,s2,ours));
     if(exts.length){
-      const shut=prefs.secExt!==false,h=el('div','subh',s2),b=el('button','shbtn',h),off=exts.filter(q=>!q.visible).length;
+      const shut=state.prefs.secExt!==false,h=el('div','subh',s2),b=el('button','shbtn',h),off=exts.filter(q=>!q.visible).length;
       b.innerHTML=(shut?ICON_CR:ICON_CD)+`<span>${esc(L('extGrp'))}</span><em>${exts.length}</em>`+(shut&&off?`<small>${esc(L('extHid',{n:off}))}</small>`:'');
-      b.setAttribute('aria-expanded',String(!shut));b.onclick=()=>{prefs.secExt=!shut;savePrefs();renderSide()};
+      b.setAttribute('aria-expanded',String(!shut));b.onclick=()=>{state.prefs.secExt=!shut;savePrefs();renderSide()};
       const tp=el('span','tip',h);tp.textContent='ⓘ';tp.title=L('extGrpTip');
       if(!shut){const g=el('div','extg',s2);exts.forEach(q=>pRow(q,g,exts))}
     }
   }
   // activity types
   const s5=el('div','sec tysec',body);
-  secHead(s5,'tyH',S.types.length,'tyTip','secTyp',()=>{const n=prompt(L('pTy'));if(!n||!n.trim())return;hist();S.types.push({id:uid(),name:n.trim().slice(0,200),color:PAL[S.types.length%PAL.length],icon:'dot',visible:true});render()},'addTyTip');
-  if(!prefs.secTyp)S.types.forEach(t=>{
-    const r=el('div','sch'+(t.visible!==false?'':' off'),s5);gripFor(r,S.types,t,S.types,'gripTyTip');   // the order is the order of statistics and of the dialog's list (R-TYP-05)
+  secHead(s5,'tyH',state.S.types.length,'tyTip','secTyp',()=>{const n=prompt(L('pTy'));if(!n||!n.trim())return;hist();state.S.types.push({id:uid(),name:n.trim().slice(0,200),color:PAL[state.S.types.length%PAL.length],icon:'dot',visible:true});render()},'addTyTip');
+  if(!state.prefs.secTyp)state.S.types.forEach(t=>{
+    const r=el('div','sch'+(t.visible!==false?'':' off'),s5);gripFor(r,state.S.types,t,state.S.types,'gripTyTip');   // the order is the order of statistics and of the dialog's list (R-TYP-05)
     eyeBtn(r,t.visible!==false,()=>{t.visible=t.visible===false;render()});   // view state: not undoable, not an unsaved change (R-TYP-04)
     const ib=el('span','ic pick',r);ib.style.color=t.color;ib.innerHTML=tIcon(t.icon);ib.title=L('iconTip');ib._ty=t.id;ib.onclick=()=>iconMenu(ib,t);
     const n=el('input','',r);n.type='text';n.value=t.name;n.setAttribute('aria-label',L('tyH'));n.onchange=()=>{const v=n.value.trim().slice(0,200)||t.name;if(v!==t.name){hist();t.name=v}render()};
     const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>tyMenu(mb,t);
   });
   const s3=el('div','sec',body);
-  secHead(s3,'rhH',S.rhythms.length,'rhTip','secRh',()=>{const n=prompt(L('pRh'),L('rhDefault'));if(!n)return;hist();S.rhythms.forEach(x=>x.visible=false);S.rhythms.push({id:uid(),name:n.trim(),visible:true});render()},'addRhTip');
-  if(!prefs.secRh){
-    S.rhythms.forEach(rh=>{
-      const r=el('div','sch'+(rh.visible?'':' off'),s3);gripFor(r,S.rhythms,rh,S.rhythms,'gripRhTip');   // the order: the rhythm Phases mode shows first, lists (R-PHS-09)
-      const eb=eyeBtn(r,rh.visible,()=>{if(rh.visible)rh.visible=false;else S.rhythms.forEach(x=>x.visible=x===rh);render()});eb.title=L('rhEye');
+  secHead(s3,'rhH',state.S.rhythms.length,'rhTip','secRh',()=>{const n=prompt(L('pRh'),L('rhDefault'));if(!n)return;hist();state.S.rhythms.forEach(x=>x.visible=false);state.S.rhythms.push({id:uid(),name:n.trim(),visible:true});render()},'addRhTip');
+  if(!state.prefs.secRh){
+    state.S.rhythms.forEach(rh=>{
+      const r=el('div','sch'+(rh.visible?'':' off'),s3);gripFor(r,state.S.rhythms,rh,state.S.rhythms,'gripRhTip');   // the order: the rhythm Phases mode shows first, lists (R-PHS-09)
+      const eb=eyeBtn(r,rh.visible,()=>{if(rh.visible)rh.visible=false;else state.S.rhythms.forEach(x=>x.visible=x===rh);render()});eb.title=L('rhEye');
       const ic=el('span','ic',r);ic.innerHTML=ICON_RHYTHM;
       const n=el('input','',r);n.type='text';n.value=rh.name;n.setAttribute('aria-label',L('nmRh'));n.onchange=()=>{const v=n.value.trim().slice(0,200)||rh.name;if(v!==rh.name){hist();rh.name=v}render()};
       const ag=el('button','eye',r);ag.innerHTML=ICON_AGENDA;ag.title=L('rhAgTip');ag.onclick=()=>openRhythmAgenda(rh);
       const mb=el('button','eye',r);mb.innerHTML=ICON_MORE;mb.title=L('moreTip');mb.onclick=()=>rowMenu(mb,(m,mi)=>{mi(ICON_WS,L('mTransfer'),()=>openTransfer('rhythm',rh));mi('<span class="ic" style="margin:0">'+ICON_RHYTHM+'</span>',L('mDelete'),()=>delRhythm(rh),'d')});
     });
     const orow=el('div','sch',s3),oi=el('span','ic',orow);oi.innerHTML=ICON_OPAC;oi.title=L('phOp');
-    const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=S.phaseOpacity;sl.title=L('phOp');
-    sl.oninput=()=>{S.phaseOpacity=+sl.value;skipSide=true;render();skipSide=false};
+    const sl=el('input','op',orow);sl.type='range';sl.min=.05;sl.max=1;sl.step=.05;sl.value=state.S.phaseOpacity;sl.title=L('phOp');
+    sl.oninput=()=>{state.S.phaseOpacity=+sl.value;state.skipSide=true;render();state.skipSide=false};
   }
   // tools (R-UI-11): Live View and temporary ways of looking at the week; per-browser view state
   const s6=el('div','sec tsec',body);
   secHead(s6,'toolsH',null,'toolsTip','secTools');
-  if(!prefs.secTools){
-    {const r=el('div','lvrow',s6),b=el('button','',r),c=el('button','',r);b.id='lvB';b.type='button';b.onclick=()=>setLive(!live);   // live view (R-GRID-12)
+  if(!state.prefs.secTools){
+    {const r=el('div','lvrow',s6),b=el('button','',r),c=el('button','',r);b.id='lvB';b.type='button';b.onclick=()=>setLive(!state.live);   // live view (R-GRID-12)
      c.id='lvC';c.type='button';c.innerHTML=ICON_NOW+'<span></span>';c.querySelector('span').textContent=L('lvNow');c.title=L('lvNowTip');c.onclick=liveBack;updLive()}
     const tck=(label,tip,get,set)=>{const l=el('label','zck',s6),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=get();el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{set(c.checked);savePrefs();render()};return c};
-    tck('hlNoTy','hlNoTyTip',()=>prefs.hlNoType,v=>{prefs.hlNoType=v});
-    tck('colByT','colByTTip',()=>prefs.colBy==='t',v=>{prefs.colBy=v?'t':''});   // the two colour modes exclude each other
-    tck('colByP','colByPTip',()=>prefs.colBy==='p',v=>{prefs.colBy=v?'p':''});
-    tck('lanesFix','lanesFixTip',()=>prefs.lanesFix,v=>{prefs.lanesFix=v});   // R-EVT-23
+    tck('hlNoTy','hlNoTyTip',()=>state.prefs.hlNoType,v=>{state.prefs.hlNoType=v});
+    tck('colByT','colByTTip',()=>state.prefs.colBy==='t',v=>{state.prefs.colBy=v?'t':''});   // the two colour modes exclude each other
+    tck('colByP','colByPTip',()=>state.prefs.colBy==='p',v=>{state.prefs.colBy=v?'p':''});
+    tck('lanesFix','lanesFixTip',()=>state.prefs.lanesFix,v=>{state.prefs.lanesFix=v});   // R-EVT-23
   }
   // zoom (grid scale only; per-browser view state)
   const s4=el('div','sec zsec',body);
   secHead(s4,'zoomH',null,'zoomNote','secZoom');
-  if(!prefs.secZoom){
+  if(!state.prefs.secZoom){
     // each Fit box heads its own slider; while it is on, the slider is disabled and shows the fitted size (updZoomUI)
     const zsl=(label,key,min,max,step,unit,off,cls)=>{const r=el('div','zrow'+(cls?' '+cls:''),s4);el('span','',r).textContent=L(label);
-      const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=prefs[key];i.dataset.z=key;i.disabled=!!off&&prefs[off];i.setAttribute('aria-label',L(label));i.title=L(i.disabled?(off.startsWith('fitW')?'zoomOffW':'zoomOffH'):key==='txt'?'zoomTxtTip':label);
-      const v=el('span','zv',r);v.textContent=prefs[key]+unit;i.oninput=()=>{prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()}};
-    const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
-      c.onchange=()=>{if(!c.checked)prefs[size]=fitted(size);prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};   // unticking keeps the fitted size, so nothing jumps
+      const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=state.prefs[key];i.dataset.z=key;i.disabled=!!off&&state.prefs[off];i.setAttribute('aria-label',L(label));i.title=L(i.disabled?(off.startsWith('fitW')?'zoomOffW':'zoomOffH'):key==='txt'?'zoomTxtTip':label);
+      const v=el('span','zv',r);v.textContent=state.prefs[key]+unit;i.oninput=()=>{state.prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()}};
+    const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=state.prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
+      c.onchange=()=>{if(!c.checked)state.prefs[size]=fitted(size);state.prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};   // unticking keeps the fitted size, so nothing jumps
     ck('zoomFitW','zoomFitWTip',FWK(),WK());zsl('zoomCol',WK(),70,1000,10,' px',FWK(),'zsub');
     ck('zoomFitH','zoomFitHTip',FH(),RH());zsl('zoomRow',RH(),24,120,4,' px/h',FH(),'zsub');
     el('div','zsep',s4);zsl('zoomTxt','txt',80,160,10,' %');
     const rb=el('button','zreset',s4);rb.type='button';rb.textContent=L('zoomReset');rb.title=L(phone()?'zoomResetTipP':'zoomResetTip');
-    rb.onclick=()=>{if(phone()){prefs.rowHP=100;prefs.fitHP=false;prefs.colWP=110;prefs.fitWP=true}else{prefs.rowH=48;prefs.fitH=true;prefs.colW=110;prefs.fitW=true}prefs.txt=100;savePrefs();zoomRender();renderSide()};
+    rb.onclick=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;savePrefs();zoomRender();renderSide()};
     updZoomUI();
   }
   sb.scrollTop=st;
 }
 function delRhythm(rh){
-  const lost=S.phases.filter(p=>p.rhythms.length===1&&p.rhythms[0]===rh.id).length;
+  const lost=state.S.phases.filter(p=>p.rhythms.length===1&&p.rhythms[0]===rh.id).length;
   if(!confirm(L('confRh',{n:rh.name})+(lost?L('confRhLost',{k:lost}):'')))return;hist();
-  S.rhythms=S.rhythms.filter(x=>x!==rh);
-  S.phases.forEach(p=>p.rhythms=p.rhythms.filter(i=>i!==rh.id));
-  S.phases=S.phases.filter(p=>p.rhythms.length);
+  state.S.rhythms=state.S.rhythms.filter(x=>x!==rh);
+  state.S.phases.forEach(p=>p.rhythms=p.rhythms.filter(i=>i!==rh.id));
+  state.S.phases=state.S.phases.filter(p=>p.rhythms.length);
   render();
 }
-const wkSuf=()=>cyc()>1?' — '+(allWk?L('wkAllT'):wkLabel(curWk)):'';
-const wkH1=txt=>{const c=!allWk&&wkCol(curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
+const wkSuf=()=>cyc()>1?' — '+(state.allWk?L('wkAllT'):wkLabel(state.curWk)):'';
+const wkH1=txt=>{const c=!state.allWk&&wkCol(state.curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
 function schedPage(){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
   const w=el('div');w.innerHTML=wkH1(L('printTitle')+wkSuf())+metaLine();w.append(c);return w;
 }
-function printSchedule(){doPrint(schedPage(),allWk)}   // every week side by side prints across the page (R-CYC-19)
+function printSchedule(){doPrint(schedPage(),state.allWk)}   // every week side by side prints across the page (R-CYC-19)
 // fn drawn with one week shown (w), as when every week is side by side a page or day view is printed (R-CYC-19)
-function oneWeek(w,fn){const a=allWk,c=curWk;allWk=false;curWk=w;try{return fn()}finally{allWk=a;curWk=c;render()}}
+function oneWeek(w,fn){const a=state.allWk,c=state.curWk;state.allWk=false;state.curWk=w;try{return fn()}finally{state.allWk=a;state.curWk=c;render()}}
 function printAll(){   // every week of the cycle, one page each (the focused day of each week while focused)
-  const w0=curWk,a0=allWk,out=el('div');allWk=false;
-  try{for(let w=1;w<=cyc();w++){curWk=w;const pg=focusD!=null?dayPage(focusD):schedPage();if(w>1)pg.className='pgb';out.append(pg)}}finally{curWk=w0;allWk=a0;render()}
+  const w0=state.curWk,a0=state.allWk,out=el('div');state.allWk=false;
+  try{for(let w=1;w<=cyc();w++){state.curWk=w;const pg=state.focusD!=null?dayPage(state.focusD):schedPage();if(w>1)pg.className='pgb';out.append(pg)}}finally{state.curWk=w0;state.allWk=a0;render()}
   doPrint(out,false);
 }
 function delPerson(q){
   if(!confirm(L('confPer',{n:q.name})))return;hist();
-  S.people=S.people.filter(x=>x!==q);
-  S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);if(e.owner===q.id)delete e.owner;e.slots.forEach(s=>{if(s.person===q.id)s.person='';if(s.inv)s.inv=s.inv.filter(i=>i!==q.id)})});
+  state.S.people=state.S.people.filter(x=>x!==q);
+  state.S.events.forEach(e=>{e.involved=e.involved.filter(i=>i!==q.id);if(e.owner===q.id)delete e.owner;e.slots.forEach(s=>{if(s.person===q.id)s.person='';if(s.inv)s.inv=s.inv.filter(i=>i!==q.id)})});
   render();
 }
 function delSchedule(s){
-  const lost=S.events.filter(e=>e.schedules.length===1&&e.schedules[0]===s.id).length;
+  const lost=state.S.events.filter(e=>e.schedules.length===1&&e.schedules[0]===s.id).length;
   if(!confirm(L('confSch',{n:s.name})+(lost?L('confLost',{k:lost}):'')))return;hist();
-  S.schedules=S.schedules.filter(x=>x!==s);
-  S.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));
-  S.events=S.events.filter(e=>e.schedules.length);
+  state.S.schedules=state.S.schedules.filter(x=>x!==s);
+  state.S.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));
+  state.S.events=state.S.events.filter(e=>e.schedules.length);
   render();
 }

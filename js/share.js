@@ -84,15 +84,15 @@ function askPassword(blob,onOpen,onCancel){   // ask for the password of an encr
 // what to include (R-SHARE-08): everything, or chosen schedules and rhythms, and only some people's activities. ics: the calendar export,
 // which has no phases (no Rhythms list) and is no copy of the workspace (its own summary, R-SHARE-09). inc() = null for everything
 function incPicker(body,ics){
-  const inc={sch:new Set(S.schedules.map(s=>s.id)),rh:new Set(S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
+  const inc={sch:new Set(state.S.schedules.map(s=>s.id)),rh:new Set(state.S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
   const pb=el('div','partbox',body);el('div','parth',pb).textContent=L('partH');
   const ps=el('div','seg partsel',pb),pl=el('div','partl',pb),sum=el('p','note partsum',pb);
   [[false,'partAll'],[true,'partPick']].forEach(([v,k])=>{const b=el('button','',ps);b.type='button';b.textContent=L(k);b.onclick=()=>{part=v;drawPart()}});
   const grp=(title,list,set,tip)=>{if(!list.length)return;const g=el('div','partg',pl),h=el('div','partgh',g);h.textContent=L(title);if(tip){const t=el('span','tip',h);t.textContent=' ⓘ';t.title=L(tip)}
     list.forEach(([id,name])=>{const l=el('label','',g),i=el('input','',l);i.type='checkbox';i.checked=set.has(id);l.append(' '+name);i.onchange=()=>{i.checked?set.add(id):set.delete(id);drawPart()}})};
   const drawPart=()=>{[...ps.children].forEach((b,i)=>{b.classList.toggle('on',(i===1)===part);b.setAttribute('aria-pressed',String((i===1)===part))});pl.innerHTML='';pl.hidden=!part;sum.hidden=!part;
-    if(!part)return;grp('partSch',S.schedules.map(s=>[s.id,s.name]),inc.sch);if(!ics)grp('partRh',S.rhythms.map(r=>[r.id,r.name]),inc.rh);grp('partPpl',S.people.map(q=>[q.id,q.name]),inc.ppl,'partPplTip');
-    const f=partOf(buildFile(),inc);sum.textContent=ics?L('icsSum',{e:f.events.length,te:S.events.length}):L('partSum',{e:f.events.length,te:S.events.length,p:f.phases.length,tp:S.phases.length})+' '+L('partNote')};
+    if(!part)return;grp('partSch',state.S.schedules.map(s=>[s.id,s.name]),inc.sch);if(!ics)grp('partRh',state.S.rhythms.map(r=>[r.id,r.name]),inc.rh);grp('partPpl',state.S.people.map(q=>[q.id,q.name]),inc.ppl,'partPplTip');
+    const f=partOf(buildFile(),inc);sum.textContent=ics?L('icsSum',{e:f.events.length,te:state.S.events.length}):L('partSum',{e:f.events.length,te:state.S.events.length,p:f.phases.length,tp:state.S.phases.length})+' '+L('partNote')};
   drawPart();
   return {sum,inc:()=>part?inc:null};
 }
@@ -147,49 +147,49 @@ async function handleShareLink(){
   if(!sealedOk(blob)){clean();toast(L('linkBad'));return}   // empty or truncated: no point asking for a password
   askPassword(blob,obj=>{
     clean();let w;try{w=parseWorkspace(obj,L('wsShared'))}catch(e){toast(L(errKey(e,'linkBad')));return}
-    if(!memGet()&&WS.length===1&&!isDirty()){adoptWs(w,'link');toast(L('linkLoaded'));return}
+    if(!memGet()&&state.WS.length===1&&!isDirty()){adoptWs(w,'link');toast(L('linkLoaded'));return}
     openImport(w,'link');
   },clean);
 }
 async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file, chosen explicitly by the user; inc: only part of it (R-SHARE-08)
   let text;try{const f=shareOf(inc,anon);text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}
   const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+fileDay()+(pw==null?'':'-encrypted')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  if(!anon&&!inc)cw().lf=keyOf(S);   // an anonymised or partial copy is not a backup of this workspace
+  if(!anon&&!inc)cw().lf=keyOf(state.S);   // an anonymised or partial copy is not a backup of this workspace
   toast(L('savedFile'));renderSide();
 }
 function loadMem(){  // reverts the current workspace to its saved copy in browser memory
   return withStore(st=>{
     if(st&&verOf(st)>FMT){alert(L('memNewer'));return}
-    const e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===curId);
+    const e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===state.curId);
     if(!e){toast(L('noMem'));return}
-    try{const d=parseData(migrate(e,verOf(st)));hist();S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
+    try{const d=parseData(migrate(e,verOf(st)));hist();state.S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
   });
 }
 function restart(){
   if(anyDirty()&&!confirm(L('confRestart')))return;
-  return withStore(st=>{loadStore(st);selK=null;editMode='events';render();toast(L('restarted'))});
+  return withStore(st=>{loadStore(st);state.selK=null;state.editMode='events';render();toast(L('restarted'))});
 }
-const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}memKey=null;prefs.lvAnchor=Object.create(null);prefs.icsLast=Object.create(null);savePrefs()};
+const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}state.memKey=null;state.prefs.lvAnchor=Object.create(null);state.prefs.icsLast=Object.create(null);savePrefs()};
 function clearMem(){
   if(!confirm(L('confClear')))return;
-  eraseMem();initDefault();selK=null;editMode='events';render();toast(L('clearedMem'));
+  eraseMem();initDefault();state.selK=null;state.editMode='events';render();toast(L('clearedMem'));
 }
 /* ---------- R-DATA-11: a passphrase for browser memory ---------- */
 const pwInput=(body,lab,ac)=>{const l=el('label','pwl',body);el('span','',l).textContent=L(lab);const i=el('input','',l);i.type='password';i.autocomplete=ac;return i};
 const pwShowBox=(body,ins)=>{const sl=el('label','sopt',body),sc=el('input','',sl);sc.type='checkbox';sl.append(' '+L('prShow'));sc.onchange=()=>ins.forEach(i=>{i.type=sc.checked?'text':'password'});return sc};
 // the plain store, if pw opens the protected one this page has open (another tab may have changed it: 'tab')
 async function storeWith(pw){
-  const st=readStore();if(!isSealed(st)||!memKey)throw new Error('tab');
+  const st=readStore();if(!isSealed(st)||!state.memKey)throw new Error('tab');
   const blob=unb64u(st.sealed),k=await keyFor(pw,blob),plain=await unseal(blob,null,k);
-  if(k.salt.some((x,i)=>x!==memKey.salt[i]))throw new Error('tab');return plain;
+  if(k.salt.some((x,i)=>x!==state.memKey.salt[i]))throw new Error('tab');return plain;
 }
 async function protectMem(pw){   // seals what is stored, or an empty store, so that the protection is kept
-  const st=readStore();if(st&&verOf(st)>FMT)throw new Error('newer');if(isSealed(st)||memKey)throw new Error('tab');
-  memKey=await newKey(pw);
-  try{await writeStore(st||{version:FMT,current:curId,workspaces:[]})}catch(e){memKey=null;throw e}
+  const st=readStore();if(st&&verOf(st)>FMT)throw new Error('newer');if(isSealed(st)||state.memKey)throw new Error('tab');
+  state.memKey=await newKey(pw);
+  try{await writeStore(st||{version:FMT,current:state.curId,workspaces:[]})}catch(e){state.memKey=null;throw e}
 }
-async function changePass(old,pw){const plain=await storeWith(old),k=await newKey(pw),k0=memKey;memKey=k;try{await writeStore(plain)}catch(e){memKey=k0;throw e}}
-async function unprotectMem(old){const plain=await storeWith(old);memKey=null;localStorage.setItem(WKEY,JSON.stringify(plain))}
+async function changePass(old,pw){const plain=await storeWith(old),k=await newKey(pw),k0=state.memKey;state.memKey=k;try{await writeStore(plain)}catch(e){state.memKey=k0;throw e}}
+async function unprotectMem(old){const plain=await storeWith(old);state.memKey=null;localStorage.setItem(WKEY,JSON.stringify(plain))}
 // mode 'on': protect; 'change': the current passphrase and a new one; 'off': the current one, to store it readable again
 function openPassphrase(mode){
   const body=el('div');el('p','',body).textContent=L({on:'prBody',change:'chBody',off:'unBody'}[mode]);
@@ -220,7 +220,7 @@ function askUnlock(onOpen){
   er.onclick=()=>{if(!confirm(L('ulEraseConf')))return;eraseMem();toast(L('clearedMem'));finish(null)};
   const go=async()=>{
     msg.textContent=L('pwWorking');
-    try{const cur=readStore();if(!isSealed(cur)){finish(cur);return}const blob=unb64u(cur.sealed),k=await keyFor(pw.value.trim(),blob),plain=await unseal(blob,null,k);memKey=k;finish(plain)}
+    try{const cur=readStore();if(!isSealed(cur)){finish(cur);return}const blob=unb64u(cur.sealed),k=await keyFor(pw.value.trim(),blob),plain=await unseal(blob,null,k);state.memKey=k;finish(plain)}
     catch(e){msg.textContent=L(e&&e.message==='password'?'ulWrong':'badFile')}
   };
   pw.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}};
@@ -229,7 +229,7 @@ function askUnlock(onOpen){
 }
 function lockNow(){   // drops the key and the data from this page; the passphrase opens them again
   if(anyDirty()&&!confirm(L('lockConf')))return;
-  memKey=null;initDefault();selK=null;editMode='events';render();askUnlock(st=>{loadStore(st);render()});
+  state.memKey=null;initDefault();state.selK=null;state.editMode='events';render();askUnlock(st=>{loadStore(st);render()});
 }
 window.addEventListener('beforeunload',e=>{if(anyDirty()){e.preventDefault();e.returnValue=''}});
 // Settings have no version (none = 1): a key never changes its meaning, unknown or missing values fall back to the defaults (R-DATA-08)

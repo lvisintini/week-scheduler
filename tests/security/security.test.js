@@ -51,7 +51,7 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
       events: [{ id: 'e1', title: payload, desc: payload, color: '#3b6df0', type: 't1', schedules: ['s1'], involved: ['p1'], slots: [{ day: 0, start: 600, end: 720, person: 'p1' }, { day: 0, start: 660, end: 780, person: 'p1' }] }],
       rhythms: [{ id: 'r1', name: payload, visible: true }], phases: [{ id: 'ph1', title: payload, desc: payload, color: '#3b6df0', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }, { day: 1, start: 720, end: 780 }] }],
     });
-    a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(hostile)});S=w.data;cw().data=w.data;cw().name=w.name;render()})()`);
+    a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(hostile)});state.S=w.data;cw().data=w.data;cw().name=w.name;render()})()`);
     const bits = [
       'openAgenda(0)', 'openRhythmAgenda(S.rhythms[0])', 'openDlg(S.events[0])', 'closeDlgs&&closeDlgs()', 'openCopy(S.events[0])', 'openTransfer("schedule",S.schedules[0])', 'openSettings()',
       'printSchedule()', 'printDay(0)', 'openStats("p1")', 'stP="*";openStats()', 'editMode="phases";render();openDlg(S.phases[0])', 'editMode="events";render()',
@@ -68,8 +68,8 @@ describe('R-SEC-02 Everything user-controlled is escaped before it reaches the p
   });
   it('ids with quotes cannot break out of attributes', async () => {
     const a = openApp(); const id = 'x" onmouseover="window.__pwned=1" y="';
-    a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(workspace({ schedules: [{ id, name: 'S', color: '#3b6df0', opacity: 1, locked: false, visible: true }], events: [{ id, title: 'T', desc: '', color: '#3b6df0', schedules: [id], involved: [], slots: [{ day: 0, start: 600, end: 660, person: '' }] }] }))});S=w.data;render()})()`);
-    a.ev('openAgenda(0)'); a.ev('openDlg(S.events[0])'); await sleep(20); expect(a.w.__pwned).toBeUndefined(); expect(a.qa('[onmouseover]')).toHaveLength(0);
+    a.ev(`(()=>{const w=parseWorkspace(${JSON.stringify(workspace({ schedules: [{ id, name: 'S', color: '#3b6df0', opacity: 1, locked: false, visible: true }], events: [{ id, title: 'T', desc: '', color: '#3b6df0', schedules: [id], involved: [], slots: [{ day: 0, start: 600, end: 660, person: '' }] }] }))});state.S=w.data;render()})()`);
+    a.ev('openAgenda(0)'); a.ev('openDlg(state.S.events[0])'); await sleep(20); expect(a.w.__pwned).toBeUndefined(); expect(a.qa('[onmouseover]')).toHaveLength(0);
   });
   it('unsafe colour values are replaced by safe palette colours before they can reach a style attribute', () => {
     const a = openApp(); const d = a.ev(`parseData(${JSON.stringify(blank({ schedules: [sched({ color: 'red;background:url(https://evil.example/x)' })], events: [ev1({ color: 'expression(alert(1))' })] }))})`);
@@ -88,12 +88,12 @@ describe('R-SEC-02 Names typed in the sidebar are trimmed and capped at 200 char
   it('a schedule, a person and a rhythm renamed with 300 characters keep only the first 200', () => {
     const a = openApp(); setData(a, data()); const long = 'x'.repeat(300);
     rename(a, a.q('input[aria-label="Name of the schedule"]'), long); rename(a, fields(a).ppl, long); rename(a, fields(a).rh, long);
-    expect(a.ev('[S.schedules[0].name.length, S.people[0].name.length, S.rhythms[0].name.length]')).toEqual([200, 200, 200]);
+    expect(a.ev('[state.S.schedules[0].name.length, state.S.people[0].name.length, state.S.rhythms[0].name.length]')).toEqual([200, 200, 200]);
   });
   it('spaces around a typed name are removed, and a name of only spaces keeps the old name', () => {
     const a = openApp(); setData(a, data());
     rename(a, a.q('input[aria-label="Name of the schedule"]'), '  Work  '); rename(a, fields(a).ppl, '   '); rename(a, fields(a).rh, ' Holiday ');
-    expect(a.ev('[S.schedules[0].name, S.people[0].name, S.rhythms[0].name]')).toEqual(['Work', 'Ann', 'Holiday']);
+    expect(a.ev('[state.S.schedules[0].name, state.S.people[0].name, state.S.rhythms[0].name]')).toEqual(['Work', 'Ann', 'Holiday']);
   });
 });
 
@@ -118,7 +118,7 @@ describe('R-SEC-04 Nothing leaves the device and nothing unexpected is stored', 
     expect(calls).toEqual([]); expect(a.d.cookie).toBe('');
   });
   it('only the two documented browser-storage keys are ever written', () => {
-    const a = openApp(); a.ev('saveMem("all");prefs.theme="dark";savePrefs()'); expect(Object.keys(a.storage()).sort()).toEqual([PREFS_KEY, WS_KEY].sort());
+    const a = openApp(); a.ev('saveMem("all");state.prefs.theme="dark";savePrefs()'); expect(Object.keys(a.storage()).sort()).toEqual([PREFS_KEY, WS_KEY].sort());
   });
   it('the shared-link data is only written to the address fragment, which browsers never send to servers', () => {
     expect(script).toMatch(/'#data=e1\.'/); expect(script).not.toMatch(/\?data=|[?&]d=/);

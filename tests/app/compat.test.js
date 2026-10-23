@@ -14,7 +14,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); for (;;) { const
 const openFile = async (a, text, name = 'f.json') => { a.d.getElementById('file').onchange({ target: { files: [{ name, text: async () => text }], value: '' } }); await a.sleep(30); };
 const importNew = a => { a.qa('#xDlg input[name=impm]').find(r => r.value === 'new').checked = true; a.click('Import'); };
 const typePw = a => { a.q('#xDlg input').value = FIXTURE_PASSWORD; a.click('Open'); };
-const loaded = a => JSON.parse(a.ev('JSON.stringify(S)'));
+const loaded = a => JSON.parse(a.ev('JSON.stringify(state.S)'));
 const shapeOf = (x, p = '') => Array.isArray(x) ? x.flatMap(v => shapeOf(v, p + '[]')) : x && typeof x === 'object' ? Object.keys(x).flatMap(k => [p + '.' + k, ...shapeOf(x[k], p + '.' + k)]) : [];
 const shape = x => [...new Set(shapeOf(x))].sort();
 const bump = (text, f) => { const j = JSON.parse(text); f(j); return JSON.stringify(j); };
@@ -36,8 +36,8 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
   });
   it(`browser memory of version ${v} loads both workspaces at startup, unchanged and not marked unsaved`, () => {
     const a = openApp({ storage: { [WS_KEY]: read(v, 'store.json') } });
-    expect(a.ev('WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(a.ev('curId')).toBe('ws-family');
-    expect(loaded(a)).toMatchObject(householdAt(v)); expect(JSON.parse(a.ev('JSON.stringify(WS[1].data)'))).toMatchObject(grandparents);
+    expect(a.ev('state.WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(a.ev('state.curId')).toBe('ws-family');
+    expect(loaded(a)).toMatchObject(householdAt(v)); expect(JSON.parse(a.ev('JSON.stringify(state.WS[1].data)'))).toMatchObject(grandparents);
     expect(a.ev('anyDirty()')).toBe(false); expect(a.log.alerts).toEqual([]);
   });
   it(`browser memory of version ${v} is rewritten in the current format only when the user saves`, () => {
@@ -47,7 +47,7 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
   });
   it(`the settings saved by version ${v} are read back with every value`, () => {
     const a = openApp({ storage: { [PREFS_KEY]: read(v, 'prefs.json') } });
-    expect(JSON.parse(a.ev('JSON.stringify(prefs)'))).toMatchObject(prefsAt(v)); expect(a.d.documentElement.dataset.theme).toBe('dark');
+    expect(JSON.parse(a.ev('JSON.stringify(state.prefs)'))).toMatchObject(prefsAt(v)); expect(a.d.documentElement.dataset.theme).toBe('dark');
   });
   it(`all files of version ${v} hold exactly the same workspace (file, encrypted file, link, browser memory)`, async () => {
     const a = openApp(), plain = JSON.parse(read(v, 'workspace.json')), store = JSON.parse(read(v, 'store.json'));
@@ -61,8 +61,8 @@ describe.each(versions)('R-DATA-08 Sample files of format version %i still load 
 describe.each(versions.filter(v => fs.existsSync(path.join(FIX, 'v' + v, 'store-protected.json'))))('R-DATA-08 R-DATA-11 Protected browser memory of format version %i opens with its passphrase', v => {
   it(`the protected browser memory of version ${v} asks for its passphrase, then loads both workspaces unchanged and not marked unsaved`, async () => {
     const text = read(v, 'store-protected.json'), a = openApp({ storage: { [WS_KEY]: text } }); expect(a.dlgTitle()).toBe('Browser memory is protected');
-    a.q('#xDlg .pwl input').value = FIXTURE_PASSWORD; a.click('Open'); await waitFor(() => !a.dlgOpen() && a.ev('WS.length') === 2);
-    expect(a.ev('WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(loaded(a)).toMatchObject(householdAt(v)); expect(a.ev('anyDirty()')).toBe(false); expect(a.storage()[WS_KEY]).toBe(text);
+    a.q('#xDlg .pwl input').value = FIXTURE_PASSWORD; a.click('Open'); await waitFor(() => !a.dlgOpen() && a.ev('state.WS.length') === 2);
+    expect(a.ev('state.WS.map(w=>w.name)')).toEqual(['Family week', 'Grandparents']); expect(loaded(a)).toMatchObject(householdAt(v)); expect(a.ev('anyDirty()')).toBe(false); expect(a.storage()[WS_KEY]).toBe(text);
   }, 20000);
 });
 
@@ -92,7 +92,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[13] = [...SHAPES[12], '.color', '.desc'].sort();   // 13: the workspace's colour and description (R-DATA-10)
   SHAPES[14] = SHAPES[13];   // 14: same keys; browser memory may be protected with a passphrase (R-DATA-11)
   SHAPES[15] = [...SHAPES[14], '.pool'].sort();   // 15: the staged weeks kept after the cycle (R-CYC-21)
-  const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
+  const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});state.S=d;const w=cw();w.data=d;w.id='ws-family';state.curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));
   });
@@ -163,7 +163,7 @@ describe('R-DATA-09 Data from a newer version of the app is refused, never half-
   const NEWER = 'made with a newer version';
   it('a readable JSON file of a newer format is refused with a message to reload the page', async () => {
     const b = openApp(); await openFile(b, JSON.stringify(workspace({ version: FMT + 1 }))); expect(b.log.alerts[0]).toContain(NEWER); expect(b.log.alerts[0]).toContain('Reload the page'); expect(b.dlgOpen()).toBe(false);
-    expect(b.ev('WS.length')).toBe(1);
+    expect(b.ev('state.WS.length')).toBe(1);
   });
   it('an encrypted file whose container is of a newer version is refused before the password is asked', async () => {
     const b = openApp(); await openFile(b, bump(read(FMT, 'encrypted.json'), j => { j.version = 2; })); expect(b.log.alerts[0]).toContain(NEWER); expect(b.dlgOpen()).toBe(false);
@@ -174,7 +174,7 @@ describe('R-DATA-09 Data from a newer version of the app is refused, never half-
   it('an encrypted file whose workspace inside is of a newer format is refused after the password', async () => {
     const a = openApp(); const data = await a.ev(`seal(${JSON.stringify(workspace({ version: FMT + 1 }))},${JSON.stringify(FIXTURE_PASSWORD)}).then(b64u)`);
     const b = openApp(); await openFile(b, JSON.stringify({ format: 'weekly-schedules-encrypted', version: 1, data })); await waitFor(() => b.dlgTitle() === 'Password needed'); typePw(b);
-    await waitFor(() => b.log.alerts.length); expect(b.log.alerts[0]).toContain(NEWER); expect(b.ev('WS.length')).toBe(1);
+    await waitFor(() => b.log.alerts.length); expect(b.log.alerts[0]).toContain(NEWER); expect(b.ev('state.WS.length')).toBe(1);
   });
   it('a compression flag of a newer version inside the encrypted data is reported as newer', async () => {
     const a = openApp(); const r = await a.ev(`encryptBytes(new Uint8Array([2,123,125]),${JSON.stringify(FIXTURE_PASSWORD)}).then(b=>unseal(b,${JSON.stringify(FIXTURE_PASSWORD)})).then(()=>'ok',e=>e.message)`);
@@ -199,17 +199,17 @@ describe('R-DATA-09 Browser memory written by a newer version is neither loaded 
   const start = () => { const text = newer(); return { text, a: openApp({ storage: { [WS_KEY]: text } }) }; };
   it('at startup the app explains it and starts with an empty default workspace instead', () => {
     const { a } = start(); expect(a.log.alerts[0]).toContain('newer version'); expect(a.log.alerts[0]).toContain('will not write over it');
-    expect(a.ev('WS.map(w=>w.name)')).toEqual(['Workspace']); expect(a.log.errors).toEqual([]);
+    expect(a.ev('state.WS.map(w=>w.name)')).toEqual(['Workspace']); expect(a.log.errors).toEqual([]);
   });
   it('saving to browser memory is refused and the stored data stays exactly as it was', () => {
     const { a, text } = start(); a.chooseSave('Browser memory'); expect(a.log.alerts[1]).toContain('Not saved'); expect(a.storage()[WS_KEY]).toBe(text);
   });
   it('saving only the current workspace (with several open) is refused as well', () => {
-    const { a, text } = start(); a.ev("WS.push(newWs('Two',defaultData(),false))"); a.ev("saveMem('current')"); a.ev("saveMem('all')");
+    const { a, text } = start(); a.ev("state.WS.push(newWs('Two',defaultData(),false))"); a.ev("saveMem('current')"); a.ev("saveMem('all')");
     expect(a.log.alerts.filter(m => /Not saved/.test(m))).toHaveLength(2); expect(a.storage()[WS_KEY]).toBe(text);
   });
   it('Load from browser memory is refused with the explanation instead of reading the data', () => {
-    const { a, text } = start(); a.ev('loadMem()'); expect(a.log.alerts[1]).toContain('newer version'); expect(a.ev('S.schedules[0].name')).toBe('Routine'); expect(a.storage()[WS_KEY]).toBe(text);
+    const { a, text } = start(); a.ev('loadMem()'); expect(a.log.alerts[1]).toContain('newer version'); expect(a.ev('state.S.schedules[0].name')).toBe('Routine'); expect(a.storage()[WS_KEY]).toBe(text);
   });
   it('Restart checks again and still leaves the newer data alone', () => {
     const { a, text } = start(); a.ev('restart()'); expect(a.log.alerts.filter(m => /newer version/.test(m))).toHaveLength(2); expect(a.storage()[WS_KEY]).toBe(text);

@@ -38,7 +38,7 @@ test.describe('R-PHS-04 Phase labels sit flush against the day column in a real 
   });
   test('a lip lies inside its lane and exactly spans the phase\'s time range', async ({ page }) => {
     await openApp(page); await seed(page, rhythmData());
-    const r = await page.evaluate(() => { const l = document.querySelector('.dw[data-d="0"] .lip').getBoundingClientRect(), lane = document.querySelector('.dw[data-d="0"] .lane').getBoundingClientRect(); return { l: [l.left, l.right, l.height], lane: [lane.left, lane.right], hh: HH }; });
+    const r = await page.evaluate(() => { const l = document.querySelector('.dw[data-d="0"] .lip').getBoundingClientRect(), lane = document.querySelector('.dw[data-d="0"] .lane').getBoundingClientRect(); return { l: [l.left, l.right, l.height], lane: [lane.left, lane.right], hh: state.HH }; });
     expect(r.l[0]).toBeGreaterThanOrEqual(r.lane[0] - 0.5); expect(r.l[1]).toBeLessThanOrEqual(r.lane[1] + 0.5); expect(r.l[2]).toBeCloseTo(160 / 60 * r.hh, 0);
   });
   test('the label text is vertical and readable inside the lip (not clipped to nothing)', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
   });
   test('scrollbars are shown even when everything fits in the window', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', "Playwright's headless Firefox and WebKit always draw overlay scrollbars of width 0");
-    await page.evaluate(() => { prefs.rowH = 24; prefs.colW = 70; render(); });
+    await page.evaluate(() => { state.prefs.rowH = 24; state.prefs.colW = 70; render(); });
     const sizes = await page.evaluate(() => { const w = document.getElementById('wrap'); return { fits: w.scrollHeight <= w.clientHeight, v: w.offsetWidth - w.clientWidth, h: w.offsetHeight - w.clientHeight }; });
     expect(sizes.fits).toBe(true); expect(sizes.v).toBeGreaterThan(4); expect(sizes.h).toBeGreaterThan(4);
   });
@@ -113,10 +113,10 @@ test.describe('R-GRID-07 Zoom in a real browser', () => {
   const fs = page => page.evaluate(() => [document.querySelector('.ev .t'), document.querySelector('.times span'), document.querySelector('.dh:not(.c)')].map(e => parseFloat(getComputedStyle(e).fontSize)));
   const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { day: document.querySelector('.day').getBoundingClientRect().width, scroll: w.scrollWidth - w.clientWidth, over: w.scrollHeight - w.clientHeight, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
   test('with "Fit height" off the distance between hour labels equals the row height setting', async ({ page }) => {
-    expect(await hourGap(page)).toBeCloseTo(48, 0); await page.evaluate(() => { prefs.rowH = 96; render(); }); expect(await hourGap(page)).toBeCloseTo(96, 0);
+    expect(await hourGap(page)).toBeCloseTo(48, 0); await page.evaluate(() => { state.prefs.rowH = 96; render(); }); expect(await hourGap(page)).toBeCloseTo(96, 0);
   });
   test('the row height and column width change box sizes but never the text size', async ({ page }) => {
-    const before = await fs(page); await page.evaluate(() => { prefs.rowH = 120; prefs.colW = 250; render(); }); expect(await fs(page)).toEqual(before);
+    const before = await fs(page); await page.evaluate(() => { state.prefs.rowH = 120; state.prefs.colW = 250; render(); }); expect(await fs(page)).toEqual(before);
   });
   test('the text size slider scales box text, hour labels and day names by its percentage', async ({ page }) => {
     const before = await fs(page); expect(before).toEqual([12, 11, 14]);
@@ -124,9 +124,9 @@ test.describe('R-GRID-07 Zoom in a real browser', () => {
     expect(await fs(page)).toEqual([18, 16.5, 21]);
   });
   test('with "Fit width" off the column width is exact all the way down to 70 px, and up to 1000 px scrolls sideways', async ({ page }) => {
-    await page.evaluate(() => { prefs.colW = 70; prefs.collapsed = true; applyPrefs(); render(); });
+    await page.evaluate(() => { state.prefs.colW = 70; state.prefs.collapsed = true; applyPrefs(); render(); });
     let r = await m(page); expect(r.day).toBeCloseTo(70, 0); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.empty).toBeGreaterThan(100);
-    await page.evaluate(() => { prefs.colW = 1000; render(); });
+    await page.evaluate(() => { state.prefs.colW = 1000; render(); });
     r = await m(page); expect(r.day).toBeCloseTo(1000, 0); expect(r.scroll).toBeGreaterThan(0);
   });
 });
@@ -138,12 +138,12 @@ test.describe('R-GRID-07 Zoom defaults in a real browser', () => {
     const r = await m(page); expect(r.scroll).toBeLessThanOrEqual(0); expect(r.over).toBeLessThanOrEqual(1); expect(Math.abs(r.empty)).toBeLessThan(20);
   });
   test('"Fit height" still fits the whole day at 160 % text, because the taller day header is measured', async ({ page }) => {
-    await page.evaluate(() => { prefs.txt = 160; render(); }); const r = await m(page); expect(r.over).toBeLessThanOrEqual(1);
-    expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.clientHeight - document.querySelector('.dh').offsetHeight - HH * 19; })).toBeLessThan(19);
+    await page.evaluate(() => { state.prefs.txt = 160; render(); }); const r = await m(page); expect(r.over).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.clientHeight - document.querySelector('.dh').offsetHeight - state.HH * 19; })).toBeLessThan(19);
   });
   test('"Fit height" adapts when the browser window is resized', async ({ page }) => {
-    const big = await page.evaluate(() => HH);
-    await page.setViewportSize({ width: 1400, height: 560 }); await expect.poll(() => page.evaluate(() => HH)).toBeLessThan(big);
+    const big = await page.evaluate(() => state.HH);
+    await page.setViewportSize({ width: 1400, height: 560 }); await expect.poll(() => page.evaluate(() => state.HH)).toBeLessThan(big);
     expect((await m(page)).over).toBeLessThanOrEqual(1);
   });
   test('unticking "Fit width" keeps the fitted column width, so the grid does not jump', async ({ page }) => {
@@ -157,7 +157,7 @@ test.describe('R-GRID-07 Zoom defaults in a real browser', () => {
 test.describe('R-GRID-04 The now line in a real browser', () => {
   test('is drawn on the current weekday at the current time (Wednesday 10:30)', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 10, 30) });
-    const r = await page.evaluate(() => { const n = document.querySelector('.now'); const col = n.closest('.day'); return { day: col.dataset.d, y: n.getBoundingClientRect().top - col.getBoundingClientRect().top, hh: HH }; });
+    const r = await page.evaluate(() => { const n = document.querySelector('.now'); const col = n.closest('.day'); return { day: col.dataset.d, y: n.getBoundingClientRect().top - col.getBoundingClientRect().top, hh: state.HH }; });
     expect(r.day).toBe('2'); expect(r.y).toBeCloseTo((630 - 300) / 60 * r.hh, 0);
   });
   test('is a red line that spans the width of its column', async ({ page }) => {
@@ -183,7 +183,7 @@ test.describe('R-GRID-10 Layer order in a real browser', () => {
 test.describe('R-GRID-02 Hidden early hours in a real browser', () => {
   test('showing the early hours makes the day taller by exactly five rows', async ({ page }) => {
     await openApp(page); const h0 = await boxOf(page.locator('.day').first());
-    await page.evaluate(() => { prefs.showEarly = true; render(); }); const h1 = await boxOf(page.locator('.day').first());
+    await page.evaluate(() => { state.prefs.showEarly = true; render(); }); const h1 = await boxOf(page.locator('.day').first());
     expect(h1.height - h0.height).toBeCloseTo(5 * 48, 0);
   });
 });
@@ -232,7 +232,7 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
       ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] }), ev({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [slot(0, 1005, 1050, '')] })] }));
   });
   test('the other event\'s core covers the margin, and the uncovered margin shows a 2 px dashed border', async ({ page }) => {
-    const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
+    const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * state.HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
     expect(await at(1008)).toBe('core:Pick');   // (Work's resize handle covers its last ~9 minutes, as for every box)
     expect(await at(550)).toBe('margin:Work'); expect(await at(700)).toBe('core:Work');
     const st = await page.locator('.mg.t').evaluate(m => { const c = getComputedStyle(m); return [c.borderTopStyle, c.borderTopWidth, c.borderBottomStyle]; });
@@ -241,7 +241,7 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
   test('an event without a responsible person covers the margin at full width; another person\'s event goes beside it for its whole length', async ({ page }) => {
     let w = await boxOf(page.locator('.ev', { hasText: 'Work' })), p = await boxOf(page.locator('.ev', { hasText: 'Pickup' }));
     expect(Math.abs(w.width - p.width)).toBeLessThan(1); expect(Math.abs(w.x - p.x)).toBeLessThan(1); expect(await page.locator('.ov').count()).toBe(0);
-    await page.evaluate(() => { S.events[1].slots[0].person = 'B'; render(); });
+    await page.evaluate(() => { state.S.events[1].slots[0].person = 'B'; render(); });
     w = await boxOf(page.locator('.ev', { hasText: 'Work' })); p = await boxOf(page.locator('.ev', { hasText: 'Pickup' })); const mb = await boxOf(page.locator('.mg.b'));
     expect(Math.abs(w.width - p.width)).toBeLessThan(3);   // half width each (the 2 px gap between lanes)
     expect(w.x + w.width).toBeLessThanOrEqual(p.x + 1); expect(Math.abs(mb.x - w.x)).toBeLessThan(1); expect(await page.locator('.ov').count()).toBe(0);
@@ -252,7 +252,7 @@ test.describe('R-EVT-15 The edges of a flexible event\'s core can be dragged wit
   test.beforeEach(async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] })] }));
   });
-  const scrollTo = (page, m) => page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * HH - 150; }, m);
+  const scrollTo = (page, m) => page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * state.HH - 150; }, m);
   const drag = async (page, from, to) => { await scrollTo(page, from); const a = await pt(page, 0, from), b = await pt(page, 0, to); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(a.x, (a.y + b.y) / 2, { steps: 4 }); await page.mouse.move(b.x, b.y, { steps: 4 }); await page.mouse.up(); };
   const hitAt = async (page, m) => { await scrollTo(page, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e.classList.contains('rz') ? [...e.classList].join(' ') : e.closest('.ev') ? 'box' : e.className; }, [p.x, p.y]); };
   test('the handles lie on the core\'s own edges, inside the solid box, with a resize cursor', async ({ page }) => {
@@ -280,7 +280,7 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),
     ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(2, 480, 720, 'O')] }), ev({ id: 'sat', title: 'Hidden', slots: [slot(5, 600, 660)] })] });
   const hit = (p, q) => p.x < q.x + q.width - 0.5 && q.x < p.x + p.width - 0.5 && p.y < q.y + q.height - 0.5 && q.y < p.y + p.height - 0.5;
-  const live = async page => { await page.evaluate(() => { prefs.collapsed = true; applyPrefs(); setLive(true); }); };
+  const live = async page => { await page.evaluate(() => { state.prefs.collapsed = true; applyPrefs(); setLive(true); }); };
   const clickAt = async (page, title, fy = 0.5, fx = 0.5) => { const b = await boxOf(page.locator('.day .ev, .day .bgs', { hasText: title }).first()); const p = { x: b.x + b.width * fx, y: b.y + Math.min(b.height - 4, Math.max(30, b.height * fy)) }; await page.mouse.click(p.x, p.y); return p; };
   test('nothing pops up by itself; clicking a box fades in a bubble pointing at the click, inside the day and clear of the click row', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await live(page); await expect(page.locator('.lvb')).toHaveCount(0);
@@ -332,7 +332,7 @@ test.describe('R-EVT-19 An event marked "In the background" as drawn by a real b
   test('it is a strip at the right edge of the day, and the person\'s own box beside it keeps almost the full width', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'O', name: 'Olivia' })], events: [
       ev({ id: 'hw', title: 'Homework', slots: [slot(0, 1080, 1140, 'O')] }), ev({ id: 'sf', title: 'Screen-free time', color: '#607d8b', bg: true, slots: [slot(0, 1080, 1200, 'O')] })] }));
-    await page.evaluate(() => { document.getElementById('wrap').scrollTop = 12 * HH; });
+    await page.evaluate(() => { document.getElementById('wrap').scrollTop = 12 * state.HH; });
     const col = await boxOf(page.locator('.day[data-d="0"]')), st = await boxOf(page.locator('.bgs')), hw = await boxOf(page.locator('.ev', { hasText: 'Homework' }));
     expect(Math.round(st.width)).toBe(14); expect(Math.abs((col.x + col.width) - (st.x + st.width))).toBeLessThan(1.5);
     expect(hw.x + hw.width).toBeLessThanOrEqual(st.x - 1); expect(hw.width).toBeGreaterThan(col.width - 6 - 16 - 2); await expect(page.locator('.ov')).toHaveCount(0);
@@ -396,7 +396,7 @@ test.describe('R-EVT-13 Spanning lanes in a real browser', () => {
 test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', () => {
   const data2 = () => blank({ people: [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })], events: [ev({ title: 'Swim', slots: [slot(0, 1020, 1080, 'A'), slot(2, 1020, 1080, 'B')] })] });
   test('on a wide screen labels sit left of their fields; day rows line up with the header columns', async ({ page }) => {
-    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT'));
     expect(lb.x + lb.width).toBeLessThan(f.x); expect(Math.abs((lb.y + lb.height / 2) - (f.y + f.height / 2))).toBeLessThan(4);
     const col = async (sel, d) => boxOf(page.locator('#fDays .dr').nth(d).locator(sel).first());   // the columns line up: header, Monday and Wednesday
@@ -406,7 +406,7 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     }
   });
   test('on a phone the labels move above their fields, each ticked day is a card with labelled fields, and nothing scrolls sideways', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     const lb = await boxOf(page.locator('label[for="fT"]')), f = await boxOf(page.locator('#fT')); expect(lb.y + lb.height).toBeLessThanOrEqual(f.y + 1);
     await page.locator('.dtabs button', { hasText: 'When' }).click(); await expect(page.locator('#fAddT')).toBeVisible(); await page.locator('#fDays .dr').first().locator('.sum').click();   // open Monday's card
     const ticked = await page.locator('#fDays .dr:not(.dx)').evaluateAll(rs => rs.filter(r => !r.classList.contains('off')).length); await expect(page.locator('#fDays .dr:visible')).toHaveCount(ticked);   // unticked days take no room
@@ -419,21 +419,21 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
   const geo = page => page.evaluate(() => { const q = document.getElementById('paneQ'), r = q.getBoundingClientRect(), h = document.querySelector('#paneQ .dhd span').getBoundingClientRect();
     return { dlg: document.getElementById('dlg').getBoundingClientRect().height, pane: r.height, top: r.top, bottom: r.bottom, scroll: q.scrollHeight - q.clientHeight, head: h.top, vh: innerHeight }; });
   test('a long list of times scrolls inside the day table, so the dialog stops growing', async ({ page }) => {
-    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     expect((await geo(page)).scroll).toBeLessThanOrEqual(0);   // a normal week fits without a scroll bar
     await many(page, 12); const g12 = await geo(page); await many(page, 8); const g20 = await geo(page);
     expect(g12.scroll).toBeGreaterThan(0); expect(g12.pane).toBeLessThanOrEqual(Math.min(420, g12.vh / 2) + 1);
     expect(g20.dlg).toBeCloseTo(g12.dlg, 0); expect(g20.dlg).toBeLessThan(g20.vh);
   });
   test('the header row stays visible while the times scroll, and a time added with + is scrolled into view', async ({ page }) => {
-    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0])); await many(page, 20);
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0])); await many(page, 20);
     const last = await boxOf(page.locator('#fDays .dr.dx').last().locator('select').first()), g = await geo(page);
     expect(last.y).toBeGreaterThanOrEqual(g.top - 1); expect(last.y + last.height).toBeLessThanOrEqual(g.bottom + 1);   // the newest time is visible
     await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; }); const g2 = await geo(page);
     expect(Math.abs(g2.head - g2.top)).toBeLessThan(2);
   });
   test('on a phone a long list of times scrolls inside the When tab, with the tabs and the footer in place', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     await page.locator('.dtabs button', { hasText: 'When' }).click();   // the day table is on the When tab (R-UI-14)
     for (let i = 0; i < 12; i++) { await page.locator('#fAddT').click(); await page.locator('.addm .addd .oi').first().click(); }   // twelve more times on Monday
     const ch0 = await boxOf(page.locator('.dtabs')); await page.evaluate(() => { document.getElementById('paneQ').scrollTop = 1e6; });
@@ -442,14 +442,14 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
   });
   test('R-EVT-22 the colour swatch menu works with the mouse inside the modal dialog, and the box takes the chosen colour', async ({ page }) => {
-    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     await page.locator('#fDays .dr').nth(2).locator('.cbtn').click(); await page.locator('.cmenu .oi', { hasText: "Performer's colour (Bob)" }).click();
     await expect(page.locator('.cmenu')).toHaveCount(0); await page.click('#fOk');
     expect(await page.locator('.day[data-d="2"] .ev').evaluate(b => getComputedStyle(b).backgroundColor)).toBe('rgb(47, 166, 106)');
     expect(await page.locator('.day[data-d="0"] .ev').evaluate(b => getComputedStyle(b).backgroundColor)).toBe('rgb(59, 109, 240)');
   });
   test('clicking a person chip with the mouse ticks it and shows "only on call"; clicking again unticks it', async ({ page }) => {
-    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, data2()); await page.evaluate(() => openDlg(state.S.events[0]));
     await expect(page.locator('#fOcRow')).toBeHidden(); await page.locator('#fInv label', { hasText: 'Bob' }).click();
     expect(await page.locator('#fInv input[value="B"]').isChecked()).toBe(true); await expect(page.locator('#fOcRow')).toBeVisible();
     await page.locator('#fInv label', { hasText: 'Bob' }).click(); expect(await page.locator('#fInv input[value="B"]').isChecked()).toBe(false);
@@ -461,7 +461,7 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
   const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   test('dragging the grip bar moves the dialog off a box it was hiding; menus inside it still open at their button', async ({ page }) => {
     await page.setViewportSize({ width: 1700, height: 800 }); await openApp(page, { prefs: { fitW: true } }); await seed(page, box());   // room beside the 900 px dialog
-    await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - vs()) * HH - 100; openDlg(S.events[0]); });
+    await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - vs()) * state.HH - 100; openDlg(state.S.events[0]); });
     const ev0 = await boxOf(page.locator('.day[data-d="2"] .ev')), d0 = await boxOf(page.locator('#dlg'));
     expect(overlaps(ev0, d0)).toBe(true);
     const g = await boxOf(page.locator('#dGrip')), dx = ev0.x + ev0.width + 10 - d0.x;
@@ -547,7 +547,7 @@ test.describe('R-UI-01 The sidebar top row in a real browser', () => {
 
 test.describe('R-UI-14 On a desktop the event dialog keeps its floating, all-in-one layout', () => {
   test('no tab row, 900 px wide, every section shown and the grip bar in place; Settings stays a floating window', async ({ page }) => {
-    await openApp(page); await seed(page, blank({ events: [ev()] })); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, blank({ events: [ev()] })); await page.evaluate(() => openDlg(state.S.events[0]));
     await expect(page.locator('.dtabs')).toBeHidden(); await expect(page.locator('#dGrip')).toBeVisible();
     for (const s of ['#fT', '#paneQ', '#fSch']) await expect(page.locator(s)).toBeVisible();
     const b = await page.locator('#dlg').boundingBox(), v = page.viewportSize(); expect(Math.round(b.width)).toBe(Math.min(900, Math.floor(v.width * 0.96))); expect(b.height).toBeLessThan(v.height);
@@ -557,7 +557,7 @@ test.describe('R-UI-14 On a desktop the event dialog keeps its floating, all-in-
 
 test.describe('R-REP-02 The day copy menu in a real browser', () => {
   test('⧉ opens its menu beside the button inside the dialog; "The days below" copies only to the later ticked days', async ({ page }) => {
-    await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(state.S.events[0]));
     const cp = page.locator('#fDays .dr:not(.dx)').nth(2).locator('.cpy'); await cp.click(); const m = page.locator('#dlg .cmenu');
     await expect(m).toBeVisible(); const b = await cp.boundingBox(), r = await m.boundingBox(), v = page.viewportSize();
     expect(r.y).toBeGreaterThanOrEqual(b.y + b.height - 1); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
@@ -579,7 +579,7 @@ test.describe('R-CYC-17 The week colour as drawn by a real browser', () => {
 test.describe('R-UI-07 The day table of a 900 px dialog on a computer', () => {
   test('days alternate in light bands with a rule between them, a further time shares its day\'s band, and nothing scrolls sideways at 1280 px', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(1, 600, 660), slot(1, 720, 780)] })] }));
-    await page.evaluate(() => openDlg(S.events[0])); expect(Math.round((await page.locator('#dlg').boundingBox()).width)).toBe(900);
+    await page.evaluate(() => openDlg(state.S.events[0])); expect(Math.round((await page.locator('#dlg').boundingBox()).width)).toBe(900);
     const line = await page.locator('#fDays .dr').nth(1).boundingBox(), sel = await page.locator('#fDays .dr').nth(1).locator('select').first().boundingBox();
     expect(line && line.width).toBeGreaterThan(800); expect(line.x).toBeLessThanOrEqual(sel.x);   // each line is a box across the table (a subgrid), so its band is drawn
     const bg = i => page.locator('#fDays .dr').nth(i).evaluate(r => getComputedStyle(r).backgroundColor);
@@ -592,7 +592,7 @@ test.describe('R-UI-07 The day table of a 900 px dialog on a computer', () => {
 test.describe('R-UI-07 R-CYC-08 Lines and the Week column of the day table on a computer', () => {
   test('a 2 px line between days, 1 px between the times of a day; with different times per week the week buttons line up under their Week header', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page); await seed(page, blank({ cycle: 2, events: [ev({ slots: [{ ...slot(0, 600, 660), wk: 1 }, { ...slot(0, 720, 780), wk: 2 }, { ...slot(2, 600, 660), wk: 2 }] })] }));
-    await page.evaluate(() => openDlg(S.events[0])); const bw = i => page.locator('#fDays .dr').nth(i).evaluate(r => getComputedStyle(r).borderTopWidth);
+    await page.evaluate(() => openDlg(state.S.events[0])); const bw = i => page.locator('#fDays .dr').nth(i).evaluate(r => getComputedStyle(r).borderTopWidth);
     expect([await bw(1), await bw(2)]).toEqual(['1px', '2px']);   // Monday's second time, then Tuesday
     const h = await boxOf(page.locator('#paneQ .dhd .wkh')); await expect(page.locator('#paneQ .dhd .wkh')).toHaveText('Week');
     const b0 = await boxOf(page.locator('#fDays .dr').nth(0).locator('.wcell .wkc')), b1 = await boxOf(page.locator('#fDays .dr').nth(1).locator('.wcell .wkc')), cb = await boxOf(page.locator('#fDays .dr').nth(0).locator('.dcell input'));
@@ -627,7 +627,7 @@ test.describe('R-CYC-21 Swapping a staged week into the cycle with a real mouse,
       const g = await boxOf(rows.nth(2).locator('.grip')), t = await boxOf(rows.nth(1));
       await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.mouse.down(); await page.mouse.move(g.x + g.width / 2, t.y + 2, { steps: 8 }); await page.mouse.up();
       await expect(rows.nth(1).locator('.cyname')).toHaveValue('Exams'); await page.locator('#xDlg button', { hasText: 'Apply' }).click();
-      expect(await page.evaluate(() => [S.events[0].weeks, S.weekInfo.map(x => x.name)])).toEqual([[1, 2], ['Home', 'Exams', 'Away']]);
+      expect(await page.evaluate(() => [state.S.events[0].weeks, state.S.weekInfo.map(x => x.name)])).toEqual([[1, 2], ['Home', 'Exams', 'Away']]);
     });
   }
 });

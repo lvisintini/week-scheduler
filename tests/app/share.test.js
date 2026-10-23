@@ -65,7 +65,7 @@ describe('R-SHARE-02 "Leave out personal details" option', () => {
     const a = fresh(); const w = await decrypt(a, dataOf(await makeLink(a))); expect(w.people[0].name).toBe('Granny Rose'); expect(w.events[0].desc).toBe('door code 4711');
   });
   it('the app\'s own data is not altered by an anonymised export', async () => {
-    const a = fresh(); await makeFile(a, { anon: true }); expect(a.ev('S.people[0].name')).toBe('Granny Rose'); expect(a.ev('S.events[0].desc')).toBe('door code 4711');
+    const a = fresh(); await makeFile(a, { anon: true }); expect(a.ev('state.S.people[0].name')).toBe('Granny Rose'); expect(a.ev('state.S.events[0].desc')).toBe('door code 4711');
   });
   it('an anonymised file is not counted as a backup: the workspace stays marked as unsaved', async () => {
     const a = fresh(); await makeFile(a, { anon: true }); expect(a.ev('isDirty()')).toBe(true);
@@ -105,7 +105,7 @@ describe('R-SHARE-03 Passwords: strong by default, minimum 20 characters', () =>
   it('the password is also accepted with Unicode characters and when typed with the show-password option', async () => {
     const a = fresh(); const pw = 'Zażółć-gęślą-jaźń-1234567'; const link = await makeLink(a, { pw });
     const b = openApp({ url: 'https://app.test/#data=e1.' + dataOf(link) }); await b.sleep(10); b.q('#xDlg input[type=password]').value = pw; b.q('#xDlg input[type=checkbox]').click(); b.click('Open');
-    await waitFor(() => b.toast() === 'Shared schedule loaded'); expect(b.ev('S.events[0].title')).toBe('Doctor visit');
+    await waitFor(() => b.toast() === 'Shared schedule loaded'); expect(b.ev('state.S.events[0].title')).toBe('Doctor visit');
   });
 });
 
@@ -132,11 +132,11 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   });
   it('a wrong password shows a message and lets you try again', async () => {
     const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD + 'x'; b.click('Open');
-    await waitFor(() => /Wrong password/.test(b.dlgText())); expect(b.dlgOpen()).toBe(true); expect(b.ev('S.events.length')).toBe(0);
+    await waitFor(() => /Wrong password/.test(b.dlgText())); expect(b.dlgOpen()).toBe(true); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it('the right password opens the shared workspace directly for a first-time visitor (nothing saved yet)', async () => {
     const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open');
-    await waitFor(() => b.toast() === 'Shared schedule loaded'); expect(b.ev('S.events[0].title')).toBe('Doctor visit'); expect(b.ev('WS.length')).toBe(1); expect(b.ev('cw().name')).toBe('Granny care');
+    await waitFor(() => b.toast() === 'Shared schedule loaded'); expect(b.ev('state.S.events[0].title')).toBe('Doctor visit'); expect(b.ev('state.WS.length')).toBe(1); expect(b.ev('cw().name')).toBe('Granny care');
   });
   it('a visitor who already has data gets the import dialog instead, so nothing is overwritten silently', async () => {
     const a = fresh(); const link = await makeLink(a); const b = openApp({ url: link, storage: { [WS_KEY]: JSON.stringify({ version: 1, current: 'w', workspaces: [{ id: 'w', name: 'Mine', ...blank() }] }) } });
@@ -146,7 +146,7 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
     const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open'); await waitFor(() => b.toast() === 'Shared schedule loaded'); expect(b.w.location.hash).toBe('');
   });
   it('cancelling the password dialog also removes the data from the address bar and loads nothing', async () => {
-    const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.click('Cancel'); expect(b.w.location.hash).toBe(''); expect(b.ev('S.events.length')).toBe(0);
+    const a = fresh(); const b = openApp({ url: await makeLink(a) }); await b.sleep(10); b.click('Cancel'); expect(b.w.location.hash).toBe(''); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it.each([['#data=e1.@@@@'], ['#data=plain-old-link'], ['#data=e0.AAAA'], ['#data=ex.AAAA']])('a damaged or unknown link %s is refused with a message and cleaned from the address', async hash => {
     const b = openApp({ url: 'https://app.test/' + hash }); await b.sleep(10); expect(b.toast()).toBe('The shared link is invalid or damaged.'); expect(b.w.location.hash).toBe(''); expect(b.dlgOpen()).toBe(false);
@@ -157,7 +157,7 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   it('a link that decompresses past 2 MB (a decompression bomb) says it is too big, not that it is invalid', async () => {
     const a = openApp(); const blob = await a.ev(`(async()=>{const z=await deflate(new Uint8Array(3e6));const i=new Uint8Array(1+z.length);i[0]=1;i.set(z,1);return b64u(await encryptBytes(i,${JSON.stringify(PASSWORD)}))})()`);
     const b = openApp({ url: 'https://app.test/#data=e1.' + blob }); await b.sleep(10); b.q('#xDlg input').value = PASSWORD; b.click('Open');
-    await waitFor(() => /too many items/.test(b.dlgText())); expect(b.dlgText()).not.toMatch(/not a valid/); expect(b.ev('S.events.length')).toBe(0);
+    await waitFor(() => /too many items/.test(b.dlgText())); expect(b.dlgText()).not.toMatch(/not a valid/); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it('a damaged encrypted link asks for the password but then says the data was altered', async () => {
     const a = fresh(); const data = dataOf(await makeLink(a)); const broken = data.slice(0, -6) + (data.at(-6) === 'A' ? 'B' : 'A') + data.slice(-5);
@@ -187,7 +187,7 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
     const a = fresh(); await makeFile(a); expect(a.toast()).toBe('Saved to JSON file');
   });
   it('contains only the current workspace, and never asks which workspaces to save', async () => {
-    const a = fresh(); a.ev('addWorkspace()'); a.ev('switchWs(WS[0].id)'); a.toolbar('save').click(); a.click('JSON file'); await a.sleep(10); expect(a.dlgTitle()).toBe('Save JSON file');
+    const a = fresh(); a.ev('addWorkspace()'); a.ev('switchWs(state.WS[0].id)'); a.toolbar('save').click(); a.click('JSON file'); await a.sleep(10); expect(a.dlgTitle()).toBe('Save JSON file');
     setPw(a, PASSWORD); a.click('Save file'); await waitFor(() => a.w.__file); const w = await decrypt(a, JSON.parse(a.w.__file).data); expect(w.name).toBe('Granny care'); expect(w.events).toHaveLength(1);
   });
   it('opening it asks for the password, then offers the import choices', async () => {
@@ -198,7 +198,7 @@ describe('R-SHARE-06 Encrypted JSON files', () => {
   it('the password is asked again after a mistake and the file stays unopened until it is right', async () => {
     const a = fresh(); const text = await makeFile(a); const b = openApp();
     b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => text }], value: '' } }); await waitFor(() => b.dlgTitle() === 'Password needed');
-    b.q('#xDlg input').value = 'wrong'; b.click('Open'); await waitFor(() => /Wrong password/.test(b.dlgText())); expect(b.ev('S.events.length')).toBe(0);
+    b.q('#xDlg input').value = 'wrong'; b.click('Open'); await waitFor(() => /Wrong password/.test(b.dlgText())); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it.each([[''], ['AQ']])('an encrypted file whose data is empty or truncated (%j) is refused at once as not valid, without asking for a password', async data => {
     const b = openApp(); b.d.getElementById('file').onchange({ target: { files: [{ name: 'f.json', text: async () => JSON.stringify({ format: 'weekly-schedules-encrypted', version: 1, data }) }], value: '' } });
@@ -291,7 +291,7 @@ describe('R-SHARE-08 A file or link can hold only part of a workspace: chosen sc
   });
   it('a partial copy is not a backup: the workspace stays unsaved to file; Everything still is one', async () => {
     const a = fam(); a.ev('cw().lf=null'); await protectDialog(a, 'file'); choose(a); untick(a, 'Schedules', 'Work'); await plainFile(a); expect(a.ev('cw().lf')).toBeNull();
-    a.w.__file = undefined; await protectDialog(a, 'file'); await plainFile(a); expect(a.ev('cw().lf===keyOf(S)')).toBe(true);
+    a.w.__file = undefined; await protectDialog(a, 'file'); await plainFile(a); expect(a.ev('cw().lf===keyOf(state.S)')).toBe(true);
   });
   it('it combines with Leave out personal details, and works for links too', async () => {
     const a = fam(); await protectDialog(a, 'link'); setPw(a, PASSWORD); tick(a); choose(a); untick(a, 'Schedules', 'Work'); a.click('Create link');

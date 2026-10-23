@@ -14,11 +14,11 @@ describe('R-CYC-14 The cycle length is stored on the workspace and validated', (
   it('a cycle of one week is not written to files, a longer one is', () => {
     const a = openApp();
     expect(a.ev('buildFile()')).not.toHaveProperty('cycle');
-    a.ev('S.cycle=3'); expect(a.ev('buildFile().cycle')).toBe(3);
+    a.ev('state.S.cycle=3'); expect(a.ev('buildFile().cycle')).toBe(3);
   });
   it('the cycle length is data: changing it counts as an unsaved change', () => {
-    const a = openApp(); a.ev("cw().lb=keyOf(S)"); expect(a.ev('anyDirty()')).toBe(false);
-    a.ev('S.cycle=2'); expect(a.ev('anyDirty()')).toBe(true);
+    const a = openApp(); a.ev("cw().lb=keyOf(state.S)"); expect(a.ev('anyDirty()')).toBe(false);
+    a.ev('state.S.cycle=2'); expect(a.ev('anyDirty()')).toBe(true);
   });
   it('R-CYC-16 phases carry weeks with the rules of events: a per-repetition phase drops its pattern, weeks beyond the cycle go', () => {
     const ph = o => ({ id: 'p', title: 'P', rhythms: ['r'], ...o });

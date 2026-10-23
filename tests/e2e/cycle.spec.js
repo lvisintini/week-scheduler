@@ -29,7 +29,7 @@ test.describe('R-CYC-14 A 4-week cycle at the import limit stays usable', () => 
   test('5,000 events in a 4-week cycle, a quarter in each week, are drawn within the budgets of a one-week workspace', async ({ page, browserName }) => {
     await openApp(page);
     const d = blank({ cycle: 4, events: Array.from({ length: 5000 }, (_, i) => { const start = (i * 15) % 1380; return ev({ id: 'e' + i, title: 'Event ' + i, weeks: [1 + (i % 4)], slots: [slot(i % 7, start, start + 30)] }); }) });
-    const ms = await page.evaluate(x => { const t = performance.now(); const y = parseData(x, true); S = y; cw().data = y; render(); return performance.now() - t; }, d);
+    const ms = await page.evaluate(x => { const t = performance.now(); const y = parseData(x, true); state.S = y; cw().data = y; render(); return performance.now() - t; }, d);
     expect(ms).toBeLessThan(browserName === 'chromium' ? 3000 : 8000); expect(await page.locator('.ev').count()).toBeGreaterThan(200);
     const sw = await page.evaluate(() => { const t = performance.now(); setWeek(3); return performance.now() - t; }); expect(sw).toBeLessThan(browserName === 'chromium' ? 3000 : 8000);
   });
@@ -49,13 +49,13 @@ test.describe('R-CYC-19 All weeks side by side in a real browser', () => {
     const box = page.locator('.day[data-w="1"][data-d="6"] .ev'); await box.scrollIntoViewIfNeeded(); const b = await boxOf(box);
     const t = await boxOf(page.locator('.day[data-w="2"][data-d="0"]'));
     await page.mouse.move(b.x + b.width / 2, b.y + 5); await page.mouse.down(); await page.mouse.move(b.x + b.width / 2 + 40, b.y + 5, { steps: 4 }); await page.mouse.move(t.x + t.width / 2, b.y + 5, { steps: 8 }); await page.mouse.up();
-    const s = await page.evaluate(() => S.events[1].slots[0]); expect([s.day, s.wk, s.start]).toEqual([0, 2, 1260]);
+    const s = await page.evaluate(() => state.S.events[1].slots[0]); expect([s.day, s.wk, s.start]).toEqual([0, 2, 1260]);
     await expect(page.locator('.day[data-w="2"][data-d="0"] .ev')).toHaveText(/Late/);
   });
   test('a 4-week cycle at the import limit is drawn side by side within the budget of one week', async ({ page, browserName }) => {
     await openApp(page);
     const d = blank({ cycle: 4, events: Array.from({ length: 5000 }, (_, i) => { const start = (i * 15) % 1380; return ev({ id: 'e' + i, title: 'Event ' + i, weeks: [1 + (i % 4)], slots: [slot(i % 7, start, start + 30)] }); }) });
-    await page.evaluate(x => { const y = parseData(x, true); S = y; cw().data = y; render(); }, d);
+    await page.evaluate(x => { const y = parseData(x, true); state.S = y; cw().data = y; render(); }, d);
     const ms = await page.evaluate(() => { const t = performance.now(); setAllWk(true); return performance.now() - t; });
     expect(ms).toBeLessThan(browserName === 'chromium' ? 3000 : 8000); expect(await page.locator('#grid .day').count()).toBe(28);
   });

@@ -1,6 +1,6 @@
 // Basics: DOM helpers, icons, colour utilities and the colour popover. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
 /* ---------- basics & icons ---------- */
-let MAXEND=2880,HH=48,printMode=false;const SNAP=15,PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
+const SNAP=15,PAL=['#3b6df0','#e5484d','#2fa66a','#e8912d','#8e4ec6','#12a5b5','#d6409f'];
 const SWATCHES=[...PAL,'#6b7385','#1d2330','#f5c518','#7bc043','#ff7f50','#a0522d','#00897b','#5c6bc0','#ec407a'];
 const uid=()=>Math.random().toString(36).slice(2,10);
 const $=id=>document.getElementById(id);
@@ -48,7 +48,7 @@ coin:'<circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-
 const tIcon=k=>I(TICONS[k]||TICONS.dot);
 const TYN={en:{dot:'Dot',moon:'Moon',bed:'Bed',sun:'Sun',meal:'Cutlery',coffee:'Cup',cook:'Pot',work:'Briefcase',school:'School',book:'Book',pencil:'Pencil',laptop:'Computer',target:'Target',clock:'Clock',broom:'Broom',shirt:'Clothes',cart:'Shopping',tool:'Tools',home:'Home',drop:'Water',smile:'Smile',heart:'Heart',health:'Health',pill:'Medicine',dumbbell:'Exercise',ball:'Ball',bike:'Bicycle',car:'Car',bus:'Bus',plane:'Trip',people:'People',chat:'Talk',phone:'Phone',tv:'TV',game:'Games',music:'Music',palette:'Art',camera:'Photo',paw:'Pets',leaf:'Plant',tree:'Outdoors',star:'Star',flag:'Goal',coin:'Money',gift:'Gift'},
 es:{dot:'Punto',moon:'Luna',bed:'Cama',sun:'Sol',meal:'Cubiertos',coffee:'Taza',cook:'Olla',work:'Maletín',school:'Escuela',book:'Libro',pencil:'Lápiz',laptop:'Ordenador',target:'Diana',clock:'Reloj',broom:'Escoba',shirt:'Ropa',cart:'Compras',tool:'Herramientas',home:'Casa',drop:'Agua',smile:'Sonrisa',heart:'Corazón',health:'Salud',pill:'Medicina',dumbbell:'Ejercicio',ball:'Pelota',bike:'Bicicleta',car:'Coche',bus:'Autobús',plane:'Viaje',people:'Personas',chat:'Conversación',phone:'Teléfono',tv:'Televisión',game:'Juegos',music:'Música',palette:'Arte',camera:'Foto',paw:'Mascotas',leaf:'Planta',tree:'Aire libre',star:'Estrella',flag:'Meta',coin:'Dinero',gift:'Regalo'}};
-const iconName=k=>(TYN[lang]||TYN.en)[k]||k;
+const iconName=k=>(TYN[state.lang]||TYN.en)[k]||k;
 const ICON_WARN=I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>');
 const ICON_RHYTHM=I('<rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/>');
 const ICON_WS=I('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'),ICON_CHECK=I('<path d="M5 12l5 5 9-10"/>');
@@ -56,11 +56,11 @@ const ICON_EXT=I('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1
 const ICON_STATS=I('<path d="M3 21h18M6 17v-5M11 17V6M16 17v-8M21 17v-3"/>');
 const ICON_GRIP='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 const FAV=document.querySelector('link[rel=icon]').href;
-const tyOf=e=>e.type?S.types.find(t=>t.id===e.type):null;
+const tyOf=e=>e.type?state.S.types.find(t=>t.id===e.type):null;
 const tyTag=t=>`<span class="ic" style="color:${esc(t.color)}">${tIcon(t.icon)}</span>${esc(t.name)}`;
 const pIcon=q=>`<span class="ic" style="color:${esc(q.color)}">${ICON_USER}</span>`;
-const pTag=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
-const pIc=id=>{const q=S.people.find(x=>x.id===id);return q?pIcon(q):''};
+const pTag=id=>{const q=state.S.people.find(x=>x.id===id);return q?pIcon(q)+esc(q.name):''};
+const pIc=id=>{const q=state.S.people.find(x=>x.id===id);return q?pIcon(q):''};
 const sTag=s=>`<span class="ic" style="color:${esc(s.color)}">${ICON_CAL}</span>${esc(s.name)}`;
 /* ---------- colour utilities ---------- */
 function normHex(h){h=String(h).trim().replace(/^#/,'');if(/^[0-9a-f]{3}$/i.test(h))h=h.replace(/./g,'$&$&');return /^[0-9a-f]{6}$/i.test(h)?'#'+h.toLowerCase():null}

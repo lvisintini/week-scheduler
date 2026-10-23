@@ -5,8 +5,8 @@ const app = openApp();
 const ev = c => app.ev(c);
 
 /** Event "title" is visible to the people filter when the occurrence passes slotVisible and its schedule is visible. */
-const shownTitles = () => ev('S.events.filter(e=>visible(e)&&e.slots.some(s=>slotVisible(e,s))).map(e=>e.title).join("|")');
-const setPeople = (ann, bob) => ev(`S.people[0].visible=${ann};S.people[1].visible=${bob}`);
+const shownTitles = () => ev('state.S.events.filter(e=>visible(e)&&e.slots.some(s=>slotVisible(e,s))).map(e=>e.title).join("|")');
+const setPeople = (ann, bob) => ev(`state.S.people[0].visible=${ann};state.S.people[1].visible=${bob}`);
 
 describe('R-PPL-01 The people filter shows whose calendar you see', () => {
   const people = [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob' })];
@@ -37,15 +37,15 @@ describe('R-PPL-01 The people filter shows whose calendar you see', () => {
   });
   it('an event without a responsible person is always shown, even when all its involved people are hidden', () => {
     setup(); setPeople(false, false);
-    expect(ev('slotVisible(S.events[2],S.events[2].slots[0])')).toBe(true);
+    expect(ev('slotVisible(state.S.events[2],state.S.events[2].slots[0])')).toBe(true);
   });
   it('the rule is applied per repetition, because each repetition has its own responsible person', () => {
     setData(app, blank({ people, events: [ev1({ title: 'split', slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 1, start: 600, end: 660, person: 'B' }] })] }));
     setPeople(true, false);
-    expect(ev('S.events[0].slots.map(s=>slotVisible(S.events[0],s))')).toEqual([true, false]);
+    expect(ev('state.S.events[0].slots.map(s=>slotVisible(state.S.events[0],s))')).toEqual([true, false]);
   });
   it('a hidden schedule hides its events whatever the people filter says', () => {
-    setup(); setPeople(true, true); ev('S.schedules[0].visible=false');
+    setup(); setPeople(true, true); ev('state.S.schedules[0].visible=false');
     expect(shownTitles()).toBe('');
   });
 });
@@ -54,12 +54,12 @@ describe('R-SCH-02 Locked schedules', () => {
   const lockedData = (a, b) => blank({ schedules: [sched({ id: 'a', locked: a }), sched({ id: 'b', locked: b })], events: [ev1({ schedules: ['a', 'b'] })] });
   it('an event in a single locked schedule is locked', () => {
     setData(app, blank({ schedules: [sched({ locked: true })], events: [ev1()] }));
-    expect(ev('isLocked(S.events[0])')).toBe(true);
+    expect(ev('isLocked(state.S.events[0])')).toBe(true);
   });
   it('an event shared by two schedules is locked only when both are locked', () => {
-    setData(app, lockedData(true, true)); expect(ev('isLocked(S.events[0])')).toBe(true);
-    setData(app, lockedData(true, false)); expect(ev('isLocked(S.events[0])')).toBe(false);
-    setData(app, lockedData(false, true)); expect(ev('isLocked(S.events[0])')).toBe(false);
+    setData(app, lockedData(true, true)); expect(ev('isLocked(state.S.events[0])')).toBe(true);
+    setData(app, lockedData(true, false)); expect(ev('isLocked(state.S.events[0])')).toBe(false);
+    setData(app, lockedData(false, true)); expect(ev('isLocked(state.S.events[0])')).toBe(false);
   });
   it('locked events are click-through boxes (they cannot be grabbed) and show a lock icon', () => {
     setData(app, blank({ schedules: [sched({ locked: true })], events: [ev1()] }));
@@ -73,7 +73,7 @@ describe('R-SCH-02 Locked schedules', () => {
 describe('R-EVT-08 Event opacity is the highest opacity among its visible schedules', () => {
   const op = (aOp, aVis, bOp, bVis) => {
     setData(app, blank({ schedules: [sched({ id: 'a', opacity: aOp, visible: aVis }), sched({ id: 'b', opacity: bOp, visible: bVis })], events: [ev1({ schedules: ['a', 'b'] })] }));
-    return ev('evOp(S.events[0])');
+    return ev('evOp(state.S.events[0])');
   };
   it('uses the larger of the two when both schedules are visible', () => { expect(op(0.4, true, 0.8, true)).toBe(0.8); });
   it('ignores the opacity of a hidden schedule', () => { expect(op(0.3, true, 1, false)).toBe(0.3); });
@@ -92,19 +92,19 @@ describe('R-PHS-02 Only one rhythm can be shown at a time', () => {
   it('showing a rhythm through its eye hides the others', () => {
     setData(app, rh(true, false));
     app.qa('#sbin .sec')[3].querySelectorAll('.sch')[1].querySelector('.eye').click();
-    expect(ev('S.rhythms.map(r=>r.visible)')).toEqual([false, true]);
+    expect(ev('state.S.rhythms.map(r=>r.visible)')).toEqual([false, true]);
   });
   it('clicking the eye of the visible rhythm hides it, leaving none visible', () => {
     setData(app, rh(true, false));
     app.qa('#sbin .sec')[3].querySelectorAll('.sch')[0].querySelector('.eye').click();
-    expect(ev('S.rhythms.every(r=>!r.visible)')).toBe(true);
+    expect(ev('state.S.rhythms.every(r=>!r.visible)')).toBe(true);
   });
 });
 
 describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by early hours or the hidden weekend', () => {
   const hidden = (events, prefs = '') => {
     setData(app, blank({ events }));
-    ev(`prefs.showEarly=false;prefs.hideWeekend=false;${prefs};render()`);
+    ev(`state.prefs.showEarly=false;state.prefs.hideWeekend=false;${prefs};render()`);
     return ev('hiddenInfo()');
   };
   const at = (day, start, end, extra = {}) => ev1({ id: `e-${day}-${start}`, slots: [{ day, start, end, person: '' }], ...extra });
@@ -115,28 +115,28 @@ describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by ear
     expect(hidden([at(0, 240, 360)]).n).toBe(0);
   });
   it('an event on Saturday is counted while the weekend is hidden', () => {
-    expect(hidden([at(5, 600, 660)], 'prefs.hideWeekend=true').wk).toBe(1);
+    expect(hidden([at(5, 600, 660)], 'state.prefs.hideWeekend=true').wk).toBe(1);
   });
   it('an overnight event from Friday to Saturday is partly visible (Friday) and is not counted', () => {
-    expect(hidden([at(4, 1320, 1560)], 'prefs.hideWeekend=true').n).toBe(0);
+    expect(hidden([at(4, 1320, 1560)], 'state.prefs.hideWeekend=true').n).toBe(0);
   });
   it('an overnight event from Saturday to Sunday is hidden completely and is counted', () => {
-    expect(hidden([at(5, 1320, 1560)], 'prefs.hideWeekend=true').wk).toBe(1);
+    expect(hidden([at(5, 1320, 1560)], 'state.prefs.hideWeekend=true').wk).toBe(1);
   });
   it('an event hidden by the people filter is not counted', () => {
     setData(app, blank({ people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ slots: [{ day: 0, start: 120, end: 240, person: 'B' }] })] }));
-    ev('S.people[1].visible=false;render()');
+    ev('state.S.people[1].visible=false;render()');
     expect(ev('hiddenInfo().n')).toBe(0);
   });
   it('nothing is counted once the early hours and the weekend are shown again', () => {
-    expect(hidden([at(0, 120, 240), at(5, 600, 660)], 'prefs.showEarly=true').n).toBe(0);
+    expect(hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.showEarly=true').n).toBe(0);
   });
   it('phases are never counted as hidden events, even on the hidden weekend', () => {
     setData(app, blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Sleep', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 0, end: 120 }] }] }));
     expect(ev('hiddenInfo().n')).toBe(0);
   });
   it('the pill is visible with the number and its tooltip lists the weekend and early-hours counts', () => {
-    hidden([at(0, 120, 240), at(5, 600, 660)], 'prefs.hideWeekend=true');
+    hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.hideWeekend=true');
     const pill = app.q('#hid');
     expect(pill.style.display).not.toBe('none'); expect(pill.textContent).toBe('2 hidden');
     expect(pill.title).toMatch(/1 on the hidden weekend/); expect(pill.title).toMatch(/1 in the hidden early hours/);

@@ -3,7 +3,7 @@ import { openApp, seed, data, slots, blank, ev, slot, sched, person, pt, drag, t
 
 const three = () => blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660), slot(4, 600, 660)] })] });
 const overlapping = () => blank({ events: [ev({ id: 'a', title: 'A', slots: [slot(0, 600, 720)] }), ev({ id: 'b', title: 'B', color: '#e5484d', slots: [slot(0, 660, 750)] })] });
-const starts = page => page.evaluate(() => S.events[0].slots.map(s => s.start));
+const starts = page => page.evaluate(() => state.S.events[0].slots.map(s => s.start));
 const menuTitles = page => page.locator('.omenu .oi b').allTextContents();
 
 test.beforeEach(async ({ page }) => { await openApp(page); });
@@ -94,12 +94,12 @@ test.describe('R-SEL-01 Clicking where events overlap, with a real mouse', () =>
 test.describe('R-SEL-02 Dragging where events overlap, with a real mouse', () => {
   test('a drag from the overlap asks which one to move and moves nothing yet', async ({ page }) => {
     await seed(page, overlapping()); await drag(page, { col: 0, min: 690 }, { col: 0, min: 780 });
-    await expect(page.locator('.omenu .oh')).toHaveText(/pick the one to move/); expect(await page.evaluate(() => S.events.map(e => e.slots[0].start))).toEqual([600, 660]);
+    await expect(page.locator('.omenu .oh')).toHaveText(/pick the one to move/); expect(await page.evaluate(() => state.S.events.map(e => e.slots[0].start))).toEqual([600, 660]);
   });
   test('picking one outlines it, and the next drag moves just that event', async ({ page }) => {
     await seed(page, overlapping()); await drag(page, { col: 0, min: 690 }, { col: 0, min: 780 }); await page.locator('.omenu .oi', { hasText: 'B' }).click();
     await expect(page.locator('.ev.sel')).toHaveCount(1); await drag(page, { col: 0, min: 690 }, { col: 0, min: 780 });
-    expect(await page.evaluate(() => S.events.map(e => e.slots[0].start))).toEqual([600, 750]);
+    expect(await page.evaluate(() => state.S.events.map(e => e.slots[0].start))).toEqual([600, 750]);
   });
   test('Escape clears the selection outline', async ({ page }) => {
     await seed(page, overlapping()); await drag(page, { col: 0, min: 690 }, { col: 0, min: 780 }); await page.locator('.omenu .oi').first().click(); await page.keyboard.press('Escape');
@@ -135,16 +135,16 @@ test.describe('R-PHS-06 Editing phases with a real mouse', () => {
   const withPhases = () => blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r'], slots: [0, 1, 2].map(d => ({ day: d, start: 720, end: 780 })) }], events: [ev()] });
   test('in Phases mode dragging a phase moves all its repetitions while events stay put', async ({ page }) => {
     await seed(page, withPhases()); await page.locator('.seg button', { hasText: 'Phases' }).click(); await drag(page, { col: 0, min: 750 }, { col: 0, min: 810 });
-    const r = await page.evaluate(() => ({ ph: S.phases[0].slots.map(s => s.start), ev: S.events[0].slots[0].start })); expect(r).toEqual({ ph: [780, 780, 780], ev: 600 });
+    const r = await page.evaluate(() => ({ ph: state.S.phases[0].slots.map(s => s.start), ev: state.S.events[0].slots[0].start })); expect(r).toEqual({ ph: [780, 780, 780], ev: 600 });
   });
   test('in Events mode dragging over a phase does not move it (phases are only background)', async ({ page }) => {
     await seed(page, withPhases()); await drag(page, { col: 0, min: 750 }, { col: 0, min: 810 }); await page.keyboard.press('Escape');
-    expect(await page.evaluate(() => S.phases[0].slots.map(s => s.start))).toEqual([720, 720, 720]);
+    expect(await page.evaluate(() => state.S.phases[0].slots.map(s => s.start))).toEqual([720, 720, 720]);
   });
   test('dragging the phase label (lip) in Phases mode moves the phase', async ({ page }) => {
     await seed(page, withPhases()); await page.locator('.seg button', { hasText: 'Phases' }).click();
     const lip = await page.locator('.dw[data-d="0"] .lip').boundingBox(); await page.mouse.move(lip.x + lip.width / 2, lip.y + lip.height / 2); await page.mouse.down(); await page.mouse.move(lip.x + lip.width / 2, lip.y + lip.height / 2 + 48, { steps: 5 }); await page.mouse.up();
-    expect(await page.evaluate(() => S.phases[0].slots[0].start)).toBe(780);
+    expect(await page.evaluate(() => state.S.phases[0].slots[0].start)).toBe(780);
   });
 });
 
@@ -176,7 +176,7 @@ test.describe('R-PHS-06 Resizing a phase whose bottom edge lies inside another p
       await seed(page, blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: order.map(k => P[k]) })); await page.locator('.seg button', { hasText: 'Phases' }).click();
       const e = await edge(page, '.day[data-d="0"] .phx', 'A ·'); expect(e).toMatchObject({ handle: true, cursor: 'ns-resize' });
       await page.mouse.move(e.x, e.y); await page.mouse.down(); await page.mouse.move(e.x, e.y + 24, { steps: 5 }); await page.mouse.up();
-      expect(await page.evaluate(() => Object.fromEntries(S.phases.map(p => [p.id, p.slots[0].end])))).toEqual({ A: 750, B: 780 });
+      expect(await page.evaluate(() => Object.fromEntries(state.S.phases.map(p => [p.id, p.slots[0].end])))).toEqual({ A: 750, B: 780 });
     });
   }
 });
@@ -187,7 +187,7 @@ test.describe('R-EVT-01 Resizing an event whose bottom edge lies inside another 
       await seed(page, blank({ schedules: [sched({ opacity: op })], events: order.map(k => E[k]) }));
       const e = await edge(page, '.day[data-d="0"] .ev', 'AAA'); expect(e).toMatchObject({ handle: true, cursor: 'ns-resize' });
       await page.mouse.move(e.x, e.y); await page.mouse.down(); await page.mouse.move(e.x, e.y + 24, { steps: 5 }); await page.mouse.up();
-      expect(await page.evaluate(() => Object.fromEntries(S.events.map(x => [x.id, x.slots[0].end])))).toEqual({ A: 750, B: 780 });
+      expect(await page.evaluate(() => Object.fromEntries(state.S.events.map(x => [x.id, x.slots[0].end])))).toEqual({ A: 750, B: 780 });
     });
   }
 });

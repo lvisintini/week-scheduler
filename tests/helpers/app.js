@@ -86,7 +86,7 @@ export function openApp(opts = {}) {
     /** keyboard shortcut on the document */
     key(key, o = {}) { d.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...o })); },
     /** y coordinate (px) of a minute-of-day inside a day column */
-    y: min => w.eval(`(${min}-vs()*60)/60*HH`),
+    y: min => w.eval(`(${min}-vs()*60)/60*state.HH`),
     /** x coordinate of the middle of the n-th displayed day column */
     x: n => n * 100 + 50,
     /** open the Save dialog and choose a target by its label */
@@ -131,7 +131,7 @@ export function workspace(overrides = {}) {
 
 /** Replaces the current workspace's data (no dialogs) – used to set up scenarios. */
 export function setData(app, data) {
-  app.ev(`(()=>{const d=parseData(${JSON.stringify(data)});S=d;cw().data=d;render()})()`);
+  app.ev(`(()=>{const d=parseData(${JSON.stringify(data)});state.S=d;cw().data=d;render()})()`);
 }
 
 export const ev1 = (o = {}) => ({ id: 'e1', title: 'Event', desc: '', color: '#3b6df0', schedules: ['s1'], involved: [], slots: [{ day: 0, start: 600, end: 660, person: '' }], ...o });

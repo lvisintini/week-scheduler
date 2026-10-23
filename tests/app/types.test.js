@@ -6,7 +6,7 @@ const types = () => [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun
 const iconHTML = (a, k) => a.ev(`(()=>{const d=document.createElement("span");d.innerHTML=tIcon(${JSON.stringify(k)});return d.innerHTML})()`);   // as the browser serialises it
 const tySec = a => a.q('#sbin .tysec');
 const rows = a => [...tySec(a).querySelectorAll('.sch')];
-const data = a => a.ev('JSON.parse(JSON.stringify(S))');
+const data = a => a.ev('JSON.parse(JSON.stringify(state.S))');
 const menu = (a, i) => { [...rows(a)[i].querySelectorAll('button.eye')].at(-1).click(); return a.qa('.omenu .oi').map(b => b.textContent.trim()); };
 const menuClick = (a, label) => a.qa('.omenu .oi').find(b => b.textContent.trim() === label).click();
 
@@ -29,7 +29,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
   });
   it('renaming in the row changes the name everywhere (event dialog list, hover card)', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm' })] })); const n = rows(a)[1].querySelector('input'); n.value = 'Lunch & dinner'; n.onchange();
-    expect(data(a).types[1].name).toBe('Lunch & dinner'); a.ev('openDlg(S.events[0])'); expect(a.q('#fTy').selectedOptions[0].textContent).toBe('Lunch & dinner');
+    expect(data(a).types[1].name).toBe('Lunch & dinner'); a.ev('openDlg(state.S.events[0])'); expect(a.q('#fTy').selectedOptions[0].textContent).toBe('Lunch & dinner');
   });
   it('clicking the icon opens a grid of all built-in icons with names; picking one changes the type icon (undoable)', () => {
     const a = fresh(blank({ types: types() })); rows(a)[1].querySelector('.pick').click();
@@ -46,7 +46,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).not.toBeNull(); menuClick(a, 'Soft look'); expect('soft' in data(a).types[1]).toBe(false);
   });
   it('by default the type colour is not used on the grid: changing it does not change the event colour', () => {
-    const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm', color: '#3b6df0' })] })); a.ev('S.types[1].color="#000000";render()');
+    const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm', color: '#3b6df0' })] })); a.ev('state.S.types[1].color="#000000";render()');
     expect(a.q('.ev').style.background).toMatch(/#3b6df0|rgb\(59, 109, 240\)/);
   });
   it('deleting a type asks first, says how many events lose it, and leaves those events without a type (undoable)', () => {
@@ -62,7 +62,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     const n = rows(a)[0].querySelector('input'); n.value = 'Leisure'; n.onchange(); expect(a.ev('isDirty()')).toBe(true);
   });
   it('the section can be collapsed like the others (remembered per browser)', () => {
-    const a = fresh(blank({ types: types() })); tySec(a).querySelector('.shbtn').click(); expect(rows(a)).toHaveLength(0); expect(a.ev('prefs.secTyp')).toBe(true);
+    const a = fresh(blank({ types: types() })); tySec(a).querySelector('.shbtn').click(); expect(rows(a)).toHaveLength(0); expect(a.ev('state.prefs.secTyp')).toBe(true);
   });
   it('the section, its tooltip and its menu are translated', () => {
     const a = fresh(blank({ types: types() }), { languages: ['es'] });
@@ -73,20 +73,20 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
 
 describe('R-TYP-02 Default activity types and the built-in icon set', () => {
   it('a new workspace has nine types: Sleep, Meal, Work/School, Focus time, Chore, Free time, Social, Personal care and Travel', () => {
-    const a = openApp(); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Sleep', 'Meal', 'Work/School', 'Focus time', 'Chore', 'Free time', 'Social', 'Personal care', 'Travel']);
-    expect(a.ev("S.types.find(t=>t.name==='Social')")).toMatchObject({ icon: 'people', color: '#e5484d' }); expect(a.ev("'soft' in S.types.find(t=>t.name==='Social')")).toBe(false);
+    const a = openApp(); expect(a.ev('state.S.types.map(t=>t.name)')).toEqual(['Sleep', 'Meal', 'Work/School', 'Focus time', 'Chore', 'Free time', 'Social', 'Personal care', 'Travel']);
+    expect(a.ev("state.S.types.find(t=>t.name==='Social')")).toMatchObject({ icon: 'people', color: '#e5484d' }); expect(a.ev("'soft' in state.S.types.find(t=>t.name==='Social')")).toBe(false);
   });
   it('only Free time has the soft look; every default type has its own icon and a valid colour', () => {
-    const a = openApp(); const t = a.ev('JSON.parse(JSON.stringify(S.types))');
+    const a = openApp(); const t = a.ev('JSON.parse(JSON.stringify(state.S.types))');
     expect(t.filter(x => x.soft).map(x => x.name)).toEqual(['Free time']); expect(new Set(t.map(x => x.icon)).size).toBe(9); t.forEach(x => expect(x.color).toMatch(/^#[0-9a-f]{6}$/));
     expect(t.find(x => x.name === 'Free time').icon).toBe('sun'); expect(t.find(x => x.name === 'Sleep').icon).toBe('moon');
   });
   it('in Spanish the default types are Spanish', () => {
-    const a = openApp({ languages: ['es'] }); expect(a.ev('S.types.map(t=>t.name)')).toEqual(['Dormir', 'Comida', 'Trabajo/Escuela', 'Concentración', 'Tarea doméstica', 'Tiempo libre', 'Vida social', 'Cuidado personal', 'Desplazamiento']);
+    const a = openApp({ languages: ['es'] }); expect(a.ev('state.S.types.map(t=>t.name)')).toEqual(['Dormir', 'Comida', 'Trabajo/Escuela', 'Concentración', 'Tarea doméstica', 'Tiempo libre', 'Vida social', 'Cuidado personal', 'Desplazamiento']);
   });
   it('New workspace and Clear memory start with the default types', () => {
-    const a = openApp({ promptAnswer: 'Second' }); a.ev('addWorkspace()'); expect(a.ev('S.types.length')).toBe(9);
-    a.ev('S.types=[];clearMem()'); expect(a.ev('S.types.length')).toBe(9);
+    const a = openApp({ promptAnswer: 'Second' }); a.ev('addWorkspace()'); expect(a.ev('state.S.types.length')).toBe(9);
+    a.ev('state.S.types=[];clearMem()'); expect(a.ev('state.S.types.length')).toBe(9);
   });
   it('the icon set has about forty inline SVG icons, each with an English and a Spanish name', () => {
     const a = openApp(); const keys = a.ev('Object.keys(TICONS)'); expect(keys.length).toBeGreaterThanOrEqual(40);
@@ -123,14 +123,14 @@ describe('R-TYP-03 Activity types in saved data, imports and transfers', () => {
   });
   it('copying a schedule to another workspace brings the types its events use, matched by name', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tf' })] }));
-    a.ev('const b=newWs("Other",{schedules:[],people:[],types:[{id:"o1",name:"FREE TIME",color:"#000000",icon:"dot"}],events:[],rhythms:[],phases:[],phaseOpacity:.3},true);WS.push(b)');
-    a.ev('doTransfer("schedule",S.schedules[0],WS[1],false)'); const o = a.ev('JSON.parse(JSON.stringify(WS[1].data))');
+    a.ev('const b=newWs("Other",{schedules:[],people:[],types:[{id:"o1",name:"FREE TIME",color:"#000000",icon:"dot"}],events:[],rhythms:[],phases:[],phaseOpacity:.3},true);state.WS.push(b)');
+    a.ev('doTransfer("schedule",state.S.schedules[0],state.WS[1],false)'); const o = a.ev('JSON.parse(JSON.stringify(state.WS[1].data))');
     expect(o.types.map(t => t.id)).toEqual(['o1']); expect(o.events[0].type).toBe('o1');
   });
   it('a type missing in the target workspace is created there; unused types are not copied', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm' })] }));
-    a.ev('const b=newWs("Other",{schedules:[],people:[],types:[],events:[],rhythms:[],phases:[],phaseOpacity:.3},true);WS.push(b)');
-    a.ev('doTransfer("schedule",S.schedules[0],WS[1],false)'); const o = a.ev('JSON.parse(JSON.stringify(WS[1].data))');
+    a.ev('const b=newWs("Other",{schedules:[],people:[],types:[],events:[],rhythms:[],phases:[],phaseOpacity:.3},true);state.WS.push(b)');
+    a.ev('doTransfer("schedule",state.S.schedules[0],state.WS[1],false)'); const o = a.ev('JSON.parse(JSON.stringify(state.WS[1].data))');
     expect(o.types.map(t => [t.name, t.icon])).toEqual([['Meal', 'meal']]); expect(o.events[0].type).toBe(o.types[0].id); expect(o.types[0].id).not.toBe('tm');
   });
   it('anonymised exports keep the type names (like schedule names)', () => {
@@ -161,12 +161,12 @@ describe('R-TYP-04 Activity types can be hidden and shown with their eye (a grid
     eye(a, 1).click(); expect(a.ev("personStats('A',true).by.get('tm')")).toBe(before); expect(before).toBe(60);
   });
   it('the eye is view state: not undoable and not an unsaved change, and undo keeps it', () => {
-    const a = fresh(blank({ types: types(), events: evs() })); a.ev('saveMem("all")'); eye(a, 1).click(); expect(a.ev('isDirty()')).toBe(false); expect(a.ev('undoSt.length')).toBe(0);
+    const a = fresh(blank({ types: types(), events: evs() })); a.ev('saveMem("all")'); eye(a, 1).click(); expect(a.ev('isDirty()')).toBe(false); expect(a.ev('state.undoSt.length')).toBe(0);
     const n = rows(a)[0].querySelector('input'); n.value = 'Leisure'; n.onchange(); a.toolbar('undo').click(); expect(data(a).types[1].visible).toBe(false);
   });
   it('the eye is saved with the workspace and read back; data without it shows every type', () => {
     const a = fresh(blank({ types: types(), events: evs() })); eye(a, 1).click(); a.ev('saveMem("all")');
-    const b = openApp({ storage: a.storage() }); expect(b.ev('S.types.map(t=>t.visible)')).toEqual([true, false]); expect(b.qa('.ev .t').map(x => x.textContent).sort()).toEqual(['Park', 'Untyped']);
+    const b = openApp({ storage: a.storage() }); expect(b.ev('state.S.types.map(t=>t.visible)')).toEqual([true, false]); expect(b.qa('.ev .t').map(x => x.textContent).sort()).toEqual(['Park', 'Untyped']);
     expect(a.ev(`parseData(${JSON.stringify(blank({ types: types() }))}).types.map(t=>t.visible)`)).toEqual([true, true]);
   });
   it('a type created by "+" or brought in by an insert is shown', () => {
@@ -179,7 +179,7 @@ describe('R-TYP-05 Activity types can be reordered; the order is used by the sta
   const three = () => fresh(blank({ people: [{ id: 'A', name: 'Ann', color: '#e5484d', visible: true }],
     types: [{ id: 'ta', name: 'Sleep', color: '#3f51b5', icon: 'moon' }, { id: 'tb', name: 'Meal', color: '#e8912d', icon: 'meal' }, { id: 'tc', name: 'Work', color: '#2fa66a', icon: 'work' }],
     events: ['ta', 'tb', 'tc'].map((t, i) => ev1({ id: 'e' + i, type: t, slots: [{ day: i, start: 600, end: 660, person: 'A' }] })) }));
-  const names = a => a.ev('S.types.map(t=>t.name)'), grips = a => rows(a).map(r => r.querySelector('.grip'));
+  const names = a => a.ev('state.S.types.map(t=>t.name)'), grips = a => rows(a).map(r => r.querySelector('.grip'));
   const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
   it('each type row starts with a grip that names the type and says what the order is for', () => {
     const a = three(), g = grips(a); expect(g[0]).toBe(rows(a)[0].firstElementChild); expect(g[1].getAttribute('aria-label')).toBe('Move Meal');
@@ -187,7 +187,7 @@ describe('R-TYP-05 Activity types can be reordered; the order is used by the sta
   });
   it('the arrow keys move a type up or down and keep the focus on its grip; past either end nothing happens', () => {
     const a = three(); key(grips(a)[0], 'ArrowDown'); expect(names(a)).toEqual(['Meal', 'Sleep', 'Work']); expect(a.d.activeElement.getAttribute('aria-label')).toBe('Move Sleep');
-    const n = a.ev('undoSt.length'); key(grips(a)[0], 'ArrowUp'); expect(names(a)).toEqual(['Meal', 'Sleep', 'Work']); expect(a.ev('undoSt.length')).toBe(n);
+    const n = a.ev('state.undoSt.length'); key(grips(a)[0], 'ArrowUp'); expect(names(a)).toEqual(['Meal', 'Sleep', 'Work']); expect(a.ev('state.undoSt.length')).toBe(n);
   });
   it('dragging a grip below the last row moves the type to the end; it is undoable data that marks the workspace unsaved', () => {
     const a = three(); a.ev('saveMem("all")'); grips(a)[0].onpointerdown({ button: 0, preventDefault() {}, stopPropagation() {} });
@@ -195,7 +195,7 @@ describe('R-TYP-05 Activity types can be reordered; the order is used by the sta
     a.toolbar('undo').click(); expect(names(a)).toEqual(['Sleep', 'Meal', 'Work']);
   });
   it('the event dialog lists the types in the new order', () => {
-    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp'); a.ev('openDlg(S.events[0])');
+    const a = three(); key(grips(a)[2], 'ArrowUp'); key(grips(a)[1], 'ArrowUp'); a.ev('openDlg(state.S.events[0])');
     expect(a.qa('#fTy option').map(o => o.textContent)).toEqual(['(none)', 'Work', 'Sleep', 'Meal']);
   });
   it('the statistics table, CSV columns and the everyone view follow the new order', () => {

@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest';
 import { openApp, setData, blank, ev1, person, dragFrom, createDrag, workspace, sleep, pointer } from '../helpers/app.js';
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
-const week = (a, w) => a.ev(`curWk=${w};render()`);
+const week = (a, w) => a.ev(`state.curWk=${w};render()`);
 const boxes = (a, d) => a.qa(`.day[data-d="${d}"] .ev`).map(b => b._it.e.id + (b._it.piece ? '+' : ''));
 const sl = (day, start, end, o = {}) => ({ day, start, end, person: '', ...o });
 const people = [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#00a000' })];
-const ovl = (a, i = 0) => a.ev(`[...overlapSet(S.events[${i}])].map(s=>S.events[${i}].slots.indexOf(s))`);
+const ovl = (a, i = 0) => a.ev(`[...overlapSet(state.S.events[${i}])].map(s=>state.S.events[${i}].slots.indexOf(s))`);
 
 describe('R-CYC-06 The week wrap: Sunday runs into Monday of the next week, the last week into week 1', () => {
   it('a Sunday-night event of week 1 shows its part after midnight on Monday of week 2, not of week 1', () => {
@@ -74,7 +74,7 @@ describe('R-CYC-07 Each week of the cycle shows, lays out and finds only its own
   });
   it('fixed lanes give an external person a lane in every week once they have an activity in any week', () => {
     const d = blank({ cycle: 2, people: [person({ id: 'A' }), person({ id: 'X', name: 'Cleaner', external: true })], events: [ev1({ weeks: [2], slots: [sl(0, 600, 660, { person: 'X' })] })] });
-    const a = fresh(d); a.ev('prefs.lanesFix=true;render()'); expect(a.ev('fixedLayout([{e:S.events[0],s:S.events[0].slots[0]}]).values().next().value.n')).toBe(2);
+    const a = fresh(d); a.ev('state.prefs.lanesFix=true;render()'); expect(a.ev('fixedLayout([{e:state.S.events[0],s:state.S.events[0].slots[0]}]).values().next().value.n')).toBe(2);
   });
 });
 
@@ -92,55 +92,55 @@ describe('R-CYC-16 Phases have weeks like events: a rhythm can differ per week o
   });
   it('a phase with different times per week draws each time in its own week, and lips group only within the week', () => {
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(1, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
-    expect(a.qa('.day[data-d="0"] .phx').map(x => x.style.top)).toEqual([a.ev('(360-vs()*60)/60*HH+"px"')]); expect(lipT(a)).toEqual(['Shift']);
+    expect(a.qa('.day[data-d="0"] .phx').map(x => x.style.top)).toEqual([a.ev('(360-vs()*60)/60*state.HH+"px"')]); expect(lipT(a)).toEqual(['Shift']);
     week(a, 2); expect(phx(a, 0)).toBe(1); expect(phx(a, 1)).toBe(0); expect(a.q('.lane .lip').title).toContain('21:00');
   });
   it('the phase dialog has the Weeks row and Different per week, with its own tooltip, and saves weeks like an event', () => {
-    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph()] })); a.ev("editMode='phases';render();openDlg(S.phases[0])");
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph()] })); a.ev("state.editMode='phases';render();openDlg(state.S.phases[0])");
     expect(a.q('#fWk').style.display).toBe(''); expect(a.q('#fWk b').title).toContain('this phase'); const ch = a.qa('#fWk .chips input');
-    ch[0].checked = false; ch[0].dispatchEvent(new a.w.Event('change')); a.q('#fOk').click(); expect(a.ev('S.phases[0].weeks')).toEqual([2]);
-    a.ev('openDlg(S.phases[0])'); a.q('#fPw').checked = true; a.q('#fPw').onchange(); expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
-    expect(a.q('#fDays .dr:not(.off) button.wkc').textContent).toBe('2'); a.q('#fOk').click(); expect(a.ev('JSON.stringify(S.phases[0])')).toContain('"wk":2'); expect(a.ev('S.phases[0].weeks')).toBeUndefined();
+    ch[0].checked = false; ch[0].dispatchEvent(new a.w.Event('change')); a.q('#fOk').click(); expect(a.ev('state.S.phases[0].weeks')).toEqual([2]);
+    a.ev('openDlg(state.S.phases[0])'); a.q('#fPw').checked = true; a.q('#fPw').onchange(); expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
+    expect(a.q('#fDays .dr:not(.off) button.wkc').textContent).toBe('2'); a.q('#fOk').click(); expect(a.ev('JSON.stringify(state.S.phases[0])')).toContain('"wk":2'); expect(a.ev('state.S.phases[0].weeks')).toBeUndefined();
   });
   it('dragging a phase with its own week moves it along the cycle; Sunday of week 1 goes to Monday of week 2', () => {
-    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ slots: [sl(6, 600, 660, { wk: 1 })] })] })); a.ev("editMode='phases';render()");
-    a.ev('S.phases[0].slots.forEach(s=>shiftDay(s,1));render()'); expect(a.ev('JSON.stringify(S.phases[0].slots[0])')).toContain('"day":0'); expect(a.ev('S.phases[0].slots[0].wk')).toBe(2);
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ slots: [sl(6, 600, 660, { wk: 1 })] })] })); a.ev("state.editMode='phases';render()");
+    a.ev('state.S.phases[0].slots.forEach(s=>shiftDay(s,1));render()'); expect(a.ev('JSON.stringify(state.S.phases[0].slots[0])')).toContain('"day":0'); expect(a.ev('state.S.phases[0].slots[0].wk')).toBe(2);
   });
   it('the rhythm agenda names a pattern\'s weeks and gives different times per week a section each', () => {
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] }), ph({ id: 'q', title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
-    const h = a.ev('rhythmAgendaHTML(S.rhythms[0])'); expect(h).toContain('Week 2'); expect((h.match(/class="pwk"/g) || []).length).toBe(2); expect(h).toContain('06:00–14:00'); expect(h).toContain('21:00–00:00');
+    const h = a.ev('rhythmAgendaHTML(state.S.rhythms[0])'); expect(h).toContain('Week 2'); expect((h.match(/class="pwk"/g) || []).length).toBe(2); expect(h).toContain('06:00–14:00'); expect(h).toContain('21:00–00:00');
   });
   it('lengthening to a multiple in step extends the weeks of phases too; shrinking lists phases and can move them into a rhythm per week', () => {
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] }), ph({ id: 'q', title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
-    a.ev('setCycle(4,true)'); expect(a.ev('S.phases[0].weeks')).toEqual([2, 4]); expect(a.ev('S.phases[1].slots.map(s=>s.wk)')).toEqual([1, 3, 2, 4]);
+    a.ev('setCycle(4,true)'); expect(a.ev('state.S.phases[0].weeks')).toEqual([2, 4]); expect(a.ev('state.S.phases[1].slots.map(s=>s.wk)')).toEqual([1, 3, 2, 4]);
     a.ev('shrinkCycle(1)'); expect(a.dlgText()).toContain('Night shift'); expect(a.dlgText()).toContain('events and phases');
     a.qa('#xDlg input[type=radio]').find(r => r.value === 'mv').click(); a.click('Apply');
-    expect(a.ev('S.rhythms.map(r=>r.name)')).toEqual(['R', 'Week 2', 'Week 3', 'Week 4']); expect(a.ev('S.rhythms.slice(1).every(r=>!r.visible)')).toBe(true);
-    expect(a.ev('S.phases.filter(p=>p.rhythms[0]==="r").map(p=>p.title)')).toEqual(['Shift']); expect(a.ev('S.phases.every(p=>!p.weeks&&p.slots.every(s=>!s.wk))')).toBe(true);
+    expect(a.ev('state.S.rhythms.map(r=>r.name)')).toEqual(['R', 'Week 2', 'Week 3', 'Week 4']); expect(a.ev('state.S.rhythms.slice(1).every(r=>!r.visible)')).toBe(true);
+    expect(a.ev('state.S.phases.filter(p=>p.rhythms[0]==="r").map(p=>p.title)')).toEqual(['Shift']); expect(a.ev('state.S.phases.every(p=>!p.weeks&&p.slots.every(s=>!s.wk))')).toBe(true);
   });
   it('inserting a workspace whose phases use weeks beyond the cycle asks first, like events', () => {
     const a = fresh(blank({ rhythms: rh })); const src = JSON.stringify(blank({ cycle: 2, rhythms: [{ id: 'x', name: 'Shifts', visible: true }], phases: [ph({ rhythms: ['x'], weeks: [2] })] }));
     a.ev(`openImport({name:'W',data:parseData(${src})},'file')`); a.qa('#xDlg input[type=radio]')[1].click(); a.click('Import');
     return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.click('Apply'); return sleep(5); })
-      .then(() => { expect(a.ev('S.cycle')).toBe(2); expect(a.ev('S.phases.at(-1).weeks')).toEqual([2]); });
+      .then(() => { expect(a.ev('state.S.cycle')).toBe(2); expect(a.ev('state.S.phases.at(-1).weeks')).toEqual([2]); });
   });
   it('transferring a rhythm into a workspace with a shorter cycle asks first, like a schedule', () => {
-    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] })] })); a.ev("addWorkspace&&0;WS.push(newWs('Other',parseData({schedules:[{id:'s',name:'S'}],events:[]}),false))");
-    a.ev("doTransfer('rhythm',S.rhythms[0],WS.at(-1),false)"); return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.qa('#xDlg input[type=radio]').find(r => r.value === 'rm').click(); a.click('Apply'); return sleep(5); })
-      .then(() => { expect(a.ev('WS.at(-1).data.phases.length')).toBe(0); expect(a.ev('WS.at(-1).data.rhythms.map(r=>r.name)')).toEqual(['R']); });
+    const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] })] })); a.ev("addWorkspace&&0;state.WS.push(newWs('Other',parseData({schedules:[{id:'s',name:'S'}],events:[]}),false))");
+    a.ev("doTransfer('rhythm',state.S.rhythms[0],state.WS.at(-1),false)"); return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.qa('#xDlg input[type=radio]').find(r => r.value === 'rm').click(); a.click('Apply'); return sleep(5); })
+      .then(() => { expect(a.ev('state.WS.at(-1).data.phases.length')).toBe(0); expect(a.ev('state.WS.at(-1).data.rhythms.map(r=>r.name)')).toEqual(['R']); });
   });
 });
 
 const openCycleDlg = a => { a.q('.wsbtn').click(); a.qa('.omenu .oi').find(b => b.textContent.includes('Weeks in the cycle')).click(); };
 const chooseLen = (a, n) => { const s = a.q('#xDlg select'); s.value = String(n); s.dispatchEvent(new a.w.Event('change')); };
-const evs = a => JSON.parse(a.ev('JSON.stringify(S.events.map(e=>({id:e.id,weeks:e.weeks,wk:e.slots.map(s=>s.wk||0),sch:e.schedules})))'));
+const evs = a => JSON.parse(a.ev('JSON.stringify(state.S.events.map(e=>({id:e.id,weeks:e.weeks,wk:e.slots.map(s=>s.wk||0),sch:e.schedules})))'));
 
 describe('R-CYC-01 The cycle length is set from the workspace menu and is data', () => {
   it('Weeks in the cycle… sets 1 to 4 weeks for the workspace, as an undoable unsaved change', () => {
-    const a = fresh(blank()); a.ev('cw().lb=keyOf(S)'); openCycleDlg(a); expect(a.dlgTitle()).toBe('Weeks in the cycle');
+    const a = fresh(blank()); a.ev('cw().lb=keyOf(state.S)'); openCycleDlg(a); expect(a.dlgTitle()).toBe('Weeks in the cycle');
     expect(a.qa('#xDlg .cyrow select option').map(o => o.textContent)).toEqual(['1 week', '2 weeks', '3 weeks', '4 weeks']);
-    chooseLen(a, 3); a.click('Apply'); expect(a.ev('S.cycle')).toBe(3); expect(a.toast()).toBe('The cycle now has 3 weeks'); expect(a.ev('anyDirty()')).toBe(true);
-    a.key('z', { ctrlKey: true }); expect(a.ev('S.cycle')).toBe(1);
+    chooseLen(a, 3); a.click('Apply'); expect(a.ev('state.S.cycle')).toBe(3); expect(a.toast()).toBe('The cycle now has 3 weeks'); expect(a.ev('anyDirty()')).toBe(true);
+    a.key('z', { ctrlKey: true }); expect(a.ev('state.S.cycle')).toBe(1);
   });
   it('the dialog explains that events happen every week unless their weeks are chosen, and how to keep a rota', () => {
     const a = fresh(blank()); openCycleDlg(a); expect(a.dlgText()).toContain('Events happen every week unless you choose their weeks'); expect(a.dlgText()).toContain('the people in it as involved');
@@ -169,10 +169,10 @@ describe('R-CYC-04 The week switcher in the grid corner chooses the week shown, 
     const a = two(); expect(boxes(a, 0)).toEqual([]); pick(a, 'Week 2'); expect(btn(a).textContent).toBe('W2'); expect(boxes(a, 0)).toEqual(['e1']);
   });
   it('switching weeks is not an unsaved change and cannot be undone', () => {
-    const a = two(); a.ev('cw().lb=keyOf(S)'); pick(a, 'Week 2'); expect(a.ev('anyDirty()')).toBe(false); expect(a.ev('undoSt.length')).toBe(0);
+    const a = two(); a.ev('cw().lb=keyOf(state.S)'); pick(a, 'Week 2'); expect(a.ev('anyDirty()')).toBe(false); expect(a.ev('state.undoSt.length')).toBe(0);
   });
   it('undo and redo of a data change keep the week that is shown', () => {
-    const a = two(); pick(a, 'Week 2'); a.ev("hist();S.events[0].title='X';render()"); a.key('z', { ctrlKey: true }); expect(btn(a).textContent).toBe('W2'); expect(a.ev('S.events[0].title')).toBe('Event');
+    const a = two(); pick(a, 'Week 2'); a.ev("hist();state.S.events[0].title='X';render()"); a.key('z', { ctrlKey: true }); expect(btn(a).textContent).toBe('W2'); expect(a.ev('state.S.events[0].title')).toBe('Event');
   });
   it('the week is never saved: it is not in files or browser memory', () => {
     const a = two(); pick(a, 'Week 2'); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/curWk|"week"/); a.ev("saveMem('all')"); expect(a.storage()['weekly-schedules-workspaces']).not.toMatch(/curWk/);
@@ -182,15 +182,15 @@ describe('R-CYC-04 The week switcher in the grid corner chooses the week shown, 
   });
   it('in the day view ▶ on Sunday goes on to Monday of the next week, and ◀ back again; the header names the week', () => {
     const a = two(); a.ev('setFocus(6)'); expect(a.q('.dh.fo').textContent).toContain('Sunday · W1');
-    a.q('.dh .nxt').click(); expect(a.ev('focusD')).toBe(0); expect(btn(a).textContent).toBe('W2'); expect(a.q('.dh.fo').textContent).toContain('Monday · W2');
-    a.q('.dh .prv').click(); expect(a.ev('[focusD,curWk]')).toEqual([6, 1]);
+    a.q('.dh .nxt').click(); expect(a.ev('state.focusD')).toBe(0); expect(btn(a).textContent).toBe('W2'); expect(a.q('.dh.fo').textContent).toContain('Monday · W2');
+    a.q('.dh .prv').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([6, 1]);
   });
   it('stepping forward from Sunday of the last week wraps to week 1, also skipping a hidden weekend', () => {
-    const a = two(); a.ev('prefs.hideWeekend=true;curWk=2;setFocus(4)'); a.q('.dh .nxt').click(); expect(a.ev('[focusD,curWk]')).toEqual([0, 1]);
-    a.q('.dh .prv').click(); expect(a.ev('[focusD,curWk]')).toEqual([4, 2]);
+    const a = two(); a.ev('state.prefs.hideWeekend=true;state.curWk=2;setFocus(4)'); a.q('.dh .nxt').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([0, 1]);
+    a.q('.dh .prv').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([4, 2]);
   });
   it('with a cycle of one week stepping wraps within the week, as before', () => {
-    const a = fresh(blank()); a.ev('setFocus(6)'); a.q('.dh .nxt').click(); expect(a.ev('[focusD,curWk]')).toEqual([0, 1]); expect(a.q('.dh.fo').textContent).not.toContain('·');
+    const a = fresh(blank()); a.ev('setFocus(6)'); a.q('.dh .nxt').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([0, 1]); expect(a.q('.dh.fo').textContent).not.toContain('·');
   });
 });
 
@@ -215,24 +215,24 @@ describe('R-CYC-10 Changing the cycle length keeps meaning where it can and neve
   it('shrinking lists the events that happen in the weeks that go, and Cancel changes nothing', async () => {
     const a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await a.sleep(5);
     expect(a.dlgText()).toContain('Week 2 will no longer be part of the cycle'); expect(a.qa('#xDlg li').map(l => l.textContent)).toEqual(['Event · Weeks 1 and 2']);
-    a.click('Cancel'); expect(a.ev('S.cycle')).toBe(2); expect(evs(a)).toEqual(evs(fresh(data())));
+    a.click('Cancel'); expect(a.ev('state.S.cycle')).toBe(2); expect(evs(a)).toEqual(evs(fresh(data())));
   });
   it('shrinking with Remove drops the occurrences of the removed weeks and keeps the rest, in one undo step', async () => {
     const a = fresh(blank({ cycle: 3, events: [ev1({ id: 'odd', weeks: [1, 3] }), ev1({ id: 'gone', weeks: [3] }), ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 3 }), sl(1, 600, 660, { wk: 2 })] })] }));
     openCycleDlg(a); chooseLen(a, 2); a.click('Apply'); await a.sleep(5);
     expect(a.qa('#xDlg li').map(l => l.textContent)).toEqual(['Event · Weeks 1 and 3', 'Event · Week 3 · nothing left in the other weeks', 'Event · Weeks 2 and 3']);
     a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply'); expect(evs(a)).toEqual([{ id: 'odd', weeks: [1], wk: [0], sch: ['s1'] }, { id: 'per', wk: [2], sch: ['s1'] }]);
-    a.key('z', { ctrlKey: true }); expect(a.ev('S.cycle')).toBe(3); expect(evs(a).map(e => e.id)).toEqual(['odd', 'gone', 'per']);
+    a.key('z', { ctrlKey: true }); expect(a.ev('state.S.cycle')).toBe(3); expect(evs(a).map(e => e.id)).toEqual(['odd', 'gone', 'per']);
   });
   it('shrinking with Move keeps those occurrences in a new schedule per removed week, as week 1', async () => {
     const a = fresh(blank({ cycle: 3, events: [ev1({ id: 'odd', weeks: [1, 3] }), ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 3 }), sl(1, 600, 660, { wk: 2 })] })] }));
     openCycleDlg(a); chooseLen(a, 2); a.click('Apply'); await a.sleep(5); a.qa('#xDlg input[name=cym]').find(r => r.value === 'mv').checked = true; a.click('Apply');
-    expect(a.ev('S.schedules.map(s=>s.name)')).toEqual(['S1', 'Week 3']); const sid = a.ev('S.schedules[1].id'), e = evs(a);
+    expect(a.ev('state.S.schedules.map(s=>s.name)')).toEqual(['S1', 'Week 3']); const sid = a.ev('state.S.schedules[1].id'), e = evs(a);
     expect(e.slice(0, 2).map(x => x.id)).toEqual(['odd', 'per']); expect(e.slice(2)).toMatchObject([{ weeks: [1], sch: [sid] }, { wk: [1], sch: [sid] }]);
   });
   it('shrinking to one week with Remove leaves no week marks at all', async () => {
     const a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await a.sleep(5); a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply');
-    expect(a.ev('S.cycle')).toBe(1); expect(evs(a)).toEqual([{ id: 'every', wk: [0], sch: ['s1'] }, { id: 'odd', wk: [0], sch: ['s1'] }, { id: 'per', wk: [0], sch: ['s1'] }]);
+    expect(a.ev('state.S.cycle')).toBe(1); expect(evs(a)).toEqual([{ id: 'every', wk: [0], sch: ['s1'] }, { id: 'odd', wk: [0], sch: ['s1'] }, { id: 'per', wk: [0], sch: ['s1'] }]);
     expect(a.toast()).toBe('Every week is the same again (a cycle of one week)');
   });
 });
@@ -246,103 +246,103 @@ describe('R-CYC-05 Live View asks which week of the cycle today is in, once per 
   const anchors = a => JSON.parse(a.storage()['weekly-schedules-prefs'] || '{}').lvAnchor || {};
   const data = () => blank({ cycle: 3, events: [ev1({ id: 'two', weeks: [2], slots: [sl(2, 600, 660)] })] });
   const stored = (a, prefs) => ({ 'weekly-schedules-workspaces': a.storage()['weekly-schedules-workspaces'], 'weekly-schedules-prefs': JSON.stringify(prefs) });
-  const saved = () => { const a = fresh(data()); a.ev("saveMem('all')"); return { a, id: a.ev('curId') }; };
+  const saved = () => { const a = fresh(data()); a.ev("saveMem('all')"); return { a, id: a.ev('state.curId') }; };
   it('starting Live View with a cycle asks the week first, preselecting the week shown', () => {
-    const a = fresh(data()); freeze(a, 2); week(a, 2); start(a); expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.ev('live')).toBe(false);
+    const a = fresh(data()); freeze(a, 2); week(a, 2); start(a); expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.ev('state.live')).toBe(false);
     expect(a.q('#xDlg select').value).toBe('2'); expect(a.qa('#xDlg select option').map(o => o.textContent)).toEqual(['Week 1', 'Week 2', 'Week 3']);
   });
   it('the answer starts Live View on today in that week, and the header names the week', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2);
-    expect(a.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(a.q('.dh:not(.c)').textContent).toBe('Wednesday · W2');
+    expect(a.ev('[state.live,state.focusD,state.curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(a.q('.dh:not(.c)').textContent).toBe('Wednesday · W2');
   });
   it('Cancel does not start Live View and remembers nothing', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); a.click('Cancel'); expect(a.ev('live')).toBe(false); expect(a.ev('focusD')).toBeNull(); expect(anchors(a)).toEqual({});
+    const a = fresh(data()); freeze(a, 2); start(a); a.click('Cancel'); expect(a.ev('state.live')).toBe(false); expect(a.ev('state.focusD')).toBeNull(); expect(anchors(a)).toEqual({});
   });
   it('a cycle of one week starts Live View at once, without asking or remembering a date', () => {
-    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('live')).toBe(true); expect(a.dlgOpen()).toBe(false); expect(anchors(a)).toEqual({});
+    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('state.live')).toBe(true); expect(a.dlgOpen()).toBe(false); expect(anchors(a)).toEqual({});
   });
   it('the answer is remembered in this browser as the Monday of a week 1, for this workspace only', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev("saveMem('all')");
-    expect(anchors(a)).toEqual({ [a.ev('curId')]: '2026-10-05' });   // Wednesday 14 October is in week 2, so week 1 began on Monday 5 October
+    expect(anchors(a)).toEqual({ [a.ev('state.curId')]: '2026-10-05' });   // Wednesday 14 October is in week 2, so week 1 began on Monday 5 October
     expect(a.storage()['weekly-schedules-workspaces']).not.toMatch(/2026|lvAnchor/); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/2026|lvAnchor/);
-    expect(a.ev('anyDirty()')).toBe(false); expect(a.ev('undoSt.length')).toBe(0);
+    expect(a.ev('anyDirty()')).toBe(false); expect(a.ev('state.undoSt.length')).toBe(0);
   });
   it('the week is asked only once: stopping and starting again does not ask', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); start(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('[live,curWk]')).toEqual([true, 3]);
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); start(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('[state.live,state.curWk]')).toEqual([true, 3]);
   });
   it('after a reload with Live View remembered, it starts at once on today\'s week, without asking', () => {
     const { a, id } = saved();
-    const b = openApp({ now: on(2), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.dlgOpen()).toBe(false); expect(b.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]);
-    const c = openApp({ now: on(2 + 7), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(c.ev('[live,focusD,curWk]')).toEqual([true, 2, 3]);   // a week later
-    const d = openApp({ now: on(2 + 14), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(d.ev('curWk')).toBe(1);   // the cycle wraps
+    const b = openApp({ now: on(2), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.dlgOpen()).toBe(false); expect(b.ev('[state.live,state.focusD,state.curWk]')).toEqual([true, 2, 2]);
+    const c = openApp({ now: on(2 + 7), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(c.ev('[state.live,state.focusD,state.curWk]')).toEqual([true, 2, 3]);   // a week later
+    const d = openApp({ now: on(2 + 14), storage: stored(a, { live: true, lvAnchor: { [id]: '2026-10-05' } }) }); expect(d.ev('state.curWk')).toBe(1);   // the cycle wraps
   });
   it('after a reload with Live View remembered but no week known, it asks; Cancel leaves it off', () => {
     const { a } = saved();
-    const b = openApp({ now: on(2), storage: stored(a, { live: true }) }); expect(b.dlgTitle()).toBe('Which week is it?'); expect(b.ev('live')).toBe(false); answer(b, 3); expect(b.ev('[live,curWk]')).toEqual([true, 3]);
-    const c = openApp({ now: on(2), storage: stored(a, { live: true }) }); c.click('Cancel'); expect(c.ev('live')).toBe(false); expect(JSON.parse(c.storage()['weekly-schedules-prefs']).live).toBe(false);
+    const b = openApp({ now: on(2), storage: stored(a, { live: true }) }); expect(b.dlgTitle()).toBe('Which week is it?'); expect(b.ev('state.live')).toBe(false); answer(b, 3); expect(b.ev('[state.live,state.curWk]')).toEqual([true, 3]);
+    const c = openApp({ now: on(2), storage: stored(a, { live: true }) }); c.click('Cancel'); expect(c.ev('state.live')).toBe(false); expect(JSON.parse(c.storage()['weekly-schedules-prefs']).live).toBe(false);
   });
   it('outside Live View the page opens on today\'s week, and the week menu and corner tooltip name it', () => {
     const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-09-28' } }) });   // week 1 began two weeks earlier: today is in week 3
-    expect(b.ev('[live,focusD,curWk]')).toEqual([false, null, 3]); expect(b.q('.dh.c .wkb').title).toBe('Week 3 of 3 is shown. Choose another week of the cycle. Today is in week 3 (remembered in this browser; to correct it, change the week while Live View runs).');
+    expect(b.ev('[state.live,state.focusD,state.curWk]')).toEqual([false, null, 3]); expect(b.q('.dh.c .wkb').title).toBe('Week 3 of 3 is shown. Choose another week of the cycle. Today is in week 3 (remembered in this browser; to correct it, change the week while Live View runs).');
     b.q('.dh.c .wkb').dispatchEvent(new b.w.MouseEvent('click', { bubbles: true, cancelable: true })); expect(b.qa('.omenu .oi').map(x => x.textContent.trim()).slice(0, 3)).toEqual(['Week 1', 'Week 2', 'Week 3 · today']);
-    const c = openApp({ now: on(2), storage: stored(a, {}) }); expect(c.ev('curWk')).toBe(1); expect(c.q('.dh.c .wkb').title).toBe('Week 1 of 3 is shown. Choose another week of the cycle');
+    const c = openApp({ now: on(2), storage: stored(a, {}) }); expect(c.ev('state.curWk')).toBe(1); expect(c.q('.dh.c .wkb').title).toBe('Week 1 of 3 is shown. Choose another week of the cycle');
   });
   it('a phone opens on today\'s day view in today\'s week', () => {
-    const { a, id } = saved(); const b = openApp({ phone: true, now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.ev('[live,focusD,curWk]')).toEqual([false, 2, 2]);
+    const { a, id } = saved(); const b = openApp({ phone: true, now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); expect(b.ev('[state.live,state.focusD,state.curWk]')).toEqual([false, 2, 2]);
   });
   it('once today\'s week is known, the now line shows only in that week', () => {
-    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); b.ev('nowOn=true;drawNow()');
+    const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: '2026-10-05' } }) }); b.ev('state.nowOn=true;drawNow()');
     expect(b.qa('.day[data-d="2"] .now')).toHaveLength(1); week(b, 1); b.ev('drawNow()'); expect(b.qa('.now')).toHaveLength(0);
-    const c = openApp({ now: on(2), storage: stored(a, {}) }); c.ev('nowOn=true;drawNow()'); expect(c.qa('.day[data-d="2"] .now')).toHaveLength(1);   // not known: in whichever week is shown
+    const c = openApp({ now: on(2), storage: stored(a, {}) }); c.ev('state.nowOn=true;drawNow()'); expect(c.qa('.day[data-d="2"] .now')).toHaveLength(1);   // not known: in whichever week is shown
   });
   it('each workspace has its own week: switching while live asks for one it does not know yet', async () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); const first = a.ev('curId');
-    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);WS.push(w);switchWs(w.id)})()`); await a.sleep(5);
-    expect(a.dlgTitle()).toBe('Which week is it?'); answer(a, 3, 'Show this week'); expect(a.ev('[live,curWk]')).toEqual([true, 3]);
-    a.ev(`switchWs('${first}')`); await a.sleep(5); expect(a.dlgOpen()).toBe(false); expect(a.ev('curWk')).toBe(2); expect(Object.keys(anchors(a))).toHaveLength(2);
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); const first = a.ev('state.curId');
+    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);state.WS.push(w);switchWs(w.id)})()`); await a.sleep(5);
+    expect(a.dlgTitle()).toBe('Which week is it?'); answer(a, 3, 'Show this week'); expect(a.ev('[state.live,state.curWk]')).toEqual([true, 3]);
+    a.ev(`switchWs('${first}')`); await a.sleep(5); expect(a.dlgOpen()).toBe(false); expect(a.ev('state.curWk')).toBe(2); expect(Object.keys(anchors(a))).toHaveLength(2);
   });
   it('Cancel on that question stops Live View', async () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2);
-    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);WS.push(w);switchWs(w.id)})()`); await a.sleep(5); a.click('Cancel'); expect(a.ev('live')).toBe(false);
+    a.ev(`(()=>{const w=newWs('Other',parseData(${JSON.stringify(data())}),false);state.WS.push(w);switchWs(w.id)})()`); await a.sleep(5); a.click('Cancel'); expect(a.ev('state.live')).toBe(false);
   });
   it('a workspace that gets a cycle while live asks its week at the next tick', () => {
-    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('live')).toBe(true); a.ev('S.cycle=2;render();liveTick()');
-    expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.dlgButtons()).toContain('Show this week'); answer(a, 2, 'Show this week'); expect(a.ev('[live,curWk]')).toEqual([true, 2]);
+    const a = fresh(blank()); freeze(a, 2); start(a); expect(a.ev('state.live')).toBe(true); a.ev('state.S.cycle=2;render();liveTick()');
+    expect(a.dlgTitle()).toBe('Which week is it?'); expect(a.dlgButtons()).toContain('Show this week'); answer(a, 2, 'Show this week'); expect(a.ev('[state.live,state.curWk]')).toEqual([true, 2]);
   });
   it('duplicating a workspace keeps its week; deleting one or clearing the memory forgets it', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev('setLive(false)'); const first = a.ev('curId');
-    a.ev('duplicateWorkspace()'); const copy = a.ev('curId'); expect(anchors(a)).toEqual({ [first]: '2026-10-05', [copy]: '2026-10-05' });
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 2); a.ev('setLive(false)'); const first = a.ev('state.curId');
+    a.ev('duplicateWorkspace()'); const copy = a.ev('state.curId'); expect(anchors(a)).toEqual({ [first]: '2026-10-05', [copy]: '2026-10-05' });
     a.ev('deleteWorkspace()'); expect(anchors(a)).toEqual({ [first]: '2026-10-05' }); a.ev('clearMem()'); expect(anchors(a)).toEqual({});
   });
   it('damaged or hostile remembered weeks are ignored, and no workspace id can reach the object prototype', () => {
     const { a, id } = saved(); const b = openApp({ now: on(2), storage: stored(a, { lvAnchor: { [id]: 'soon', other: 5, ['x'.repeat(65)]: '2026-10-05' } }) });
-    expect(b.ev('Object.keys(prefs.lvAnchor)')).toEqual([]); expect(b.ev('curWk')).toBe(1);
+    expect(b.ev('Object.keys(state.prefs.lvAnchor)')).toEqual([]); expect(b.ev('state.curWk')).toBe(1);
     const c = openApp({ now: on(2), storage: { ...stored(a, {}), 'weekly-schedules-prefs': `{"lvAnchor":{"__proto__":"2026-10-05","constructor":"2026-10-05"}}` } });
-    expect(c.ev('({}).constructor===Object')).toBe(true); expect(c.ev('prefs.lvAnchor.constructor')).toBe('2026-10-05'); expect(c.ev('curWk')).toBe(1);
-    c.ev(`cw().id='constructor';curId='constructor';render()`); expect(c.ev('todayWk()')).toBe(2);
-    c.ev(`cw().id='__proto__';curId='__proto__';setAnchor(1)`); expect(c.ev('Object.getPrototypeOf(prefs.lvAnchor)===null&&({}).constructor===Object&&!("2026-10-12" in {})')).toBe(true); expect(c.ev('todayWk()')).toBe(1);
+    expect(c.ev('({}).constructor===Object')).toBe(true); expect(c.ev('state.prefs.lvAnchor.constructor')).toBe('2026-10-05'); expect(c.ev('state.curWk')).toBe(1);
+    c.ev(`cw().id='constructor';state.curId='constructor';render()`); expect(c.ev('todayWk()')).toBe(2);
+    c.ev(`cw().id='__proto__';state.curId='__proto__';setAnchor(1)`); expect(c.ev('Object.getPrototypeOf(state.prefs.lvAnchor)===null&&({}).constructor===Object&&!("2026-10-12" in {})')).toBe(true); expect(c.ev('todayWk()')).toBe(1);
   });
   it('at midnight after Sunday Live View moves on to Monday of the next week', () => {
-    const a = fresh(data()); freeze(a, 6, 23, 50); start(a); answer(a, 1); expect(a.ev('[focusD,curWk]')).toEqual([6, 1]);
-    freeze(a, 7, 0, 5); a.ev('liveTick()'); expect(a.ev('[focusD,curWk]')).toEqual([0, 2]);
+    const a = fresh(data()); freeze(a, 6, 23, 50); start(a); answer(a, 1); expect(a.ev('[state.focusD,state.curWk]')).toEqual([6, 1]);
+    freeze(a, 7, 0, 5); a.ev('liveTick()'); expect(a.ev('[state.focusD,state.curWk]')).toEqual([0, 2]);
   });
   it('the last week of the cycle moves on to week 1', () => {
-    const a = fresh(data()); freeze(a, 6, 23, 50); start(a); answer(a, 3); freeze(a, 7, 0, 5); a.ev('liveTick()'); expect(a.ev('curWk')).toBe(1);
+    const a = fresh(data()); freeze(a, 6, 23, 50); start(a); answer(a, 3); freeze(a, 7, 0, 5); a.ev('liveTick()'); expect(a.ev('state.curWk')).toBe(1);
   });
   it('a tablet that slept for days still lands on the right week', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); freeze(a, 2 + 14 + 6); a.ev('liveTick()'); expect(a.ev('[focusD,curWk]')).toEqual([1, 1]);   // 20 days later: Tuesday, three weeks on
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); freeze(a, 2 + 14 + 6); a.ev('liveTick()'); expect(a.ev('[state.focusD,state.curWk]')).toEqual([1, 1]);   // 20 days later: Tuesday, three weeks on
   });
   it('the corner switcher stays pressable while live; correcting the week jumps to today in that week and is remembered', () => {
     const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); expect(corner(a).textContent).toBe('W1');
     corner(a).dispatchEvent(new a.w.MouseEvent('click', { bubbles: true, cancelable: true })); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Week 1 · today', 'Week 2', 'Week 3']);
-    a.qa('.omenu .oi')[1].click(); expect(a.ev('[live,focusD,curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(anchors(a)).toEqual({ [a.ev('curId')]: '2026-10-05' });
-    freeze(a, 3); a.ev('liveTick()'); expect(a.ev('[focusD,curWk]')).toEqual([3, 2]);
+    a.qa('.omenu .oi')[1].click(); expect(a.ev('[state.live,state.focusD,state.curWk]')).toEqual([true, 2, 2]); expect(boxes(a, 2)).toEqual(['two']); expect(anchors(a)).toEqual({ [a.ev('state.curId')]: '2026-10-05' });
+    freeze(a, 3); a.ev('liveTick()'); expect(a.ev('[state.focusD,state.curWk]')).toEqual([3, 2]);
   });
   it('outside Live View choosing a week only changes the week shown, not the remembered one', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); a.ev('setLive(false)'); a.ev('setWeek(3)'); expect(a.ev('[curWk,todayWk()]')).toEqual([3, 1]);
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 1); a.ev('setLive(false)'); a.ev('setWeek(3)'); expect(a.ev('[state.curWk,todayWk()]')).toEqual([3, 1]);
   });
   it('leaving Live View keeps its week on the grid', () => {
-    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); expect(a.ev('[focusD,curWk]')).toEqual([null, 3]);
+    const a = fresh(data()); freeze(a, 2); start(a); answer(a, 3); a.ev('setLive(false)'); expect(a.ev('[state.focusD,state.curWk]')).toEqual([null, 3]);
   });
   it('the question is translated into Spanish', () => {
     const a = openApp({ languages: ['es-ES'] }); setData(a, data()); freeze(a, 2); start(a); expect(a.dlgTitle()).toBe('¿Qué semana es?'); expect(a.dlgButtons()).toContain('Iniciar vista en directo');
@@ -359,7 +359,7 @@ describe('R-CYC-08 The event dialog: a Weeks row, and a week for every time when
   const save = a => a.q('#fOk').click();
   const dayRow = (a, d) => a.qa('#fDays .dr:not(.dx)')[d];
   const tick = (a, d) => { const cb = dayRow(a, d).querySelector('input'); cb.checked = true; cb.dispatchEvent(new a.w.Event('change')); };
-  const ev = a => JSON.parse(a.ev('JSON.stringify(S.events.at(-1))'));
+  const ev = a => JSON.parse(a.ev('JSON.stringify(state.S.events.at(-1))'));
   it('with a cycle of one week the dialog has no Weeks row and no week buttons', () => {
     const a = fresh(blank()); a.toolbar('add').click(); expect(a.q('#fWk').style.display).toBe('none'); expect(a.q('#paneQ').classList.contains('pw')).toBe(false);
   });
@@ -372,57 +372,57 @@ describe('R-CYC-08 The event dialog: a Weeks row, and a week for every time when
     toggle(chips(a)[0], false); expect(chips(a)[0].checked).toBe(true); save(a); expect(ev(a).weeks).toEqual([1]);
   });
   it('an event with a pattern opens with its weeks ticked', () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [1, 3] })] })); a.ev('openDlg(S.events[0])'); expect(chips(a).map(i => i.checked)).toEqual([true, false, true]);
+    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [1, 3] })] })); a.ev('openDlg(state.S.events[0])'); expect(chips(a).map(i => i.checked)).toEqual([true, false, true]);
   });
   it('Different per week copies every time into each week of the pattern and shows the week of each time', () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [1, 3] })] })); a.ev('openDlg(S.events[0])'); toggle(pw(a), true);
+    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [1, 3] })] })); a.ev('openDlg(state.S.events[0])'); toggle(pw(a), true);
     expect(a.q('#paneQ').classList.contains('pw')).toBe(true); expect(a.q('#fWk .chips')).toBeNull(); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['3', '600']]);
     save(a); expect(ev(a).slots.map(s => [s.day, s.wk])).toEqual([[0, 1], [0, 3]]); expect(ev(a)).not.toHaveProperty('weeks');
   });
   it('an event with weeks per time opens in that mode, its times in week order', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 720, 780, { wk: 2 }), sl(0, 600, 660, { wk: 1 }), sl(2, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 720, 780, { wk: 2 }), sl(0, 600, 660, { wk: 1 }), sl(2, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0])');
     expect(pw(a).checked).toBe(true); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '720'], ['2', '600']]);
   });
   it('+ on a day proposes the same times in the next week that has none on that day yet', () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); a.ev('openDlg(S.events[0])'); dayRow(a, 0).querySelector('.addt').click();
+    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])'); dayRow(a, 0).querySelector('.addt').click();
     expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600']]); dayRow(a, 0).querySelector('.addt').click(); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600'], ['3', '600']]);
     dayRow(a, 0).querySelector('.addt').click(); expect(lines(a).map(lineOf).at(-1)).toEqual(['3', '660']);   // every week has a time: after the day's last time, as before
   });
   it('choosing another week for a time from its button keeps the day\'s times in week order', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 720, 780, { wk: 1 })] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 720, 780, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])');
     lines(a)[0].querySelector('.wkc').click(); expect(a.qa('.cmenu .oi').map(b => b.textContent)).toEqual(['Week 1', 'Week 2']); a.qa('.cmenu .oi')[1].click();
     expect(lines(a).map(lineOf)).toEqual([['1', '720'], ['2', '600']]); save(a); expect(ev(a).slots.map(s => [s.start, s.wk])).toEqual([[720, 1], [600, 2]]);
   });
   it('⧉ makes the other ticked days like this one, weeks included', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 2, person: '' }), sl(2, 800, 860, { wk: 1 })] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 2, person: '' }), sl(2, 800, 860, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])');
     dayRow(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(ev(a).slots.filter(s => s.day === 2).map(s => [s.start, s.wk])).toEqual([[600, 1], [600, 2]]);
   });
   it('a newly ticked day in per-week mode starts in the week shown on the grid', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); week(a, 2); a.ev('openDlg(S.events[0])'); tick(a, 3);
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); week(a, 2); a.ev('openDlg(state.S.events[0])'); tick(a, 3);
     expect(dayRow(a, 3).querySelector('.wkc').textContent).toBe('2');
   });
   it('switching back to a pattern when every week has the same times gives the pattern of those weeks', () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 3 })] })] })); a.ev('openDlg(S.events[0])'); toggle(pw(a), false);
+    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 3 })] })] })); a.ev('openDlg(state.S.events[0])'); toggle(pw(a), false);
     expect(a.log.confirms).toEqual([]); expect(chips(a).map(i => i.checked)).toEqual([true, false, true]); expect(lines(a)).toHaveLength(1); save(a); expect(ev(a).weeks).toEqual([1, 3]); expect(ev(a).slots[0]).not.toHaveProperty('wk');
   });
   it('switching back when the weeks differ asks first and keeps the times of the first week', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(S.events[0])'); toggle(pw(a), false);
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0])'); toggle(pw(a), false);
     expect(a.log.confirms[0]).toContain('Keep only the times of week 1'); save(a); expect(ev(a).slots.map(s => s.day)).toEqual([0]); expect(ev(a)).not.toHaveProperty('weeks');
   });
   it('declining that question stays with different times per week', () => {
-    const a = openApp({ confirmAnswer: false }); setData(a, blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(S.events[0])');
+    const a = openApp({ confirmAnswer: false }); setData(a, blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0])');
     toggle(pw(a), false); expect(pw(a).checked).toBe(true); expect(lines(a)).toHaveLength(2);
   });
   it('the dialog warns about overlapping times only within one week', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 720, { wk: 1 }), sl(0, 630, 690, { wk: 2 })] })] })); a.ev('openDlg(S.events[0])'); expect(a.q('#fWarn').textContent).toBe('');
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 720, { wk: 1 }), sl(0, 630, 690, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0])'); expect(a.q('#fWarn').textContent).toBe('');
     lines(a)[1].querySelector('.wkc').click(); a.qa('.cmenu .oi')[0].click(); expect(a.q('#fWarn').textContent).toContain('Monday');
   });
   it('opening a time of week 2 from the grid brings its own line into view', () => {
-    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(S.events[0],null,S.events[0].slots[1])');
+    const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0],null,state.S.events[0].slots[1])');
     expect(a.qa('#fDays .dr.pulse').map(r => r.querySelector('.wkc').textContent)).toEqual(['2']);
   });
   it('the week controls are named for screen readers and translated into Spanish', () => {
-    const a = openApp({ languages: ['es-ES'] }); setData(a, blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(S.events[0])');
+    const a = openApp({ languages: ['es-ES'] }); setData(a, blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 2 })] })] })); a.ev('openDlg(state.S.events[0])');
     expect(a.q('#fWk b').textContent).toBe('Semanas'); expect(a.q('#fWk .pwsw').textContent).toBe('Distinto cada semana'); expect(lines(a)[0].querySelector('.wkc').getAttribute('aria-label')).toBe('Lunes: semana 2');
   });
 });
@@ -430,7 +430,7 @@ describe('R-CYC-08 The event dialog: a Weeks row, and a week for every time when
 describe('R-CYC-02 Events that are not every week say which weeks, on the grid and in the agenda', () => {
   it('the hover card, the box label and the day agenda name the weeks of a pattern', () => {
     const a = fresh(blank({ cycle: 4, events: [ev1({ title: 'Swim', weeks: [1, 3] })] }));
-    expect(a.ev('peekRows({e:S.events[0],s:S.events[0].slots[0],piece:0})')).toContain('Weeks 1 and 3');
+    expect(a.ev('peekRows({e:state.S.events[0],s:state.S.events[0].slots[0],piece:0})')).toContain('Weeks 1 and 3');
     expect(a.q('.ev').getAttribute('aria-label')).toContain('Weeks 1 and 3'); expect(a.ev('agendaHTML(0)')).toContain('Weeks 1 and 3');
   });
   it('a time with its own week is named by that week', () => {
@@ -443,10 +443,10 @@ describe('R-CYC-02 Events that are not every week say which weeks, on the grid a
 
 describe('R-CYC-09 Dragging through the cycle: patterns as before, a week per time along the cycle', () => {
   const box = (a, d) => a.q(`.day[data-d="${d}"] .ev`);
-  const slots = a => JSON.parse(a.ev('JSON.stringify(S.events[0].slots.map(s=>[s.day,s.wk||0]))'));
+  const slots = a => JSON.parse(a.ev('JSON.stringify(state.S.events[0].slots.map(s=>[s.day,s.wk||0]))'));
   it('a patterned event moves by days within the week and keeps its weeks', async () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ weeks: [1], slots: [sl(5, 600, 660), sl(6, 600, 660)] })] }));
-    await dragFrom(a, box(a, 5), { col: 5, min: 610 }, { col: 6, min: 610 }); expect(slots(a)).toEqual([[6, 0], [0, 0]]); expect(a.ev('S.events[0].weeks')).toEqual([1]);
+    await dragFrom(a, box(a, 5), { col: 5, min: 610 }, { col: 6, min: 610 }); expect(slots(a)).toEqual([[6, 0], [0, 0]]); expect(a.ev('state.S.events[0].weeks')).toEqual([1]);
   });
   it('with a week per time, moving all repetitions a day on takes Sunday of week 1 to Monday of week 2', async () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(5, 600, 660, { wk: 1 }), sl(6, 600, 660, { wk: 1 })] })] }));
@@ -477,7 +477,7 @@ describe('R-CYC-09 Dragging through the cycle: patterns as before, a week per ti
   it('a nested activity follows its host along the cycle', () => {
     const a = fresh(blank({ cycle: 2, people, events: [ev1({ id: 'h', slots: [sl(6, 480, 600, { person: 'A', wk: 1 })] }), ev1({ id: 'n', nest: true, slots: [sl(6, 510, 525, { person: 'A', wk: 1 })] })] }));
     expect(a.qa('.ev.nest')).toHaveLength(1);
-    const r = JSON.parse(a.ev(`(()=>{const h=S.events[0],n=S.events[1],o=h.slots.map(x=>({...x})),c=nestCarry(h);shiftDay(h.slots[0],1);carryMove(c,h.slots,o);return JSON.stringify([h.slots[0],n.slots[0]].map(s=>[s.day,s.wk]))})()`));
+    const r = JSON.parse(a.ev(`(()=>{const h=state.S.events[0],n=state.S.events[1],o=h.slots.map(x=>({...x})),c=nestCarry(h);shiftDay(h.slots[0],1);carryMove(c,h.slots,o);return JSON.stringify([h.slots[0],n.slots[0]].map(s=>[s.day,s.wk]))})()`));
     expect(r).toEqual([[0, 2], [0, 2]]);
   });
 });
@@ -489,7 +489,7 @@ describe('R-CYC-13 Inserting or transferring events whose weeks lie beyond the c
   const pickIc = (a, v) => { a.qa('#xDlg input[name=icm]').find(r => r.value === v).checked = true; a.click('Apply'); };
   const mine = () => blank({ cycle: 2, events: [ev1({ id: 'mine', weeks: [2] })] });
   it('an insert whose weeks fit the current cycle asks nothing', async () => {
-    const a = fresh(blank({ cycle: 4 })); await importFile(a, file()); await insert(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('S.events.length')).toBe(3);
+    const a = fresh(blank({ cycle: 4 })); await importFile(a, file()); await insert(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('state.S.events.length')).toBe(3);
   });
   it('otherwise it offers to lengthen the cycle (the default), keep those weeks as staged weeks, remove those occurrences, or keep them in a schedule per week', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a);
@@ -499,24 +499,24 @@ describe('R-CYC-13 Inserting or transferring events whose weeks lie beyond the c
   });
   it('lengthening to a multiple keeps the workspace\'s own rhythm and the arriving weeks as they are, in one undo step', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a); pickIc(a, 'len'); await a.sleep(10);
-    expect(a.ev('S.cycle')).toBe(4); expect(evs(a).map(e => [e.weeks || e.wk])).toEqual([[[2, 4]], [[1, 3]], [[4]], [[0]]]);
-    a.key('z', { ctrlKey: true }); expect(a.ev('[S.cycle,S.events.length]')).toEqual([2, 1]);
+    expect(a.ev('state.S.cycle')).toBe(4); expect(evs(a).map(e => [e.weeks || e.wk])).toEqual([[[2, 4]], [[1, 3]], [[4]], [[0]]]);
+    a.key('z', { ctrlKey: true }); expect(a.ev('[state.S.cycle,state.S.events.length]')).toEqual([2, 1]);
   });
   it('removing keeps only the arriving occurrences inside the cycle', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a); pickIc(a, 'rm'); await a.sleep(10);
-    expect(a.ev('S.cycle')).toBe(2); expect(evs(a).map(e => e.weeks || e.wk)).toEqual([[2], [1], [0]]);
+    expect(a.ev('state.S.cycle')).toBe(2); expect(evs(a).map(e => e.weeks || e.wk)).toEqual([[2], [1], [0]]);
   });
   it('keeping them puts each week beyond the cycle into a schedule of its own', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a); pickIc(a, 'mv'); await a.sleep(10);
-    expect(a.ev('S.schedules.map(s=>s.name)')).toEqual(['S1', 'Team', 'Week 3', 'Week 4']);
+    expect(a.ev('state.S.schedules.map(s=>s.name)')).toEqual(['S1', 'Team', 'Week 3', 'Week 4']);
   });
   it('Cancel inserts nothing and leaves the schedules as they were', async () => {
-    const a = fresh(mine()); await importFile(a, file()); await insert(a); a.click('Cancel'); await a.sleep(10); expect(a.ev('S.events.length')).toBe(1); expect(a.ev('S.schedules.length')).toBe(1);
+    const a = fresh(mine()); await importFile(a, file()); await insert(a); a.click('Cancel'); await a.sleep(10); expect(a.ev('state.S.events.length')).toBe(1); expect(a.ev('state.S.schedules.length')).toBe(1);
   });
   it('copying a schedule to a workspace with a shorter cycle asks the same and lengthens the target', async () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [3] })] })); a.ev("const t=newWs('Target',defaultData(),true);WS.push(t);render()");
-    a.ev('openTransfer("schedule",S.schedules[0])'); a.click('Continue'); await a.sleep(20); expect(a.dlgTitle()).toBe('Weeks in the cycle'); pickIc(a, 'len'); await a.sleep(20);
-    expect(a.ev('WS[1].data.cycle')).toBe(3); expect(a.ev('WS[1].data.events[0].weeks')).toEqual([3]);
+    const a = fresh(blank({ cycle: 3, events: [ev1({ weeks: [3] })] })); a.ev("const t=newWs('Target',defaultData(),true);state.WS.push(t);render()");
+    a.ev('openTransfer("schedule",state.S.schedules[0])'); a.click('Continue'); await a.sleep(20); expect(a.dlgTitle()).toBe('Weeks in the cycle'); pickIc(a, 'len'); await a.sleep(20);
+    expect(a.ev('state.WS[1].data.cycle')).toBe(3); expect(a.ev('state.WS[1].data.events[0].weeks')).toEqual([3]);
   });
 });
 
@@ -572,7 +572,7 @@ describe('R-CYC-12 Print, agendas and N hidden follow the week shown, and every 
   it('every week prints one page per week, each titled, and the grid stays on its week', () => {
     const a = fresh(data()); week(a, 2); a.toolbar('print').click(); a.qa('.omenu .oi')[1].click();
     const pr = a.q('#pr'); expect([...pr.querySelectorAll('h1')].map(h => h.textContent)).toEqual(['Weekly schedule — Week 1', 'Weekly schedule — Week 2']);
-    expect(pr.querySelectorAll('.pgb')).toHaveLength(1); expect(printed(a)).toContain('Only one'); expect(printed(a)).toContain('Only two'); expect(a.ev('curWk')).toBe(2);
+    expect(pr.querySelectorAll('.pgb')).toHaveLength(1); expect(printed(a)).toContain('Only one'); expect(printed(a)).toContain('Only two'); expect(a.ev('state.curWk')).toBe(2);
   });
   it('every week in the day view prints that day of each week', () => {
     const a = fresh(data()); a.ev('setFocus(1)'); a.toolbar('print').click(); a.qa('.omenu .oi')[1].click();
@@ -599,7 +599,7 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
     expect(a.d.documentElement.innerHTML).not.toMatch(/Week A|Semana A|two-week rota|rotación de dos semanas/);
   });
   it('the Weeks row of the dialog points to the same way of keeping a rota', () => {
-    const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.q('#fWk b').title).toContain('A rota whose turns change is better kept as one event');
+    const a = fresh(rota()); a.ev('openDlg(state.S.events[0])'); expect(a.q('#fWk b').title).toContain('A rota whose turns change is better kept as one event');
   });
   it('a rota counts in full for each person in it while involved time is included, and only for the performer otherwise', () => {
     const a = fresh(rota()); expect(a.ev('["A","B","C"].map(p=>personStats(p,true).planned)')).toEqual([60, 60, 60]);
@@ -610,7 +610,7 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
     const a = fresh(d); expect(a.qa('.ov').length).toBeGreaterThan(0);
   });
   it('the app offers no helper that assigns turns', () => {
-    const a = fresh(rota()); a.ev('openDlg(S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate/);
+    const a = fresh(rota()); a.ev('openDlg(state.S.events[0])'); expect(a.d.getElementById('dlg').textContent).not.toMatch(/Rotate/);
     expect([...a.d.querySelectorAll('#dlg button, #dlg select:not(#fTuM) option')].map(b => b.textContent).filter(t => /turn|rota/i.test(t))).toEqual([]);   // turns are only counted (R-CYC-18)
   });
 });
@@ -618,7 +618,7 @@ describe('R-CYC-15 Rotas are kept by people: owner plus involved people, explain
 describe('R-CYC-17 Each week of a cycle can have a name, a description and a colour', () => {
   const info = [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday pickup', color: '#8e4ec6' }];
   const data = (o = {}) => blank({ cycle: 2, weekInfo: info, people, events: [ev1({ id: 'w2', title: 'Swim', weeks: [2], slots: [sl(0, 600, 660, { person: 'A' })] })], ...o });
-  const wi = a => JSON.parse(a.ev('JSON.stringify(S.weekInfo)'));
+  const wi = a => JSON.parse(a.ev('JSON.stringify(state.S.weekInfo)'));
   const rows = a => a.qa('#xDlg .cywr');
   const typeIn = (a, k, cls, v) => { const i = rows(a)[k].querySelector('.cy' + cls); i.value = v; i.dispatchEvent(new a.w.Event('input')); };
   it('import keeps names, descriptions and hex colours, trims and caps them, drops anything else and trailing empty weeks', () => {
@@ -628,7 +628,7 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
     expect(p('nonsense')).toEqual([]); expect(fresh().ev(`parseData(${JSON.stringify(blank({ weekInfo: info }))}).weekInfo`)).toEqual([]);   // a 1-week cycle has none
   });
   it('it is stored only when something is set, counts as an unsaved change and is undoable', () => {
-    const a = fresh(blank({ cycle: 2 })); expect('weekInfo' in a.ev('buildFile()')).toBe(false); a.ev('cw().lb=keyOf(S)');
+    const a = fresh(blank({ cycle: 2 })); expect('weekInfo' in a.ev('buildFile()')).toBe(false); a.ev('cw().lb=keyOf(state.S)');
     openCycleDlg(a); typeIn(a, 1, 'name', "At Dad's"); a.click('Apply'); expect(wi(a)).toEqual([{}, { name: "At Dad's" }]);
     expect(a.ev('buildFile()').weekInfo).toEqual([{}, { name: "At Dad's" }]); expect(a.ev('anyDirty()')).toBe(true);
     a.ev('undo()'); expect(wi(a)).toEqual([]); expect(a.ev('anyDirty()')).toBe(false);
@@ -650,10 +650,10 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
     a = fresh(data()); openCycleDlg(a); chooseLen(a, 4); const cb = a.q('#xDlg .cyext input'); cb.checked = false; cb.dispatchEvent(new a.w.Event('change'));
     expect(rows(a)[2].querySelector('.cyname').value).toBe(''); typeIn(a, 3, 'name', 'Exams'); a.click('Apply'); expect(wi(a).map(w => w.name)).toEqual(['At home', "At Dad's", undefined, 'Exams']);
     a = fresh(data()); openCycleDlg(a); chooseLen(a, 3); a.click('Apply'); expect(wi(a)).toEqual(info);
-    a = fresh(data({ events: [], weekInfo: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); expect(a.ev('[S.cycle,kept()]')).toEqual([1, 1]);   // an empty week that leaves is dropped
-    a = fresh(data({ events: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.click('Apply'); expect(a.ev('[S.cycle,kept()]')).toEqual([1, 2]); expect(wi(a)).toEqual(info);   // a named week is kept as staged by default
+    a = fresh(data({ events: [], weekInfo: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); expect(a.ev('[state.S.cycle,kept()]')).toEqual([1, 1]);   // an empty week that leaves is dropped
+    a = fresh(data({ events: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.click('Apply'); expect(a.ev('[state.S.cycle,kept()]')).toEqual([1, 2]); expect(wi(a)).toEqual(info);   // a named week is kept as staged by default
     a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply');
-    expect(a.ev('[S.cycle,kept()]')).toEqual([1, 1]); expect(wi(a)).toEqual([]);
+    expect(a.ev('[state.S.cycle,kept()]')).toEqual([1, 1]); expect(wi(a)).toEqual([]);
   });
   it('the week switcher is filled with the week colour, its tooltip names the week, and the menu shows chips, names and descriptions', () => {
     const a = fresh(data()); week(a, 2); const b = a.q('.dh.c .wkb');
@@ -670,7 +670,7 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
     const c = fresh(blank({ weekInfo: info })); expect(c.q('#grid').classList.contains('wkband')).toBe(false);   // a 1-week workspace shows none of it
   });
   it('the event dialog colours the Weeks chips and the week of each time, and names the weeks', () => {
-    const a = fresh(data()); a.ev('openDlg(S.events[0])'); const ch = a.qa('#fWk .chips label');
+    const a = fresh(data()); a.ev('openDlg(state.S.events[0])'); const ch = a.qa('#fWk .chips label');
     expect(ch.map(l => l.textContent)).toEqual(['Week 1 · At home', "Week 2 · At Dad's"]); expect(ch[1].classList.contains('wcol')).toBe(true); expect(ch[1].title).toBe("Week 2 · At Dad's: From Friday pickup");
     a.q('#fPw').checked = true; a.q('#fPw').onchange(); const wb = a.q('#fDays .dr button.wkc'); expect(wb.textContent).toBe('2'); expect(wb.style.background).toMatch(/#8e4ec6|rgb\(142, 78, 198\)/);
     wb.click(); expect(a.qa('.cmenu .oi').map(x => x.textContent)).toEqual(['Week 1 · At home', "Week 2 · At Dad's"]);
@@ -708,7 +708,7 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
 describe('R-CYC-18 Rota turns: how many times each person is responsible over the cycle', () => {
   const three = [...people, person({ id: 'C', name: 'Cat', color: '#0000c0' })];
   const rota = (o = {}) => ev1({ id: 'r', title: 'Cook', slots: [sl(0, 1080, 1140, { person: 'A', wk: 1 }), sl(1, 1080, 1140, { person: 'B', wk: 1 }), sl(0, 1080, 1140, { person: 'B', wk: 2 }), sl(1, 1080, 1140, { person: 'B', wk: 2 })], ...o });
-  const turns = (a, i = 0) => a.ev(`(t=>t&&Object.fromEntries(t))(turnsOf(S.events[${i}]))`);
+  const turns = (a, i = 0) => a.ev(`(t=>t&&Object.fromEntries(t))(turnsOf(state.S.events[${i}]))`);
   it('a per-week rota counts each person\'s turns per week; a pattern counts a repetition once in each of its weeks', () => {
     const a = fresh(blank({ cycle: 2, people, events: [rota(), ev1({ id: 'p', weeks: [1, 2], slots: [sl(0, 600, 660, { person: 'A' }), sl(2, 600, 660, { person: 'B' }), sl(4, 600, 660, { person: 'B' })] })] }));
     expect(turns(a)).toEqual({ A: [1, 0], B: [1, 2] }); expect(turns(a, 1)).toEqual({ A: [1, 1], B: [2, 2] });
@@ -718,14 +718,14 @@ describe('R-CYC-18 Rota turns: how many times each person is responsible over th
     expect(turns(a)).toBeNull(); expect(turns(a, 1)).toBeNull();
   });
   it('the event dialog shows the turns under Who and updates them while the table is edited', () => {
-    const a = fresh(blank({ cycle: 2, people: three, events: [rota()] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ cycle: 2, people: three, events: [rota()] })); a.ev('openDlg(state.S.events[0])');
     expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 3 turns in the cycle'); expect(a.q('#fTu').title).toBe('Week 1: Ann 1 · Bob 1\nWeek 2: Ann 0 · Bob 2'); expect(a.q('#fTuL').style.display).toBe('');
     const ps = a.qa('#fDays .dr select.ev-only').find(s => s.value === 'B'); ps.value = 'C'; ps.onchange(); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 2 · Cat 1 turns in the cycle');
   });
   it('the dialog shows no counts when fewer than two people have turns (Automatic), and says "a week" with a one-week cycle', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [sl(0, 600, 660, { person: 'A' })] }), ev1({ id: 't', slots: [sl(0, 600, 660, { person: 'A' }), sl(1, 600, 660, { person: 'B' })] })] }));
-    a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').textContent).toBe(''); expect(a.q('#fTuM').value).toBe(''); a.ev('$("dlg").close()');
-    a.ev('openDlg(S.events[1])'); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 1 turns a week'); expect(a.q('#fTuL').title).toContain('has no turns to count');
+    a.ev('openDlg(state.S.events[0])'); expect(a.q('#fTu').textContent).toBe(''); expect(a.q('#fTuM').value).toBe(''); a.ev('$("dlg").close()');
+    a.ev('openDlg(state.S.events[1])'); expect(a.q('#fTu').textContent).toBe('Ann 1 · Bob 1 turns a week'); expect(a.q('#fTuL').title).toContain('has no turns to count');
   });
   it('the statistics list a person\'s rotas with their turns per week, their total and all turns', () => {
     const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('openStats("A")');
@@ -739,8 +739,8 @@ describe('R-CYC-18 Rota turns: how many times each person is responsible over th
     expect(a.ev('statsRows("A",true)').slice(-2)).toEqual([['Person', 'Rota', 'W1', 'W2', 'Turns', 'Of all turns'], ['Ann', 'Cook', 1, 0, 1, 4]]);
   });
   it('rotas of hidden schedules are not counted, and the turn labels are translated', () => {
-    const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('S.schedules[0].visible=false;openStats("A")'); expect(a.q('#xDlg .sttu')).toBeNull();
-    const b = openApp({ languages: ['es'] }); setData(b, blank({ cycle: 2, people, events: [rota()] })); b.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ cycle: 2, people, events: [rota()] })); a.ev('state.S.schedules[0].visible=false;openStats("A")'); expect(a.q('#xDlg .sttu')).toBeNull();
+    const b = openApp({ languages: ['es'] }); setData(b, blank({ cycle: 2, people, events: [rota()] })); b.ev('openDlg(state.S.events[0])');
     expect(b.q('#fTuL').textContent).toBe('Turnos'); expect(b.q('#fTu').textContent).toContain('turnos en el ciclo');
   });
 });
@@ -751,7 +751,7 @@ describe('R-CYC-20 The weeks of a cycle can be reordered; everything in a week m
     events: [ev1({ id: 'pat', weeks: [1, 3], slots: [sl(0, 600, 660)] }), ev1({ id: 'per', slots: [sl(1, 600, 660, { wk: 1 }), sl(2, 600, 660, { wk: 2 }), sl(3, 600, 660, { wk: 3 })] })] });
   const rows = a => a.qa('#xDlg .cywr'), grips = a => a.qa('#xDlg .cywr .grip');
   const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
-  const state = a => a.ev('JSON.stringify([S.events[0].weeks,S.events[1].slots.map(s=>s.wk),S.phases[0].weeks,S.weekInfo.map(w=>w.name)])');
+  const state = a => a.ev('JSON.stringify([state.S.events[0].weeks,state.S.events[1].slots.map(s=>s.wk),state.S.phases[0].weeks,state.S.weekInfo.map(w=>w.name)])');
   it('each week of the dialog has a grip with a name and a tooltip, and a note explains what moves', () => {
     const a = fresh(data()); openCycleDlg(a); expect(grips(a)).toHaveLength(3); expect(grips(a)[1].getAttribute('aria-label')).toBe('Move week 2');
     expect(grips(a)[0].title).toContain('order of the weeks'); expect(a.dlgText()).toContain('Today stays the week you are in');
@@ -772,16 +772,16 @@ describe('R-CYC-20 The weeks of a cycle can be reordered; everything in a week m
     a.toolbar('redo').click(); expect(JSON.parse(state(a))).toEqual([[2, 3], [2, 1, 3], [1], ['B', 'A', 'C']]);
   });
   it('today\'s week and the shown week follow their content; undo and redo move them back and forth', () => {
-    const a = fresh(data()); a.ev('setAnchor(2);curWk=2;render()'); openCycleDlg(a); key(grips(a)[1], 'ArrowUp'); a.click('Apply');
-    expect(a.ev('[todayWk(),curWk]')).toEqual([1, 1]); expect(a.q('.wkb').textContent).toBe('W1'); expect(a.qa('.day[data-d="5"] .phx')).toHaveLength(1);
-    a.toolbar('undo').click(); expect(a.ev('[todayWk(),curWk]')).toEqual([2, 2]); a.toolbar('redo').click(); expect(a.ev('[todayWk(),curWk]')).toEqual([1, 1]);
+    const a = fresh(data()); a.ev('setAnchor(2);state.curWk=2;render()'); openCycleDlg(a); key(grips(a)[1], 'ArrowUp'); a.click('Apply');
+    expect(a.ev('[todayWk(),state.curWk]')).toEqual([1, 1]); expect(a.q('.wkb').textContent).toBe('W1'); expect(a.qa('.day[data-d="5"] .phx')).toHaveLength(1);
+    a.toolbar('undo').click(); expect(a.ev('[todayWk(),state.curWk]')).toEqual([2, 2]); a.toolbar('redo').click(); expect(a.ev('[todayWk(),state.curWk]')).toEqual([1, 1]);
   });
   it('without a known today\'s week nothing is remembered; a plain change of names is still a single step', () => {
-    const a = fresh(data()); openCycleDlg(a); key(grips(a)[2], 'ArrowUp'); a.click('Apply'); expect(a.ev('prefs.lvAnchor[curId]')).toBeUndefined(); expect(a.ev('undoSt.length')).toBe(1);
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[2], 'ArrowUp'); a.click('Apply'); expect(a.ev('state.prefs.lvAnchor[state.curId]')).toBeUndefined(); expect(a.ev('state.undoSt.length')).toBe(1);
   });
   it('the grips stay while the length changes (a new week has none); an order made before is applied first, then the new length', () => {
     const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown'); chooseLen(a, 4); expect(grips(a).length).toBe(3); expect(rows(a).length).toBe(4);
-    a.click('Apply'); expect(a.ev('S.cycle')).toBe(4); expect(a.ev('S.events[0].weeks')).toEqual([2, 3]); expect(a.ev('undoSt.length')).toBe(2);
+    a.click('Apply'); expect(a.ev('state.S.cycle')).toBe(4); expect(a.ev('state.S.events[0].weeks')).toEqual([2, 3]); expect(a.ev('state.undoSt.length')).toBe(2);
   });
   it('in Spanish the grips and the note are translated', () => {
     const b = openApp({ languages: ['es'] }); setData(b, data()); openCycleDlg2(b); expect(b.qa('#xDlg .cywr .grip')[0].getAttribute('aria-label')).toBe('Mover la semana 1');
@@ -806,7 +806,7 @@ describe('R-CYC-19 All weeks side by side: every week of the cycle in one row, c
     expect([ids(a, 1, 0), ids(a, 2, 0), ids(a, 1, 6), ids(a, 2, 6), ids(a, 1, 2), ids(a, 2, 2)]).toEqual([[], ['w2', 'per+'], ['per'], [], ['all'], ['all']]);
   });
   it('choosing a week goes back to one week; it is view state, not undoable and not an unsaved change', () => {
-    const a = fresh(data()); a.ev('saveMem("all")'); all(a); expect(a.ev('[isDirty(),undoSt.length]')).toEqual([false, 0]);
+    const a = fresh(data()); a.ev('saveMem("all")'); all(a); expect(a.ev('[isDirty(),state.undoSt.length]')).toEqual([false, 0]);
     a.q('.dh.c .wkb').click(); expect(a.q('.omenu .oi.on, .omenu .oi svg') !== null).toBe(true); a.qa('.omenu .oi').find(b => b.textContent.trim().startsWith('Week 2')).click();
     expect(a.qa('.day')).toHaveLength(7); expect(a.q('.wkb').textContent).toBe('W2');
   });
@@ -822,23 +822,23 @@ describe('R-CYC-19 All weeks side by side: every week of the cycle in one row, c
   });
   it('dragging a time with its own week across the week edge moves it along the cycle', async () => {
     const a = fresh(data()); all(a); await dragFrom(a, cell(a, 1, 6).querySelector('.ev'), { col: 6, min: 1350 }, { col: 7, min: 1350 });
-    expect(a.ev('JSON.stringify(S.events[1].slots[0])')).toMatch(/"day":0,"start":1320.*"wk":2|"wk":2.*"day":0/);
+    expect(a.ev('JSON.stringify(state.S.events[1].slots[0])')).toMatch(/"day":0,"start":1320.*"wk":2|"wk":2.*"day":0/);
   });
   it('creating in a week\'s column makes an event of that week', async () => {
     const a = fresh(data()); all(a); await createDrag(a, { col: 9, min: 600 }, { col: 9, min: 660 });
-    expect(a.qa('#fWk .chips input').map(i => i.checked)).toEqual([false, true]); a.q('#fT').value = 'New'; a.q('#fOk').click(); expect(a.ev('S.events.at(-1).weeks')).toEqual([2]);
+    expect(a.qa('#fWk .chips input').map(i => i.checked)).toEqual([false, true]); a.q('#fT').value = 'New'; a.q('#fOk').click(); expect(a.ev('state.S.events.at(-1).weeks')).toEqual([2]);
   });
   it('the day view shows that day of every week, which also suits a phone', () => {
     const a = fresh(data()); all(a); a.ev('setFocus(0)'); expect(a.qa('.dh:not(.c)').map(h => h.textContent.trim().replace(/\s+/g, ' '))).toEqual(expect.arrayContaining([expect.stringContaining('Monday · W1'), expect.stringContaining('Monday · W2')]));
     expect(a.qa('.day')).toHaveLength(2);
   });
   it('Live View turns it off, and a cycle of one week does not offer it', () => {
-    const a = fresh(data()); all(a); a.ev('setAnchor(1);setLive(true)'); expect(a.ev('allWk')).toBe(false); a.ev('setLive(false)');
-    const b = fresh(blank()); expect(b.q('.dh.c .wkb')).toBeNull(); b.ev('setAllWk(true)'); expect(b.ev('allWk')).toBe(false);
+    const a = fresh(data()); all(a); a.ev('setAnchor(1);setLive(true)'); expect(a.ev('state.allWk')).toBe(false); a.ev('setLive(false)');
+    const b = fresh(blank()); expect(b.q('.dh.c .wkb')).toBeNull(); b.ev('setAllWk(true)'); expect(b.ev('state.allWk')).toBe(false);
   });
   it('Print offers this view (across the page) or every week, one week per page', () => {
     const a = fresh(data()); all(a); a.toolbar('print').click(); expect(a.qa('.omenu .oi').map(b => b.textContent.trim())).toEqual(['Print this view (all weeks side by side)', 'Print every week (one page each)']);
-    a.qa('.omenu .oi')[1].click(); expect((a.w.__printed.match(/class="day"/g) || []).length).toBe(14); expect(a.ev('allWk')).toBe(true); expect(a.qa('#grid .day')).toHaveLength(14);
+    a.qa('.omenu .oi')[1].click(); expect((a.w.__printed.match(/class="day"/g) || []).length).toBe(14); expect(a.ev('state.allWk')).toBe(true); expect(a.qa('#grid .day')).toHaveLength(14);
   });
   it('in Spanish the menu item and the corner button are translated', () => {
     const b = openApp({ languages: ['es'] }); setData(b, data()); b.ev('setAllWk(true)'); expect(b.q('.wkb').textContent).toBe('S1–2'); expect(b.q('.dh[data-w="2"]').textContent).toContain('· S2');
@@ -851,34 +851,34 @@ describe('R-CYC-18 Choosing which events count turns: automatic, always or never
   const rows = a => a.qa('#xDlg .sttu tbody tr').map(r => r.cells[0].textContent.replace('✕', ''));
   it('the data keeps the mark only as true or false; absent means automatic', () => {
     const a = fresh(blank({ people, events: [rota({ turns: false }), solo({ turns: true }), ev1({ id: 'x', turns: 'yes' })] }));
-    expect(a.ev('S.events.map(e=>e.turns)')).toEqual([false, true, undefined]);
+    expect(a.ev('state.S.events.map(e=>e.turns)')).toEqual([false, true, undefined]);
   });
   it('never takes an automatic rota out; always counts an event that only one person does', () => {
     const a = fresh(blank({ people, events: [rota({ turns: false }), solo({ turns: true })] }));
-    expect(a.ev('turnsOf(S.events[0])')).toBeNull(); expect(a.ev('Object.fromEntries(turnsOf(S.events[1]))')).toEqual({ A: [2] });
+    expect(a.ev('turnsOf(state.S.events[0])')).toBeNull(); expect(a.ev('Object.fromEntries(turnsOf(state.S.events[1]))')).toEqual({ A: [2] });
   });
   it('the event dialog chooses Automatic, Count turns or Don\'t count, shows the counts while it applies and saves the mark', () => {
-    const a = fresh(blank({ people, events: [solo()] })); a.ev('openDlg(S.events[0])'); const m = a.q('#fTuM');
+    const a = fresh(blank({ people, events: [solo()] })); a.ev('openDlg(state.S.events[0])'); const m = a.q('#fTuM');
     expect([...m.options].map(o => o.textContent)).toEqual(['Automatic (two or more people)', 'Count turns', "Don't count"]); expect(m.getAttribute('aria-label')).toBe('Count turns');
     expect(a.q('#fTu').textContent).toBe(''); m.value = 'y'; m.onchange(); expect(a.q('#fTu').textContent).toBe('Ann 2 turns a week');
-    a.q('#fOk').click(); expect(a.ev('S.events[0].turns')).toBe(true);
-    a.ev('openDlg(S.events[0])'); expect(a.q('#fTuM').value).toBe('y'); a.q('#fTuM').value = ''; a.q('#fOk').click(); expect(a.ev('"turns" in S.events[0]')).toBe(false);
+    a.q('#fOk').click(); expect(a.ev('state.S.events[0].turns')).toBe(true);
+    a.ev('openDlg(state.S.events[0])'); expect(a.q('#fTuM').value).toBe('y'); a.q('#fTuM').value = ''; a.q('#fOk').click(); expect(a.ev('"turns" in state.S.events[0]')).toBe(false);
   });
   it('Don\'t count hides the counts of a rota in the dialog', () => {
-    const a = fresh(blank({ people, events: [rota()] })); a.ev('openDlg(S.events[0])'); expect(a.q('#fTu').textContent).toContain('Ann 1 · Bob 1');
-    a.q('#fTuM').value = 'n'; a.q('#fTuM').onchange(); expect(a.q('#fTu').textContent).toBe(''); a.q('#fOk').click(); expect(a.ev('S.events[0].turns')).toBe(false);
+    const a = fresh(blank({ people, events: [rota()] })); a.ev('openDlg(state.S.events[0])'); expect(a.q('#fTu').textContent).toContain('Ann 1 · Bob 1');
+    a.q('#fTuM').value = 'n'; a.q('#fTuM').onchange(); expect(a.q('#fTu').textContent).toBe(''); a.q('#fOk').click(); expect(a.ev('state.S.events[0].turns')).toBe(false);
   });
   it('in the statistics ✕ leaves a rota out, as an undoable change that marks the workspace unsaved', () => {
     const a = fresh(blank({ people, events: [rota(), solo()] })); a.ev('saveMem("all");openStats("*")'); expect(rows(a)).toEqual(['Cook']);
     const x = a.q('#xDlg .sttu .tux'); expect(x.getAttribute('aria-label')).toBe('Leave Cook out of the turns'); x.click();
-    expect(a.q('#xDlg .sttu')).toBeNull(); expect(a.dlgText()).toContain('No rotas yet.'); expect(a.ev('[S.events[0].turns,isDirty()]')).toEqual([false, true]);
-    a.ev('undo()'); expect(a.ev('"turns" in S.events[0]')).toBe(false);
+    expect(a.q('#xDlg .sttu')).toBeNull(); expect(a.dlgText()).toContain('No rotas yet.'); expect(a.ev('[state.S.events[0].turns,isDirty()]')).toEqual([false, true]);
+    a.ev('undo()'); expect(a.ev('"turns" in state.S.events[0]')).toBe(false);
   });
   it('Add an event… lists the other events one per line and adds the one picked; one left out says so and can come back', () => {
     const a = fresh(blank({ people, events: [rota({ turns: false }), solo(), ev1({ id: 'z', title: 'Away', away: true, slots: [sl(0, 0, 60, { person: 'A' })] })] })); a.ev('openStats("A")');
     a.q('#xDlg .tuadd').click(); expect(a.qa('.tupop .oi').map(b => b.textContent)).toEqual(['Bins', 'Cookleft out']); expect(a.q('.tupop .oh').textContent).toBe('Count the turns of');
-    a.qa('.tupop .oi')[0].click(); expect(a.q('.tupop')).toBeNull(); expect(rows(a)).toEqual(['Bins']); expect(a.ev('S.events[1].turns')).toBe(true);
-    a.q('#xDlg .tuadd').click(); a.qa('.tupop .oi')[0].click(); expect(a.ev('S.events[0].turns')).toBe(true);
+    a.qa('.tupop .oi')[0].click(); expect(a.q('.tupop')).toBeNull(); expect(rows(a)).toEqual(['Bins']); expect(a.ev('state.S.events[1].turns')).toBe(true);
+    a.q('#xDlg .tuadd').click(); a.qa('.tupop .oi')[0].click(); expect(a.ev('state.S.events[0].turns')).toBe(true);
   });
   it('when every event counts, the list says so; the buttons are not printed', () => {
     const a = fresh(blank({ people, events: [rota()] })); a.ev('openStats("*")'); a.q('#xDlg .tuadd').click();
@@ -887,7 +887,7 @@ describe('R-CYC-18 Choosing which events count turns: automatic, always or never
   });
   it('the turns of a person with no rota say so, and the new labels are translated', () => {
     const a = fresh(blank({ people, events: [solo()] })); a.ev('openStats("B")'); expect(a.dlgText()).toContain('Bob takes no turns in a rota.');
-    const b = openApp({ languages: ['es'] }); setData(b, blank({ people, events: [solo()] })); b.ev('openDlg(S.events[0])');
+    const b = openApp({ languages: ['es'] }); setData(b, blank({ people, events: [solo()] })); b.ev('openDlg(state.S.events[0])');
     expect([...b.q('#fTuM').options].map(o => o.textContent)).toEqual(['Automático (dos o más personas)', 'Contar turnos', 'No contar']);
   });
 });

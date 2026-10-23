@@ -1,8 +1,7 @@
 // Translations: the English and Spanish strings (D), the static dialog texts (ES), L() and applyStatic(). Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
 const DAYN={en:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],es:['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']};
 const DAY2={en:['Mo','Tu','We','Th','Fr','Sa','Su'],es:['Lu','Ma','Mi','Ju','Vi','Sá','Do']};   // headers of narrow week columns (R-GRID-06)
-let lang=/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en';
-const DAYS=[...DAYN[lang]];
+const DAYS=[...DAYN[state.lang]];
 const D={en:{
 appTitle:'Weekly Schedules',collapseTip:'Collapse sidebar',expandTip:'Expand sidebar',
 undo:'Undo',undoTip:'Undo the last change (Ctrl+Z)',redoTip:'Redo (Ctrl+Y)',
@@ -153,8 +152,8 @@ const ES=[
 
 ['Rhythms *','Ritmos *'],['At least one. Tick several to make the phase','Al menos uno. Marca varios para que la franja aparezca en cada ritmo. Usa Copiar… para copiarla a otro ritmo como franja independiente.'],
 ['Close','Cerrar'],['Print agenda','Imprimir agenda']];
-const L=(k,v)=>{let s=(D[lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
-function tr(s){if(lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
+const L=(k,v)=>{let s=(D[state.lang][k]||D.en[k]||k);if(v)for(const x in v)s=s.replace('{'+x+'}',v[x]);return s};
+function tr(s){if(state.lang==='en')return s;const q=s.trim();for(const [k,v] of ES){if(k.length<12?q===k:q.startsWith(k))return s.replace(q,v)}return s}
 function applyStatic(){
   document.querySelectorAll('dialog').forEach(root=>{
     const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),ns=[];let n;while(n=w.nextNode())ns.push(n);

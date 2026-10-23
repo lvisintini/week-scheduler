@@ -54,7 +54,7 @@ describe('R-STAT-02 How the week is counted', () => {
     expect(stats(a).planned).toBe(60);
   });
   it('hidden early hours and a hidden weekend still count; the people filter does not matter', () => {
-    const a = fresh(blank({ people: [{ ...people[0], visible: false }], events: [at('n', 6, 0, 300)] })); a.ev('prefs.hideWeekend=true;render()'); expect(stats(a).planned).toBe(300);
+    const a = fresh(blank({ people: [{ ...people[0], visible: false }], events: [at('n', 6, 0, 300)] })); a.ev('state.prefs.hideWeekend=true;render()'); expect(stats(a).planned).toBe(300);
   });
   it('events without a type go to "No type"; types deleted later are "No type" too', () => {
     const a = fresh(blank({ people, types, events: [at('x', 0, 600, 660)] })); expect(stats(a).by).toEqual({ '': 60 });
@@ -292,8 +292,8 @@ describe('R-STAT-07 The activity types shown can be filtered inside the statisti
     a.qa('.typop .tyall')[0].click(); expect(a.q('#xDlg .stwk .stf')).toBeNull(); expect(a.q('#xDlg .sttyb').textContent).toBe('Activity types: all');
   });
   it('the filter does not touch the eyes of the activity types in the sidebar, and the sidebar eyes do not touch it', () => {
-    const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); expect(a.ev('S.types.map(t=>t.visible!==false)')).toEqual([true, true, true]);
-    a.ev('S.types[0].visible=false'); a.click('Close'); a.ev('openStats("A")'); expect(chip(a, 'Sleep').getAttribute('aria-checked')).toBe('true');
+    const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); expect(a.ev('state.S.types.map(t=>t.visible!==false)')).toEqual([true, true, true]);
+    a.ev('state.S.types[0].visible=false'); a.click('Close'); a.ev('openStats("A")'); expect(chip(a, 'Sleep').getAttribute('aria-checked')).toBe('true');
   });
   it('the filter is remembered while the page is open', () => {
     const a = day(); a.ev('stHide.clear();openStats("A")'); chip(a, 'Work').click(); a.click('Close'); a.ev('openStats("A")');

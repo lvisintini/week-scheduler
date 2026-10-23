@@ -1,13 +1,14 @@
 # Code map
 
 ## Files
-The app is static files served as they are (no build): `index.html` (markup, the static dialogs, the CSP), `app.css` (all styles; `#pgStyle` in `index.html` is the print page size, set at runtime) and classic scripts in `js/`, loaded with `<script src defer>` in this order. They share **one global scope** (top-level `function`/`const`/`let` of every file are visible to the others), so a function may call one from any file, but a top-level statement that **runs at load** may only use what earlier files define. Not ES modules: module bindings are not globals, and the tests reach the state by name (`a.ev`); modules would first need the mutable state gathered into one object (parked).
+The app is static files served as they are (no build): `index.html` (markup, the static dialogs, the CSP), `app.css` (all styles; `#pgStyle` in `index.html` is the print page size, set at runtime) and classic scripts in `js/`, loaded with `<script src defer>` in this order. They share **one global scope** (top-level `function`/`const`/`let` of every file are visible to the others), so a function may call one from any file, but a top-level statement that **runs at load** may only use what earlier files define. Not ES modules yet (parked). The state that several files share is one object, `state` (`js/state.js`); state that one file owns stays a private variable of that file.
 
 | File | Holds |
 |---|---|
+| `js/state.js` | `state`: the shared state, data (`S`, `WS`, `curId`, `undoSt`/`redoSt`, `memKey`) and view (`prefs`, `lang`, `curWk`, `allWk`, `focusD`, `selK`, `editMode`, `live`, `livePaused`, `nowOn`, `skipSide`, `printMode`, `HH`, `MAXEND`). The rest of this map writes its fields without `state.` (`curWk` = `state.curWk`) |
 | `js/i18n.js` | `D` (English/Spanish strings), `ES` (static dialog texts), `L`, `tr`, `applyStatic` |
 | `js/basics.js` | `$`/`el`, icons (`I`, `ICON_*`, `TICONS`), colour utilities, the colour popover (`pickColor`) |
-| `js/data.js` | state and history (`S`, `WS`, `hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
+| `js/data.js` | history (`hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
 | `js/share.js` | what to include (`incPicker`, `partOf`, `shareOf`), links (`inflate`), encryption (`seal`/`unseal` with an optional reused key, `newKey`/`keyFor`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem`/`eraseMem`, the passphrase of browser memory (`askUnlock`, `openPassphrase`, `protectMem`/`changePass`/`unprotectMem`, `lockNow`) |
 | `js/ics.js` | the calendar export (R-SHARE-09): `icsText` (a workspace record → the `.ics` text; pure), `icsFold`, `icsEsc`, `openIcs` (the dialog), `saveIcs` (the download) |
 | `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
@@ -21,7 +22,7 @@ The test harness (`tests/helpers/app.js`) gives jsdom one document with `app.css
 
 ## Map
 
-- State `S` (data) + `prefs` (view). `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar (skipped while dragging an opacity slider via `skipSide`).
+- State `state.S` (data) + `state.prefs` (view), see `js/state.js`. `render()` rebuilds the grid; `renderSide()` rebuilds the sidebar (skipped while dragging an opacity slider via `skipSide`).
 - Time helpers: `fmt`, `fmtEnd`, `endLabel`, `piecesOf` (event → per-day pieces), `coreOf`/`coreIn`/`fitMg`/`setMg`/`coreEdge`/`edgeNote` (flexible start/end), `overlapSet` (week-wrapped overlap detection of cores; squeezed-out *Around these times*), `piecesAt/handlesAt` (hit-testing, polymorphic for events/phases via `act()`, `eVis`, `eLock`, `sVis`).
 - People outside the household and background strips: `isExt`, `ourPeople`, `isBg` (marked `bg` only, R-EVT-19; dialog `#fBg`/`updBg`; old data upgraded by `MIG[3]`), `pplOf` (on-call rule); strips are drawn in `render()` after the boxes (`bgs`, `gutMap`, `SW` = strip width), each with its band (`.bgb`, `d._bb`) inserted before `.gl`; the People sidebar splits `ourPeople()` and the `.extg` sub-group.
 - Side-by-side layout: `fixedLayout` (R-EVT-23, while `prefs.lanesFix`), `laneLayout` (clash/parallel matrices, groups, spanners, joining people's own lanes `join`/`fits`, lane-order search, fallback; R-EVT-10/13/18), `laneMap` (last drawn lane ranges, keyed `eventId|slotIndex|piece`) read by `inLane`; boxes and stripes carry `data-lane="l/n"` or `"l0-l1/n"` (tests read that, since jsdom rewrites the `calc()` positions).

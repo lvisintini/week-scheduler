@@ -7,7 +7,7 @@ const run = (o = {}) => ev1({ id: 'run', title: 'School run', color: '#3b6df0', 
 const milk = (o = {}) => ev1({ id: 'milk', title: 'Collect milk', color: '#e8912d', nest: true, slots: [{ day: 0, start: 495, end: 510, person: 'A' }], ...o });
 const box = (a, id, d = 0) => a.qa(`.day[data-d="${d}"] .ev`).find(b => b._it.e.id === id);
 const nested = a => a.qa('.ev.nest').map(b => b._it.e.id + '@' + b._it.s.day);
-const slots = (a, id) => a.ev(`JSON.parse(JSON.stringify(S.events.find(e=>e.id==="${id}").slots.map(({day,start,end})=>({day,start,end}))))`);
+const slots = (a, id) => a.ev(`JSON.parse(JSON.stringify(state.S.events.find(e=>e.id==="${id}").slots.map(({day,start,end})=>({day,start,end}))))`);
 const at = (a, x, m) => a.ev(`(()=>{const c=document.querySelector('.day[data-d="0"]');return piecesAt(0,${m},true,fxAt(c,${x})).map(i=>i.e.id)})()`);
 const toastBtn = (a, t) => [...a.q('#toast').querySelectorAll('button')].find(b => b.textContent === t);
 const stats = (a, pid = 'A') => a.ev(`(()=>{const s=personStats(${JSON.stringify(pid)},true);return {by:Object.fromEntries(s.by),planned:s.planned,overlap:s.overlap,places:s.places}})()`);
@@ -122,12 +122,12 @@ describe('R-NST-04 Statistics give the shared time to the nested activity', () =
 });
 
 describe('R-NST-05 The event dialog has the "can be done during" checkbox', () => {
-  const open = a => a.ev('openDlg(S.events.find(e=>e.id==="milk"))');
+  const open = a => a.ev('openDlg(state.S.events.find(e=>e.id==="milk"))');
   it('a labelled checkbox under Timing; ticking saves nest:true and unticking removes it', () => {
     const a = fresh(blank({ people, events: [milk({ nest: undefined })] })); open(a); const cb = a.q('#fNest');
     expect(cb.closest('label').textContent).toBe("Can be done during the person's other activities"); expect(cb.closest('label').title).toMatch(/^For small tasks done along the way/);
-    expect(cb.checked).toBe(false); cb.checked = true; a.q('#fOk').click(); expect(a.ev('S.events[0].nest')).toBe(true);
-    open(a); expect(a.q('#fNest').checked).toBe(true); a.q('#fNest').checked = false; a.q('#fOk').click(); expect(a.ev('"nest" in S.events[0]')).toBe(false);
+    expect(cb.checked).toBe(false); cb.checked = true; a.q('#fOk').click(); expect(a.ev('state.S.events[0].nest')).toBe(true);
+    open(a); expect(a.q('#fNest').checked).toBe(true); a.q('#fNest').checked = false; a.q('#fOk').click(); expect(a.ev('"nest" in state.S.events[0]')).toBe(false);
   });
   it('the checkbox and its explanation are translated', () => {
     const a = fresh(blank({ people, events: [milk()] })); a.ev("setLang('es')"); open(a);

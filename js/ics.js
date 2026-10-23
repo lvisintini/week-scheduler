@@ -42,10 +42,10 @@ function icsText(f,o){
   if(!out.length)return null;
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Weekly Schedules//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+icsEsc(f.name),...out,'END:VCALENDAR'].map(icsFold).join('\r\n')+'\r\n';
 }
-const icsShow=t=>new Date(dnum(t)*864e5).toLocaleDateString(lang,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});   // a 'YYYY-MM-DD' for people
+const icsShow=t=>new Date(dnum(t)*864e5).toLocaleDateString(state.lang,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});   // a 'YYYY-MM-DD' for people
 function openIcs(){
   if(cyc()>1&&todayWk()==null){askLiveWeek(()=>setTimeout(openIcs,0),null,{body:'icsWkBody',btn:'icsWkGo'});return}   // the dates follow today's week (R-CYC-05)
-  const body=el('div'),tday=ymd(new Date()),last=prefs.icsLast[curId];
+  const body=el('div'),tday=ymd(new Date()),last=state.prefs.icsLast[state.curId];
   el('p','note',body).textContent=L('icsBody');
   const hh=el('div','parth',body);hh.textContent=L('icsHow');const ht=el('span','tip',hh);ht.textContent=' ⓘ';ht.title=ht.__t=L('icsHowTip');
   const ol=el('ol','icsteps',body);['icsS1','icsS2','icsS3','icsS4'].forEach(k=>{el('li','',ol).textContent=L(k)});
@@ -64,7 +64,7 @@ function openIcs(){
     const from=dnum(fromIn.value),until=ok(untilIn.value)?dnum(untilIn.value):null;if(until!=null&&until<from){msg.textContent=L('icsBadUntil');return false}
     let text;try{text=icsText(shareOf(ip.inc(),ac.checked),{from,until,rem:+rem.value,wk:wkAt,now:new Date()})}catch(e){msg.textContent=L('shareFail');return false}
     if(!text){msg.textContent=L('icsNone');return false}
-    saveIcs(text);prefs.icsLast[curId]=until!=null?{from:icsDay(from),until:icsDay(until)}:{from:icsDay(from)};savePrefs();
+    saveIcs(text);state.prefs.icsLast[state.curId]=until!=null?{from:icsDay(from),until:icsDay(until)}:{from:icsDay(from)};savePrefs();
   }},{label:L('cancel'),dismiss:true}]});
 }
 function saveIcs(text){   // never a backup: the workspace stays unsaved

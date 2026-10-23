@@ -15,9 +15,9 @@ describe('R-UI-01 Everything lives in a collapsible, resizable sidebar', () => {
     a.q('.sbtop button[title="Expand sidebar"], .sbtop button:last-child').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(false);
   });
   const dragHandle = (a, dx) => { a.q('#rs').onpointerdown({ preventDefault() {}, clientX: 300 }); pointer(a, 'pointermove', { x: 300 + dx }); pointer(a, 'pointerup', { x: 300 + dx }); };
-  it('dragging the divider changes the sidebar width', () => { const a = fresh(); dragHandle(a, 400); expect(a.ev('prefs.w')).toBe(400); });
+  it('dragging the divider changes the sidebar width', () => { const a = fresh(); dragHandle(a, 400); expect(a.ev('state.prefs.w')).toBe(400); });
   it('the sidebar can be no narrower than 230 px and no wider than 560 px', () => {
-    const a = fresh(); dragHandle(a, -5000); expect(a.ev('prefs.w')).toBe(230); dragHandle(a, 5000); expect(a.ev('prefs.w')).toBe(560);
+    const a = fresh(); dragHandle(a, -5000); expect(a.ev('state.prefs.w')).toBe(230); dragHandle(a, 5000); expect(a.ev('state.prefs.w')).toBe(560);
   });
   it('the width is saved when the drag ends', () => { const a = fresh(); dragHandle(a, 300); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).w).toBe(300); });
 });
@@ -28,7 +28,7 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     expect(top.querySelector('.ttl').textContent).toBe('Weekly Schedules');
   });
   it('a bullet appears after the title while anything is unsaved', () => {
-    const a = fresh(); a.ev('S.schedules[0].name="x";render()'); expect(a.q('.ttl').textContent).toBe('Weekly Schedules •');
+    const a = fresh(); a.ev('state.S.schedules[0].name="x";render()'); expect(a.q('.ttl').textContent).toBe('Weekly Schedules •');
   });
   it('then the workspace switcher, the Events | Phases switch, the seven toolbar buttons (each with a tooltip), and the sections', () => {
     const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
@@ -134,7 +134,7 @@ describe('R-UI-04 Colour picker', () => {
   });
   it('starts with the current colour in the hex field', () => { expect(hex(open()).value).toBe('#3b6df0'); });
   it('clicking a swatch puts its colour in the hex field without applying it yet', () => {
-    const a = open(); a.qa('.cpop .sw')[1].click(); expect(hex(a).value).toBe('#e5484d'); expect(a.ev('S.schedules[0].color')).toBe('#3b6df0');
+    const a = open(); a.qa('.cpop .sw')[1].click(); expect(hex(a).value).toBe('#e5484d'); expect(a.ev('state.S.schedules[0].color')).toBe('#3b6df0');
   });
   it('moving a slider updates the hex field', () => {
     const a = open(); const before = hex(a).value; sliders(a)[0].value = 10; sliders(a)[0].oninput(); expect(hex(a).value).not.toBe(before);
@@ -143,10 +143,10 @@ describe('R-UI-04 Colour picker', () => {
     const a = open(); hex(a).value = '#ff0000'; hex(a).oninput(); expect(+sliders(a)[0].value).toBe(0); expect(+sliders(a)[1].value).toBe(100);
   });
   it('Apply uses the chosen colour and closes the picker', () => {
-    const a = open(); hex(a).value = '#0a0b0c'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('S.schedules[0].color')).toBe('#0a0b0c'); expect(pop(a)).toBeNull();
+    const a = open(); hex(a).value = '#0a0b0c'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('state.S.schedules[0].color')).toBe('#0a0b0c'); expect(pop(a)).toBeNull();
   });
   it('an invalid hex value is never applied', () => {
-    const a = open(); hex(a).value = 'url(x)'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('S.schedules[0].color')).toMatch(/^#[0-9a-f]{6}$/);
+    const a = open(); hex(a).value = 'url(x)'; hex(a).oninput(); [...pop(a).querySelectorAll('button')].find(b => b.textContent === 'Apply').click(); expect(a.ev('state.S.schedules[0].color')).toMatch(/^#[0-9a-f]{6}$/);
   });
   it('the same picker is used for events, people and phases', () => {
     const a = fresh(blank({ people: [person()] })); sections(a)[1].querySelector('.sch .pick').click(); expect(pop(a)).not.toBeNull(); pop(a).querySelectorAll('button')[0].click();
@@ -155,31 +155,31 @@ describe('R-UI-04 Colour picker', () => {
 });
 
 describe('R-UI-05 Undo and redo', () => {
-  const change = (a, name) => { a.ev(`hist();S.schedules[0].name=${JSON.stringify(name)}`); a.ev('renderSide()'); };
+  const change = (a, name) => { a.ev(`hist();state.S.schedules[0].name=${JSON.stringify(name)}`); a.ev('renderSide()'); };
   it('both buttons start disabled', () => { const a = fresh(); expect([a.toolbar('undo').disabled, a.toolbar('redo').disabled]).toEqual([true, true]); });
   it('a change enables Undo; undoing enables Redo; a new change after an undo clears Redo', () => {
     const a = fresh(); change(a, 'one'); expect(a.toolbar('undo').disabled).toBe(false); a.toolbar('undo').click(); expect(a.toolbar('redo').disabled).toBe(false); change(a, 'two'); expect(a.toolbar('redo').disabled).toBe(true);
   });
   it('Undo and Redo walk back and forth through the changes', () => {
-    const a = fresh(); change(a, 'one'); change(a, 'two'); a.toolbar('undo').click(); expect(a.ev('S.schedules[0].name')).toBe('one'); a.toolbar('undo').click(); expect(a.ev('S.schedules[0].name')).toBe('Routine'); a.toolbar('redo').click(); expect(a.ev('S.schedules[0].name')).toBe('one');
+    const a = fresh(); change(a, 'one'); change(a, 'two'); a.toolbar('undo').click(); expect(a.ev('state.S.schedules[0].name')).toBe('one'); a.toolbar('undo').click(); expect(a.ev('state.S.schedules[0].name')).toBe('Routine'); a.toolbar('redo').click(); expect(a.ev('state.S.schedules[0].name')).toBe('one');
   });
   it.each([['Ctrl+Z', { ctrlKey: true }, 'z'], ['Cmd+Z', { metaKey: true }, 'z']])('the keyboard shortcut %s undoes the last change', (_, mod, key) => {
-    const a = fresh(); change(a, 'one'); a.key(key, mod); expect(a.ev('S.schedules[0].name')).toBe('Routine');
+    const a = fresh(); change(a, 'one'); a.key(key, mod); expect(a.ev('state.S.schedules[0].name')).toBe('Routine');
   });
   it.each([['Ctrl+Y', { ctrlKey: true }, 'y'], ['Ctrl+Shift+Z', { ctrlKey: true, shiftKey: true }, 'z']])('the keyboard shortcut %s redoes the undone change', (_, mod, key) => {
-    const a = fresh(); change(a, 'one'); a.toolbar('undo').click(); a.key(key, mod); expect(a.ev('S.schedules[0].name')).toBe('one');
+    const a = fresh(); change(a, 'one'); a.toolbar('undo').click(); a.key(key, mod); expect(a.ev('state.S.schedules[0].name')).toBe('one');
   });
   it('the shortcuts are ignored while typing in a field, so text editing keeps its own undo', () => {
-    const a = fresh(); change(a, 'one'); const input = a.q('#sbin input[type=text]'); input.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })); expect(a.ev('S.schedules[0].name')).toBe('one');
+    const a = fresh(); change(a, 'one'); const input = a.q('#sbin input[type=text]'); input.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })); expect(a.ev('state.S.schedules[0].name')).toBe('one');
   });
   it('the shortcuts are ignored while a dialog is open', () => {
-    const a = fresh(); change(a, 'one'); a.toolbar('add').click(); a.key('z', { ctrlKey: true }); expect(a.ev('S.schedules[0].name')).toBe('one');
+    const a = fresh(); change(a, 'one'); a.toolbar('add').click(); a.key('z', { ctrlKey: true }); expect(a.ev('state.S.schedules[0].name')).toBe('one');
   });
   it('the undo history keeps the most recent 100 steps and drops older ones', () => {
-    const a = fresh(); for (let i = 0; i < 120; i++) a.ev('hist()'); expect(a.ev('undoSt.length')).toBe(100);
+    const a = fresh(); for (let i = 0; i < 120; i++) a.ev('hist()'); expect(a.ev('state.undoSt.length')).toBe(100);
   });
   it('undo and redo do nothing harmful when there is nothing to undo', () => {
-    const a = fresh(); a.ev('undo();redo()'); expect(a.ev('S.schedules.length')).toBe(1);
+    const a = fresh(); a.ev('undo();redo()'); expect(a.ev('state.S.schedules.length')).toBe(1);
   });
 });
 
@@ -194,7 +194,7 @@ describe('R-UI-06 Toasts', () => {
 });
 
 describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, How it fits in, Schedules)', () => {
-  const dialog = (o = {}) => { const a = fresh(blank({ events: [ev1(o)], people: [person(), person({ id: 'B', name: 'Bob', color: '#2fa66a' })] })); a.ev('openDlg(S.events[0])'); return a; };
+  const dialog = (o = {}) => { const a = fresh(blank({ events: [ev1(o)], people: [person(), person({ id: 'B', name: 'Bob', color: '#2fa66a' })] })); a.ev('openDlg(state.S.events[0])'); return a; };
   const shown = (a, n) => ![n, ...(n.closest('.ev-only,.ph-only,.fsec') ? [n.closest('.ev-only,.ph-only,.fsec')] : [])].some(x => a.w.getComputedStyle(x).display === 'none');
   it('title and colour swatch share the first cell, followed by description, type, Who, When, How it fits in and the schedules', () => {
     const a = dialog(); expect(a.q('#fT').closest('.fcell')).toBe(a.q('#fC').closest('.fcell'));
@@ -250,7 +250,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     expect(css).toContain('@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
   });
   it('R-CYC-08 with different times per week the week has a column and a header of its own; on a phone card it reads Week [1] – Monday', () => {
-    const a = openApp(); setData(a, blank({ cycle: 2, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', wk: 2 }] })] })); a.ev('openDlg(S.events[0])');
+    const a = openApp(); setData(a, blank({ cycle: 2, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', wk: 2 }] })] })); a.ev('openDlg(state.S.events[0])');
     const css = a.d.querySelector('style').textContent; expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
     expect(css).toContain('#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}'); expect(css).toContain('#paneQ.pw{--dc:auto auto minmax(68px,1fr)');
     const r = a.qa('#fDays .dr')[0]; expect(r.children[1].classList.contains('wcell')).toBe(true); expect(r.querySelector('.wcell .wkc').textContent).toBe('2'); expect(r.querySelector('.wcell .wkw').textContent).toBe('Week');
@@ -283,8 +283,8 @@ describe('R-UI-13 R-UI-01 A phone gets floating buttons; its drawer has the comp
     const a = openApp({ phone: true }); expect(rule(a, 'aside.collapsed.lv .sbtop .help,aside.collapsed.lv .sbtop .xpand').style.display).toBe('none');
     expect(rule(a, 'aside.collapsed.lv.paused .lvnow').style.display).toBe('inline-flex'); expect(rule(a, 'aside.collapsed.lv.paused .lvnow').style.order).toBe('1');
     a.q('#lvR').click(); expect(a.q('#sb').classList.contains('lv')).toBe(true); expect(a.q('#sb').classList.contains('paused')).toBe(false);
-    a.ev("livePaused=true;updLive()"); expect(a.q('#sb').classList.contains('paused')).toBe(true); expect(a.q('#lvF').getAttribute('aria-label')).toBe('Now');
-    a.q('#lvF').click(); expect(a.ev('livePaused')).toBe(false); expect(a.q('#sb').classList.contains('paused')).toBe(false);
+    a.ev("state.livePaused=true;updLive()"); expect(a.q('#sb').classList.contains('paused')).toBe(true); expect(a.q('#lvF').getAttribute('aria-label')).toBe('Now');
+    a.q('#lvF').click(); expect(a.ev('state.livePaused')).toBe(false); expect(a.q('#sb').classList.contains('paused')).toBe(false);
     a.q('#lvR').click(); expect(a.q('#sb').classList.contains('lv')).toBe(false);
   });
 });
@@ -296,11 +296,11 @@ describe('R-UI-08 Light and dark theme', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); a.click('Dark'); expect(root(a)).toBe('dark'); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).theme).toBe('dark');
     a.click('Light'); expect(root(a)).toBe('light'); a.click('System'); expect(root(a)).toBeNull();
   });
-  it('the chosen theme is applied again at the next visit', () => { const a = fresh(); a.ev('prefs.theme="dark";savePrefs()'); expect(root(openApp({ storage: a.storage() }))).toBe('dark'); });
+  it('the chosen theme is applied again at the next visit', () => { const a = fresh(); a.ev('state.prefs.theme="dark";savePrefs()'); expect(root(openApp({ storage: a.storage() }))).toBe('dark'); });
   it('the dark palette exists both for the forced theme and for the system preference', () => {
     const css = fresh().d.querySelector('style').textContent; expect(css).toContain(':root[data-theme="dark"]'); expect(css).toContain('@media(prefers-color-scheme:dark)');
   });
-  it('the current theme button is highlighted in the dialog', () => { const a = fresh(); a.ev('prefs.theme="dark"'); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg .seg button').find(b => b.textContent === 'Dark').classList.contains('on')).toBe(true); });
+  it('the current theme button is highlighted in the dialog', () => { const a = fresh(); a.ev('state.prefs.theme="dark"'); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg .seg button').find(b => b.textContent === 'Dark').classList.contains('on')).toBe(true); });
 });
 
 describe('R-UI-09 Icons', () => {
@@ -319,7 +319,7 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
     const a = fresh(data), dl = a.q('#dlg');
     dl.getBoundingClientRect = () => { const l = dl.classList.contains('moved') ? parseFloat(dl.style.left) : 132, t = dl.classList.contains('moved') ? parseFloat(dl.style.top) : 100;
       return { left: l, top: t, width: 760, height: 500, right: l + 760, bottom: t + 500, x: l, y: t }; };
-    a.ev('openDlg(S.events[0])'); return a;
+    a.ev('openDlg(state.S.events[0])'); return a;
   };
   const press = (a, target, x, y) => target.dispatchEvent(new a.w.MouseEvent('pointerdown', { clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true }));
   const drag = (a, target, [x0, y0], [x1, y1]) => { press(a, target, x0, y0); pointer(a, 'pointermove', { x: x1, y: y1 }); pointer(a, 'pointerup', { x: x1, y: y1 }); };
@@ -345,7 +345,7 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
   });
   it('every time the dialog opens (event or phase) it is back in the middle of the window', () => {
     const a = open(blank({ events: [ev1()], rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'ph', title: 'P', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 600, end: 660 }] }] }));
-    drag(a, a.q('#dGrip'), [500, 108], [800, 208]); a.q('#dlg').close(); a.ev('openDlg(S.phases[0])');
+    drag(a, a.q('#dGrip'), [500, 108], [800, 208]); a.q('#dlg').close(); a.ev('openDlg(state.S.phases[0])');
     expect(a.q('#dlg').classList.contains('moved')).toBe(false); expect(pos(a)).toEqual(['', '']);
   });
 });
@@ -373,7 +373,7 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
     expect([...t.querySelectorAll('label.zck')].every(l => l.title.length > 40)).toBe(true); expect(t.querySelector('.tip').title).toContain('Live View');
   });
   it('Live View still starts and stops from its new place', () => {
-    const a = fresh(week()); a.q('#lvB').click(); expect(a.ev('live')).toBe(true); expect(a.q('#lvB').textContent).toBe('Stop Live View'); a.q('#lvB').click(); expect(a.ev('live')).toBe(false);
+    const a = fresh(week()); a.q('#lvB').click(); expect(a.ev('state.live')).toBe(true); expect(a.q('#lvB').textContent).toBe('Stop Live View'); a.q('#lvB').click(); expect(a.ev('state.live')).toBe(false);
   });
   it('highlighting marks only the boxes and strips of events without an activity type', () => {
     const a = fresh(week()); expect(a.qa('.noty')).toHaveLength(0); tick(a, 'Highlight events without an activity type');
@@ -387,18 +387,18 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   });
   it('the two colour switches exclude each other, and unticking brings back the stored colours unchanged', () => {
     const a = fresh(week()); tick(a, 'Colour by activity type'); tick(a, 'Colour by person');
-    expect(box(a, 'Colour by activity type').checked).toBe(false); expect(a.ev('prefs.colBy')).toBe('p');
-    tick(a, 'Colour by person', false); expect([0, 1].map(d => col(a, d))).toEqual(['#123456', '#8e4ec6']); expect(a.ev('S.events[0].slots[0].col')).toBe('#123456');
+    expect(box(a, 'Colour by activity type').checked).toBe(false); expect(a.ev('state.prefs.colBy')).toBe('p');
+    tick(a, 'Colour by person', false); expect([0, 1].map(d => col(a, d))).toEqual(['#123456', '#8e4ec6']); expect(a.ev('state.S.events[0].slots[0].col')).toBe('#123456');
   });
   it('the event dialog still shows each time\'s stored colour while the week is coloured by type, and nothing becomes unsaved', () => {
-    const a = fresh(week()); a.ev('saveMem("all")'); tick(a, 'Colour by activity type'); expect(a.ev('isDirty()')).toBe(false); a.ev('openDlg(S.events[0])');
+    const a = fresh(week()); a.ev('saveMem("all")'); tick(a, 'Colour by activity type'); expect(a.ev('isDirty()')).toBe(false); a.ev('openDlg(state.S.events[0])');
     expect(a.qa('#fDays .dr')[0].querySelector('.cbtn').getAttribute('aria-label')).toBe('Monday: colour: Own colour (#123456)');
   });
   it('every switch and the folded section are remembered by this browser', () => {
     const a = fresh(week()); tick(a, 'Highlight events without an activity type'); tick(a, 'Colour by person');
-    const b = openApp({ storage: a.storage() }); expect(b.ev('[prefs.hlNoType,prefs.colBy]')).toEqual([true, 'p']);
-    tools(b).querySelector('.shbtn').click(); expect(b.ev('prefs.secTools')).toBe(true); expect(b.q('#lvB')).toBeNull(); expect(openApp({ storage: b.storage() }).ev('prefs.secTools')).toBe(true);
-    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colBy: 'x', hlNoType: 'yes' }) } }).ev('[prefs.colBy,prefs.hlNoType]')).toEqual(['', false]);
+    const b = openApp({ storage: a.storage() }); expect(b.ev('[state.prefs.hlNoType,state.prefs.colBy]')).toEqual([true, 'p']);
+    tools(b).querySelector('.shbtn').click(); expect(b.ev('state.prefs.secTools')).toBe(true); expect(b.q('#lvB')).toBeNull(); expect(openApp({ storage: b.storage() }).ev('state.prefs.secTools')).toBe(true);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colBy: 'x', hlNoType: 'yes' }) } }).ev('[state.prefs.colBy,state.prefs.hlNoType]')).toEqual(['', false]);
   });
   it('printing keeps the colouring on screen but never the highlight', () => {
     const a = fresh(week()); tick(a, 'Highlight events without an activity type'); a.ev('printSchedule()');
@@ -444,9 +444,9 @@ describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
     a.q('#sbBack').click(); expect(a.q('#sb').classList.contains('collapsed')).toBe(true); expect(a.q('.sbtop .xpand').title).toBe('Expand sidebar');
   });
   it('a phone opens on today\'s day view; a desktop window opens on the week; a remembered Live View still wins', () => {
-    const a = openApp({ phone: true }); expect(a.ev('focusD')).toBe(a.ev('today()')); expect(a.qa('.day')).toHaveLength(1); expect(a.q('.dh.fo')).not.toBeNull();
-    expect(openApp().ev('focusD')).toBeNull();
-    const l = openApp({ phone: true, storage: saved({ live: true }) }); expect(l.ev('live')).toBe(true); expect(l.ev('focusD')).toBe(l.ev('today()'));
+    const a = openApp({ phone: true }); expect(a.ev('state.focusD')).toBe(a.ev('today()')); expect(a.qa('.day')).toHaveLength(1); expect(a.q('.dh.fo')).not.toBeNull();
+    expect(openApp().ev('state.focusD')).toBeNull();
+    const l = openApp({ phone: true, storage: saved({ live: true }) }); expect(l.ev('state.live')).toBe(true); expect(l.ev('state.focusD')).toBe(l.ev('today()'));
   });
   it('the phone stylesheet lays the open sidebar over the grid, above a backdrop, and hides the resize edge', () => {
     const css = openApp().q('style').textContent;
@@ -456,7 +456,7 @@ describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
 
 describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in tabs', () => {
   const ppl = [person({ id: 'A', name: 'Ann' })];
-  const open = (o = {}, data = blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 2, start: 600, end: 660, person: 'A' }] })] })) => { const a = fresh(data, o); a.ev('openDlg(S.events[0])'); return a; };
+  const open = (o = {}, data = blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 2, start: 600, end: 660, person: 'A' }] })] })) => { const a = fresh(data, o); a.ev('openDlg(state.S.events[0])'); return a; };
   const tabs = a => a.qa('#dlg .dtabs button'), pane = (a, k) => a.q(`#dlg .dpane[data-p="${k}"]`);
   const shown = a => a.qa('#dlg .dpane').filter(p => !p.classList.contains('off')).map(p => p.dataset.p);
   const sel = a => tabs(a).map(b => b.getAttribute('aria-selected'));
@@ -480,14 +480,14 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
     tabs(a)[1].click(); expect(shown(a)).toEqual(['wh']); expect(tabs(a).map(b => b.tabIndex)).toEqual([-1, 0, -1]);
     a.q('#dlg .dtabs').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); expect(shown(a)).toEqual(['mo']); expect(a.d.activeElement).toBe(tabs(a)[2]);
     a.q('#dlg .dtabs').dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); expect(shown(a)).toEqual(['ev']);
-    a.q('#fCancel').click(); a.ev('openDlg(S.events[0])'); expect(shown(a)).toEqual(['ev']);
+    a.q('#fCancel').click(); a.ev('openDlg(state.S.events[0])'); expect(shown(a)).toEqual(['ev']);
   });
   it('a failed save shows the tab with the field it is about and marks that tab', () => {
     const a = open({ phone: true }); tabs(a)[2].click(); a.q('#fT').value = ''; a.q('#fOk').click();
     expect(shown(a)).toEqual(['ev']); expect(tabs(a)[0].classList.contains('bad')).toBe(true); expect(a.q('#err').textContent).toBe('Title is required.');
     a.q('#fT').value = 'Event'; a.q('#fSch input').checked = false; a.q('#fOk').click(); expect(shown(a)).toEqual(['mo']);
     expect(tabs(a).map(b => b.classList.contains('bad'))).toEqual([false, false, true]);
-    a.q('#fSch input').checked = true; a.q('#fOk').click(); expect(a.q('#dlg').open).toBe(false); a.ev('openDlg(S.events[0])'); expect(tabs(a).some(b => b.classList.contains('bad'))).toBe(false);
+    a.q('#fSch input').checked = true; a.q('#fOk').click(); expect(a.q('#dlg').open).toBe(false); a.ev('openDlg(state.S.events[0])'); expect(tabs(a).some(b => b.classList.contains('bad'))).toBe(false);
   });
   it('the When tab shows ⚠ while repetitions in the table clash', () => {
     const a = open({ phone: true }, blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 720, person: 'A' }, { day: 0, start: 660, end: 780, person: 'A' }] })] }));
@@ -496,14 +496,14 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
   });
   it('the jump to the clicked repetition waits until the When tab is shown on a phone', () => {
     const a = fresh(blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 4, start: 600, end: 660, person: 'A' }] })] }), { phone: true });
-    a.ev('openDlg(S.events[0],null,S.events[0].slots[1])'); const fri = a.qa('#fDays .dr')[4]; expect(fri.classList.contains('pulse')).toBe(false);
+    a.ev('openDlg(state.S.events[0],null,state.S.events[0].slots[1])'); const fri = a.qa('#fDays .dr')[4]; expect(fri.classList.contains('pulse')).toBe(false);
     tabs(a)[1].click(); expect(fri.classList.contains('pulse')).toBe(true);
     const b = fresh(blank({ people: ppl, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A' }, { day: 4, start: 600, end: 660, person: 'A' }] })] }));
-    b.ev('openDlg(S.events[0],null,S.events[0].slots[1])'); expect(b.qa('#fDays .dr')[4].classList.contains('pulse')).toBe(true);
+    b.ev('openDlg(state.S.events[0],null,state.S.events[0].slots[1])'); expect(b.qa('#fDays .dr')[4].classList.contains('pulse')).toBe(true);
   });
   it('a phase dialog names its tabs Phase, When and Rhythms, and Spanish translates them all', () => {
     const a = fresh(blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'P', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 0, end: 60 }] }] }), { phone: true });
-    a.ev("editMode='phases';openDlg(S.phases[0])"); expect(a.q('#dlg').classList.contains('ph')).toBe(true);
+    a.ev("state.editMode='phases';openDlg(state.S.phases[0])"); expect(a.q('#dlg').classList.contains('ph')).toBe(true);
     expect(tabs(a).map(b => [...b.querySelectorAll('.ph-only')].map(s => s.textContent).join('') || b.textContent)).toEqual(['Phase', 'When', 'Rhythms']);
     a.ev("setLang('es')"); expect(tabs(a).map(b => b.textContent)).toEqual(['EventoFranja', 'Cuándo', 'MásRitmos']);
   });
@@ -517,7 +517,7 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
     a.ev('openSettings()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
     a.ev('openHelp()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
     a.ev('openStats("A")'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Close');
-    a.ev('openCopy(S.events[0])'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
+    a.ev('openCopy(state.S.events[0])'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
     a.ev('openCycle()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
     a.ev('askLiveWeek(()=>{})'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
     const ph = [...a.d.styleSheets[0].cssRules].filter(r => r.media).flatMap(r => [...r.cssRules]).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');

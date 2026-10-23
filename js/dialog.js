@@ -3,7 +3,7 @@
 $('f').onsubmit=()=>false;   // the dialog's form never submits (set here, not as an inline handler, which the CSP forbids: R-SEC-01)
 let cur=null;
 function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
-const pOpts=()=>[['',L('none')],...S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
+const pOpts=()=>[['',L('none')],...state.S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
 const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c;updCols()};
 $('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
 let curStl=[],curEtl=[],dkind='event';
@@ -12,9 +12,9 @@ let curStl=[],curEtl=[],dkind='event';
    or the event's default (R-EVT-21) and its timing (R-EVT-12/15). Nothing here is an event-level look-alike; ⧉ copies a whole day. */
 const MGS=[0,15,30,45,60,75,90,120,150,180,240];
 const OWN='@o';   // "Performed by: Owner" (slot.fo)
-const ownName=()=>{const q=S.people.find(x=>x.id===$('fOw').value);return q?q.name:''};
+const ownName=()=>{const q=state.S.people.find(x=>x.id===$('fOw').value);return q?q.name:''};
 const ownLbl=()=>ownName()?L('perfOwn',{n:ownName()}):L('perfOwn0');
-const perfOpts=()=>[[OWN,ownLbl()],['',L('perfNobody')],...S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
+const perfOpts=()=>[[OWN,ownLbl()],['',L('perfNobody')],...state.S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
 const defInv=()=>[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value);
 /* weeks in the event dialog (R-CYC-08): a Weeks row with week chips (all = every week) and "Different per week", which gives every time
    its own week (a button in the day cell). dWk: pw = different per week; weeks = the pattern's weeks of the cycle while not pw.
@@ -76,7 +76,7 @@ function rowCtl(o,r,day){   // the cells of one time: start, end, performer, Wit
   // field labels of the phone cards (R-UI-07); on a desktop the header row names the columns
   o.lb=[['ls',''],['le',''],['lp','ev-only'],['lw','ev-only'],['lk','ev-only'],['lt','ev-only']].map(([a,c])=>el('span','cl '+a+(c?' '+c:''),r));
   o.s=el('select','',r);o.en=el('select','',r);
-  o.s.onchange=()=>{if(+o.en.value<=+o.s.value)o.en.value=Math.min(MAXEND,+o.s.value+60);updEnd(o.s,o.en);updWarn()};o.en.onchange=updWarn;
+  o.s.onchange=()=>{if(+o.en.value<=+o.s.value)o.en.value=Math.min(state.MAXEND,+o.s.value+60);updEnd(o.s,o.en);updWarn()};o.en.onchange=updWarn;
   o.ps=el('select','ev-only',r);o.ps.onchange=()=>{cSet(o,o.col);updWarn()};o.wb=el('button','wbtn ev-only',r);o.wb.type='button';o.wb.onclick=()=>wPop(o);
   o.cl=el('button','cbtn ev-only',r);o.cl.type='button';o.cl.onclick=()=>cPop(o);
   o.tsel=el('select','tsel ev-only',r);o.tsel.onchange=()=>{tmSet(o,o.tsel.value,15,15);updWarn()};
@@ -99,16 +99,16 @@ function rowTexts(o,day,k){   // labels and tooltips (also after a language chan
 function tmSet(o,tm,fs,fe){o.tm=tm==='flex'||tm==='edge'?tm:'';o.fs=o.tm==='edge'?+fs||0:0;o.fe=o.tm==='edge'?+fe||0:0;o.tsel.value=o.tm;o.fsS.value=o.fs;o.feS.value=o.fe;
   o.sub.style.display=o.tm==='edge'&&!o.tsel.disabled?'':'none'}
 // a time's colour (R-EVT-22): null = the event's, 'p' = the performer's, 't' = the activity type's, or '#rrggbb'; the swatch shows the colour the box will get
-const rowPerf=o=>o.ps.value===OWN?$('fOw').value:o.ps.value,dlgTy=()=>S.types.find(t=>t.id===$('fTy').value);   // the type chosen in the dialog
+const rowPerf=o=>o.ps.value===OWN?$('fOw').value:o.ps.value,dlgTy=()=>state.S.types.find(t=>t.id===$('fTy').value);   // the type chosen in the dialog
 function cSet(o,col){
-  o.col=col==='p'||col==='t'||normHex(col)?col:null;if(!o.cl)return;const ev=$('fC').dataset.v,q=S.people.find(x=>x.id===rowPerf(o)),ty=dlgTy(),c=o.col==='p'?(q?q.color:ev):o.col==='t'?(ty?ty.color:ev):o.col||ev;
+  o.col=col==='p'||col==='t'||normHex(col)?col:null;if(!o.cl)return;const ev=$('fC').dataset.v,q=state.S.people.find(x=>x.id===rowPerf(o)),ty=dlgTy(),c=o.col==='p'?(q?q.color:ev):o.col==='t'?(ty?ty.color:ev):o.col||ev;
   o.cl.style.background=c||'';o.cl.style.color=ink(normHex(c)||'#3b6df0');o.cl.innerHTML=o.col==='p'?ICON_USER:o.col==='t'&&ty?tIcon(ty.icon):'';
   const st=o.col==='p'?L('colPer',{n:q?q.name:L('colNoP')}):o.col==='t'?L('colTy',{n:ty?ty.name:L('colNoT')}):o.col?L('colOwnS',{c:o.col}):L('colEv'),t=L('rowC',{d:o.wbl||''})+': '+st;o.cl.title=o.cl.__t=t;o.cl.setAttribute('aria-label',t);
 }
 const updCols=()=>rows.flatMap(o=>[o,...o.more]).forEach(o=>cSet(o,o.col));
 function cPop(o){   // the colour of one time: the event's, the performer's or its own
   document.querySelectorAll('.wpop,.cpop').forEach(x=>x.remove());
-  const b=o.cl,m=el('div','omenu cmenu',b.closest('dialog')||document.body),q=S.people.find(x=>x.id===rowPerf(o));el('div','oh',m).textContent=L('rowC',{d:o.wbl||''});
+  const b=o.cl,m=el('div','omenu cmenu',b.closest('dialog')||document.body),q=state.S.people.find(x=>x.id===rowPerf(o));el('div','oh',m).textContent=L('rowC',{d:o.wbl||''});
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true)},out=e=>{if(!m.contains(e.target)&&e.target!==b&&!e.target.closest('.cpop'))close()};
   const item=(col,c,label,fn)=>{const x=el('button','oi'+(o.col===col?' on':''),m);x.type='button';x.setAttribute('aria-pressed',o.col===col);x.innerHTML=chip(c)+`<span>${esc(label)}</span>`;x.onclick=fn;return x};
   const set=col=>{cSet(o,col);close();b.focus()};
@@ -199,7 +199,7 @@ function rmFirst(o){   // ✕ on a day's first time: its next time moves up, or 
   o.upd();updWarn();updOc()}
 function addPop(){   // "+ Add a time": the week (with different times per week) and the day
   document.querySelectorAll('.wpop,.cpop,.cmenu').forEach(x=>x.remove());
-  const b=$('fAddT'),m=el('div','omenu cmenu addm',b.closest('dialog')||document.body);m.setAttribute('role','menu');el('div','oh',m).textContent=L('addTH');let wk=curWk>cyc()?1:curWk;
+  const b=$('fAddT'),m=el('div','omenu cmenu addm',b.closest('dialog')||document.body);m.setAttribute('role','menu');el('div','oh',m).textContent=L('addTH');let wk=state.curWk>cyc()?1:state.curWk;
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true)},out=e=>{if(!m.contains(e.target)&&e.target!==b)close()};
   if(dWk.pw){const wr=el('div','addw',m),wbs=[];el('span','',wr).textContent=L('addTW');
     for(let w=1;w<=cyc();w++){const x=el('button','',wr);x.type='button';x.textContent=w;x.setAttribute('aria-label',wkLabel(w));wbs.push(x);x.onclick=()=>{wk=w;wbs.forEach((y,k)=>y.setAttribute('aria-pressed',String(k+1===w)))}}
@@ -219,13 +219,13 @@ function addTime(o,sl){   // a further time on day o, on a line of its own below
   // times per week (R-CYC-08), the same times in the next week that has none on that day yet
   const used=new Set([o,...o.more].map(y=>y.wk)),nx=dWk.pw&&!sl?[...Array(cyc()).keys()].map(k=>(last.wk+k)%cyc()+1).find(w=>!used.has(w)):null;
   const st=sl?sl.start:nx?+last.s.value:+last.en.value<=1380?+last.en.value:+last.s.value;
-  if(nx)wkSet(x,nx);rowLoad(x,sl||{start:st,end:nx?+last.en.value:Math.min(MAXEND,st+60),fo:true});o.upd();if(!sl)x.s.scrollIntoView?.({block:'nearest'});return x;   // a time added with + is scrolled into view
+  if(nx)wkSet(x,nx);rowLoad(x,sl||{start:st,end:nx?+last.en.value:Math.min(state.MAXEND,st+60),fo:true});o.upd();if(!sl)x.s.scrollIntoView?.({block:'nearest'});return x;   // a time added with + is scrolled into view
 }
 function newDay(o){   // a newly ticked day: the times of the nearest ticked day above it (else below), the owner, the default With, fixed
   const t=[...rows.slice(0,o.i).reverse(),...rows.slice(o.i+1)].find(x=>x.cb.checked);
-  rowLoad(o,{start:t?+t.s.value:540,end:t?+t.en.value:600,fo:true});wkSet(o,Math.min(curWk,cyc()));   // with different times per week, in the week shown
+  rowLoad(o,{start:t?+t.s.value:540,end:t?+t.en.value:600,fo:true});wkSet(o,Math.min(state.curWk,cyc()));   // with different times per week, in the week shown
 }
-function updTyIc(){const t=S.types.find(x=>x.id===$('fTy').value);$('fTyIc').innerHTML=t?tIcon(t.icon):'';$('fTyIc').style.color=t?t.color:''}
+function updTyIc(){const t=state.S.types.find(x=>x.id===$('fTy').value);$('fTyIc').innerHTML=t?tIcon(t.icon):'';$('fTyIc').style.color=t?t.color:''}
 $('fTy').onchange=()=>{updTyIc();updCols()};
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
 function formSlots(){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)[o,...o.more].forEach(x=>a.push({day:i,...rowSlot(x)}))});return a}
@@ -241,11 +241,11 @@ function refreshDlg(){updWarn();updOc()}
 function updTurns(items){   // the rota's turns per person while the table is edited (R-CYC-18)
   const md=$('fTuM').value,t=turnsOf({...(!dWk.pw&&dWk.weeks.size<cyc()?{weeks:[...dWk.weeks]}:{})},items,md==='y'?true:md==='n'?false:undefined),c=$('fTu');c.textContent='';c.title='';if(!t)return;
   if(!t.size){c.textContent=L('tuNobody');return}
-  const nm=id=>(S.people.find(q=>q.id===id)||{}).name;c.textContent=[...t].map(([id,a])=>nm(id)+' '+tuSum(a)).join(' · ');el('small','',c).textContent=' '+L(cyc()>1?'tuCyc':'tuWk');
+  const nm=id=>(state.S.people.find(q=>q.id===id)||{}).name;c.textContent=[...t].map(([id,a])=>nm(id)+' '+tuSum(a)).join(' · ');el('small','',c).textContent=' '+L(cyc()>1?'tuCyc':'tuWk');
   c.title=cyc()>1?[...Array(cyc()).keys()].map(k=>wkLabel(k+1)+': '+[...t].map(([id,a])=>nm(id)+' '+a[k]).join(' · ')).join('\n'):'';
 }
 function updOwn(){   // the owner's icon, and "Owner (name)" in every performer list
-  const q=S.people.find(x=>x.id===$('fOw').value);$('fOwIc').innerHTML=q?ICON_USER:'';$('fOwIc').style.color=q?q.color:'';
+  const q=state.S.people.find(x=>x.id===$('fOw').value);$('fOwIc').innerHTML=q?ICON_USER:'';$('fOwIc').style.color=q?q.color:'';
   rows.flatMap(o=>[o,...o.more]).forEach(o=>{const op=o.ps.querySelector(`option[value="${OWN}"]`);if(op)op.textContent=ownLbl()});
 }
 $('fOw').onchange=()=>{updOwn();updCols();updWarn()};$('fOnCall').onchange=updWarn;$('fTuM').onchange=updWarn;
@@ -291,31 +291,31 @@ function dlgJump(s){
   const r=ln.r;r.classList.remove('pulse');void r.offsetWidth;r.classList.add('pulse');clearTimeout(r._pt);r._pt=setTimeout(()=>r.classList.remove('pulse'),1600);
 }
 function openDlg(e,def,src){   // src: the repetition that was clicked, to jump to in the day table (R-UI-12)
-  const kind=e?(e.rhythms?'phase':'event'):(editMode==='phases'?'phase':'event');
-  if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
-  dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
-  cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
+  const kind=e?(e.rhythms?'phase':'event'):(state.editMode==='phases'?'phase':'event');
+  if(kind==='phase'&&!e&&!state.S.rhythms.length){toast(L('noRh'));return}
+  dkind=kind;state.MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
+  cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[state.S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||state.S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[state.S.events.length%PAL.length],involved:[],schedules:state.S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
   const slots=e?cycSl(e.slots):[{day:0,start:540,end:600,person:'',fo:true,...def}];   // the times of the cycle's weeks; staged weeks' own times wait aside (R-CYC-22)
   {const n=cyc(),pw=!!(e&&e.slots.some(x=>x.wk)),cw=e&&e.weeks&&e.weeks.filter(inCyc);
    dWk={pw,weeks:new Set(cw&&cw.length?cw:def&&def.wk?[def.wk]:[...Array(n).keys()].map(k=>k+1)),   // R-CYC-08; created in a week's column, that week (R-CYC-19)
      stgW:e&&!pw?(e.weeks||[...Array(kept()).keys()].map(k=>k+1)).filter(k=>k>n):[],stgL:pw?e.slots.filter(stgSl).map(x=>({...x})):[],base:e&&!pw?e.slots.map(x=>({...x})):[],nw:!e}}
-  curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
+  curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=state.MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
   $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
   // the owner: our people, plus a current owner who has since become external (kept, marked)
-  fillSel($('fOw'),[['',L('none')],...S.people.filter(q=>!q.external||q.id===d.owner).map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])]);$('fOw').value=d.owner||'';
+  fillSel($('fOw'),[['',L('none')],...state.S.people.filter(q=>!q.external||q.id===d.owner).map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])]);$('fOw').value=d.owner||'';
   const iv=$('fInv');iv.innerHTML='';
   if(!ourPeople().length)iv.textContent=L('noPeople');   // external people are never offered as involved (R-PPL-03)
   ourPeople().forEach(q=>{const l=el('label','',iv);const i=el('input','',l);i.type='checkbox';i.value=q.id;i.checked=(d.involved||[]).includes(q.id);l.insertAdjacentHTML('beforeend',pTag(q.id))});
   rows.forEach((o,i)=>{o.more.forEach(x=>x.r.remove());o.more=[];const sl=slots.filter(x=>x.day===i).sort((a,b)=>(a.wk||0)-(b.wk||0)||a.start-b.start);
-    fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,perfOpts());o.cb.checked=!!sl.length;rowLoad(o,sl[0]||{start:540,end:600,fo:true});wkSet(o,sl[0]&&sl[0].wk||curWk);o.src=sl[0]||null;sl.slice(1).forEach(x=>{addTime(o,x).src=x});o.upd()});
+    fillSel(o.s,curStl);fillSel(o.en,curEtl);fillSel(o.ps,perfOpts());o.cb.checked=!!sl.length;rowLoad(o,sl[0]||{start:540,end:600,fo:true});wkSet(o,sl[0]&&sl[0].wk||state.curWk);o.src=sl[0]||null;sl.slice(1).forEach(x=>{addTime(o,x).src=x});o.upd()});
   drawWk();
   updOwn();
   const c=$('fSch');c.innerHTML='';
-  (kind==='phase'?S.rhythms:S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
+  (kind==='phase'?state.S.rhythms:state.S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});
   fillSel($('fTuM'),[['',L('tuAuto')],['y',L('tuYes')],['n',L('tuNo')]]);$('fTuM').value=d.turns===true?'y':d.turns===false?'n':'';$('fTuM').setAttribute('aria-label',L('tuMode'));   // R-CYC-18
   $('fOnCall').checked=!!d.oncall;$('fNest').checked=!!d.nest;$('fBg').checked=!!d.bg;$('fAw').checked=!d.bg&&!!d.away;$('fBox').checked=!d.bg&&!d.away;updBg();$('fC').setAttribute('aria-label',tr('Colour'));
-  $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
+  $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...state.S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&state.S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
   dTabs().forEach(b=>b.classList.remove('bad'));dJump=null;dlgTab('ev');
@@ -338,13 +338,13 @@ $('fOk').onclick=()=>{
   if(d.away&&!slots.some(x=>x.person||(x.inv||defInv()).length))return dErr('wh',L('errAway'));   // somebody must be away (R-EVT-24)
   hist();
   if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.bg;delete cur.away;delete cur.turns}if(cur)delete cur.weeks;
-  if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
-  normWk(cur||(dkind==='phase'?S.phases:S.events).at(-1),kept());
+  if(cur)Object.assign(cur,d);else (dkind==='phase'?state.S.phases:state.S.events).push({id:uid(),...d});
+  normWk(cur||(dkind==='phase'?state.S.phases:state.S.events).at(-1),kept());
   $('dlg').close();render();
 };
 $('fCancel').onclick=()=>$('dlg').close();
 // R-CYC-23: an event or phase that also happens in staged weeks asks whether those go too, or stay as they are
-$('fDel').onclick=()=>{const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)S.phases=S.phases.filter(x=>x!==e);else S.events=S.events.filter(x=>x!==e);render()};$('dlg').close();
+$('fDel').onclick=()=>{const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)state.S.phases=state.S.phases.filter(x=>x!==e);else state.S.events=state.S.events.filter(x=>x!==e);render()};$('dlg').close();
   const sg=stgWks(e);if(!sg.length){del();return}
   const keep=()=>{hist();if(e.slots.some(x=>x.wk))e.slots=e.slots.filter(stgSl);else e.weeks=sg;normWk(e,kept());render()};
   setTimeout(()=>xdlg({title:L(ph?'delPhT':'delEvT'),body:`<p>${esc(L('delStgBody',{t:e.title,w:wksText(sg)}))}</p>`,stack:true,
@@ -352,12 +352,12 @@ $('fDel').onclick=()=>{const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)S.ph
 $('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
 /* ---------- copy dialog ---------- */
 function openCopy(src){
-  const isPh=!!src.rhythms,mem=isPh?src.rhythms:src.schedules;let lst=isPh?S.rhythms:S.schedules,tw=null;   // tw: another workspace (events only, R-DATA-04)
+  const isPh=!!src.rhythms,mem=isPh?src.rhythms:src.schedules;let lst=isPh?state.S.rhythms:state.S.schedules,tw=null;   // tw: another workspace (events only, R-DATA-04)
   const body=el('div');el('p','note',body).textContent=L('cpNote');
-  let wsel=null;if(!isPh&&WS.length>1){el('label','',body).textContent=L('cpWs');wsel=el('select','',body);fillSel(wsel,WS.map(w=>[w.id,w.id===curId?L('cpThis',{n:w.name}):w.name]));wsel.value=curId;wsel.setAttribute('aria-label',L('cpWs'))}
+  let wsel=null;if(!isPh&&state.WS.length>1){el('label','',body).textContent=L('cpWs');wsel=el('select','',body);fillSel(wsel,state.WS.map(w=>[w.id,w.id===state.curId?L('cpThis',{n:w.name}):w.name]));wsel.value=state.curId;wsel.setAttribute('aria-label',L('cpWs'))}
   el('label','',body).textContent=L(isPh?'cpDestR':'cpDest');
   const sel=el('select','',body);sel.setAttribute('aria-label',L(isPh?'cpDestR':'cpDest'));   // its label above is not tied to it
-  const fillDest=()=>{tw=wsel&&wsel.value!==curId?WS.find(w=>w.id===wsel.value):null;lst=tw?tw.data.schedules:isPh?S.rhythms:S.schedules;fillSel(sel,lst.map(s=>[s.id,s.name]));
+  const fillDest=()=>{tw=wsel&&wsel.value!==state.curId?state.WS.find(w=>w.id===wsel.value):null;lst=tw?tw.data.schedules:isPh?state.S.rhythms:state.S.schedules;fillSel(sel,lst.map(s=>[s.id,s.name]));
     const o=!tw&&lst.find(s=>!mem.includes(s.id));if(o)sel.value=o.id;const mv=$('xDlg').querySelectorAll('.btns button')[1];if(mv&&mv.dataset.mv)mv.style.display=tw?'':'none'};
   fillDest();
   el('label','',body).textContent=L('cpColor');
@@ -370,10 +370,10 @@ function openCopy(src){
   sel.onchange=auto;if(wsel)wsel.onchange=()=>{fillDest();auto()};auto();
   const go=move=>{
       const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
-      const used=(isPh?S.phases:(tw?tw.data:S).events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
+      const used=(isPh?state.S.phases:(tw?tw.data:state.S).events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
       const col=mode==='tweak'?shiftColor(src.color,used):mode==='random'?randomColor(used):mode==='pick'?pv:src.color;
-      if(tw){const t=tw;setTimeout(()=>carryEvents([{...src,color:col}],t,()=>tid,()=>{if(move){pushUndoWs(cw());S.events=S.events.filter(e=>e!==src)}render();toast(L(move?'trMoved':'trDone',{n:t.name}))}),0);return}   // to another workspace (R-DATA-04)
-      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?S.phases:S.events).push(c);render();toast(L('copied'))};
+      if(tw){const t=tw;setTimeout(()=>carryEvents([{...src,color:col}],t,()=>tid,()=>{if(move){pushUndoWs(cw());state.S.events=state.S.events.filter(e=>e!==src)}render();toast(L(move?'trMoved':'trDone',{n:t.name}))}),0);return}   // to another workspace (R-DATA-04)
+      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?state.S.phases:state.S.events).push(c);render();toast(L('copied'))};
   xdlg({title:L('cpTitle')+': '+src.title,full:true,body,buttons:[
     {label:L('cpDo'),cls:'p',fn:()=>go(false)},
     ...(wsel?[{label:L('cpMove'),fn:()=>go(true)}]:[]),

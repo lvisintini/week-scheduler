@@ -99,7 +99,7 @@ test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', 
 test.describe('R-DATA-03 Browser memory across real page reloads', () => {
   test('saved work is still there after a reload, and unsaved work is not', async ({ page }) => {
     await openApp(page); await seed(page, rich()); await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click(); await expect(page.locator('#toast')).toHaveText('Saved to browser memory');
-    await page.evaluate(() => { S.events[0].title = 'Edited but not saved'; }); await page.evaluate(() => { window.onbeforeunload = null; });
+    await page.evaluate(() => { state.S.events[0].title = 'Edited but not saved'; }); await page.evaluate(() => { window.onbeforeunload = null; });
     page.once('dialog', d => d.accept()); await page.reload(); await expect(page.locator('.dh:not(.c)').first()).toBeVisible();
     expect((await data(page)).events[0].title).toBe('Doctor visit');
   });
@@ -178,7 +178,7 @@ test.describe('R-DATA-08 Sample files of every published format open in a real b
     });
     test(`the ${v} browser memory loads after a real page load with both workspaces`, async ({ page }) => {
       await openApp(page, { storage: { 'weekly-schedules-workspaces': read('store.json') } });
-      await expect(page.locator('.wsbtn .wsn')).toContainText('Family week'); expect(await page.evaluate(() => WS.map(w => w.name))).toEqual(['Family week', 'Grandparents']);
+      await expect(page.locator('.wsbtn .wsn')).toContainText('Family week'); expect(await page.evaluate(() => state.WS.map(w => w.name))).toEqual(['Family week', 'Grandparents']);
     });
   }
 });

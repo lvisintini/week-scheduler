@@ -18,7 +18,7 @@ async function protect(a, pw = PASS) {
 }
 const reopen = a => openApp({ storage: a.storage() });
 async function unlock(a, pw = PASS) { a.q('#xDlg .pwl input').value = pw; a.click('Open'); }
-const opened = async a => { await waitFor(() => !a.dlgOpen() && a.ev('S.events.length') === 1); };
+const opened = async a => { await waitFor(() => !a.dlgOpen() && a.ev('state.S.events.length') === 1); };
 
 describe('R-DATA-11 Protecting browser memory with a passphrase encrypts what is stored', { timeout: 30000 }, () => {
   it('Settings → Data offers "Passphrase…" with a tooltip line, and the dialog asks twice, warns and can suggest one', async () => {
@@ -34,18 +34,18 @@ describe('R-DATA-11 Protecting browser memory with a passphrase encrypts what is
     const a = fresh(); a.ev("saveMem('all')"); const before = a.storage()[WS_KEY]; await settingsBtn(a, 'Passphrase…');
     fill(a, ['short', 'short']); a.click('Protect'); expect(err(a)).toBe('The passphrase needs at least 8 characters.');
     fill(a, ['long enough one', 'long enough two']); a.click('Protect'); expect(err(a)).toBe('The two passphrases are different.');
-    await a.sleep(50); expect(a.storage()[WS_KEY]).toBe(before); expect(a.ev('memKey')).toBe(null);
+    await a.sleep(50); expect(a.storage()[WS_KEY]).toBe(before); expect(a.ev('state.memKey')).toBe(null);
   });
   it('with nothing saved yet, protecting stores an empty protected memory, so the protection is kept', async () => {
     const a = fresh(); await settingsBtn(a, 'Passphrase…'); fill(a, [PASS, PASS]); a.click('Protect'); await waitFor(() => a.toast() === 'Browser memory is now protected');
     expect(Object.keys(stored(a)).sort()).toEqual(['sealed', 'version']); expect(a.ev('isDirty()')).toBe(true);
-    const b = reopen(a); expect(b.dlgTitle()).toBe('Browser memory is protected'); await unlock(b); await waitFor(() => !b.dlgOpen()); expect(b.ev('S.events.length')).toBe(0);
+    const b = reopen(a); expect(b.dlgTitle()).toBe('Browser memory is protected'); await unlock(b); await waitFor(() => !b.dlgOpen()); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it('saving the current workspace or all of them while protected keeps it sealed and keeps the other workspaces', async () => {
-    const a = fresh(); a.ev('addWorkspace()'); a.ev('cw().name="Work"'); a.ev("switchWs(WS[0].id)"); await protect(a);
-    a.ev('S.events[0].title="Changed"'); await a.ev("saveMem('current')"); expect(a.storage()[WS_KEY]).not.toMatch(/Changed/);
-    const c = reopen(a); await unlock(c); await waitFor(() => !c.dlgOpen() && c.ev('WS.length') === 2);
-    expect(c.ev('WS.map(w=>w.name)')).toEqual(['Family', 'Work']); expect(c.ev('S.events[0].title')).toBe('Changed'); expect(c.ev('anyDirty()')).toBe(false);
+    const a = fresh(); a.ev('addWorkspace()'); a.ev('cw().name="Work"'); a.ev("switchWs(state.WS[0].id)"); await protect(a);
+    a.ev('state.S.events[0].title="Changed"'); await a.ev("saveMem('current')"); expect(a.storage()[WS_KEY]).not.toMatch(/Changed/);
+    const c = reopen(a); await unlock(c); await waitFor(() => !c.dlgOpen() && c.ev('state.WS.length') === 2);
+    expect(c.ev('state.WS.map(w=>w.name)')).toEqual(['Family', 'Work']); expect(c.ev('state.S.events[0].title')).toBe('Changed'); expect(c.ev('anyDirty()')).toBe(false);
   });
   it('the Save and Load dialogs say "Browser memory (protected)" while it is protected', async () => {
     const a = fresh(); a.toolbar('save').click(); expect(a.dlgButtons()).toContain('Browser memory'); a.click('Cancel');
@@ -53,32 +53,32 @@ describe('R-DATA-11 Protecting browser memory with a passphrase encrypts what is
     a.toolbar('load').click(); expect(a.dlgButtons()).toContain('Browser memory (protected)');
   });
   it('Load → Browser memory and Restart work with the open passphrase without asking again', async () => {
-    const a = fresh(); await protect(a); a.ev('hist();S.events[0].title="Unsaved"'); await a.ev('loadMem()'); expect(a.ev('S.events[0].title')).toBe('Doctor visit');
-    a.ev('hist();S.events[0].title="Unsaved"'); await a.ev('restart()'); expect(a.ev('S.events[0].title')).toBe('Doctor visit'); expect(a.dlgOpen()).toBe(false);
+    const a = fresh(); await protect(a); a.ev('hist();state.S.events[0].title="Unsaved"'); await a.ev('loadMem()'); expect(a.ev('state.S.events[0].title')).toBe('Doctor visit');
+    a.ev('hist();state.S.events[0].title="Unsaved"'); await a.ev('restart()'); expect(a.ev('state.S.events[0].title')).toBe('Doctor visit'); expect(a.dlgOpen()).toBe(false);
   });
 });
 
 describe('R-DATA-11 Opening the page with protected browser memory asks for the passphrase first', { timeout: 30000 }, () => {
   it('the unlock dialog shows over an empty grid; the right passphrase restores every workspace, the current one and the saved state', async () => {
     const a = fresh(); a.ev('addWorkspace()'); a.ev('cw().name="Work"'); await protect(a); const b = reopen(a);
-    expect(b.dlgTitle()).toBe('Browser memory is protected'); expect(b.ev('S.events.length')).toBe(0); expect(b.dlgButtons()).toEqual(['Forgot it? Erase browser memory…', 'Open']);
-    await unlock(b); await waitFor(() => !b.dlgOpen() && b.ev('WS.length') === 2); expect(b.ev('WS.map(w=>w.name)')).toEqual(['Family', 'Work']); expect(b.ev('cw().name')).toBe('Work'); expect(b.ev('anyDirty()')).toBe(false);
+    expect(b.dlgTitle()).toBe('Browser memory is protected'); expect(b.ev('state.S.events.length')).toBe(0); expect(b.dlgButtons()).toEqual(['Forgot it? Erase browser memory…', 'Open']);
+    await unlock(b); await waitFor(() => !b.dlgOpen() && b.ev('state.WS.length') === 2); expect(b.ev('state.WS.map(w=>w.name)')).toEqual(['Family', 'Work']); expect(b.ev('cw().name')).toBe('Work'); expect(b.ev('anyDirty()')).toBe(false);
   });
   it('a wrong passphrase says so and lets you try again; nothing is shown until it is right', async () => {
     const a = fresh(); await protect(a); const b = reopen(a); await unlock(b, 'not the passphrase');
-    await waitFor(() => err(b) === 'Wrong passphrase. Try again.'); expect(b.dlgOpen()).toBe(true); expect(b.ev('S.events.length')).toBe(0);
+    await waitFor(() => err(b) === 'Wrong passphrase. Try again.'); expect(b.dlgOpen()).toBe(true); expect(b.ev('state.S.events.length')).toBe(0);
     await unlock(b); await opened(b);
   });
   it('Escape does not close the unlock dialog, and if the browser closes it anyway it comes back', async () => {
     const a = fresh(); await protect(a); const b = reopen(a), dlg = b.q('#xDlg');
     const esc = new b.w.Event('cancel', { cancelable: true }); dlg.dispatchEvent(esc); expect(esc.defaultPrevented).toBe(true);
-    dlg.close(); await waitFor(() => b.dlgOpen() && b.dlgTitle() === 'Browser memory is protected'); expect(b.ev('S.events.length')).toBe(0);
+    dlg.close(); await waitFor(() => b.dlgOpen() && b.dlgTitle() === 'Browser memory is protected'); expect(b.ev('state.S.events.length')).toBe(0);
   });
   it('"Erase browser memory…" asks first, then removes everything and starts with an empty workspace', async () => {
     const a = fresh(); await protect(a); const b = openApp({ storage: a.storage(), confirmAnswer: m => !/Erase everything/.test(m) });
     b.click('Forgot it? Erase browser memory…'); expect(b.log.confirms.at(-1)).toMatch(/cannot be recovered/); expect(b.dlgOpen()).toBe(true); expect(b.storage()[WS_KEY]).toBeDefined();
     const c = openApp({ storage: a.storage() }); c.click('Forgot it? Erase browser memory…'); await waitFor(() => !c.dlgOpen());
-    expect(c.storage()[WS_KEY]).toBeUndefined(); expect(c.ev('memKey')).toBe(null); expect(c.ev('S.events.length')).toBe(0); expect(c.toast()).toBe('Browser memory cleared and app restarted');
+    expect(c.storage()[WS_KEY]).toBeUndefined(); expect(c.ev('state.memKey')).toBe(null); expect(c.ev('state.S.events.length')).toBe(0); expect(c.toast()).toBe('Browser memory cleared and app restarted');
   });
   it('a shared link opened with the page asks for its password only after the passphrase', async () => {
     const a = fresh(); await protect(a); const link = await a.ev(`seal(buildFile(),"link-password-123").then(b=>"https://app.test/#data=e1."+b64u(b))`);
@@ -87,8 +87,8 @@ describe('R-DATA-11 Opening the page with protected browser memory asks for the 
   });
   it('Live View remembered by this browser starts after the passphrase, not before', async () => {
     const a = fresh(); await protect(a); const prefs = JSON.stringify({ live: true });
-    const b = openApp({ storage: { ...a.storage(), [PREFS_KEY]: prefs } }); expect(b.ev('live')).toBe(false); expect(b.dlgTitle()).toBe('Browser memory is protected');
-    await unlock(b); await waitFor(() => b.ev('live') === true);
+    const b = openApp({ storage: { ...a.storage(), [PREFS_KEY]: prefs } }); expect(b.ev('state.live')).toBe(false); expect(b.dlgTitle()).toBe('Browser memory is protected');
+    await unlock(b); await waitFor(() => b.ev('state.live') === true);
   });
   it('a protected store from a newer version gets the newer-version message, no unlock dialog, and is never overwritten', async () => {
     const a = fresh(); await protect(a); const st = stored(a); st.version = a.ev('FMT') + 1; const text = JSON.stringify(st);
@@ -116,16 +116,16 @@ describe('R-DATA-11 Changing or removing the passphrase, and Lock now', { timeou
     const a = fresh(); await protect(a); await settingsBtn(a, 'Remove passphrase…'); expect(a.dlgText()).toContain('anyone using this browser can read it');
     fill(a, ['wrong passphrase']); a.click('Remove'); await waitFor(() => err(a) === 'Wrong passphrase.'); expect(stored(a).sealed).toBeDefined();
     fill(a, [PASS]); a.click('Remove'); await waitFor(() => a.toast() === 'Browser memory is no longer protected');
-    expect(stored(a).workspaces[0].events[0].title).toBe('Doctor visit'); expect(a.ev('memKey')).toBe(null); expect(reopen(a).dlgOpen()).toBe(false);
+    expect(stored(a).workspaces[0].events[0].title).toBe('Doctor visit'); expect(a.ev('state.memKey')).toBe(null); expect(reopen(a).dlgOpen()).toBe(false);
   });
   it('Lock now asks when there are unsaved changes, then hides the data until the passphrase is typed again', async () => {
-    const a = fresh({ confirmAnswer: false }); await protect(a); a.ev('hist();S.events[0].title="Unsaved"'); await settingsBtn(a, 'Lock now');
-    expect(a.log.confirms.at(-1)).toBe('Lock now? Unsaved changes will be lost.'); expect(a.ev('S.events[0].title')).toBe('Unsaved');
-    const b = fresh(); await protect(b); await settingsBtn(b, 'Lock now'); expect(b.ev('memKey')).toBe(null); expect(b.ev('S.events.length')).toBe(0); expect(b.dlgTitle()).toBe('Browser memory is protected');
-    await unlock(b); await opened(b); expect(b.ev('S.events[0].title')).toBe('Doctor visit');
+    const a = fresh({ confirmAnswer: false }); await protect(a); a.ev('hist();state.S.events[0].title="Unsaved"'); await settingsBtn(a, 'Lock now');
+    expect(a.log.confirms.at(-1)).toBe('Lock now? Unsaved changes will be lost.'); expect(a.ev('state.S.events[0].title')).toBe('Unsaved');
+    const b = fresh(); await protect(b); await settingsBtn(b, 'Lock now'); expect(b.ev('state.memKey')).toBe(null); expect(b.ev('state.S.events.length')).toBe(0); expect(b.dlgTitle()).toBe('Browser memory is protected');
+    await unlock(b); await opened(b); expect(b.ev('state.S.events[0].title')).toBe('Doctor visit');
   });
   it('a passphrase changed in another tab makes saving here refuse with the reload message, leaving it as it is', async () => {
-    const a = fresh(); await protect(a); const other = await a.ev(`(async()=>{const st=readStore(),k=await newKey("other tab phrase");const plain=await unseal(unb64u(st.sealed),null,memKey);return JSON.stringify({version:FMT,sealed:b64u(await seal(plain,null,k))})})()`);
+    const a = fresh(); await protect(a); const other = await a.ev(`(async()=>{const st=readStore(),k=await newKey("other tab phrase");const plain=await unseal(unb64u(st.sealed),null,state.memKey);return JSON.stringify({version:FMT,sealed:b64u(await seal(plain,null,k))})})()`);
     a.w.localStorage.setItem(WS_KEY, other); await a.ev("saveMem('all')"); await waitFor(() => a.log.alerts.length); expect(a.log.alerts[0]).toContain('changed in another tab'); expect(a.storage()[WS_KEY]).toBe(other);
   });
   it('protection turned on in another tab makes a page that opened it plain refuse to save over it', async () => {
@@ -145,7 +145,7 @@ describe('R-SEC-04 Protected browser memory still uses only the two documented k
     expect(b.storage()[PREFS_KEY] || '').not.toMatch(/correct horse|Granny|Doctor/);
   });
   it('the derived key is a non-extractable AES-GCM key made with 600,000 PBKDF2 iterations', async () => {
-    const a = fresh(); await protect(a); expect(a.ev('memKey.key.extractable')).toBe(false); expect(a.ev('memKey.key.algorithm.name')).toBe('AES-GCM'); expect(a.ev('memKey.iter')).toBe(600000);
-    await expect(a.ev('crypto.subtle.exportKey("raw",memKey.key).then(()=>"exported",()=>"refused")')).resolves.toBe('refused');
+    const a = fresh(); await protect(a); expect(a.ev('state.memKey.key.extractable')).toBe(false); expect(a.ev('state.memKey.key.algorithm.name')).toBe('AES-GCM'); expect(a.ev('state.memKey.iter')).toBe(600000);
+    await expect(a.ev('crypto.subtle.exportKey("raw",state.memKey.key).then(()=>"exported",()=>"refused")')).resolves.toBe('refused');
   });
 });

@@ -24,15 +24,15 @@ export async function openApp(page, { prefs, clock, storage, defaults = false } 
 }
 
 /** Replaces the current workspace's data with validated data and redraws. */
-export const seed = (page, data) => page.evaluate(d => { const x = parseData(d); S = x; cw().data = x; render(); }, data);
-export const data = page => page.evaluate(() => JSON.parse(JSON.stringify(S)));
-export const slots = (page, i = 0) => page.evaluate(n => JSON.parse(JSON.stringify(S.events[n].slots)), i);
+export const seed = (page, data) => page.evaluate(d => { const x = parseData(d); state.S = x; cw().data = x; render(); }, data);
+export const data = page => page.evaluate(() => JSON.parse(JSON.stringify(state.S)));
+export const slots = (page, i = 0) => page.evaluate(n => JSON.parse(JSON.stringify(state.S.events[n].slots)), i);
 
 /** Viewport coordinates of minute `min` in the n-th displayed day column (x = middle of the column). */
 export async function pt(page, col, min) {
   return page.evaluate(([c, m]) => {
     const day = document.querySelectorAll('.day')[c], r = day.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + (m - vs() * 60) / 60 * HH };
+    return { x: r.left + r.width / 2, y: r.top + (m - vs() * 60) / 60 * state.HH };
   }, [col, min]);
 }
 

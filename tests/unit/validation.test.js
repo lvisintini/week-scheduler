@@ -102,7 +102,7 @@ describe('R-SEC-03 Import limits protect against huge files and links', () => {
   it('data already stored in the browser is never rejected by the limits, so saved work cannot fail to load', () => {
     const store = JSON.stringify({ version: 1, current: 'w', workspaces: [{ id: 'w', name: 'Big', ...blank({ events: many(5200, i => ev1({ id: 'e' + i })) }) }] });
     const big = openApp({ storage: { [WS_KEY]: store } });
-    expect(big.ev('S.events.length')).toBe(5200); expect(big.ev('cw().name')).toBe('Big');
+    expect(big.ev('state.S.events.length')).toBe(5200); expect(big.ev('cw().name')).toBe('Big');
   });
 });
 
@@ -126,7 +126,7 @@ describe('R-DATA-01 A damaged or missing browser store never breaks the app', ()
   it.each([['not json at all'], ['{"workspaces":"x"}'], ['{"workspaces":[]}'], ['null'], ['{"workspaces":[{"id":"a","name":"A"}]}']])(
     'with the stored text %j the app starts with a fresh default workspace', raw => {
       const a = openApp({ storage: { [WS_KEY]: raw } });
-      expect(a.ev('WS.length')).toBe(1); expect(a.ev('S.schedules[0].name')).toBe('Routine');
+      expect(a.ev('state.WS.length')).toBe(1); expect(a.ev('state.S.schedules[0].name')).toBe('Routine');
       expect(a.log.errors).toEqual([]);
     });
 });

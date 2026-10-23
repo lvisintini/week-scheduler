@@ -38,13 +38,13 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
   });
   test('R-UI-07 on a phone the folded and open day cards, the Add a time menu, and the floating Live View controls add no serious accessibility violation', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 }); await openApp(page, { prefs: { collapsed: true } }); await seed(page, blank({ people: [person()], events: [ev({ slots: [{ day: 0, start: 600, end: 660, person: '' }, { day: 2, start: 600, end: 660, person: '' }] })] }));
-    await page.evaluate(() => openDlg(S.events[0])); await page.locator('.dtabs button', { hasText: 'When' }).click(); ratchet(await scan(page), {});
+    await page.evaluate(() => openDlg(state.S.events[0])); await page.locator('.dtabs button', { hasText: 'When' }).click(); ratchet(await scan(page), {});
     await page.locator('#fDays .dr').first().locator('.sum').click(); ratchet(await scan(page), {}); await page.locator('#fAddT').click(); ratchet(await scan(page), {});
     await page.keyboard.press('Escape'); await page.locator('#fCancel').click(); await page.locator('#lvR').click(); ratchet(await scan(page), {});
   });
   test('R-UI-14 on a phone each tab of the full-screen event dialog has no serious accessibility violation', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 }); await openApp(page); await seed(page, blank({ people: [person()], events: [ev()] }));
-    await page.evaluate(() => openDlg(S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();
+    await page.evaluate(() => openDlg(state.S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();
     for (const tab of ['Event', 'When', 'More']) { await page.locator('.dtabs button', { hasText: tab }).click(); ratchet(await scan(page), {}); }
   });
   for (const tab of ['View', 'Data', 'UI', 'About']) {
@@ -99,9 +99,9 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
   test('R-CYC-16 the phase dialog with its Weeks row and a week for every time adds no accessibility violation', async ({ page }) => {
     await openApp(page); await seed(page, blank({ cycle: 2, weekInfo: [{}, { name: 'Nights', color: '#8e4ec6' }], rhythms: [{ id: 'r', name: 'Shifts', visible: true }],
       phases: [{ id: 'p', title: 'Shift', desc: '', color: '#a1662f', rhythms: ['r'], slots: [{ day: 0, start: 360, end: 840, wk: 1 }, { day: 0, start: 1260, end: 1440, wk: 2 }] }, { id: 'q', title: 'Quiet', desc: '', color: '#607d8b', rhythms: ['r'], weeks: [2], slots: [{ day: 0, start: 480, end: 720 }] }] }));
-    await page.evaluate(() => { setWeek(2); openDlg(S.phases[0]); }); await expect(page.locator('#fWk')).toBeVisible();
+    await page.evaluate(() => { setWeek(2); openDlg(state.S.phases[0]); }); await expect(page.locator('#fWk')).toBeVisible();
     let r = await new AxeBuilder({ page }).include('#dlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
-    await page.evaluate(() => { document.getElementById('dlg').close(); openDlg(S.phases[1]); }); await expect(page.locator('#fWk .chips')).toBeVisible();
+    await page.evaluate(() => { document.getElementById('dlg').close(); openDlg(state.S.phases[1]); }); await expect(page.locator('#fWk .chips')).toBeVisible();
     r = await new AxeBuilder({ page }).include('#dlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });
   test('R-CYC-19 every week of the cycle side by side adds no serious accessibility violation', async ({ page }) => {
@@ -117,17 +117,17 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     });
   }
   test('R-DATA-04 the copy dialog with a workspace choice adds no accessibility violation', async ({ page }) => {
-    await openApp(page); await seed(page, blank({ events: [ev({ title: 'Dishes' })] })); await page.evaluate(() => { WS.push(newWs('Work', defaultData(), true)); openCopy(S.events[0]); });
+    await openApp(page); await seed(page, blank({ events: [ev({ title: 'Dishes' })] })); await page.evaluate(() => { state.WS.push(newWs('Work', defaultData(), true)); openCopy(state.S.events[0]); });
     await page.locator('#xDlg select').first().selectOption({ label: 'Work' }); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
   });
   test('R-DATA-04 the dialog that copies people to another workspace adds no accessibility violation', async ({ page }) => {
-    await openApp(page); await seed(page, blank({ people: [person(), person({ id: 'p2', name: 'Bob', color: '#0060c0', external: true })] })); await page.evaluate(() => { WS.push(newWs('Work', defaultData(), true)); openPeopleCopy(S.people[0]); });
+    await openApp(page); await seed(page, blank({ people: [person(), person({ id: 'p2', name: 'Bob', color: '#0060c0', external: true })] })); await page.evaluate(() => { state.WS.push(newWs('Work', defaultData(), true)); openPeopleCopy(state.S.people[0]); });
     await expect(page.locator('#xDlg .pcl')).toBeVisible(); const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
   });
   for (const theme of ['light', 'dark']) {
     test(`R-DATA-10 the Workspaces dialog, and the workspace menu with colours and descriptions, add no accessibility violation (${theme} theme)`, async ({ page }) => {
       await openApp(page, { prefs: { theme } }); await seed(page, blank({ events: [ev()] }));
-      await page.evaluate(() => { S.color = '#2fa66a'; S.desc = 'Our routine'; WS.push(newWs('Work', defaultData(), true)); render(); });
+      await page.evaluate(() => { state.S.color = '#2fa66a'; state.S.desc = 'Our routine'; state.WS.push(newWs('Work', defaultData(), true)); render(); });
       await page.locator('.wsbtn').click(); let r = await new AxeBuilder({ page }).include('.omenu').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
       await page.locator('.omenu .oi', { hasText: 'Workspaces…' }).click(); await expect(page.locator('#xDlg .wsr')).toHaveCount(2);
       r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
@@ -155,7 +155,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
   });
   test('R-CYC-08 R-EVT-24 the event dialog with its Weeks row, the week of every time and Drawn as adds no serious accessibility violation', async ({ page }) => {
     await openApp(page); await seed(page, blank({ cycle: 2, people: [person()], events: [ev({ slots: [{ day: 0, start: 600, end: 660, person: 'p1', wk: 1 }, { day: 0, start: 600, end: 660, person: '', wk: 2 }] })] }));
-    await page.evaluate(() => openDlg(S.events[0])); ratchet(await scan(page), {});
+    await page.evaluate(() => openDlg(state.S.events[0])); ratchet(await scan(page), {});
     page.once('dialog', d => d.accept()); await page.locator('#fPw').uncheck(); await expect(page.locator('#fWk .chips')).toBeVisible(); ratchet(await scan(page), {});   // the weeks differ: the switch back asks first
   });
   test('R-CYC-10 R-CYC-05 the cycle dialog, the shrinking question and Live View\'s week question add no accessibility violation', async ({ page }) => {
@@ -169,7 +169,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     const dlg = async () => { const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); };
     await page.evaluate(() => openCycle()); await expect(page.locator('#xDlg .cystg')).toBeVisible(); await dlg();
     await page.locator('#xDlg .cydel').click(); await page.locator('#xDlg button', { hasText: 'Apply' }).click(); await expect(page.locator('#xDlg li')).toHaveCount(1); await dlg();
-    await page.locator('#xDlg button', { hasText: 'Cancel' }).click(); await page.evaluate(() => openDlg(S.events[0])); ratchet(await scan(page), {});
+    await page.locator('#xDlg button', { hasText: 'Cancel' }).click(); await page.evaluate(() => openDlg(state.S.events[0])); ratchet(await scan(page), {});
     await page.locator('#fDel').click(); await expect(page.locator('#xDlg .btns.stack')).toBeVisible(); await dlg();
   });
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {

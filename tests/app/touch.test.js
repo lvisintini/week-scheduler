@@ -56,7 +56,7 @@ describe('R-TOUCH-01 Touch: scrolling stays native, long-press creates/moves/res
   });
   it('a long-press on an event followed by a drag moves it', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 1, min: 750 }, { pointerType: 'touch', hold: 450 });
-    expect(a.ev('JSON.stringify(S.events[0].slots[0])')).toContain('"day":1');
+    expect(a.ev('JSON.stringify(state.S.events[0].slots[0])')).toContain('"day":1');
   });
   it('after a touch, the right-click copy menu does not pop up (a long-press is for moving)', () => {
     const a = fresh(blank({ events: [ev1()] })); const down = new a.w.MouseEvent('pointerdown', { bubbles: true }); Object.defineProperty(down, 'pointerType', { value: 'touch' }); a.q('.day').dispatchEvent(down);
@@ -72,16 +72,16 @@ describe('R-UI-13 Swiping sideways in the day view changes the day', () => {
   const swipe = (a, x, y, dx, dy, type = 'touch') => { down(a, x, y, type); pointer(a, 'pointermove', { x: x + dx / 2, y: y + dy / 2, pointerType: type }); pointer(a, 'pointerup', { x: x + dx, y: y + dy, pointerType: type }); };
   const at = d => { const a = openApp(); a.ev(`setFocus(${d})`); return a; };
   it('a swipe to the left shows the next day, a swipe to the right the previous one (Sunday wraps to Monday)', () => {
-    const a = at(2); swipe(a, 500, 300, -120, 10); expect(a.ev('focusD')).toBe(3); swipe(a, 500, 300, 120, -10); swipe(a, 500, 300, 120, 0); expect(a.ev('focusD')).toBe(1);
-    const s = at(6); swipe(s, 500, 300, -120, 0); expect(s.ev('focusD')).toBe(0);
+    const a = at(2); swipe(a, 500, 300, -120, 10); expect(a.ev('state.focusD')).toBe(3); swipe(a, 500, 300, 120, -10); swipe(a, 500, 300, 120, 0); expect(a.ev('state.focusD')).toBe(1);
+    const s = at(6); swipe(s, 500, 300, -120, 0); expect(s.ev('state.focusD')).toBe(0);
   });
   it('short, mostly vertical, mouse and edge swipes change nothing, and nor does the week view', () => {
     const a = at(2); swipe(a, 500, 300, -50, 0); swipe(a, 500, 300, -100, 60); swipe(a, 500, 300, -120, 0, 'mouse'); swipe(a, 10, 300, 120, 0); swipe(a, 1015, 300, -120, 0);
-    expect(a.ev('focusD')).toBe(2);
-    const w = openApp(); swipe(w, 500, 300, -120, 0); expect(w.ev('focusD')).toBeNull();
+    expect(a.ev('state.focusD')).toBe(2);
+    const w = openApp(); swipe(w, 500, 300, -120, 0); expect(w.ev('state.focusD')).toBeNull();
   });
   it('a finger that held still for the long-press time is moving an event, not swiping', async () => {
-    const a = at(2); down(a, 500, 300); await sleep(450); pointer(a, 'pointermove', { x: 440, y: 300, pointerType: 'touch' }); pointer(a, 'pointerup', { x: 380, y: 300, pointerType: 'touch' }); expect(a.ev('focusD')).toBe(2);
+    const a = at(2); down(a, 500, 300); await sleep(450); pointer(a, 'pointermove', { x: 440, y: 300, pointerType: 'touch' }); pointer(a, 'pointerup', { x: 380, y: 300, pointerType: 'touch' }); expect(a.ev('state.focusD')).toBe(2);
   });
   it('the day view lets the browser scroll only up and down, so sideways moves reach the app', () => {
     const a = at(2); expect(a.q('#grid').classList.contains('fo')).toBe(true); expect(a.q('style').textContent).toContain('#grid.fo .day,#grid.fo .lane{touch-action:pan-y}');
@@ -92,10 +92,10 @@ describe('R-UI-13 Swiping sideways in the day view changes the day', () => {
 describe('R-TOUCH-02 Copy by touch: a long press released without moving offers the right-click Copy list', () => {
   const locked = () => blank({ schedules: [{ id: 's1', name: 'S1', color: '#3b6df0', opacity: 1, locked: true, visible: true }], events: [ev1()] });
   it('a long press on an event, lifted without moving, opens the Copy list instead of moving anything', async () => {
-    const a = fresh(blank({ events: [ev1()] })); const before = a.ev('JSON.stringify(S)');
+    const a = fresh(blank({ events: [ev1()] })); const before = a.ev('JSON.stringify(state.S)');
     await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
     expect(a.q('.omenu .oh').textContent).toBe('Copy event…'); expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['Event']);
-    expect(a.d.getElementById('dlg').open).toBe(false); expect(a.ev('JSON.stringify(S)')).toBe(before); expect(a.ev('undoSt.length')).toBe(0);
+    expect(a.d.getElementById('dlg').open).toBe(false); expect(a.ev('JSON.stringify(state.S)')).toBe(before); expect(a.ev('state.undoSt.length')).toBe(0);
   });
   it('choosing an event in the list opens its Copy dialog', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
@@ -116,12 +116,12 @@ describe('R-TOUCH-02 Copy by touch: a long press released without moving offers 
   });
   it('a long press that then moves still moves the event; a mouse click without moving still opens it', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 1, min: 630 }, { pointerType: 'touch', hold: 450 });
-    expect(a.qa('.omenu')).toHaveLength(0); expect(a.ev('S.events[0].slots[0].day')).toBe(1);
+    expect(a.qa('.omenu')).toHaveLength(0); expect(a.ev('state.S.events[0].slots[0].day')).toBe(1);
     await dragFrom(a, a.q('.ev'), { col: 1, min: 630 }, { col: 1, min: 630 }, { move: false }); expect(a.d.getElementById('dlg').open).toBe(true);
   });
   it('in Phases mode a phase is copied the same way', async () => {
     const a = fresh(blank({ rhythms: [{ id: 'r1', name: 'Normal', visible: true }], phases: [{ id: 'p1', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }] }] }));
-    a.ev("editMode='phases';render()"); await dragFrom(a, a.q('.phx'), { col: 0, min: 750 }, { col: 0, min: 750 }, { pointerType: 'touch', hold: 450, move: false });
+    a.ev("state.editMode='phases';render()"); await dragFrom(a, a.q('.phx'), { col: 0, min: 750 }, { col: 0, min: 750 }, { pointerType: 'touch', hold: 450, move: false });
     expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['Lunch']); a.q('.omenu .oi').click(); expect(a.dlgOpen()).toBe(true);
   });
 });

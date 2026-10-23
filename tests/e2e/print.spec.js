@@ -24,23 +24,23 @@ test.describe('R-PRN-02 Print schedule in print media', () => {
   });
   test('printing ignores the zoom settings: the printed grid has the default scale', async ({ page }) => {
     const measure = async () => { await page.evaluate(() => printSchedule()); await page.emulateMedia({ media: 'print' }); const r = await page.evaluate(() => { const l = document.querySelectorAll('#pr .times span'); return { gap: l[2].getBoundingClientRect().top - l[1].getBoundingClientRect().top, w: document.querySelector('#pr .grid').getBoundingClientRect().width }; }); await page.emulateMedia({ media: 'screen' }); return r; };
-    const normal = await measure(); await page.evaluate(() => { prefs.rowH = 110; prefs.colW = 250; render(); }); const zoomed = await measure();
+    const normal = await measure(); await page.evaluate(() => { state.prefs.rowH = 110; state.prefs.colW = 250; render(); }); const zoomed = await measure();
     expect(zoomed.gap).toBeCloseTo(normal.gap, 1); expect(zoomed.w).toBeCloseTo(normal.w, 0);
   });
   test('the screen is left exactly as it was: zoom restored and the print area emptied afterwards', async ({ page }) => {
-    await page.evaluate(() => { prefs.rowH = 110; render(); }); await page.evaluate(() => { printSchedule(); window.onafterprint(); });
-    expect(await page.evaluate(() => HH)).toBe(110); await expect(page.locator('#pr > *')).toHaveCount(0);
+    await page.evaluate(() => { state.prefs.rowH = 110; render(); }); await page.evaluate(() => { printSchedule(); window.onafterprint(); });
+    expect(await page.evaluate(() => state.HH)).toBe(110); await expect(page.locator('#pr > *')).toHaveCount(0);
   });
   test('colours are printed exactly (backgrounds are not dropped by the browser)', async ({ page }) => {
     await page.evaluate(() => printSchedule()); await page.emulateMedia({ media: 'print' });
     const v = await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('#pr .ev')); return cs.getPropertyValue('print-color-adjust') || cs.getPropertyValue('-webkit-print-color-adjust'); }); expect(v).toBe('exact');
   });
   test('even in dark mode the paper is white with dark text', async ({ page }) => {
-    await page.evaluate(() => { prefs.theme = 'dark'; applyTheme(); printSchedule(); }); await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
+    await page.evaluate(() => { state.prefs.theme = 'dark'; applyTheme(); printSchedule(); }); await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
     const r = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('pr')); return { bg: cs.backgroundColor, fg: cs.color }; }); expect(r.bg).toBe('rgb(255, 255, 255)'); expect(r.fg).toBe('rgb(17, 17, 17)');
   });
   test('hidden early hours and the hidden weekend stay hidden on paper', async ({ page }) => {
-    await page.evaluate(() => { prefs.hideWeekend = true; render(); printSchedule(); }); await expect(page.locator('#pr .dh:not(.c)')).toHaveCount(5); await expect(page.locator('#pr .times span').first()).toHaveText('05:00');
+    await page.evaluate(() => { state.prefs.hideWeekend = true; render(); printSchedule(); }); await expect(page.locator('#pr .dh:not(.c)')).toHaveCount(5); await expect(page.locator('#pr .times span').first()).toHaveText('05:00');
   });
 });
 
@@ -84,7 +84,7 @@ test.describe('R-CYC-12 Printing every week of the cycle', () => {
 test.describe('R-CYC-17 A coloured week in print', () => {
   test('the printed title names the week and has a band in its colour, printed exactly, and the grid keeps the band under its headers', async ({ page }) => {
     await seed(page, blank({ cycle: 2, weekInfo: [{}, { name: "At Dad's", color: '#8e4ec6' }], events: [ev()] }));
-    await page.evaluate(() => { curWk = 2; render(); printSchedule(); }); await page.emulateMedia({ media: 'print' });
+    await page.evaluate(() => { state.curWk = 2; render(); printSchedule(); }); await page.emulateMedia({ media: 'print' });
     await expect(page.locator('#pr h1')).toHaveText("Weekly schedule — Week 2 · At Dad's");
     const s = await page.locator('#pr h1').evaluate(h => { const c = getComputedStyle(h); return [c.borderBottomWidth, c.borderBottomColor, c.printColorAdjust || c.webkitPrintColorAdjust]; });
     expect(s).toEqual(['4px', 'rgb(142, 78, 198)', 'exact']);

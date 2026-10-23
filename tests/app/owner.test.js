@@ -3,7 +3,7 @@ import { openApp, setData, blank, ev1, person, fillDialog } from '../helpers/app
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' }), person({ id: 'X', name: 'Cleaner', color: '#12a5b5', external: true })];
-const events = a => a.ev('JSON.parse(JSON.stringify(S.events))');
+const events = a => a.ev('JSON.parse(JSON.stringify(state.S.events))');
 const save = a => a.q('#fOk').click();
 const row = (a, d) => a.qa('#fDays .dr')[d];
 const perf = (a, d) => row(a, d).querySelectorAll('select')[2];
@@ -15,18 +15,18 @@ describe('R-EVT-20 An event has an owner (who owns its conception, planning and 
   it('the owner is chosen in the dialog; days "Performed by: Owner" follow it, a stand-in stays', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); fillDialog(a, { title: 'School run', person: 'A' }); tick(a, 1); tick(a, 2); change(a, perf(a, 2), 'B'); save(a);
     expect(events(a)[0].owner).toBe('A'); expect(events(a)[0].slots.map(s => [s.person, !!s.fo])).toEqual([['A', true], ['A', true], ['B', false]]);
-    a.ev('openDlg(S.events[0])'); change(a, a.q('#fOw'), 'C'); save(a);
+    a.ev('openDlg(state.S.events[0])'); change(a, a.q('#fOw'), 'C'); save(a);
     expect(events(a)[0].slots.map(s => s.person)).toEqual(['C', 'C', 'B']);   // reassigning the card moves every day the owner performs
   });
   it('without an owner the "Owner" days are performed by nobody; choosing an owner later fills them', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); fillDialog(a, { title: 'T' }); save(a); expect(events(a)[0]).not.toHaveProperty('owner');
     expect(events(a)[0].slots[0]).toMatchObject({ person: '', fo: true });
-    a.ev('openDlg(S.events[0])'); expect(perf(a, 0).value).toBe('@o'); expect(perf(a, 0).selectedOptions[0].textContent).toBe('Owner (nobody yet)');
+    a.ev('openDlg(state.S.events[0])'); expect(perf(a, 0).value).toBe('@o'); expect(perf(a, 0).selectedOptions[0].textContent).toBe('Owner (nobody yet)');
     change(a, a.q('#fOw'), 'B'); expect(perf(a, 0).selectedOptions[0].textContent).toBe('Owner (Bob)'); save(a); expect(events(a)[0].slots[0].person).toBe('B');
   });
   it('only our people can own an event; an owner who later became external is kept and marked', () => {
     const a = fresh(blank({ people })); a.toolbar('add').click(); expect([...a.q('#fOw').options].map(o => o.value)).toEqual(['', 'A', 'B', 'C']);
-    const b = fresh(blank({ people, events: [ev1({ owner: 'X', slots: [{ day: 0, start: 600, end: 660, person: 'X', fo: true }] })] })); b.ev('openDlg(S.events[0])');
+    const b = fresh(blank({ people, events: [ev1({ owner: 'X', slots: [{ day: 0, start: 600, end: 660, person: 'X', fo: true }] })] })); b.ev('openDlg(state.S.events[0])');
     expect(b.q('#fOw').value).toBe('X'); expect(b.q('#fOw').selectedOptions[0].textContent).toBe('Cleaner (external)');
   });
   it('import keeps the owner only when it names a person, and a day that follows the owner always has the owner as performer', () => {
@@ -38,19 +38,19 @@ describe('R-EVT-20 An event has an owner (who owns its conception, planning and 
   });
   it('deleting the owner leaves the event unowned and its owner days with nobody, still following the next owner', () => {
     const a = fresh(blank({ people, events: [ev1({ owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A', fo: true }, { day: 1, start: 600, end: 660, person: 'B' }] })] }));
-    a.ev('delPerson(S.people[0])'); expect(events(a)[0]).not.toHaveProperty('owner'); expect(events(a)[0].slots.map(s => [s.person, !!s.fo])).toEqual([['', true], ['B', false]]);
+    a.ev('delPerson(state.S.people[0])'); expect(events(a)[0]).not.toHaveProperty('owner'); expect(events(a)[0].slots.map(s => [s.person, !!s.fo])).toEqual([['', true], ['B', false]]);
   });
   it('inserting a workspace maps the owner to the newly added person', () => {
     const a = fresh(blank({ people: [] }));
     a.ev(`insertInto(parseData(${JSON.stringify(blank({ people: [people[0], people[1]], events: [ev1({ owner: 'A', involved: ['B'], slots: [{ day: 0, start: 600, end: 660, person: 'A', fo: true, inv: ['A'] }] })] }))}))`);
-    const e = events(a)[0], ids = a.ev('Object.fromEntries(S.people.map(q=>[q.name,q.id]))');
+    const e = events(a)[0], ids = a.ev('Object.fromEntries(state.S.people.map(q=>[q.name,q.id]))');
     expect(e.owner).toBe(ids.Ann); expect(e.slots[0]).toMatchObject({ person: ids.Ann, fo: true, inv: [ids.Ann] }); expect(e.involved).toEqual([ids.Bob]);
   });
   it('copying a schedule to another workspace maps the owner through the people dialog', async () => {
     const a = fresh(blank({ people, events: [ev1({ owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A', fo: true }] })] }));
-    a.ev("const t=newWs('Target',defaultData(),true);t.data.people=[];WS.push(t);render()");
-    a.ev('openTransfer("schedule",S.schedules[0])'); a.click('Continue'); await a.sleep(20); expect(a.dlgTitle()).toBe('People'); a.click('Continue'); await a.sleep(20);
-    const t = a.ev('JSON.parse(JSON.stringify(WS[1].data))'), ann = t.people.find(q => q.name === 'Ann');
+    a.ev("const t=newWs('Target',defaultData(),true);t.data.people=[];state.WS.push(t);render()");
+    a.ev('openTransfer("schedule",state.S.schedules[0])'); a.click('Continue'); await a.sleep(20); expect(a.dlgTitle()).toBe('People'); a.click('Continue'); await a.sleep(20);
+    const t = a.ev('JSON.parse(JSON.stringify(state.WS[1].data))'), ann = t.people.find(q => q.name === 'Ann');
     expect(t.events[0].owner).toBe(ann.id); expect(t.events[0].slots[0]).toMatchObject({ person: ann.id, fo: true });
   });
   it('the hover card, agenda and screen readers name the owner; in Spanish "Titular:"', () => {
@@ -85,21 +85,21 @@ describe('R-EVT-21 Involved people: the event has a default list, and a day can 
     expect(d.events[0].slots.map(s => s.inv)).toEqual([undefined, [], undefined]);
   });
   it('the With button shows "Default"; its popover gives the day its own list, saved with the day', () => {
-    const a = fresh(two()); a.ev('openDlg(S.events[0])'); const wb = row(a, 0).querySelector('.wbtn');
+    const a = fresh(two()); a.ev('openDlg(state.S.events[0])'); const wb = row(a, 0).querySelector('.wbtn');
     expect(wb.textContent).toBe('Default'); expect(wb.classList.contains('def')).toBe(true); expect(wb.title).toContain('Bob'); wb.click();
     const sw = a.q('.wpop .wdef input'); expect(sw.checked).toBe(true); expect(a.qa('.wpop .chips input').every(i => i.disabled)).toBe(true);
     sw.checked = false; sw.onchange(); const cy = a.qa('.wpop .chips input').find(i => i.value === 'C'); cy.checked = true; cy.onchange();
     expect(wb.textContent).toBe('Bob, Cy'); save(a); expect(events(a)[0].slots[0].inv).toEqual(['B', 'C']);
   });
   it('"only on call" is offered while a day has its own involved people, even with an empty default', () => {
-    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A', inv: ['B'] }] })] })); a.ev('openDlg(S.events[0])'); expect(a.q('#fOcRow').style.display).toBe('');
+    const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: 'A', inv: ['B'] }] })] })); a.ev('openDlg(state.S.events[0])'); expect(a.q('#fOcRow').style.display).toBe('');
   });
   it('the copy button gives every other ticked day the same performer and own list', () => {
     const a = fresh(blank({ people, events: [ev1({ owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'B', inv: ['C'] }, { day: 2, start: 600, end: 660, person: 'A', fo: true }] })] }));
-    a.ev('openDlg(S.events[0])'); row(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(events(a)[0].slots.map(s => [s.person, s.inv])).toEqual([['B', ['C']], ['B', ['C']]]);
+    a.ev('openDlg(state.S.events[0])'); row(a, 0).querySelector('.cpy').click(); a.q('.cmenu .oi').click(); save(a); expect(events(a)[0].slots.map(s => [s.person, s.inv])).toEqual([['B', ['C']], ['B', ['C']]]);
   });
   it('deleting a person removes them from the days\' own lists', () => {
-    const a = fresh(two(['B', 'C'])); a.ev('delPerson(S.people.find(q=>q.id==="C"))'); expect(events(a)[0].slots[0].inv).toEqual(['B']);
+    const a = fresh(two(['B', 'C'])); a.ev('delPerson(state.S.people.find(q=>q.id==="C"))'); expect(events(a)[0].slots[0].inv).toEqual(['B']);
   });
 });
 

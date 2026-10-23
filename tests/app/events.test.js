@@ -4,7 +4,7 @@ import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fill
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
 const save = a => a.q('#fOk').click();
-const events = a => a.ev('JSON.parse(JSON.stringify(S.events))');
+const events = a => a.ev('JSON.parse(JSON.stringify(state.S.events))');
 const iconHTML = (a, k) => a.ev(`(()=>{const d=document.createElement("span");d.innerHTML=tIcon(${JSON.stringify(k)});return d.innerHTML})()`);   // as the browser serialises it
 const cssRule = (a, selector) => [...a.d.styleSheets[0].cssRules].find(r => r.selectorText === selector);
 const rowT = (a, d) => { const r = a.qa('#fDays .dr')[d].querySelectorAll('select'); return [r[0].value, r[1].value]; };   // a day's start and end in the dialog
@@ -50,7 +50,7 @@ describe('R-EVT-01 Creating, moving, resizing and removing events', () => {
     const a = fresh(blank({ events: [ev1({ id: 'a' }), ev1({ id: 'b', title: 'Other' })] })); expect(a.qa('.ev')).toHaveLength(2);
   });
   it('an event is removed with the Delete button of its dialog', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(S.events[0])'); a.q('#fDel').click();
+    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(state.S.events[0])'); a.q('#fDel').click();
     expect(events(a)).toHaveLength(0); expect(dlgOpen(a)).toBe(false); expect(a.qa('.ev')).toHaveLength(0);
   });
 });
@@ -91,12 +91,12 @@ describe('R-EVT-02 Event fields and validation', () => {
   });
   it('editing an existing event shows its stored values', () => {
     const a = fresh(blank({ people, events: [ev1({ title: 'Existing', desc: 'old', involved: ['B'], slots: [{ day: 1, start: 840, end: 900, person: 'A' }] })] }));
-    a.ev('openDlg(S.events[0])');
+    a.ev('openDlg(state.S.events[0])');
     expect(a.q('#fT').value).toBe('Existing'); expect(a.q('#fD').value).toBe('old'); expect(a.q('#fOw').value).toBe(''); expect(a.qa('#fDays .dr')[1].querySelectorAll('select')[2].value).toBe('A');
     expect(a.qa('#fInv input').filter(i => i.checked).map(i => i.value)).toEqual(['B']); expect(rowT(a, 1)).toEqual(['840', '900']);
   });
   it('the dialog Cancel button discards changes', () => {
-    const a = fresh(blank({ events: [ev1({ title: 'Keep' })] })); a.ev('openDlg(S.events[0])'); a.q('#fT').value = 'Changed'; a.q('#fCancel').click();
+    const a = fresh(blank({ events: [ev1({ title: 'Keep' })] })); a.ev('openDlg(state.S.events[0])'); a.q('#fT').value = 'Changed'; a.q('#fCancel').click();
     expect(events(a)[0].title).toBe('Keep'); expect(dlgOpen(a)).toBe(false);
   });
   it('every change is one undo step', () => {
@@ -130,7 +130,7 @@ describe('R-EVT-03 What an event box shows', () => {
     const a = full(); expect(cssRule(a, '.ev .ic svg').style.getPropertyValue('width')).toBe('calc(10px * var(--ts,1))');
   });
   it('an event that continues overnight labels its second piece "from Fri 22:00 · until 02:00"', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [{ day: 4, start: 1320, end: 1560, person: '' }] })] })); a.ev('prefs.showEarly=true;render()');
+    const a = fresh(blank({ events: [ev1({ slots: [{ day: 4, start: 1320, end: 1560, person: '' }] })] })); a.ev('state.prefs.showEarly=true;render()');
     expect(a.q('.day[data-d="4"] .ev .tm').textContent).toBe('22:00–02:00 (Next day)'); expect(a.q('.day[data-d="5"] .ev .tm').textContent).toBe('from Fri 22:00 · until 02:00');
   });
 });
@@ -226,11 +226,11 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
 describe('R-EVT-06 Delete removes the whole event', () => {
   it('Delete removes every repetition at once, closes the dialog and asks no confirmation', () => {
     const a = fresh(blank({ events: [ev1({ slots: [0, 2, 4].map(day => ({ day, start: 600, end: 660, person: '' })) })] }));
-    a.ev('openDlg(S.events[0])'); a.q('#fDel').click();
+    a.ev('openDlg(state.S.events[0])'); a.q('#fDel').click();
     expect(events(a)).toEqual([]); expect(dlgOpen(a)).toBe(false); expect(a.log.confirms).toEqual([]);
   });
   it('there is a single Delete button (no separate "delete all repeats")', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(state.S.events[0])');
     expect(a.qa('#dlg .btns button').map(b => b.textContent)).toEqual(['Delete', 'Copy…', 'Cancel', 'Save']);
   });
   it('a new event has no Delete or Copy button yet', () => {
@@ -240,7 +240,7 @@ describe('R-EVT-06 Delete removes the whole event', () => {
 
 describe('R-EVT-07 Copying an event', () => {
   const two = () => fresh(blank({ schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', color: '#e5484d' })], events: [ev1({ color: '#3b6df0', schedules: ['s1'] })] }));
-  const openCopyDialog = a => { a.ev('openDlg(S.events[0])'); a.q('#fCopy').click(); };
+  const openCopyDialog = a => { a.ev('openDlg(state.S.events[0])'); a.q('#fCopy').click(); };
   const mode = a => a.qa('#xDlg input[name=cpm]').find(r => r.checked).value;
   it('"Copy…" in the event dialog opens a separate copy dialog and closes the event dialog', () => {
     const a = two(); openCopyDialog(a); expect(a.dlgOpen()).toBe(true); expect(a.dlgTitle()).toContain('Copy event'); expect(dlgOpen(a)).toBe(false);
@@ -254,7 +254,7 @@ describe('R-EVT-07 Copying an event', () => {
   it('"same colour" makes an independent copy with the same colour in the chosen schedule', () => {
     const a = two(); openCopyDialog(a); a.click('Copy');
     const evs = events(a); expect(evs).toHaveLength(2); expect(evs[1].schedules).toEqual(['s2']); expect(evs[1].color).toBe('#3b6df0'); expect(evs[1].id).not.toBe(evs[0].id);
-    a.ev('S.events[1].title="changed"'); expect(events(a)[0].title).toBe('Event');
+    a.ev('state.S.events[1].title="changed"'); expect(events(a)[0].title).toBe('Event');
   });
   it('"same hue, brighter or darker" changes only the brightness', () => {
     const a = two(); openCopyDialog(a); const sel = a.q('#xDlg select'); sel.value = 's1'; sel.onchange(); a.click('Copy');
@@ -375,7 +375,7 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
   });
   it('side by side cannot be turned off: Settings has no such option, and an old stored "side: false" is ignored', () => {
     const a = pair(); a.ev('openSettings()'); expect(a.qa('#xDlg .sopt').map(l => l.textContent).join('|')).not.toMatch(/side by side|order of the People list/);
-    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ side: false, sideFix: true }) } }); setData(b, a.ev('JSON.parse(JSON.stringify(S))'));
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ side: false, sideFix: true }) } }); setData(b, a.ev('JSON.parse(JSON.stringify(state.S))'));
     expect(lane(box(b, 'A'))).toBe(0); expect(lane(box(b, 'B'))).toBe(0.5); expect(b.qa('.ov')).toHaveLength(0);
   });
   it('the help explains the rule and the column-width workaround in both languages', () => {
@@ -511,7 +511,7 @@ describe('R-EVT-18 An occurrence without a responsible person concerns everyone 
 describe('R-EVT-11 Activity type: each event has at most one type, shown by its icon; soft-look types stand out', () => {
   const types = [{ id: 'tf', name: 'Free time', color: '#12a5b5', icon: 'sun', soft: true }, { id: 'tm', name: 'Meal', color: '#e8912d', icon: 'meal' }];
   const typed = (o = {}) => ev1({ id: 'f', title: 'Park', color: '#2fa66a', type: 'tf', slots: [{ day: 0, start: 600, end: 720, person: '' }, { day: 2, start: 600, end: 720, person: '' }], ...o });
-  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const open = (a, i = 0) => a.ev(`openDlg(state.S.events[${i}])`);
   const pick = (a, v) => { a.q('#fTy').value = v; a.q('#fTy').dispatchEvent(new a.w.Event('change')); };
   it('the event dialog has an "Activity type" list with "(none)" first and the types of the workspace in order', () => {
     const a = fresh(blank({ types, events: [typed(), ev1({ id: 'n' })] })); open(a, 0);
@@ -553,7 +553,7 @@ describe('R-EVT-11 Activity type: each event has at most one type, shown by its 
     expect(a.qa('.ov')).toHaveLength(1);
   });
   it('the type survives copying the event to another schedule', () => {
-    const a = fresh(blank({ types, schedules: [sched(), sched({ id: 's2', name: 'S2' })], events: [typed()] })); a.ev('openCopy(S.events[0])'); a.click('Copy');
+    const a = fresh(blank({ types, schedules: [sched(), sched({ id: 's2', name: 'S2' })], events: [typed()] })); a.ev('openCopy(state.S.events[0])'); a.click('Copy');
     expect(events(a).map(e => e.type)).toEqual(['tf', 'tf']);
   });
   it('the old free-time flag no longer exists: no checkbox, and "free" in data is dropped', () => {
@@ -568,7 +568,7 @@ describe('R-EVT-11 Activity type: each event has at most one type, shown by its 
 
 describe('R-EVT-12 Around these times: a repetition with approximate timing is drawn and treated as all flexible margin', () => {
   const tsel = (a, day) => a.qa('#fDays .dr')[day].querySelector('.tsel');   // each day's own Timing list
-  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const open = (a, i = 0) => a.ev(`openDlg(state.S.events[${i}])`);
   const twoDays = (f0 = false, f2 = false) => ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', ...(f0 ? { flex: true } : {}) }, { day: 2, start: 600, end: 660, person: '', ...(f2 ? { flex: true } : {}) }] });
   const ol = [person({ id: 'O', name: 'Olivia', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
   const hw = (start = 1020, end = 1080, o = {}) => ev1({ id: 'h', title: 'Homework', slots: [{ day: 0, start, end, person: 'O', flex: true, ...o }] });
@@ -681,7 +681,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; onl
   const y = m => `${(m - 300) / 60 * 48}px`;
   const work = (o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15 }], ...o });
   const pickup = (person = 'B', start = 1005, o = {}) => ev1({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [{ day: 0, start, end: 1050, person, ...o }] });
-  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const open = (a, i = 0) => a.ev(`openDlg(state.S.events[${i}])`);
   const row = (a, day) => a.qa('#fDays .dr')[day], tsel = (a, day) => row(a, day).querySelector('.tsel'), sub = (a, day) => row(a, day).querySelector('.dsub');
   const mg = (a, day) => [...sub(a, day).querySelectorAll('select')];   // the day's two margin lists: start, end
   const col0 = a => a.q('.day[data-d="0"]');
@@ -762,7 +762,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; onl
   });
   it('a piece past midnight that is all margin is drawn as a dashed box with the title, beside a parallel event in its own lane', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 1320, end: 1470, person: 'A', fe: 30 }] }), ev1({ id: 'o', slots: [{ day: 1, start: 0, end: 60, person: 'B' }] })] }));
-    a.ev('prefs.showEarly=true;render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
+    a.ev('state.prefs.showEarly=true;render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
     expect(tue).not.toBeNull(); expect(tue.dataset.lane).toBe('0/2'); expect(a.q('.day[data-d="1"] .ev:not(.mgo)').dataset.lane).toBe('1/2'); expect(tue.querySelector('.t').textContent).toBe('Event'); expect(tue._rz).toBeTruthy();
     expect(cssRule(a, '.ev.mgo').style.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/);
   });
@@ -812,7 +812,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; onl
 describe('R-EVT-22 A colour per repetition: the event colour, the performer colour or one of its own', () => {
   const twoDays = (s0 = {}, s1 = {}, o = {}) => fresh(blank({ people, events: [ev1({ id: 'e', title: 'Swim', color: '#3b6df0', owner: 'A', slots: [{ day: 0, start: 600, end: 660, person: 'A', fo: true, ...s0 }, { day: 1, start: 600, end: 660, person: 'B', ...s1 }], ...o })] }));
   const boxC = (a, d) => a.q(`.day[data-d="${d}"] .ev`).style.getPropertyValue('--c');
-  const open = a => a.ev('openDlg(S.events[0])');
+  const open = a => a.ev('openDlg(state.S.events[0])');
   const sw = (a, i) => a.qa('#fDays .dr')[i].querySelector('.cbtn');
   const menu = a => a.qa('.cmenu .oi').map(b => b.textContent);
   const pick = (a, i, label) => { sw(a, i).click(); a.qa('.cmenu .oi').find(b => b.textContent.startsWith(label)).click(); };
@@ -823,12 +823,12 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
   it('a repetition with its own colour draws its box, margins and hover card in it; the other days keep the event colour', () => {
     const a = twoDays({ col: '#ff8800', fe: 15 }); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#ff8800', '#3b6df0']);
     expect(a.q('.day[data-d="0"] .mg').style.getPropertyValue('--c')).toBe('#ff8800');
-    expect(a.ev('peekRows({e:S.events[0],s:S.events[0].slots[0],q:{p:0,day:0,a:600,b:660}})')).toContain('background:#ff8800');
+    expect(a.ev('peekRows({e:state.S.events[0],s:state.S.events[0].slots[0],q:{p:0,day:0,a:600,b:660}})')).toContain('background:#ff8800');
   });
   it('"performer colour" follows the person who performs it, also when that person is recoloured; nobody → the event colour', () => {
     const a = twoDays({ col: 'p' }, { col: 'p' }); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#e5484d', '#2fa66a']);
-    a.ev("S.people[0].color='#123456';render()"); expect(boxC(a, 0)).toBe('#123456');
-    a.ev("S.events[0].slots[1].person='';render()"); expect(boxC(a, 1)).toBe('#3b6df0');
+    a.ev("state.S.people[0].color='#123456';render()"); expect(boxC(a, 0)).toBe('#123456');
+    a.ev("state.S.events[0].slots[1].person='';render()"); expect(boxC(a, 1)).toBe('#3b6df0');
   });
   it('background strips and the day agenda use the repetition colour too', () => {
     const a = twoDays({ col: '#ff8800' }, {}, { bg: true }); expect(a.q('.day[data-d="0"] .bgs').style.getPropertyValue('--c')).toBe('#ff8800');
@@ -876,12 +876,12 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
     events: [ev1({ id: 'e', title: 'Job', color: '#3b6df0', type: 'tw', slots: [{ day: 0, start: 600, end: 660, person: 'A', col: 't', ...s0 }, { day: 1, start: 600, end: 660, person: 'A' }], ...o })] }));
   it('"activity type colour" draws the repetition in its type colour and follows a recoloured type; the other days keep the event colour', () => {
     const a = typed(); expect([boxC(a, 0), boxC(a, 1)]).toEqual(['#aa5500', '#3b6df0']);
-    a.ev("S.types[0].color='#00aa55';render()"); expect(boxC(a, 0)).toBe('#00aa55');
-    a.ev("S.events[0].type='ts';render()"); expect(boxC(a, 0)).toBe('#0055aa');
+    a.ev("state.S.types[0].color='#00aa55';render()"); expect(boxC(a, 0)).toBe('#00aa55');
+    a.ev("state.S.events[0].type='ts';render()"); expect(boxC(a, 0)).toBe('#0055aa');
   });
   it('"activity type colour" on an event without a type (or whose type was deleted) falls back to the event colour', () => {
     const a = typed({}, { type: undefined }); expect(boxC(a, 0)).toBe('#3b6df0');
-    const b = typed(); b.ev("delType(S.types[0])"); expect(boxC(b, 0)).toBe('#3b6df0'); expect(b.ev('S.events[0].slots[0].col')).toBe('t');
+    const b = typed(); b.ev("delType(state.S.types[0])"); expect(boxC(b, 0)).toBe('#3b6df0'); expect(b.ev('state.S.events[0].slots[0].col')).toBe('t');
   });
   it('the dialog offers the type colour by name, its swatch shows the type icon, and it follows a new type chosen in the dialog', () => {
     const a = typed(); open(a); expect(sw(a, 0).getAttribute('aria-label')).toBe('Monday: colour: Activity type colour (Work)');
@@ -897,7 +897,7 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
 
 describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes its margins, not its times', () => {
   const work = (sl = {}, o = {}) => ev1({ id: 'w', title: 'Work', slots: [{ day: 0, start: 540, end: 1020, person: 'A', fs: 30, fe: 15, ...sl }], ...o });
-  const slot0 = a => a.ev('JSON.parse(JSON.stringify(S.events[0].slots[0]))');
+  const slot0 = a => a.ev('JSON.parse(JSON.stringify(state.S.events[0].slots[0]))');
   const box = a => a.q('.day[data-d="0"] .ev');
   it('a core with a start margin gets a handle at its top, one with an end margin at its bottom, each inside the core box', () => {
     const a = fresh(blank({ people, events: [work()] })), b = box(a), y = m => (m - 300) / 60 * 48;
@@ -917,7 +917,7 @@ describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes 
   });
   it('no core handles on locked events, in Phases mode or on background and Away strips', () => {
     expect(fresh(blank({ people, schedules: [sched({ locked: true })], events: [work()] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
-    const p = fresh(blank({ people, events: [work()] })); p.ev("editMode='phases';render()"); expect(p.qa('.rz.cs, .rz.ce')).toHaveLength(0);
+    const p = fresh(blank({ people, events: [work()] })); p.ev("state.editMode='phases';render()"); expect(p.qa('.rz.cs, .rz.ce')).toHaveLength(0);
     expect(fresh(blank({ people, events: [work({}, { bg: true })] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
     expect(fresh(blank({ people, events: [work({}, { away: true })] })).qa('.rz.cs, .rz.ce')).toHaveLength(0);
   });
@@ -955,7 +955,7 @@ describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes 
   });
   it('a core that starts at midnight after a start margin has its top handle on the next day', () => {
     const a = fresh(blank({ people, events: [work({ day: 0, start: 1380, end: 1860, fs: 60, fe: 0 })] }));
-    a.ev('prefs.showEarly=true;render()'); const b = a.q('.day[data-d="1"] .ev'); expect(b._cs).toBeDefined(); expect(parseFloat(b._cs.style.top)).toBe(0);
+    a.ev('state.prefs.showEarly=true;render()'); const b = a.q('.day[data-d="1"] .ev'); expect(b._cs).toBeDefined(); expect(parseFloat(b._cs.style.top)).toBe(0);
   });
   it('an edge drag is one undo step, and a click on a handle without moving opens the event', async () => {
     const a = fresh(blank({ people, events: [work()] })); let b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 630 }, { target: b._cs }); expect(slot0(a).fs).toBe(90);
@@ -963,14 +963,14 @@ describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes 
   });
   it('where two cores share an edge under the pointer, a chooser asks which one to change', async () => {
     const two = [work(), work({ person: 'B' }, { id: 'w2', title: 'Work too', color: '#2fa66a' })];
-    const a = fresh(blank({ people, events: two }), {}); a.ev('prefs.lanesFix=false;render()');
+    const a = fresh(blank({ people, events: two }), {}); a.ev('state.prefs.lanesFix=false;render()');
     const cands = a.ev('edgesAt(0,575,null,"fs").map(c=>c.e.id)'); expect(cands).toEqual(['w', 'w2']);
     expect(a.ev('edgesAt(0,575,null,"fe").length')).toBe(0); expect(a.ev('edgesAt(0,1000,null,"fe").length')).toBe(2);
   });
 });
 
 describe('R-EVT-16 Involved people only on call: available, not busy', () => {
-  const open = (a, i = 0) => a.ev(`openDlg(S.events[${i}])`);
+  const open = (a, i = 0) => a.ev(`openDlg(state.S.events[${i}])`);
   const ann = (o = {}) => ev1({ id: 'a', title: 'Homework', slots: [{ day: 0, start: 600, end: 720, person: 'A' }], ...o });
   const bobWithAnn = (o = {}) => ev1({ id: 'b', title: 'Repairs', color: '#2fa66a', involved: ['A'], slots: [{ day: 0, start: 630, end: 690, person: 'B' }], ...o });
   it('the dialog has a labelled checkbox under the involved people; ticking it saves oncall:true, unticking removes it', () => {
@@ -1142,15 +1142,15 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
     expect(a.qa('.ev.nest')).toHaveLength(0); expect(a.qa('.bgs')).toHaveLength(1);
   });
   it('the dialog checkbox saves and loads the mark, and turns the nesting option off while ticked', () => {
-    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(S.events[0])'); const cb = a.q('#fBg');
+    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(state.S.events[0])'); const cb = a.q('#fBg');
     expect(cb.closest('label').textContent).toBe("In the background (doesn't keep us busy)"); expect(cb.closest('label').title).toMatch(/^For things that happen in the background.*the cleaner/);
     expect(a.q('#fNest').disabled).toBe(false); cb.checked = true; cb.onchange(); expect(a.q('#fNest').disabled).toBe(true);
-    a.q('#fOk').click(); expect(a.ev('S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
-    a.ev('openDlg(S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
-    a.q('#fBg').checked = false; a.q('#fBg').onchange(); a.q('#fOk').click(); expect(a.ev('"bg" in S.events[0]')).toBe(false);
+    a.q('#fOk').click(); expect(a.ev('state.S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
+    a.ev('openDlg(state.S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
+    a.q('#fBg').checked = false; a.q('#fBg').onchange(); a.q('#fOk').click(); expect(a.ev('"bg" in state.S.events[0]')).toBe(false);
   });
   it('the checkbox and its explanation are translated', () => {
-    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(state.S.events[0])');
     expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no nos ocupa)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para lo que ocurre en segundo plano.*tira/);
   });
   it('import accepts the mark only when it is exactly true', () => {
@@ -1161,13 +1161,13 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
 
 describe('R-EVT-23 Fixed lanes (Tools): a lane per visible person, in People order, never shared', () => {
   const at = (id, title, person, start, end, o = {}, day = 0) => ev1({ id, title, slots: [{ day, start, end, person }], ...o });
-  const fixed = (events, o = {}) => { const a = fresh(blank({ people, events, ...o })); a.ev('prefs.lanesFix=true;render()'); return a; };
+  const fixed = (events, o = {}) => { const a = fresh(blank({ people, events, ...o })); a.ev('state.prefs.lanesFix=true;render()'); return a; };
   const boxes = (a, t) => a.qa('.ev').filter(b => b.getAttribute('aria-label').startsWith(t + ','));
   const lanesOf = (a, t) => boxes(a, t).map(b => b.dataset.lane);
   it('it is off by default; the Tools switch turns it on and this browser remembers it', () => {
-    const a = fresh(blank({ people, events: [at('a', 'Solo', 'A', 600, 660)] })); expect(a.ev('prefs.lanesFix')).toBe(false); expect(lanesOf(a, 'Solo')).toEqual([undefined]);
+    const a = fresh(blank({ people, events: [at('a', 'Solo', 'A', 600, 660)] })); expect(a.ev('state.prefs.lanesFix')).toBe(false); expect(lanesOf(a, 'Solo')).toEqual([undefined]);
     const c = [...a.qa('#sbin label.zck')].find(l => l.textContent === 'Fixed lanes, one per person').querySelector('input'); c.checked = true; c.onchange();
-    expect(lanesOf(a, 'Solo')).toEqual(['0/3']); expect(openApp({ storage: a.storage() }).ev('prefs.lanesFix')).toBe(true);
+    expect(lanesOf(a, 'Solo')).toEqual(['0/3']); expect(openApp({ storage: a.storage() }).ev('state.prefs.lanesFix')).toBe(true);
   });
   it('every visible person has a lane on every day, also where they have nothing planned: a lone event keeps its person\'s narrow lane', () => {
     const a = fixed([at('a', 'Ann alone', 'A', 600, 660), at('c', 'Cy alone', 'C', 600, 660, {}, 1)]);
@@ -1214,7 +1214,7 @@ describe('R-EVT-23 Fixed lanes (Tools): a lane per visible person, in People ord
   });
   it('dragging the second box of an event moves the event', async () => {
     const a = fixed([at('x', 'Ann with Cy', 'A', 600, 660, { involved: ['C'] })]);
-    await dragFrom(a, boxes(a, 'Ann with Cy')[1], { col: 0, min: 630 }, { col: 1, min: 690 }); expect(a.ev('S.events[0].slots[0]')).toMatchObject({ day: 1, start: 660 });
+    await dragFrom(a, boxes(a, 'Ann with Cy')[1], { col: 0, min: 630 }, { col: 1, min: 690 }); expect(a.ev('state.S.events[0].slots[0]')).toMatchObject({ day: 1, start: 660 });
   });
   it('a nested activity sits in its host\'s box that holds its own person\'s lane', () => {
     const a = fixed([at('h', 'School run', 'A', 480, 540, { involved: ['C'] }), at('m', 'Milk', 'C', 495, 510, { nest: true })]);

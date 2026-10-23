@@ -83,14 +83,14 @@ test.describe('R-GRID-12 Live View on a phone', () => {
 
 test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
   test('in the day view a sideways swipe shows the next or previous day, while an up-and-down swipe still scrolls', async ({ page }) => {
-    const t = await page.evaluate(() => today()), d = () => page.evaluate(() => focusD);
+    const t = await page.evaluate(() => today()), d = () => page.evaluate(() => state.focusD);
     await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(d).toBe((t + 1) % 7);
     await swipe(page, { x: 150, y: 450 }, 160, 0); await swipe(page, { x: 150, y: 450 }, 160, 0); await expect.poll(d).toBe((t + 6) % 7);
     const top = await page.evaluate(() => document.getElementById('wrap').scrollTop); await swipe(page, { x: 200, y: 600 }, 0, -300);
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top); expect(await d()).toBe((t + 6) % 7);
   });
   test('the phone week, with Fit width ticked, shows short day names that fit their columns; tapping one opens that day', async ({ page }) => {
-    await page.evaluate(() => { setFocus(null); prefs.fitWP = true; render(); });   // the week view turns Fit width off on a phone (R-GRID-07); ticked by hand
+    await page.evaluate(() => { setFocus(null); state.prefs.fitWP = true; render(); });   // the week view turns Fit width off on a phone (R-GRID-07); ticked by hand
     const hs = page.locator('.dh.nr'); await expect(hs).toHaveCount(7); await expect(hs.first()).toHaveText('Mo');
     for (const h of await hs.all()) expect(await h.evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);   // nothing cut off or overlapping
     await hs.nth(3).tap(); await expect(page.locator('.dh.fo')).toContainText('Thursday');
@@ -112,9 +112,9 @@ test.describe('R-UI-13 The sidebar as a drawer on a phone', () => {
 
 test.describe('R-CYC-04 On a phone the week switcher is at hand and a swipe crosses into the next week', () => {
   test('the corner shows the week in the day view, and swiping on from Sunday shows Monday of the next week', async ({ page }) => {
-    await seed(page, blank({ cycle: 2 })); await page.evaluate(() => { curWk = 1; setFocus(6); });
+    await seed(page, blank({ cycle: 2 })); await page.evaluate(() => { state.curWk = 1; setFocus(6); });
     const b = await page.locator('.wkb').boundingBox(); expect(b).not.toBeNull(); expect(b.width).toBeGreaterThan(20);
-    await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(() => page.evaluate(() => [focusD, curWk])).toEqual([0, 2]);
+    await swipe(page, { x: 250, y: 450 }, -160, 0); await expect.poll(() => page.evaluate(() => [state.focusD, state.curWk])).toEqual([0, 2]);
     await expect(page.locator('.wkb')).toHaveText('W2'); await expect(page.locator('.dh.fo')).toContainText('Monday · W2');
     await page.locator('.wkb').tap(); await expect(page.locator('.omenu .oi')).toHaveCount(4);   // Week 1, Week 2, All weeks side by side, Weeks in the cycle…
   });
@@ -124,7 +124,7 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
   const many = () => blank({ events: [ev({ slots: [0, 1, 2, 3, 4, 5, 6].map(d => slot(d, 600, 660)) })] });
   const fills = async (page, sel) => { const b = await page.locator(sel).boundingBox(), v = page.viewportSize(); expect(Math.abs(b.x) + Math.abs(b.y)).toBeLessThan(1); expect(Math.abs(b.width - v.width)).toBeLessThan(1); expect(Math.abs(b.height - v.height)).toBeLessThan(1); };
   test('the event dialog fills the screen, has no grip and cannot be dragged; tabs and the footer stay while the When pane scrolls', async ({ page }) => {
-    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0])); await fills(page, '#dlg'); await expect(page.locator('#dGrip')).toBeHidden();
+    await seed(page, many()); await page.evaluate(() => openDlg(state.S.events[0])); await fills(page, '#dlg'); await expect(page.locator('#dGrip')).toBeHidden();
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fT')).toBeHidden(); await expect(page.locator('#paneQ')).toBeVisible();
     const tabs0 = await page.locator('.dtabs').boundingBox(), ok0 = await page.locator('#fOk').boundingBox();
     await swipe(page, { x: 200, y: 600 }, 0, -300); await expect.poll(() => page.locator('#paneQ').evaluate(p => p.scrollTop)).toBeGreaterThan(20);
@@ -133,7 +133,7 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
     await touch(page, [{ x: 200, y: 20 }, { x: 200, y: 200 }, { x: 200, y: 300 }]); await fills(page, '#dlg');
   });
   test('the tabs are finger-sized and tapping More shows the switches and schedules', async ({ page }) => {
-    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0]));
+    await seed(page, many()); await page.evaluate(() => openDlg(state.S.events[0]));
     for (const b of await page.locator('.dtabs button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('.dtabs button', { hasText: 'More' }).tap(); await expect(page.locator('#fSch')).toBeVisible(); await expect(page.locator('#paneQ')).toBeHidden();
   });
@@ -143,10 +143,10 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
     await page.evaluate(() => openStats('A')); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
     await page.evaluate(() => openAgenda(0)); await fills(page, '#agDlg'); await page.evaluate(() => document.getElementById('agDlg').close());
     await page.evaluate(() => openCycle()); await fills(page, '#xDlg'); await page.evaluate(() => document.getElementById('xDlg').close());
-    await page.evaluate(() => { S.cycle = 2; askLiveWeek(() => {}); }); const b = await page.locator('#xDlg').boundingBox(); expect(b.width).toBeLessThan(page.viewportSize().width); expect(b.height).toBeLessThan(page.viewportSize().height / 2);
+    await page.evaluate(() => { state.S.cycle = 2; askLiveWeek(() => {}); }); const b = await page.locator('#xDlg').boundingBox(); expect(b.width).toBeLessThan(page.viewportSize().width); expect(b.height).toBeLessThan(page.viewportSize().height / 2);
   });
   test('opening a repetition from the grid shows it in the When tab, scrolled into view and pulsing', async ({ page }) => {
-    await seed(page, many()); await page.evaluate(() => openDlg(S.events[0], null, S.events[0].slots[6]));
+    await seed(page, many()); await page.evaluate(() => openDlg(state.S.events[0], null, state.S.events[0].slots[6]));
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); const sun = page.locator('#fDays .dr').nth(6);
     await expect(sun).toHaveClass(/pulse/); const r = await sun.locator('select').first().boundingBox(), p = await page.locator('#paneQ').boundingBox();
     expect(r.y).toBeGreaterThanOrEqual(p.y); expect(r.y + r.height).toBeLessThanOrEqual(p.y + p.height);
@@ -155,7 +155,7 @@ test.describe('R-UI-14 Large dialogs fill a phone screen; the event dialog shows
 
 test.describe('R-REP-02 The day copy menu on a phone', () => {
   test('tapping ⧉ in the full-screen dialog opens the menu on screen, and tapping "The days above" copies upwards', async ({ page }) => {
-    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 720, 780), slot(4, 600, 660)] })] })); await page.evaluate(() => openDlg(state.S.events[0]));
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); await page.locator('#fDays .dr:not(.dx)').nth(2).locator('.cpy').tap();
     const m = page.locator('#dlg .cmenu'); await expect(m).toBeVisible(); const r = await m.boundingBox(), v = page.viewportSize();
     expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
@@ -167,14 +167,14 @@ test.describe('R-REP-02 The day copy menu on a phone', () => {
 test.describe('R-GRID-07 R-GRID-12 A phone shows about 7 hours, and leaving Live View keeps the day', () => {
   test('rows are 100 px per hour by default, so a one-hour event is a finger-sized box that a tap opens', async ({ page }) => {
     await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660)] })] })); await page.evaluate(() => setFocus(0));
-    expect(await page.evaluate(() => HH)).toBe(100); const b = await page.locator('.ev').boundingBox(); expect(b.height).toBeGreaterThan(95);
-    const hours = await page.evaluate(() => document.getElementById('wrap').clientHeight / HH); expect(hours).toBeGreaterThan(5); expect(hours).toBeLessThan(10);
+    expect(await page.evaluate(() => state.HH)).toBe(100); const b = await page.locator('.ev').boundingBox(); expect(b.height).toBeGreaterThan(95);
+    const hours = await page.evaluate(() => document.getElementById('wrap').clientHeight / state.HH); expect(hours).toBeGreaterThan(5); expect(hours).toBeLessThan(10);
     await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); await expect(page.locator('#dlg')).toBeVisible();
   });
   test('tapping the Live View Mode pill leaves Live View for the day view of the day it showed', async ({ page }) => {
     await seed(page, blank()); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
-    const d = await page.evaluate(() => focusD); await page.locator('#lvPill').tap();
-    await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => focusD)).toBe(d);
+    const d = await page.evaluate(() => state.focusD); await page.locator('#lvPill').tap();
+    await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => state.focusD)).toBe(d);
   });
 });
 
@@ -199,10 +199,10 @@ test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, th
     await page.locator('.dh.fo .wk').tap(); await expect(page.locator('.day')).toHaveCount(7);
     expect(Math.round((await page.locator('.day').first().boundingBox()).width)).toBeGreaterThanOrEqual(108);
     expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.scrollWidth > w.clientWidth + 100; })).toBe(true);
-    await page.locator('.dh .foc').nth(2).tap(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => prefs.fitWP)).toBe(true);
+    await page.locator('.dh .foc').nth(2).tap(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => state.prefs.fitWP)).toBe(true);
   });
   test('in the When tab "+ Add a time" adds an open card for the day chosen, ✕ removes one, a tap opens another; nothing scrolls sideways', async ({ page }) => {
-    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660)] })] })); await page.evaluate(() => openDlg(S.events[0]));
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660)] })] })); await page.evaluate(() => openDlg(state.S.events[0]));
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2); await expect(page.locator('#fDays .dr.open')).toHaveCount(0);
     await page.locator('#fAddT').tap(); const m = await page.locator('.addm').boundingBox(); expect(m.y).toBeGreaterThanOrEqual(0); expect(m.x + m.width).toBeLessThanOrEqual(page.viewportSize().width);
     await page.locator('.addm .addd .oi', { hasText: 'Friday' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(3);

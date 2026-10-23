@@ -29,7 +29,7 @@ describe('R-SHARE-09 Save… offers a calendar file, an export that is never a b
     expect(a.q('#xDlg select').value).toBe('0'); expect(a.qa('#xDlg select option').map(o => o.textContent)).toEqual(['None', '5 minutes before', '10 minutes before', '15 minutes before', '30 minutes before', '60 minutes before']);
   });
   it('Download saves weekly-schedules-<date>.ics, says it is not encrypted, and the workspace stays unsaved', async () => {
-    const a = fresh(); a.ev("cw().lb=keyOf(S)"); a.ev('S.events[0].title="Piano lesson"'); expect(a.ev('anyDirty()')).toBe(true); const lf = a.ev('cw().lf');
+    const a = fresh(); a.ev("cw().lb=keyOf(state.S)"); a.ev('state.S.events[0].title="Piano lesson"'); expect(a.ev('anyDirty()')).toBe(true); const lf = a.ev('cw().lf');
     await download(a); expect(a.dlgOpen()).toBe(false); expect(a.w.__download).toBe('weekly-schedules-2026-10-21.ics');
     expect(a.toast()).toBe('Calendar file downloaded. It is not encrypted: it contains titles, names and times.'); expect(file(a)).toContain('SUMMARY:Piano lesson · Ann');
     expect(a.ev('anyDirty()')).toBe(true); expect(a.ev('cw().lf')).toBe(lf);
@@ -78,7 +78,7 @@ describe('R-SHARE-09 What to include and personal details work as for files', ()
 
 describe('R-SHARE-09 This browser remembers the last export of each workspace', () => {
   it('after a download with Until, the dialog shows that period and From follows the day after it', async () => {
-    const a = fresh(); await download(a, { from: '2026-10-21', until: '2026-12-18' }); expect(a.ev('prefs.icsLast[curId]')).toEqual({ from: '2026-10-21', until: '2026-12-18' });
+    const a = fresh(); await download(a, { from: '2026-10-21', until: '2026-12-18' }); expect(a.ev('state.prefs.icsLast[state.curId]')).toEqual({ from: '2026-10-21', until: '2026-12-18' });
     await open(a); expect(a.q('#xDlg .icslast').textContent).toMatch(/^Last export from this browser: Oct 21, 2026 – Dec 18, 2026\./); expect(dates(a)[0].value).toBe('2026-12-19');
   });
   it('an earlier export without Until is said to never stop, with how to end it, and From is today', async () => {
@@ -87,22 +87,22 @@ describe('R-SHARE-09 This browser remembers the last export of each workspace', 
     expect(a.q('#xDlg .icslast .tip').title).toMatch(/Exports made on another device are not known here/);
   });
   it('an Until already past gives From today, never a date in the past', async () => {
-    const a = fresh(); a.ev('prefs.icsLast[curId]={from:"2026-01-05",until:"2026-06-30"}'); await open(a); expect(dates(a)[0].value).toBe('2026-10-21');
+    const a = fresh(); a.ev('state.prefs.icsLast[state.curId]={from:"2026-01-05",until:"2026-06-30"}'); await open(a); expect(dates(a)[0].value).toBe('2026-10-21');
   });
   it('it is per browser view state: kept in prefs, never in the data, a file or undo', async () => {
-    const a = fresh(); a.ev("cw().lb=keyOf(S)"); await download(a); const id = a.ev('curId'); expect(prefsOf(a).icsLast).toEqual({ [id]: { from: '2026-10-21' } });
-    expect(a.ev('anyDirty()')).toBe(false); expect(JSON.stringify(a.ev('buildFile()'))).not.toContain('icsLast'); expect(a.ev('undoSt.length')).toBe(0);
+    const a = fresh(); a.ev("cw().lb=keyOf(state.S)"); await download(a); const id = a.ev('state.curId'); expect(prefsOf(a).icsLast).toEqual({ [id]: { from: '2026-10-21' } });
+    expect(a.ev('anyDirty()')).toBe(false); expect(JSON.stringify(a.ev('buildFile()'))).not.toContain('icsLast'); expect(a.ev('state.undoSt.length')).toBe(0);
   });
   it('deleting the workspace, clearing memory or erasing it drops it; duplicating does not copy it', async () => {
-    const a = fresh(); await download(a); const id = a.ev('curId');
-    a.ev('duplicateWorkspace()'); expect(a.ev('prefs.icsLast[curId]')).toBeUndefined(); expect(a.ev(`prefs.icsLast['${id}']`)).toBeDefined();
+    const a = fresh(); await download(a); const id = a.ev('state.curId');
+    a.ev('duplicateWorkspace()'); expect(a.ev('state.prefs.icsLast[state.curId]')).toBeUndefined(); expect(a.ev(`state.prefs.icsLast['${id}']`)).toBeDefined();
     a.ev(`switchWs('${id}')`); a.ev('deleteWorkspace()'); expect(prefsOf(a).icsLast).toEqual({});
     await download(a); a.ev('clearMem()'); expect(prefsOf(a).icsLast).toEqual({});
   });
   it('a damaged or hostile icsLast in prefs is ignored at load', () => {
     const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ icsLast: { w1: { from: 'soon' }, w2: { from: '2026-10-21', until: 5 }, w3: '2026-10-21', ['x'.repeat(65)]: { from: '2026-10-21' }, w4: { from: '2026-10-21', until: '2026-12-18', extra: 1 } } }) } });
-    expect(a.ev('JSON.stringify(prefs.icsLast)')).toBe('{"w4":{"from":"2026-10-21","until":"2026-12-18"}}');
-    const b = openApp({ storage: { [PREFS_KEY]: '{"icsLast":{"__proto__":{"from":"2026-10-21"}}}' } }); expect(b.ev('Object.getPrototypeOf(prefs.icsLast)')).toBeNull(); expect(b.ev('({}).from')).toBeUndefined();
+    expect(a.ev('JSON.stringify(state.prefs.icsLast)')).toBe('{"w4":{"from":"2026-10-21","until":"2026-12-18"}}');
+    const b = openApp({ storage: { [PREFS_KEY]: '{"icsLast":{"__proto__":{"from":"2026-10-21"}}}' } }); expect(b.ev('Object.getPrototypeOf(state.prefs.icsLast)')).toBeNull(); expect(b.ev('({}).from')).toBeUndefined();
   });
 });
 
@@ -115,7 +115,7 @@ describe('R-CYC-05 The calendar export uses today\'s week of the cycle, asking f
   });
   it('the answer is the anchor Live View uses: Live View then starts without asking', async () => {
     const a = fresh(cyc()); a.chooseSave('Calendar file (export only)'); await a.sleep(5); a.q('#xDlg select').value = '2'; a.click('Continue'); await a.sleep(5); a.click('Cancel');
-    expect(a.ev('prefs.lvAnchor[curId]')).toBe('2026-10-12'); a.q('#lvB').click(); expect(a.ev('[live,curWk]')).toEqual([true, 2]);
+    expect(a.ev('state.prefs.lvAnchor[state.curId]')).toBe('2026-10-12'); a.q('#lvB').click(); expect(a.ev('[state.live,state.curWk]')).toEqual([true, 2]);
   });
   it('a From three weeks ahead falls in the right week, and the file starts there', async () => {
     const a = fresh(cyc()); a.ev('setAnchor(2)'); await open(a); const f = dates(a)[0]; f.value = '2026-11-09'; f.oninput();
@@ -125,7 +125,7 @@ describe('R-CYC-05 The calendar export uses today\'s week of the cycle, asking f
     const a = fresh(cyc()); a.ev('setAnchor(2)'); expect(a.ev('wkAt(ymd(new Date()))')).toBe(2); expect(a.ev('todayWk()')).toBe(2); expect(a.ev('wkAt(ymd(new Date())+7)')).toBe(1);
   });
   it('Cancel on "Which week is it?" opens nothing and remembers nothing', async () => {
-    const a = fresh(cyc()); a.chooseSave('Calendar file (export only)'); await a.sleep(5); a.click('Cancel'); await a.sleep(5); expect(a.dlgOpen()).toBe(false); expect(a.ev('prefs.lvAnchor[curId]')).toBeUndefined();
+    const a = fresh(cyc()); a.chooseSave('Calendar file (export only)'); await a.sleep(5); a.click('Cancel'); await a.sleep(5); expect(a.dlgOpen()).toBe(false); expect(a.ev('state.prefs.lvAnchor[state.curId]')).toBeUndefined();
   });
 });
 
@@ -133,7 +133,7 @@ describe('R-SHARE-09 The calendar export in Spanish', () => {
   it('the button, the dialog and the file speak Spanish', async () => {
     const a = fresh(data(), { languages: ['es-ES'] }); a.toolbar('save').click(); expect(a.dlgButtons()).toContain('Archivo de calendario (solo exportar)'); a.click('Archivo de calendario (solo exportar)'); await a.sleep(5);
     expect(a.dlgTitle()).toBe('Archivo de calendario'); expect(a.dlgText()).toContain('Cómo usarlo'); expect(a.dlgButtons().slice(-2)).toEqual(['Descargar', 'Cancelar']);
-    a.ev('prefs.icsLast[curId]={from:"2026-10-21"}'); a.click('Cancelar'); await a.sleep(5); a.chooseSave('Archivo de calendario (solo exportar)'); await a.sleep(5);
+    a.ev('state.prefs.icsLast[state.curId]={from:"2026-10-21"}'); a.click('Cancelar'); await a.sleep(5); a.chooseSave('Archivo de calendario (solo exportar)'); await a.sleep(5);
     expect(a.q('#xDlg .icslast').textContent).toMatch(/^Última exportación desde este navegador: 21 oct 2026 – sin fecha de fin\. No termina nunca/);
   });
 });

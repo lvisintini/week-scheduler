@@ -41,7 +41,7 @@ test.describe('R-SHARE-09 The calendar file, downloaded and read back', () => {
   });
   for (const theme of ['light', 'dark']) {
     test(`the calendar dialog, with its Choose… lists, adds no accessibility violation (${theme} theme)`, async ({ page }) => {
-      await page.evaluate(t => { prefs.theme = t; applyTheme(); }, theme); await openIcsDialog(page); await page.locator('#xDlg .partsel button', { hasText: 'Choose…' }).click();
+      await page.evaluate(t => { state.prefs.theme = t; applyTheme(); }, theme); await openIcsDialog(page); await page.locator('#xDlg .partsel button', { hasText: 'Choose…' }).click();
       const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.flatMap(v => v.nodes.map(n => v.id + ' ' + n.target))).toEqual([]);
     });
   }

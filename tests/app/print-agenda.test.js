@@ -28,9 +28,9 @@ describe('R-PRN-01 Day agenda (click a day header)', () => {
     const a = fresh(blank({ events: [ev1({ color: '#e5484d' })] })); expect(agenda(a).querySelector('.ai').style.borderLeftColor).toMatch(/#e5484d|rgb\(229, 72, 77\)/);
   });
   it('shows what is currently visible: hidden schedules and people filtered out events are not listed', () => {
-    const a = day(); a.ev('S.people[0].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual(['Earlier', 'Later']);   // Later is led by Ann but Bob is involved and visible
-    a.ev('S.people[1].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual(['Earlier']);
-    a.ev('S.schedules[0].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual([]);
+    const a = day(); a.ev('state.S.people[0].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual(['Earlier', 'Later']);   // Later is led by Ann but Bob is involved and visible
+    a.ev('state.S.people[1].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual(['Earlier']);
+    a.ev('state.S.schedules[0].visible=false;render()'); expect(itemTitles(agenda(a))).toEqual([]);
   });
   it('an empty day says "Nothing scheduled."', () => {
     expect(agenda(fresh(blank()), 3).textContent).toContain('Nothing scheduled.');
@@ -66,11 +66,11 @@ describe('R-PRN-02 Print schedule (the visible grid on paper)', () => {
     const a = fresh(blank({ events: [ev1()] })); const pr = printed(a); expect(a.w.__printCount).toBe(1); expect(pr.querySelector('h1').textContent).toBe('Weekly schedule'); expect(pr.querySelectorAll('.ev')).toHaveLength(1); expect(pr.querySelectorAll('.dh:not(.c)')).toHaveLength(7);
   });
   it('lists the schedules and people that are shown, and none that are hidden', () => {
-    const a = fresh(blank({ people, schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', visible: false })] })); a.ev('S.people[1].visible=false;render()');
+    const a = fresh(blank({ people, schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', visible: false })] })); a.ev('state.S.people[1].visible=false;render()');
     const meta = printed(a).querySelector('.pm').textContent.split('Schedules shown:')[1]; expect(meta).toContain('Home'); expect(meta).not.toContain('Work'); expect(meta).toContain('Ann'); expect(meta).not.toContain('Bob');
   });
   it('says "none" when everything is hidden and "(no people defined)" when there are no people', () => {
-    const a = fresh(blank()); a.ev('S.schedules[0].visible=false;render()'); const meta = printed(a).querySelector('.pm').textContent; expect(meta).toContain('none'); expect(meta).toContain('(no people defined)');
+    const a = fresh(blank()); a.ev('state.S.schedules[0].visible=false;render()'); const meta = printed(a).querySelector('.pm').textContent; expect(meta).toContain('none'); expect(meta).toContain('(no people defined)');
   });
   it('is A4 portrait with a 10 mm margin', () => {
     const a = fresh(blank()); printed(a); expect(a.q('#pgStyle').textContent).toBe('@page{size:A4 portrait;margin:10mm}');
@@ -79,13 +79,13 @@ describe('R-PRN-02 Print schedule (the visible grid on paper)', () => {
     const a = fresh(blank()); a.ev('Date=class extends Date{constructor(...x){x.length?super(...x):super(2026,9,14,10,30)}};drawNow()'); expect(a.qa('.now')).toHaveLength(1); expect(printed(a).querySelectorAll('.now')).toHaveLength(0);
   });
   it('printing leaves the screen exactly as it was (zoom restored, print area emptied afterwards)', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.rowH=90;render()'); printed(a); expect(a.ev('HH')).toBe(90); a.w.onafterprint(); expect(a.q('#pr').childElementCount).toBe(0);
+    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.rowH=90;render()'); printed(a); expect(a.ev('state.HH')).toBe(90); a.w.onafterprint(); expect(a.q('#pr').childElementCount).toBe(0);
   });
   it('only the print area is shown on paper and colours are printed exactly', () => {
     const css = fresh().d.querySelector('style').textContent; expect(css).toContain('body>*:not(#pr){display:none!important}'); expect(css).toContain('print-color-adjust:exact');
   });
   it('the printed grid keeps hidden early hours hidden and the hidden weekend hidden', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.hideWeekend=true;render()'); const pr = printed(a); expect(pr.querySelectorAll('.dh:not(.c)')).toHaveLength(5); expect(pr.querySelector('.times span').textContent).toBe('05:00');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.hideWeekend=true;render()'); const pr = printed(a); expect(pr.querySelectorAll('.dh:not(.c)')).toHaveLength(5); expect(pr.querySelector('.times span').textContent).toBe('05:00');
   });
 });
 
@@ -102,7 +102,7 @@ describe('R-PRN-03 Print day view (one day on a page)', () => {
     const pr = dayView(fresh(data())); expect(pr.querySelectorAll('.lane .lbg')).toHaveLength(0); expect(pr.querySelector('.lane .lip span').textContent).toBe('Lunch');
   });
   it('is only offered in a day agenda, not in a rhythm agenda', () => {
-    const a = fresh(data()); a.ev('openRhythmAgenda(S.rhythms[0])'); expect(a.q('#agPrint2').style.display).toBe('none');
+    const a = fresh(data()); a.ev('openRhythmAgenda(state.S.rhythms[0])'); expect(a.q('#agPrint2').style.display).toBe('none');
   });
   it('the weekend join between the Saturday and Sunday headers is not printed on a single column', () => {
     const a = fresh(data()); agenda(a, 6); a.q('#agPrint2').click(); expect(a.q('#pr .dh.wj')).toBeNull();
@@ -128,7 +128,7 @@ describe('R-PRN-04 With a rhythm shown, the day agenda lists the events under th
     expect(outline(b)).toEqual(['# Morning 08:00–12:00', 'Standup', '# Work 09:00–17:00', 'Standup']);
   });
   it('without a rhythm shown the agenda is the plain list in time order, as before', () => {
-    const a = fresh(data()); a.ev('S.rhythms[0].visible=false;render()'); expect(outline(agenda(a))).toEqual(['Early swim', 'School run', 'Lunch', 'Night shift']);
+    const a = fresh(data()); a.ev('state.S.rhythms[0].visible=false;render()'); expect(outline(agenda(a))).toEqual(['Early swim', 'School run', 'Lunch', 'Night shift']);
   });
   it('the printed agenda keeps the headings, and they are translated', () => {
     const a = fresh(data(), { languages: ['es'] }); agenda(a); expect(a.q('#agBody .aph').textContent).toBe('Fuera del ritmo'); a.ev('$("agDlg").close()');

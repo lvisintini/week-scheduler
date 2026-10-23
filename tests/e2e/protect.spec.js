@@ -13,7 +13,7 @@ async function protect(page) {
 test.describe('R-DATA-11 Browser memory protected with a passphrase, in a real browser', () => {
   test('after a reload the page asks for the passphrase, Escape keeps it, and the right one brings everything back', async ({ page }) => {
     await protect(page); const raw = await page.evaluate(() => localStorage.getItem('weekly-schedules-workspaces')); expect(raw).toMatch(/"sealed"/); expect(raw).not.toMatch(/Granny|Doctor|4711/);
-    await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); expect(await page.evaluate(() => S.events.length)).toBe(0);
+    await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); expect(await page.evaluate(() => state.S.events.length)).toBe(0);
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await expect(page.locator('#xDlg')).toBeVisible(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected');
     await page.locator('#xDlg .pwl input').fill('not the passphrase'); await page.keyboard.press('Enter'); await expect(page.locator('#xDlg .err')).toHaveText('Wrong passphrase. Try again.');
     await page.locator('#xDlg .pwl input').fill(PASS); await page.locator('#xDlg button', { hasText: 'Open' }).click();
@@ -21,7 +21,7 @@ test.describe('R-DATA-11 Browser memory protected with a passphrase, in a real b
     expect(await page.evaluate(() => anyDirty())).toBe(false);
   });
   test('saving while open keeps browser memory encrypted, and Lock now hides the data again', async ({ page }) => {
-    await protect(page); await page.evaluate(() => { hist(); S.events[0].title = 'Dentist visit'; render(); }); await page.evaluate(() => saveMem('all'));
+    await protect(page); await page.evaluate(() => { hist(); state.S.events[0].title = 'Dentist visit'; render(); }); await page.evaluate(() => saveMem('all'));
     await expect(page.locator('#toast')).toHaveText('Saved to browser memory'); expect(await page.evaluate(() => localStorage.getItem('weekly-schedules-workspaces'))).not.toMatch(/Dentist/);
     await settingsData(page); await page.locator('#xDlg button', { hasText: 'Lock now' }).click();
     await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); await expect(page.locator('.ev')).toHaveCount(0);

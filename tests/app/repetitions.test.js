@@ -3,7 +3,7 @@ import { openApp, setData, blank, ev1, person, dragFrom, fillDialog, dlgOpen } f
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
-const slots = a => a.ev('JSON.parse(JSON.stringify(S.events[0].slots))');
+const slots = a => a.ev('JSON.parse(JSON.stringify(state.S.events[0].slots))');
 const save = a => a.q('#fOk').click();
 const rows = a => a.qa('#fDays .dr');
 const slot = (day, start = 600, end = 660, person = '') => ({ day, start, end, person });
@@ -34,20 +34,20 @@ describe('R-REP-01 An event can repeat on chosen days with its own times and peo
     const a = three(); expect(a.qa('.ev')).toHaveLength(3); expect(new Set(a.qa('.ev').map(b => b.style.background)).size).toBe(1);
   });
   it('a single repetition is removed by unticking its day and saving; the others stay', () => {
-    const a = three(); a.ev('openDlg(S.events[0])'); fillDialog(a, { days: { 0: {}, 4: {} } }); save(a);
+    const a = three(); a.ev('openDlg(state.S.events[0])'); fillDialog(a, { days: { 0: {}, 4: {} } }); save(a);
     expect(slots(a).map(s => s.day)).toEqual([0, 4]);
   });
   it('one repetition can be retimed in the dialog without touching the others', () => {
-    const a = three(); a.ev('openDlg(S.events[0])'); const sel = rows(a)[2].querySelectorAll('select')[0]; sel.value = '780'; sel.dispatchEvent(new a.w.Event('change')); save(a);
+    const a = three(); a.ev('openDlg(state.S.events[0])'); const sel = rows(a)[2].querySelectorAll('select')[0]; sel.value = '780'; sel.dispatchEvent(new a.w.Event('change')); save(a);
     expect(slots(a).map(s => s.start)).toEqual([600, 780, 600]);
   });
   it('deleting the event deletes every repetition', () => {
-    const a = three(); a.ev('openDlg(S.events[0])'); a.q('#fDel').click(); expect(a.ev('S.events.length')).toBe(0);
+    const a = three(); a.ev('openDlg(state.S.events[0])'); a.q('#fDel').click(); expect(a.ev('state.S.events.length')).toBe(0);
   });
 });
 
 describe('R-REP-02 One day table: each day can hold several times, without modes', () => {
-  const dlg = () => { const a = three(); a.ev('openDlg(S.events[0])'); return a; };   // Mon, Wed, Fri 10:00–11:00
+  const dlg = () => { const a = three(); a.ev('openDlg(state.S.events[0])'); return a; };   // Mon, Wed, Fri 10:00–11:00
   const lines = a => a.qa('#fDays .dr');   // day rows and the further-time lines, in order
   const days = a => a.qa('#fDays .dr:not(.dx)');   // the seven day rows only
   const times = el => [...el.querySelectorAll('select')].slice(0, 2).map(x => x.value);
@@ -68,11 +68,11 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
     a.q('#fDays .dr.dx .bx').click(); expect(a.q('#fDays .dr.dx')).toBeNull(); save(a); expect(slots(a)).toHaveLength(3);
   });
   it('an event with two times on one day opens with both lines, in time order', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 840, 900), slot(0, 540, 600)] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 840, 900), slot(0, 540, 600)] })] })); a.ev('openDlg(state.S.events[0])');
     expect(times(days(a)[0])).toEqual(['540', '600']); expect(times(a.q('#fDays .dr.dx'))).toEqual(['840', '900']); expect(lines(a)[1].classList.contains('dx')).toBe(true);
   });
   it('a time added late at night starts with the day\'s last time instead of after it', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 1380, 1440)] })] })); a.ev('openDlg(S.events[0])'); days(a)[0].querySelector('.addt').click();
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 1380, 1440)] })] })); a.ev('openDlg(state.S.events[0])'); days(a)[0].querySelector('.addt').click();
     expect(times(a.q('#fDays .dr.dx'))).toEqual(['1380', '1440']);
   });
   it('unticking a day greys out all its lines and drops them on save; ticking it again brings its further times back', () => {
@@ -134,8 +134,8 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
     const css = a.d.querySelector('style').textContent; expect(css).toContain('.dr:not(.open)>:not(.dcell):not(.dl):not(.wcell)'); expect(css).toContain('.cl,.sum,.rx,.wkw,#fAddT,.wcell,.dhd>.wkh{display:none}');
   });
   it('opening the dialog opens the clicked repetition\'s card, or the only card', () => {
-    const a = dlg(); a.ev('document.getElementById("dlg").close();openDlg(S.events[0],null,S.events[0].slots[1])'); expect(open(a)).toEqual([days(a)[2]]);
-    const b = fresh(blank({ events: [ev1()] })); b.ev('openDlg(S.events[0])'); expect(b.qa('#fDays .dr.open')).toHaveLength(1);
+    const a = dlg(); a.ev('document.getElementById("dlg").close();openDlg(state.S.events[0],null,state.S.events[0].slots[1])'); expect(open(a)).toEqual([days(a)[2]]);
+    const b = fresh(blank({ events: [ev1()] })); b.ev('openDlg(state.S.events[0])'); expect(b.qa('#fDays .dr.open')).toHaveLength(1);
   });
   it('each line has the labels of its phone card, translated; days alternate in bands that their further times share', () => {
     const a = dlg(); days(a)[2].querySelector('.addt').click();
@@ -160,7 +160,7 @@ describe('R-REP-03 The end-time list reaches the end of the next day', () => {
   it('R-REP-04 the end picked in the list reads the same on the saved box: 22:00–00:00 and 22:00–00:00 (Next day)', () => {
     for (const end of ['1440', '2880']) {
       const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'Late', start: '1320', end }); const label = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options].find(o => o.value === end).textContent; save(a);
-      a.ev('prefs.showEarly=true;render()'); expect(a.q('.ev').textContent).toContain('22:00–' + label);
+      a.ev('state.prefs.showEarly=true;render()'); expect(a.q('.ev').textContent).toContain('22:00–' + label);
     }
   });
   it('an end of "01:30 (Next day)" saves an event that ends at minute 1530', () => {
@@ -168,7 +168,7 @@ describe('R-REP-03 The end-time list reaches the end of the next day', () => {
     expect(slots(a)[0]).toMatchObject({ start: 1320, end: 1530 });
   });
   it('phases (which stay inside a day) only offer end times up to 00:00', () => {
-    const a = fresh({ ...blank(), rhythms: [{ id: 'r', name: 'R', visible: true }] }); a.ev("editMode='phases';openDlg(null)");
+    const a = fresh({ ...blank(), rhythms: [{ id: 'r', name: 'R', visible: true }] }); a.ev("state.editMode='phases';openDlg(null)");
     const opts = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options]; expect(opts.at(-1).textContent).toBe('00:00'); expect(opts).toHaveLength(96);
   });
 });
@@ -184,18 +184,18 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
     expect(a.q('#fWarn').textContent).toBe(''); expect(rows(a).every(r => r.querySelector('.wn').style.visibility !== 'visible')).toBe(true);
   });
   it('two overlapping times on the same day are both flagged', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(state.S.events[0])');
     expect(a.qa('#fDays .dr').slice(0, 2).map(r => r.querySelector('.wn').style.visibility)).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
   });
   it('overlapping times performed by people who share nobody are not flagged; making them share a person flags both at once', () => {
-    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(state.S.events[0])');
     const wn = () => rows(a).slice(0, 2).map(r => r.querySelector('.wn').style.visibility);
     expect(wn()).toEqual(['hidden', 'hidden']); expect(a.q('#fWarn').textContent).toBe('');
     const ps = rows(a)[1].querySelectorAll('select')[2]; ps.value = 'A'; ps.dispatchEvent(new a.w.Event('change'));
     expect(wn()).toEqual(['visible', 'visible']); expect(a.q('#fWarn').textContent).toContain('Monday');
   });
   it('the dialog warning follows the default With list and "only on call"', () => {
-    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(S.events[0])');
+    const a = fresh(blank({ people, events: [ev1({ slots: [slot(0, 600, 720, 'A'), slot(0, 660, 780, 'B')] })] })); a.ev('openDlg(state.S.events[0])');
     const chip = a.q('#fInv input[value="A"]'); chip.checked = true; a.q('#fInv').dispatchEvent(new a.w.Event('change', { bubbles: true }));
     expect(a.q('#fWarn').textContent).toContain('Monday');   // Ann performs one and is involved in the other
     const oc = a.q('#fOnCall'); oc.checked = true; oc.dispatchEvent(new a.w.Event('change')); expect(a.q('#fWarn').textContent).toBe('');
@@ -206,7 +206,7 @@ describe('R-REP-05 Overlapping repetitions are allowed but warned about', () => 
     expect(slots(a)[1].start).toBe(630); expect(a.toast()).not.toContain('overlap');
   });
   it('an event with overlapping repetitions can still be saved', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(S.events[0])'); save(a);
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 600, 720), slot(0, 660, 780)] })] })); a.ev('openDlg(state.S.events[0])'); save(a);
     expect(dlgOpen(a)).toBe(false); expect(slots(a)).toHaveLength(2);
   });
   it('dragging a repetition so that it newly overlaps another one shows a warning toast with Undo', async () => {
@@ -243,7 +243,7 @@ describe('R-REP-06 R-EVT-15 Dragging a core edge of a repeating flexible event c
   });
   it('a smaller core that now overlaps another repetition is reported with the overlap warning', async () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ ...slot(0, 540, 720), fe: 60 }, slot(0, 690, 780)] })] }));
-    const b = a.q('.day[data-d="0"] .ev'); expect(a.ev('overlapSet(S.events[0]).size')).toBe(0);
+    const b = a.q('.day[data-d="0"] .ev'); expect(a.ev('overlapSet(state.S.events[0]).size')).toBe(0);
     await dragFrom(a, b, { col: 0, min: 659 }, { col: 0, min: 705 }, { target: b._ce, shift: true }); expect(slots(a)[0].fe).toBe(15); expect(a.toast()).toContain('⚠');
   });
 });
@@ -284,8 +284,8 @@ describe('R-REP-06 Dragging a repeating event changes all repetitions; Shift cha
   });
   it('the toast buttons do nothing once something else has changed in between', async () => {
     const a = three(); await dragFrom(a, a.q('.day[data-d="0"] .ev'), { col: 0, min: 630 }, { col: 0, min: 750 });
-    a.ev('hist();S.events[0].title="Renamed"'); toastBtn(a, 'Only this day').click(); toastBtn(a, 'Undo').click();
-    expect(slots(a).map(s => s.start)).toEqual([720, 720, 720]); expect(a.ev('S.events[0].title')).toBe('Renamed');
+    a.ev('hist();state.S.events[0].title="Renamed"'); toastBtn(a, 'Only this day').click(); toastBtn(a, 'Undo').click();
+    expect(slots(a).map(s => s.start)).toEqual([720, 720, 720]); expect(a.ev('state.S.events[0].title')).toBe('Renamed');
   });
   it('resizing one repetition lengthens or shortens all of them by the same amount', async () => {
     const a = three(); const box = a.q('.day[data-d="0"] .ev'); await dragFrom(a, box, { col: 0, min: 655 }, { col: 0, min: 690 }, { target: box._rz });

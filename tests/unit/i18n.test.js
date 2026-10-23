@@ -63,7 +63,7 @@ describe('R-I18N-01 The interface language follows the browser and can be switch
   });
   it('the default workspace content is created in the interface language', () => {
     const es = openApp({ languages: ['es-ES'] });
-    expect(es.ev('S.schedules[0].name')).toBe('Rutina'); expect(es.ev('S.rhythms[0].name')).toBe('Ritmo normal'); expect(es.ev('cw().name')).toBe('Espacio de trabajo');
+    expect(es.ev('state.S.schedules[0].name')).toBe('Rutina'); expect(es.ev('state.S.rhythms[0].name')).toBe('Ritmo normal'); expect(es.ev('cw().name')).toBe('Espacio de trabajo');
   });
 });
 

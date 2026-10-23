@@ -31,14 +31,14 @@ describe('R-GRID-02 Hourly rows from 05:00 to midnight, early hours can be shown
     expect(fresh().q('.day').style.height).toBe(`${19 * 48}px`);
   });
   it('showing the early hours adds the rows from 00:00 to 04:00', () => {
-    const a = fresh(); a.ev('prefs.showEarly=true;render()');
+    const a = fresh(); a.ev('state.prefs.showEarly=true;render()');
     const labels = a.qa('.times span').map(s => s.textContent);
     expect(labels[0]).toBe('00:00'); expect(labels).toHaveLength(24);
   });
   it('an event inside the hidden early hours is kept but not drawn until the hours are shown', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 120, end: 240, person: '' }] })] }));
-    expect(a.qa('.ev')).toHaveLength(0); expect(a.ev('S.events.length')).toBe(1);
-    a.ev('prefs.showEarly=true;render()'); expect(a.qa('.ev')).toHaveLength(1);
+    expect(a.qa('.ev')).toHaveLength(0); expect(a.ev('state.S.events.length')).toBe(1);
+    a.ev('state.prefs.showEarly=true;render()'); expect(a.qa('.ev')).toHaveLength(1);
   });
   it('an event that starts before 05:00 but ends later is drawn from the top of the visible area', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 240, end: 360, person: '' }] })] }));
@@ -67,19 +67,19 @@ describe('R-GRID-03 Saturday and Sunday: only the header cells have a different 
     const css = fresh().d.querySelector('style').textContent; expect(css).toMatch(/\[data-theme="dark"\][^}]*--weh/); expect(css).toMatch(/prefers-color-scheme:dark[^}]*--weh/);
   });
   it('with the weekend hidden there are no weekend headers', () => {
-    const a = fresh(); a.ev('prefs.hideWeekend=true;render()'); expect(a.qa('.dh.we')).toHaveLength(0);
+    const a = fresh(); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.qa('.dh.we')).toHaveLength(0);
   });
 });
 
 describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () => {
   it('hiding Saturday and Sunday removes both columns and their events from the grid', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 5, start: 600, end: 660, person: '' }] })] }));
-    expect(a.qa('.day')).toHaveLength(7); a.ev('prefs.hideWeekend=true;render()');
+    expect(a.qa('.day')).toHaveLength(7); a.ev('state.prefs.hideWeekend=true;render()');
     expect(a.qa('.day')).toHaveLength(5); expect(headers(a)).not.toContain('Saturday'); expect(a.qa('.ev')).toHaveLength(0);
   });
   it('the AM/PM clock changes the time labels and the event times', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 810, end: 870, person: '' }] })] }));
-    expect(a.q('.ev .tm').textContent).toBe('13:30–14:30'); a.ev('prefs.clock12=true;render()');
+    expect(a.q('.ev .tm').textContent).toBe('13:30–14:30'); a.ev('state.prefs.clock12=true;render()');
     expect(a.q('.ev .tm').textContent).toBe('1:30 PM–2:30 PM'); expect(a.q('.times span').textContent).toBe('5 AM');
   });
   it('the red now line appears on the current weekday at the current time', () => {
@@ -89,15 +89,15 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () =
     expect(a.qa('.now')).toHaveLength(1);
   });
   it('the now line can be switched off and on again', () => {
-    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); a.ev('nowOn=false;drawNow()'); expect(a.qa('.now')).toHaveLength(0);
-    a.ev('nowOn=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
+    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); a.ev('state.nowOn=false;drawNow()'); expect(a.qa('.now')).toHaveLength(0);
+    a.ev('state.nowOn=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
   });
   it('before 05:00 there is no now line while the early hours are hidden, and there is one when they are shown', () => {
     const a = fresh(); freezeClock(a, 2026, 9, 14, 3, 0); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(0);
-    a.ev('prefs.showEarly=true;render()'); expect(a.qa('.now')).toHaveLength(1);
+    a.ev('state.prefs.showEarly=true;render()'); expect(a.qa('.now')).toHaveLength(1);
   });
   it('on a hidden weekend day there is no now line', () => {
-    const a = fresh(); freezeClock(a, 2026, 9, 17, 10, 30); a.ev('prefs.hideWeekend=true;render()'); expect(a.qa('.now')).toHaveLength(0);   // Saturday
+    const a = fresh(); freezeClock(a, 2026, 9, 17, 10, 30); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.qa('.now')).toHaveLength(0);   // Saturday
   });
   it('the Settings dialog offers exactly these view options with explanations', () => {
     const a = fresh(); a.ev('openSettings()');
@@ -107,24 +107,24 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line', () =
     const a = fresh(); a.ev('openSettings()');
     const boxes = a.qa('#xDlg .sopt input[type=checkbox]'); boxes[0].checked = true; boxes[0].onchange();
     expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).showEarly).toBe(true);
-    expect(a.ev('Object.keys(S)')).not.toContain('showEarly');
+    expect(a.ev('Object.keys(state.S)')).not.toContain('showEarly');
   });
 });
 
 describe('R-GRID-06 Grid basics: hour lines, snapping, header agenda icon', () => {
-  const narrow = (o = {}) => { const a = fresh(null, o); a.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:393});prefs.fitW=true;render()"); return a; };
+  const narrow = (o = {}) => { const a = fresh(null, o); a.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:393});state.prefs.fitW=true;render()"); return a; };
   it('narrow week columns (a phone) get short day names without the agenda and focus buttons; a tap opens that day', () => {
     const a = narrow(); const hs = a.qa('.dh:not(.c)');
     expect(hs.map(h => h.textContent)).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']); expect(hs.every(h => h.classList.contains('nr'))).toBe(true);
     expect(a.qa('.dh .dhb, .dh .ic')).toHaveLength(0); expect(hs[2].getAttribute('aria-label')).toBe('Wednesday');
-    hs[2].click(); expect(a.ev('focusD')).toBe(2); expect(a.q('#agDlg').open).toBeFalsy(); expect(a.q('.dh.fo .ic')).not.toBeNull();   // the day view has the agenda
+    hs[2].click(); expect(a.ev('state.focusD')).toBe(2); expect(a.q('#agDlg').open).toBeFalsy(); expect(a.q('.dh.fo .ic')).not.toBeNull();   // the day view has the agenda
   });
   it('in Spanish the short names are Lu Ma Mi Ju Vi Sá Do; wide columns keep the full names and their buttons', () => {
     expect(narrow({ languages: ['es'] }).qa('.dh:not(.c)').map(h => h.textContent)).toEqual(['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']);
-    const w = fresh(); w.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:1400});prefs.fitW=true;render()");
+    const w = fresh(); w.ev("Object.defineProperty(document.getElementById('wrap'),'clientWidth',{configurable:true,value:1400});state.prefs.fitW=true;render()");
     expect(w.q('.dh:not(.c)').textContent).toBe('Monday'); expect(w.qa('.dh .foc')).toHaveLength(7);
   });
-  it('has 48 px per hour by default', () => { expect(fresh().ev('HH')).toBe(48); expect(fresh().q('#grid').style.getPropertyValue('--hh')).toBe('48px'); });
+  it('has 48 px per hour by default', () => { expect(fresh().ev('state.HH')).toBe(48); expect(fresh().q('#grid').style.getPropertyValue('--hh')).toBe('48px'); });
   it('draws hour lines in an overlay above the phase backgrounds in every column', () => {
     expect(fresh().qa('.day > .gl')).toHaveLength(7);
   });
@@ -147,25 +147,25 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
   const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY));
   const wrapH = (a, h) => Object.defineProperty(a.q('#wrap'), 'clientHeight', { configurable: true, get: () => h });
   it('a phone has its own row height: Fit height off at 100 px per hour by default, kept apart from the computer setting', () => {
-    const a = fresh(blank(), { phone: true }); a.q('.sbtop .xpand').click(); expect(a.ev('HH')).toBe(100);
+    const a = fresh(blank(), { phone: true }); a.q('.sbtop .xpand').click(); expect(a.ev('state.HH')).toBe(100);
     expect(box(a, 'Fit height').checked).toBe(false); expect(slider(a, 'Row height').disabled).toBe(false); expect(slider(a, 'Row height').value).toBe('100');
-    const s = slider(a, 'Row height'); s.value = '80'; s.dispatchEvent(new a.w.Event('input')); expect(a.ev('HH')).toBe(80);
+    const s = slider(a, 'Row height'); s.value = '80'; s.dispatchEvent(new a.w.Event('input')); expect(a.ev('state.HH')).toBe(80);
     expect([stored(a).rowHP, stored(a).rowH ?? 48, stored(a).fitH ?? true]).toEqual([80, 48, true]);
     tick(a, 'Fit height', true); expect([stored(a).fitHP, stored(a).fitH ?? true]).toEqual([true, true]);
-    a.qa('#sbin .zreset')[0].click(); expect([stored(a).rowHP, stored(a).fitHP]).toEqual([100, false]); expect(a.ev('HH')).toBe(100);
+    a.qa('#sbin .zreset')[0].click(); expect([stored(a).rowHP, stored(a).fitHP]).toEqual([100, false]); expect(a.ev('state.HH')).toBe(100);
     expect(a.q('#sbin .zreset').title).toContain('100 px per hour');
-    const b = openApp({ phone: true, storage: { [PREFS_KEY]: JSON.stringify({ rowH: 30, fitH: true, rowHP: 500 }) } }); expect(b.ev('[HH,prefs.rowHP,prefs.fitHP]')).toEqual([120, 120, false]);
-    const c = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 60, fitH: false, rowHP: 90 }) } }); expect(c.ev('HH')).toBe(60);
+    const b = openApp({ phone: true, storage: { [PREFS_KEY]: JSON.stringify({ rowH: 30, fitH: true, rowHP: 500 }) } }); expect(b.ev('[state.HH,state.prefs.rowHP,state.prefs.fitHP]')).toEqual([120, 120, false]);
+    const c = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 60, fitH: false, rowHP: 90 }) } }); expect(c.ev('state.HH')).toBe(60);
   });
   it('on a phone Fit width follows the view: on in the day view, off in the week view keeping the column width, on again back in a day', () => {
-    const a = fresh(blank(), { phone: true }); expect(a.ev('[focusD!=null,prefs.fitWP]')).toEqual([true, true]);
-    a.ev('prefs.colWP=150'); a.q('.dh.fo .wk').click(); expect(a.ev('[focusD,prefs.fitWP,prefs.colWP]')).toEqual([null, false, 150]); expect(stored(a).fitWP).toBe(false);
+    const a = fresh(blank(), { phone: true }); expect(a.ev('[state.focusD!=null,state.prefs.fitWP]')).toEqual([true, true]);
+    a.ev('state.prefs.colWP=150'); a.q('.dh.fo .wk').click(); expect(a.ev('[state.focusD,state.prefs.fitWP,state.prefs.colWP]')).toEqual([null, false, 150]); expect(stored(a).fitWP).toBe(false);
     a.q('.sbtop .xpand').click(); expect(box(a, 'Fit width').checked).toBe(false); expect(slider(a, 'Column width').value).toBe('150');
-    tick(a, 'Fit width', true); expect(a.ev('prefs.fitWP')).toBe(true); a.ev('render()'); expect(a.ev('prefs.fitWP')).toBe(true);   // a hand-made choice lasts until the next switch
-    a.ev('setFocus(3)'); expect(a.ev('prefs.fitWP')).toBe(true); a.ev('setFocus(null)'); expect(a.ev('prefs.fitWP')).toBe(false);
-    a.ev('setFocus(null);prefs.colWP=300;prefs.fitWP=false;renderSide()'); a.qa('#sbin .zreset')[0].click(); expect(a.ev('[prefs.colWP,prefs.fitWP]')).toEqual([110, true]);
+    tick(a, 'Fit width', true); expect(a.ev('state.prefs.fitWP')).toBe(true); a.ev('render()'); expect(a.ev('state.prefs.fitWP')).toBe(true);   // a hand-made choice lasts until the next switch
+    a.ev('setFocus(3)'); expect(a.ev('state.prefs.fitWP')).toBe(true); a.ev('setFocus(null)'); expect(a.ev('state.prefs.fitWP')).toBe(false);
+    a.ev('setFocus(null);state.prefs.colWP=300;state.prefs.fitWP=false;renderSide()'); a.qa('#sbin .zreset')[0].click(); expect(a.ev('[state.prefs.colWP,state.prefs.fitWP]')).toEqual([110, true]);
     expect([stored(a).colW ?? 110, stored(a).fitW ?? true]).toEqual([110, true]);   // the computer setting is untouched
-    const c = fresh(blank()); c.ev('prefs.fitW=false;setFocus(2);setFocus(null)'); expect(c.ev('prefs.fitW')).toBe(false);   // a computer keeps its own choice
+    const c = fresh(blank()); c.ev('state.prefs.fitW=false;setFocus(2);setFocus(null)'); expect(c.ev('state.prefs.fitW')).toBe(false);   // a computer keeps its own choice
   });
   it('by default both Fit boxes are ticked, their two sliders are disabled and the text size slider is enabled', () => {
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
@@ -180,11 +180,11 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     s.querySelector('.shbtn').click(); expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(stored(a).secZoom).toBe(true);
   });
   it('with "Fit width" on the columns share the window width with a 40 px minimum, whatever the slider says', () => {
-    const a = fresh(blank()); a.ev('prefs.colW=600;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(40px,1fr))');
+    const a = fresh(blank()); a.ev('state.prefs.colW=600;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(40px,1fr))');
   });
   it('with "Fit width" off the slider sets the exact width of the columns, so nothing is stretched', () => {
-    const a = fresh(blank()); a.ev('prefs.fitW=false;prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
-    a.ev('prefs.colW=70;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,70px)');
+    const a = fresh(blank()); a.ev('state.prefs.fitW=false;state.prefs.colW=200;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,200px)');
+    a.ev('state.prefs.colW=70;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,70px)');
   });
   it('a disabled slider shows the size the fit produced, and its tooltip says how to choose the size yourself', () => {
     const a = fresh(blank()); wrapH(a, 738); a.ev('render()');   // the fake day columns are 100 px wide
@@ -195,23 +195,23 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
   it('unticking "Fit width" keeps the fitted column width, enables the slider and is remembered per browser', () => {
     const a = fresh(blank()); tick(a, 'Fit width', false);
     expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,100px)'); expect(slider(a, 'Column width').disabled).toBe(false);
-    expect([stored(a).fitW, stored(a).colW]).toEqual([false, 100]); expect(openApp({ storage: a.storage() }).ev('prefs.fitW')).toBe(false);
+    expect([stored(a).fitW, stored(a).colW]).toEqual([false, 100]); expect(openApp({ storage: a.storage() }).ev('state.prefs.fitW')).toBe(false);
   });
   it('"Fit height" sizes the rows so the visible hours fill the window under the measured day header', () => {
-    const a = fresh(); wrapH(a, 738); a.ev('render()'); expect(a.ev('HH')).toBe(Math.floor((738 - 38) / 19));   // no layout: the usual 38 px header
+    const a = fresh(); wrapH(a, 738); a.ev('render()'); expect(a.ev('state.HH')).toBe(Math.floor((738 - 38) / 19));   // no layout: the usual 38 px header
     Object.defineProperty(a.w.HTMLElement.prototype, 'offsetHeight', { configurable: true, get() { return this.classList.contains('dh') ? 60 : 0; } });
-    a.ev('render()'); expect(a.ev('HH')).toBe(Math.floor((738 - 60) / 19));
+    a.ev('render()'); expect(a.ev('state.HH')).toBe(Math.floor((738 - 60) / 19));
   });
   it('unticking "Fit height" keeps the fitted row height, so the grid does not jump', () => {
-    const a = fresh(); wrapH(a, 738); a.ev('render()'); const hh = a.ev('HH'); tick(a, 'Fit height', false);
-    expect([a.ev('HH'), stored(a).rowH, stored(a).fitH]).toEqual([hh, hh, false]); expect(slider(a, 'Row height').disabled).toBe(false);
+    const a = fresh(); wrapH(a, 738); a.ev('render()'); const hh = a.ev('state.HH'); tick(a, 'Fit height', false);
+    expect([a.ev('state.HH'), stored(a).rowH, stored(a).fitH]).toEqual([hh, hh, false]); expect(slider(a, 'Row height').disabled).toBe(false);
   });
   it('without a laid-out window (height 0) "Fit height" falls back to the row height slider', () => {
-    const a = fresh(); a.ev('prefs.rowH=72;render()'); expect(a.ev('HH')).toBe(72);
+    const a = fresh(); a.ev('state.prefs.rowH=72;render()'); expect(a.ev('state.HH')).toBe(72);
   });
   it('with "Fit height" off a taller row height makes events and hour labels proportionally taller / further apart', () => {
-    const a = fresh(blank({ events: [ev1()] })); wrapH(a, 738); a.ev('prefs.fitH=false;prefs.rowH=96;render()');
-    expect(a.ev('HH')).toBe(96); expect(parseFloat(a.q('.ev').style.height)).toBeCloseTo(95, 0); expect(a.qa('.times span')[1].style.top).toBe('96px');
+    const a = fresh(blank({ events: [ev1()] })); wrapH(a, 738); a.ev('state.prefs.fitH=false;state.prefs.rowH=96;render()');
+    expect(a.ev('state.HH')).toBe(96); expect(parseFloat(a.q('.ev').style.height)).toBeCloseTo(95, 0); expect(a.qa('.times span')[1].style.top).toBe('96px');
   });
   it('the sliders offer 70–1000 px per column, 24–120 px per hour and 80–160 % text', () => {
     const a = fresh(); expect(['Column width', 'Row height', 'Text size'].map(l => { const i = slider(a, l); return [i.min, i.max]; }))
@@ -219,7 +219,7 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
   });
   it('moving an enabled slider applies at once and is remembered per browser', () => {
     const a = fresh(); tick(a, 'Fit height', false); const r = slider(a, 'Row height'); r.value = 72; r.oninput();
-    expect(a.ev('HH')).toBe(72); expect(stored(a).rowH).toBe(72); expect(openApp({ storage: a.storage() }).ev('HH')).toBe(72);
+    expect(a.ev('state.HH')).toBe(72); expect(stored(a).rowH).toBe(72); expect(openApp({ storage: a.storage() }).ev('state.HH')).toBe(72);
   });
   it('the text size slider scales the grid text through --ts, widens the time column to match and is remembered per browser', () => {
     const a = fresh(blank()); const t = slider(a, 'Text size'); expect(t.nextElementSibling.textContent).toBe('100 %'); t.value = 150; t.oninput();
@@ -234,19 +234,19 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     expect(fs('.lip')).toBe('10px'); expect(fs('.bgs span')).toBe('10px');
   });
   it('"Reset zoom" ticks both Fit boxes again and restores 48 px per hour, 110 px columns and 100 % text', () => {
-    const a = fresh(); a.ev('prefs.rowH=100;prefs.colW=200;prefs.fitW=false;prefs.fitH=false;prefs.txt=140;render()'); a.q('#sbin .zreset').click();
-    expect(a.ev('[prefs.rowH,prefs.colW,prefs.fitW,prefs.fitH,prefs.txt]')).toEqual([48, 110, true, true, 100]);
+    const a = fresh(); a.ev('state.prefs.rowH=100;state.prefs.colW=200;state.prefs.fitW=false;state.prefs.fitH=false;state.prefs.txt=140;render()'); a.q('#sbin .zreset').click();
+    expect(a.ev('[state.prefs.rowH,state.prefs.colW,state.prefs.fitW,state.prefs.fitH,state.prefs.txt]')).toEqual([48, 110, true, true, 100]);
   });
   it('out-of-range stored zoom values are corrected on start (too large → maximum, too small → minimum, unusable → default)', () => {
     const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 5000, colW: -1, txt: 500 }) } });
-    expect(a.ev('[prefs.rowH,prefs.colW,prefs.txt]')).toEqual([120, 70, 160]);
-    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colW: 9999, txt: 10 }) } }).ev('[prefs.colW,prefs.txt]')).toEqual([1000, 80]);
+    expect(a.ev('[state.prefs.rowH,state.prefs.colW,state.prefs.txt]')).toEqual([120, 70, 160]);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ colW: 9999, txt: 10 }) } }).ev('[state.prefs.colW,state.prefs.txt]')).toEqual([1000, 80]);
     const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ rowH: 'x', colW: 0, txt: 'big' }) } });
-    expect(b.ev('[prefs.rowH,prefs.colW,prefs.txt]')).toEqual([48, 110, 100]);
-    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ txt: 93 }) } }).ev('prefs.txt')).toBe(90);
+    expect(b.ev('[state.prefs.rowH,state.prefs.colW,state.prefs.txt]')).toEqual([48, 110, 100]);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ txt: 93 }) } }).ev('state.prefs.txt')).toBe(90);
   });
   it('the retired settings "fit" and "fillW" of earlier versions are ignored: both Fit boxes start ticked', () => {
-    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ fit: false, fillW: false }) } }); expect(a.ev('[prefs.fitW,prefs.fitH]')).toEqual([true, true]);
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ fit: false, fillW: false }) } }); expect(a.ev('[state.prefs.fitW,state.prefs.fitH]')).toEqual([true, true]);
   });
   it('a visible rhythm adds its 18 px label lane to every column', () => {
     const a = fresh(); expect(a.q('#grid').style.getPropertyValue('--lane')).toBe('18px'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(58px,1fr))');
@@ -256,14 +256,14 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit height|Text size|Reset zoom/);   // "Fit width" is named in the side-by-side explanation
   });
   it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
-    const a = fresh(blank()); a.ev('prefs.fitW=false;prefs.colW=200;printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('printMode=false;render()');
+    const a = fresh(blank()); a.ev('state.prefs.fitW=false;state.prefs.colW=200;state.printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('state.printMode=false;render()');
   });
   it('printing ignores zoom: the printed grid uses the default scale and the screen scale is restored afterwards', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.fitH=false;prefs.rowH=96;render()'); a.ev('printSchedule()');
-    expect(a.q('#pr .ev').style.height).toBe(`${48 - 1}px`); expect(a.ev('HH')).toBe(96); expect(a.q('#grid').style.getPropertyValue('--hh')).toBe('96px');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.fitH=false;state.prefs.rowH=96;render()'); a.ev('printSchedule()');
+    expect(a.q('#pr .ev').style.height).toBe(`${48 - 1}px`); expect(a.ev('state.HH')).toBe(96); expect(a.q('#grid').style.getPropertyValue('--hh')).toBe('96px');
   });
   it('printing ignores the text size: the printed grid is at 100 % and the screen text size comes back afterwards', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('prefs.txt=150;render()'); a.ev('printSchedule()');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.txt=150;render()'); a.ev('printSchedule()');
     expect(a.q('#pr .grid').style.getPropertyValue('--ts')).toBe('1'); expect(a.q('#grid').style.getPropertyValue('--ts')).toBe('1.5');
     expect(a.d.documentElement.style.getPropertyValue('--ts')).toBe('1.5');
   });
@@ -305,7 +305,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
   const btn = a => a.q('#lvB'), now = a => a.q('#lvC'), pill = a => a.q('#lvPill');
   const start = a => btn(a).click();
-  const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}});prefs.fitH=false})()`);   // a fixed 48 px/h, so the scroll positions are easy to check
+  const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}});state.prefs.fitH=false})()`);   // a fixed 48 px/h, so the scroll positions are easy to check
   const scrollBy = (a, y) => a.ev(`(()=>{const w=document.getElementById('wrap');w.scrollTop=${y};w.dispatchEvent(new Event('scroll'))})()`);
   const kids = [{ id: 'O', name: 'Olivia', color: '#d6409f', visible: true }, { id: 'B', name: 'Bob', color: '#2fa66a', visible: true }];
   const day = () => blank({ people: kids, events: [
@@ -320,8 +320,8 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   it('on a phone the floating Live View button: one tap starts it, it turns red with a stop icon, a second tap stops it', () => {
     const a = fresh(day(), { phone: true }); at(a, 2, 11, 30); const r = () => a.q('#lvR');
     expect(a.q('#sb').classList.contains('collapsed')).toBe(true); expect(r().title).not.toBe(''); expect(r().getAttribute('aria-label')).toBe('Live View'); expect(r().classList.contains('on')).toBe(false);
-    r().click(); expect(a.ev('live')).toBe(true); expect(r().classList.contains('on')).toBe(true); expect(r().getAttribute('aria-pressed')).toBe('true'); expect(r().getAttribute('aria-label')).toBe('Stop Live View');
-    r().click(); expect(a.ev('live')).toBe(false); expect(r().classList.contains('on')).toBe(false);
+    r().click(); expect(a.ev('state.live')).toBe(true); expect(r().classList.contains('on')).toBe(true); expect(r().getAttribute('aria-pressed')).toBe('true'); expect(r().getAttribute('aria-label')).toBe('Stop Live View');
+    r().click(); expect(a.ev('state.live')).toBe(false); expect(r().classList.contains('on')).toBe(false);
   });
   it('on a computer the rail has the chevron first and the gear at the bottom, and no Live View button: Live View is in Tools', () => {
     const a = fresh(), st = sel => cssRule(a, sel).style;
@@ -378,15 +378,15 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     tap(a, boxOf(a, 'School'), 20, 690); const [f, d] = a.ev('__to.find(x=>x[1]===60000)'); expect(d).toBe(60000); f(); expect(bubbles(a)).toEqual([]); expect(a.q('.lvb').classList.contains('out')).toBe(true);
   });
   it('open bubbles survive redraws (another person hidden) and all close when Live View ends', () => {
-    const a = fresh(day()); at(a, 2, 11, 30); start(a); tap(a, boxOf(a, 'School'), 20, 690); a.ev('S.people[1].visible=false;render()');
-    expect(bubbles(a)).toEqual([['School']]); expect(a.q('.lvb').classList.contains('in')).toBe(false); expect(a.ev('live')).toBe(true);
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); tap(a, boxOf(a, 'School'), 20, 690); a.ev('state.S.people[1].visible=false;render()');
+    expect(bubbles(a)).toEqual([['School']]); expect(a.q('.lvb').classList.contains('in')).toBe(false); expect(a.ev('state.live')).toBe(true);
     btn(a).click(); expect(a.qa('.lvb')).toHaveLength(0); expect(a.ev('lvOpen.length')).toBe(0);
   });
   it('taps never edit while live: no dialog, no drag, no new event, no hover card, no resize handles', async () => {
     const a = fresh(day()); at(a, 2, 11, 30); start(a); const box = boxOf(a, 'School');
     tap(a, box, 20, 690); expect(a.q('#dlg').open).toBeFalsy();
     const ev = (t, x, m, tg = box) => tg.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: a.y(m), bubbles: true, cancelable: true }));
-    ev('pointerdown', 20, 690); ev('pointermove', 20, 780); ev('pointerup', 20, 780); expect(a.ev('S.events[0].slots[0].start')).toBe(540);
+    ev('pointerdown', 20, 690); ev('pointermove', 20, 780); ev('pointerup', 20, 780); expect(a.ev('state.S.events[0].slots[0].start')).toBe(540);
     tap(a, a.q('.day'), 20, 1200); expect(a.q('#dlg').open).toBeFalsy(); expect(a.qa('.rz').every(r => a.w.getComputedStyle(r).display === 'none')).toBe(true);
     expect([...a.d.styleSheets[0].cssRules].some(r => (r.selectorText || '').includes('#grid.lv .dh') && r.style.getPropertyValue('pointer-events') === 'none')).toBe(true);
   });
@@ -400,7 +400,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     at(a, 2, 4, 0); a.ev('liveTick()'); expect(a.ev('wrap.scrollTop')).toBe(0);
   });
   it('the now line is drawn while live even when "Show now line" is switched off', () => {
-    const a = fresh(); at(a, 2, 10, 0); a.ev('nowOn=false;render()'); expect(a.qa('.now')).toHaveLength(0); start(a); expect(a.qa('.now')).toHaveLength(1);
+    const a = fresh(); at(a, 2, 10, 0); a.ev('state.nowOn=false;render()'); expect(a.qa('.now')).toHaveLength(0); start(a); expect(a.qa('.now')).toHaveLength(1);
   });
   it('scrolling by hand pauses it and shows the Now button, which scrolls back at once', () => {
     const a = fresh(); fakeScroll(a); at(a, 2, 10, 0); start(a); scrollBy(a, 900); expect(now(a).style.display).toBe(''); expect(now(a).textContent).toBe('Now');
@@ -421,23 +421,23 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   });
   it('at midnight it moves on to the next day, also onto a hidden weekend day', () => {
     const a = fresh(); at(a, 2, 23, 59); start(a); at(a, 3, 0, 0); a.ev('liveTick()'); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['3']);
-    const b = fresh(); b.ev('prefs.hideWeekend=true;render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
+    const b = fresh(); b.ev('state.prefs.hideWeekend=true;render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
   });
   it('on a phone the pill and Esc leave it for the day view of the day it showed, not the week, which is too wide', () => {
-    const a = fresh(day(), { phone: true }); at(a, 2, 10, 0); a.q('#lvR').click(); expect(a.ev('[live,focusD]')).toEqual([true, 2]);
-    pill(a).click(); expect(a.ev('[live,focusD]')).toEqual([false, 2]); expect(a.qa('.day')).toHaveLength(1); expect(a.q('#grid').classList.contains('lv')).toBe(false);
-    a.q('#lvR').click(); a.key('Escape'); expect(a.ev('[live,focusD]')).toEqual([false, 2]); expect(a.q('.dh.fo')).not.toBeNull();
+    const a = fresh(day(), { phone: true }); at(a, 2, 10, 0); a.q('#lvR').click(); expect(a.ev('[state.live,state.focusD]')).toEqual([true, 2]);
+    pill(a).click(); expect(a.ev('[state.live,state.focusD]')).toEqual([false, 2]); expect(a.qa('.day')).toHaveLength(1); expect(a.q('#grid').classList.contains('lv')).toBe(false);
+    a.q('#lvR').click(); a.key('Escape'); expect(a.ev('[state.live,state.focusD]')).toEqual([false, 2]); expect(a.q('.dh.fo')).not.toBeNull();
   });
   it('the Live View Mode pill, Stop Live View and Esc each leave it for the week on a computer; Esc under a dialog does not', () => {
-    const a = fresh(); at(a, 2, 10, 0); start(a); pill(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(btn(a).textContent).toBe('Live View');
-    start(a); btn(a).click(); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
-    start(a); a.ev('openSettings()'); a.key('Escape'); expect(a.ev('live')).toBe(true); a.ev("document.getElementById('xDlg').close()"); a.key('Escape'); expect(a.ev('live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);
+    const a = fresh(); at(a, 2, 10, 0); start(a); pill(a).click(); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(btn(a).textContent).toBe('Live View');
+    start(a); btn(a).click(); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
+    start(a); a.ev('openSettings()'); a.key('Escape'); expect(a.ev('state.live')).toBe(true); a.ev("document.getElementById('xDlg').close()"); a.key('Escape'); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);
   });
   it('this browser remembers it: a reload opens straight into today\'s Live View', () => {
     const a = fresh(); start(a); expect(JSON.parse(a.storage()[PREFS_KEY]).live).toBe(true);
-    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ live: true }) } }); expect(b.ev('live')).toBe(true); expect(b.ev('focusD')).toBe(b.ev('(new Date().getDay()+6)%7')); expect(b.qa('.day')).toHaveLength(1); expect(b.q('#lvPill').style.display).toBe('');
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ live: true }) } }); expect(b.ev('state.live')).toBe(true); expect(b.ev('state.focusD')).toBe(b.ev('(new Date().getDay()+6)%7')); expect(b.qa('.day')).toHaveLength(1); expect(b.q('#lvPill').style.display).toBe('');
     b.q('#lvB').click(); expect(JSON.parse(b.storage()[PREFS_KEY]).live).toBe(false);
-    expect(openApp().ev('live')).toBe(false);
+    expect(openApp().ev('state.live')).toBe(false);
   });
   it('buttons, pill and tooltips are translated', () => {
     const a = fresh(); a.ev("setLang('es')"); expect(btn(a).textContent).toBe('Vista en directo'); expect(btn(a).title).toMatch(/^Para una pantalla/);
@@ -469,23 +469,23 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
     btn(a, 'prv').click(); expect(shown(a)).toEqual([6]); btn(a, 'prv').click(); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
   });
   it('with the weekend hidden, stepping skips Saturday and Sunday (Friday → Monday)', () => {
-    const a = fresh(); a.ev('prefs.hideWeekend=true;render()'); focus(a, 4); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
+    const a = fresh(); a.ev('state.prefs.hideWeekend=true;render()'); focus(a, 4); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
   });
   it('the Week button brings all days back', () => {
     const a = fresh(); focus(a, 3); btn(a, 'wk').click(); expect(shown(a)).toEqual([0, 1, 2, 3, 4, 5, 6]); expect(a.qa('.dh.fo')).toHaveLength(0);
   });
   it('Esc brings the week back; with an event selected it first clears the selection, and it does nothing while a dialog is open', () => {
-    const a = fresh(two()); focus(a, 1); a.ev("selK={id:'a',i:0};render()"); a.key('Escape'); expect(a.ev('selK')).toBeNull(); expect(shown(a)).toEqual([1]);
+    const a = fresh(two()); focus(a, 1); a.ev("state.selK={id:'a',i:0};render()"); a.key('Escape'); expect(a.ev('state.selK')).toBeNull(); expect(shown(a)).toEqual([1]);
     a.ev('openSettings()'); a.key('Escape'); expect(shown(a)).toEqual([1]); a.q('#xDlg').close();
     a.key('Escape'); expect(shown(a)).toHaveLength(7);
   });
   it('the focused day fills the window width even when "Fit width" is off', () => {
-    const a = fresh(); a.ev('prefs.fitW=false;render()'); expect(a.q('#grid').style.gridTemplateColumns).not.toContain('1fr');
+    const a = fresh(); a.ev('state.prefs.fitW=false;render()'); expect(a.q('#grid').style.gridTemplateColumns).not.toContain('1fr');
     focus(a, 2); expect(a.q('#grid').style.gridTemplateColumns).toMatch(/^52px repeat\(1,\s*minmax\(.*1fr\)\)$/);
   });
   it('focus is view state: not remembered in the settings, not undoable and not an unsaved change', () => {
     const a = fresh(); a.ev('savePrefs()'); focus(a, 2); a.ev('savePrefs()');
-    expect(Object.keys(JSON.parse(a.storage()[PREFS_KEY]))).not.toContain('focusD'); expect(a.ev('undoSt.length')).toBe(0); expect(a.ev('isDirty()')).toBe(false);
+    expect(Object.keys(JSON.parse(a.storage()[PREFS_KEY]))).not.toContain('focusD'); expect(a.ev('state.undoSt.length')).toBe(0); expect(a.ev('isDirty()')).toBe(false);
   });
   it('a reload shows the whole week again', () => {
     const a = fresh(); focus(a, 2); const b = openApp({ storage: a.storage() }); expect(b.qa('.day')).toHaveLength(7);
@@ -495,12 +495,12 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
     expect(a.q('#hid').textContent).toBe('3 hidden'); focus(a, 2); expect(a.q('#hid').textContent).toBe('2 hidden'); btn(a, 'nxt').click(); btn(a, 'nxt').click(); expect(a.q('#hid').style.display).toBe('none');
   });
   it('an event running past midnight shows its continuation on the focused next day', () => {
-    const a = fresh(blank({ events: [ev1({ id: 'n', title: 'Night', slots: [{ day: 0, start: 1320, end: 1740, person: '' }] })] })); a.ev('prefs.showEarly=true;render()'); focus(a, 1);
+    const a = fresh(blank({ events: [ev1({ id: 'n', title: 'Night', slots: [{ day: 0, start: 1320, end: 1740, person: '' }] })] })); a.ev('state.prefs.showEarly=true;render()'); focus(a, 1);
     expect(a.qa('.day .ev')).toHaveLength(1); expect(a.q('.day .ev').textContent).toContain('from Mon 22:00');
   });
   it('a new event dragged out on the focused day lands on that day', async () => {
     const a = fresh(); focus(a, 3); await createDrag(a, { col: 0, min: 600 }, { col: 0, min: 660 }); fillDialog(a, { title: 'Focused' }); a.q('#fOk').click();
-    expect(a.ev('S.events[0].slots')).toEqual([{ day: 3, start: 600, end: 660, person: '', fo: true }]);   // performed by the owner (none yet)
+    expect(a.ev('state.S.events[0].slots')).toEqual([{ day: 3, start: 600, end: 660, person: '', fo: true }]);   // performed by the owner (none yet)
   });
   it('the Print button prints the focused day view, and the whole week otherwise', () => {
     const a = fresh(two()); focus(a, 1); a.toolbar('print').click(); expect(a.w.__printed).toContain('<h1>Tuesday</h1>'); expect(a.w.__printed).toContain('Tue thing'); expect(a.w.__printed).not.toContain('Wed thing');
