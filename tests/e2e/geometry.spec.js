@@ -107,7 +107,7 @@ test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
   });
 });
 
-test.describe('R-GRID-07 Zoom in a real browser', () => {
+test.describe('R-GRID-07 View sizes in a real browser', () => {
   test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, blank({ events: [ev()] })); });
   const hourGap = page => page.evaluate(() => { const l = document.querySelectorAll('.times span'); return l[2].getBoundingClientRect().top - l[1].getBoundingClientRect().top; });
   const fs = page => page.evaluate(() => [document.querySelector('.ev .t'), document.querySelector('.times span'), document.querySelector('.dh:not(.c)')].map(e => parseFloat(getComputedStyle(e).fontSize)));
@@ -131,7 +131,7 @@ test.describe('R-GRID-07 Zoom in a real browser', () => {
   });
 });
 
-test.describe('R-GRID-07 Zoom defaults in a real browser', () => {
+test.describe('R-GRID-07 View defaults in a real browser', () => {
   test.beforeEach(async ({ page }) => { await openApp(page, { defaults: true }); await seed(page, blank({ events: [ev()] })); });
   const m = page => page.evaluate(() => { const w = document.getElementById('wrap'); return { scroll: w.scrollWidth - w.clientWidth, over: w.scrollHeight - w.clientHeight, empty: w.clientWidth - document.querySelector('.dw:last-child').getBoundingClientRect().right + w.getBoundingClientRect().left }; });
   test('by default the week fills the window exactly: no scrolling either way and no empty strip on the right', async ({ page }) => {
@@ -148,7 +148,7 @@ test.describe('R-GRID-07 Zoom defaults in a real browser', () => {
   });
   test('unticking "Fit width" keeps the fitted column width, so the grid does not jump', async ({ page }) => {
     const w0 = await page.evaluate(() => document.querySelector('.day').getBoundingClientRect().width);
-    await page.locator('#sbin .zck', { hasText: 'Fit width' }).locator('input').uncheck();
+    await page.locator('#sbin .zck input[aria-label="Fit width"]').uncheck();
     const w1 = await page.evaluate(() => document.querySelector('.day').getBoundingClientRect().width); expect(Math.abs(w1 - w0)).toBeLessThan(1.5);
     await expect(page.locator('#sbin .zrow input[aria-label="Column width"]')).toBeEnabled();
   });
@@ -180,10 +180,50 @@ test.describe('R-GRID-10 Layer order in a real browser', () => {
   });
 });
 
+test.describe('R-GRID-13 Days shown in a real browser', () => {
+  const knob = (page, i) => page.locator('#sbin .zdays .hrs2 input').nth(i);
+  const days = page => page.evaluate(() => state.prefs.days[state.curId] || [0, 6]);
+  const cols = page => page.evaluate(() => [...document.querySelectorAll('.day')].map(c => +c.dataset.d));
+  const track = async page => { await knob(page, 1).scrollIntoViewIfNeeded(); const t = await boxOf(page.locator('#sbin .zdays .hrs2')); return d => ({ x: t.x + t.height / 2 + (t.width - t.height) * d / 6, y: t.y + t.height / 2 }); };
+  const slide = async (page, p, q) => { await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(q.x, q.y, { steps: 8 }); await page.mouse.up(); };
+  test('both day knobs can be dragged with the mouse, and each moves on its own with the arrow keys', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } }); const at = await track(page);
+    await slide(page, at(6), at(4)); expect(await days(page)).toEqual([0, 4]); expect(await cols(page)).toEqual([0, 1, 2, 3, 4]);
+    await slide(page, at(0), at(1)); expect(await days(page)).toEqual([1, 4]); await expect(page.locator('#sbin .zdays .zv')).toHaveText('Tue–Fri');
+    await knob(page, 0).focus(); await page.keyboard.press('ArrowLeft'); expect(await days(page)).toEqual([0, 4]);
+    await knob(page, 1).focus(); await page.keyboard.press('ArrowRight'); expect(await days(page)).toEqual([0, 5]); expect(await cols(page)).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+  test('two knobs that meet on Sunday can still be parted: the start knob lies on top there', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } }); await page.evaluate(() => { state.prefs.days[state.curId] = [6, 6]; render(); }); const at = await track(page);
+    expect(await cols(page)).toEqual([6]); await slide(page, at(6), at(3)); expect(await days(page)).toEqual([3, 6]);
+  });
+  test('the day names sit under the knobs\' places', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } }); const at = await track(page);
+    const xs = await page.locator('#sbin .zdays .zticks span').evaluateAll(ns => ns.map(n => { const r = n.getBoundingClientRect(); return r.x + r.width / 2; }));
+    expect(xs).toHaveLength(7); xs.forEach((x, d) => expect(Math.abs(x - at(d).x)).toBeLessThanOrEqual(1.5));
+  });
+});
+
+test.describe('R-GRID-07 The View section\'s layout in a real browser', () => {
+  for (const w of [290, 230]) {
+    test(`at a ${w} px sidebar every row starts at one left edge, the Fit switches line up and nothing sticks out`, async ({ page }) => {
+      await openApp(page, { prefs: { collapsed: false, w } }); await page.locator('#sbin .zreset').scrollIntoViewIfNeeded();
+      const r = await page.evaluate(() => { const s = document.querySelector('#sbin .zsec'), b = s.getBoundingClientRect(), x = e => e.getBoundingClientRect();
+        const lefts = [...s.querySelectorAll('.zrow > span:first-child, .zrow > input, .hrs2, .zreset')].map(e => Math.round(x(e).left));
+        const fits = [...s.querySelectorAll('.zrow > .zck')].map(e => Math.round(x(e).left));
+        const right = Math.max(...[...s.querySelectorAll('.zrow *, .zreset')].map(e => x(e).right));
+        const sliders = [...s.querySelectorAll('.zrow > input, .hrs2')].map(e => x(e).width);
+        return { lefts, fits, over: right - b.right, sliders, sb: s.scrollWidth - s.clientWidth }; });
+      expect(new Set(r.lefts).size).toBe(1); expect(r.fits).toHaveLength(2); expect(Math.abs(r.fits[0] - r.fits[1])).toBeLessThanOrEqual(1);
+      expect(r.over).toBeLessThanOrEqual(1); expect(r.sb).toBeLessThanOrEqual(0); r.sliders.forEach(v => expect(v).toBeGreaterThan(w - 90));
+    });
+  }
+});
+
 test.describe('R-GRID-02 Hours shown in a real browser', () => {
-  const knob = (page, i) => page.locator('#sbin .hrs2 input').nth(i);
+  const knob = (page, i) => page.locator('#sbin .zhrs .hrs2 input').nth(i);
   const hours = page => page.evaluate(() => [hrA(), hrB()]);
-  const track = async page => { await page.evaluate(() => { state.prefs.secZoom = false; renderSide(); }); await knob(page, 1).scrollIntoViewIfNeeded(); const t = await boxOf(page.locator('#sbin .hrs2')); return h => ({ x: t.x + t.height / 2 + (t.width - t.height) * h / 24, y: t.y + t.height / 2 }); };
+  const track = async page => { await page.evaluate(() => { state.prefs.secZoom = false; renderSide(); }); await knob(page, 1).scrollIntoViewIfNeeded(); const t = await boxOf(page.locator('#sbin .zhrs .hrs2')); return h => ({ x: t.x + t.height / 2 + (t.width - t.height) * h / 24, y: t.y + t.height / 2 }); };
   const slide = async (page, p, q) => { await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(q.x, q.y, { steps: 8 }); await page.mouse.up(); };
   test('starting the hours at 00:00 makes the day taller by exactly five rows', async ({ page }) => {
     await openApp(page); const h0 = await boxOf(page.locator('.day').first());
@@ -347,7 +387,7 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
     expect((await slots(page, 0))[0].start).toBe(540); const h = await boxOf(page.locator('.dh').nth(1)); await page.mouse.click(h.x + h.width / 2, h.y + h.height / 2); await expect(page.locator('#agDlg')).toBeHidden();
   });
   test('the Live View Mode pill pulses, the N hidden pill stays away, a reload stays live and the pill leaves it', async ({ page }) => {
-    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0), prefs: { hideWeekend: true } }); await seed(page, busy()); await expect(page.locator('#hid')).toBeVisible();
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.evaluate(() => { state.prefs.days[state.curId] = [0, 4]; savePrefs(); saveMem('all'); render(); }); await expect(page.locator('#hid')).toBeVisible();
     await page.locator('#lvB').click(); await expect(page.locator('#lvPill')).toHaveText('Live View Mode'); await expect(page.locator('#hid')).toBeHidden();
     expect(await page.locator('#lvPill i').evaluate(e => getComputedStyle(e).animationName)).toBe('lvp');
     await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#lvPill')).toBeVisible();
@@ -402,7 +442,7 @@ test.describe('R-EVT-17 Background strips as drawn by a real browser', () => {
 test.describe('R-UI-03 The settings dialog in a real browser', () => {
   test('switching tabs never changes the size of the dialog (the largest tab sets it)', async ({ page }) => {
     await openApp(page); await page.locator('.sbtop .gear').click(); const sizes = [];
-    for (const tab of ['View', 'Data', 'UI']) { await page.locator('#xDlg .stabs button', { hasText: tab }).click(); const b = await page.locator('#xDlg').boundingBox(); sizes.push([Math.round(b.width), Math.round(b.height)]); }
+    for (const tab of ['UI', 'Data', 'About']) { await page.locator('#xDlg .stabs button', { hasText: tab }).click(); const b = await page.locator('#xDlg').boundingBox(); sizes.push([Math.round(b.width), Math.round(b.height)]); }
     expect(new Set(sizes.map(String)).size).toBe(1);
   });
   test('the theme switch spans the full width of its pane', async ({ page }) => {

@@ -4,14 +4,14 @@ import {DAYN,DAYS,L,applyStatic} from './i18n.js';
 import {$,el} from './basics.js';
 import {FMT,errKey,initDefault,isSealed,loadStore,openImport,parseWorkspace,readStore,redo,undo,verOf} from './data.js';
 import {askPassword,askUnlock,handleShareLink,hasCrypto,sealedOk,unb64u} from './share.js';
-import {FH,FWK,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,openSettings,phone,phoneFit,savePrefs,setFocus,setLive,today,todayWk} from './model.js';
+import {FH,FWK,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,phone,phoneFit,savePrefs,setFocus,setLive,today,todayWk} from './model.js';
 import {agDay,agFn,agWk,doPrint,printDay} from './stats.js';
-import {goHours,oneWeek,renderSide} from './sidebar.js';
+import {goView,oneWeek,renderSide} from './sidebar.js';
 import {render,zoomRender} from './grid.js';
 import {initDialog,rowTexts,rows} from './dialog.js';
 /* ---------- wiring & startup ---------- */
 loadPrefs();initLive();initDialog();   // the code that runs once at startup lives here, not at the top level of the other files (docs/architecture.md)
-$('hid').onclick=()=>$('hid')._hrs?goHours():openSettings();   // hidden hours: Zoom's Hours shown; a hidden weekend: Settings (R-GRID-09)
+$('hid').onclick=()=>goView(!$('hid')._hrs);   // View's Hours shown, or its Days shown when only days hide something (R-GRID-09)
 $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agFn();doPrint(d,false)};
 $('agPrint2').onclick=()=>state.allWk?oneWeek(agWk,()=>printDay(agDay)):printDay(agDay);

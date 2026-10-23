@@ -34,8 +34,8 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
     const a = fresh(); expect(before(a, '.wsbtn', '.seg')).toBe(true); expect(before(a, '.seg', '.tbar')).toBe(true); expect(before(a, '.tbar', '#sbin .sec')).toBe(true);
     expect(a.qa('.tbar button')).toHaveLength(7); a.qa('.tbar button').forEach(b => expect(b.title.length).toBeGreaterThan(5));
   });
-  it('the sections are Schedules, People, Activity types, Rhythms, Tools and Zoom in that order', () => {
-    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Activity types', 'Rhythms', 'Tools', 'Zoom']);
+  it('the sections are Schedules, People, Activity types, Rhythms, Tools and View in that order', () => {
+    expect(sections(fresh()).map(s => s.querySelector('.shbtn span').textContent)).toEqual(['Schedules', 'People', 'Activity types', 'Rhythms', 'Tools', 'View']);
   });
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
@@ -48,16 +48,16 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
 describe('R-UI-03 Settings dialog', () => {
   const tabs = a => a.qa('#xDlg .stabs button');
   const shown = a => a.qa('#xDlg .ssec').filter(p => !p.classList.contains('off'));
-  it('has four tabs, View, Data, UI and About, and opens on View', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'UI', 'About']);
-    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Use AM/PM clock');
+  it('has three tabs, UI, Data and About, and opens on UI', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['UI', 'Data', 'About']);
+    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Use AM/PM clock');
   });
-  it('View no longer holds the now line: that switch is in Tools', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); expect(shown(a)[0].textContent).not.toContain('"now" line'); expect(a.q('.tsec').textContent).toContain('Show the "now" line');
+  it('Settings no longer holds the now line or the days shown: they are in Tools and View', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgText()).not.toMatch(/"now" line|Saturday/); expect(a.q('.tsec').textContent).toContain('Show the "now" line'); expect(a.q('.zsec').textContent).toContain('Days shown');
   });
-  it('the UI tab holds the theme and the language (both start from the browser), and View no longer has the theme', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); expect(shown(a)[0].textContent).toContain('Theme'); expect(shown(a)[0].querySelector('select')).not.toBeNull();
-    expect(shown(a)[0].querySelectorAll('.seg.theme button')).toHaveLength(3); expect(a.qa('#xDlg .ssec')[0].textContent).not.toContain('Theme');
+  it('the UI tab holds the AM/PM clock, then the theme and the language (all three about how the app reads)', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); const ui = shown(a)[0]; expect(ui.textContent).toContain('Theme'); expect(ui.querySelector('select')).not.toBeNull();
+    expect(ui.querySelectorAll('.seg.theme button')).toHaveLength(3); expect([...ui.querySelectorAll('.sopt b')].map(b => b.textContent)).toEqual(['Use AM/PM clock', 'Theme', 'Language']);
   });
   it('clicking a tab shows only that section, and the last tab is shown again when Settings is reopened', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[1].click();
@@ -65,18 +65,18 @@ describe('R-UI-03 Settings dialog', () => {
     a.click('Close'); a.q('.sbtop .gear').click(); expect(tabs(a)[1].getAttribute('aria-selected')).toBe('true'); expect(shown(a)[0].textContent).toContain('Restart');
   });
   it('the dialog keeps one size: every tab stays in the layout (hidden tabs are invisible and inert, not removed), stacked in one grid cell', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); const ps = a.qa('#xDlg .ssec'); expect(ps).toHaveLength(4); expect(ps.every(p => !p.hidden)).toBe(true);
-    expect(ps.filter(p => p.hasAttribute('inert'))).toHaveLength(3); expect(a.q('#xDlg .spanes').contains(ps[0])).toBe(true);
+    const a = fresh(); a.q('.sbtop .gear').click(); const ps = a.qa('#xDlg .ssec'); expect(ps).toHaveLength(3); expect(ps.every(p => !p.hidden)).toBe(true);
+    expect(ps.filter(p => p.hasAttribute('inert'))).toHaveLength(2); expect(a.q('#xDlg .spanes').contains(ps[0])).toBe(true);
     const css = [...a.d.styleSheets[0].cssRules].map(r => r.cssText).join('\n'); expect(css).toMatch(/\.spanes ?> ?\.ssec ?\{[^}]*grid-area: ?1 ?\/ ?1/); expect(css).toMatch(/\.spanes ?> ?\.ssec\.off ?\{[^}]*visibility: ?hidden/);
   });
   it('tabs look like tabs (underlined, not a boxed button group) and can be switched with the arrow keys', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.q('#xDlg .stabs').classList.contains('seg')).toBe(false);
     a.q('#xDlg .stabs').onkeydown({ key: 'ArrowRight' }); expect(tabs(a)[1].getAttribute('aria-selected')).toBe('true'); a.q('#xDlg .stabs').onkeydown({ key: 'ArrowLeft' }); a.q('#xDlg .stabs').onkeydown({ key: 'ArrowLeft' });
-    expect(tabs(a)[3].getAttribute('aria-selected')).toBe('true');
+    expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true');
   });
   it('switching the language from the UI tab keeps that tab open, now in the new language', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); const sel = a.q('#xDlg select'); sel.value = 'es'; sel.onchange();
-    expect(tabs(a).map(b => b.textContent)).toEqual(['Vista', 'Datos', 'Interfaz', 'Acerca de']); expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true'); expect(sel.getAttribute('aria-label')).toBeTruthy();
+    const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[1].click(); tabs(a)[0].click(); const sel = a.q('#xDlg select'); sel.value = 'es'; sel.onchange();
+    expect(tabs(a).map(b => b.textContent)).toEqual(['Interfaz', 'Datos', 'Acerca de']); expect(tabs(a)[0].getAttribute('aria-selected')).toBe('true'); expect(sel.getAttribute('aria-label')).toBeTruthy();
   });
   it('the Data section has Restart and Clear memory, each with an explanation', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgButtons()).toEqual(expect.arrayContaining(['Restart', 'Clear memory'])); expect(a.dlgText()).toContain('Discard all unsaved changes and reload what is in browser memory.');

@@ -186,7 +186,7 @@ describe('R-CYC-04 The week switcher in the grid corner chooses the week shown, 
     a.q('.dh .prv').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([6, 1]);
   });
   it('stepping forward from Sunday of the last week wraps to week 1, also skipping a hidden weekend', () => {
-    const a = two(); a.ev('state.prefs.hideWeekend=true;state.curWk=2;setFocus(4)'); a.q('.dh .nxt').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([0, 1]);
+    const a = two(); a.ev('state.prefs.days[state.curId]=[0,4];state.curWk=2;setFocus(4)'); a.q('.dh .nxt').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([0, 1]);
     a.q('.dh .prv').click(); expect(a.ev('[state.focusD,state.curWk]')).toEqual([4, 2]);
   });
   it('with a cycle of one week stepping wraps within the week, as before', () => {

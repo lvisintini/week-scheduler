@@ -85,7 +85,7 @@ describe('R-PRN-02 Print schedule (the visible grid on paper)', () => {
     const css = fresh().d.querySelector('style').textContent; expect(css).toContain('body>*:not(#pr){display:none!important}'); expect(css).toContain('print-color-adjust:exact');
   });
   it('the printed grid keeps hidden early hours hidden and the hidden weekend hidden', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.hideWeekend=true;render()'); const pr = printed(a); expect(pr.querySelectorAll('.dh:not(.c)')).toHaveLength(5); expect(pr.querySelector('.times span').textContent).toBe('05:00');
+    const a = fresh(blank({ events: [ev1()] })); a.ev('state.prefs.days[state.curId]=[0,4];render()'); const pr = printed(a); expect(pr.querySelectorAll('.dh:not(.c)')).toHaveLength(5); expect(pr.querySelector('.times span').textContent).toBe('05:00');
   });
 });
 

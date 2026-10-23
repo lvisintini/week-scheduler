@@ -47,13 +47,13 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await page.evaluate(() => openDlg(state.S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();
     for (const tab of ['Event', 'When', 'More']) { await page.locator('.dtabs button', { hasText: tab }).click(); ratchet(await scan(page), {}); }
   });
-  for (const tab of ['View', 'Data', 'UI', 'About']) {
+  for (const tab of ['UI', 'Data', 'About']) {
     test(`the ${tab} tab of the settings dialog has no serious accessibility violation`, async ({ page }) => {
       await openApp(page); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: tab }).click();
       ratchet(await scan(page), {});
     });
   }
-  test('the Zoom section of the sidebar adds no unlabeled controls (sliders have names)', async ({ page }) => {
+  test('the View section of the sidebar adds no unlabeled controls (sliders and Fit switches have names)', async ({ page }) => {
     await openApp(page); await seed(page, blank());
     const r = await new AxeBuilder({ page }).include('.zsec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);
   });

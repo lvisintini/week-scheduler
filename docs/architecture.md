@@ -75,10 +75,11 @@ Implementation names that the requirement files describe in words (functions, va
 - R-EVT-22: `.cbtn`, `cSet`, `updCols`, `dlgTy`
 - R-EVT-23: `laneLayout`, `fixedLayout`, `segs`, `fixIds`
 - R-EVT-24: `isAway`, `awayHits`, `.bgs.aw`, `.awov`, `.awl`, `#fAw`
-- R-GRID-02: `hrA`/`hrB` (the current workspace's hours shown; `Z` = the minute where the column ends in `render`), `hrsOf`, `HRS0`, `prefs.hours`, `hoursRow` (`.hrs2`, `.fill`, `.lo`), `shownSpan` (Fit to what's shown, `.zfit`), `goHours` (the pill's way to Zoom)
+- R-GRID-02: `hrA`/`hrB` (the current workspace's hours shown; `Z` = the minute where the column ends in `render`), `hrsOf`, `HRS0`, `prefs.hours`, `rangeRow` (the two-knob row it shares with the days shown: `.zhrs`, `.hrs2`, `.fill`, `.lo`), `goView` (the pill's way to View)
 - R-GRID-03: `wj`, `--weh`
 - R-GRID-06: `DAY2`, `nr`
-- R-GRID-07: `.zsub`, `fitted`, `RH`/`FH` (the row-height prefs keys in use: `rowHP`/`fitHP` on a phone)
+- R-GRID-07: `zsl` (a size row: label, `.zck` Fit switch, value, slider), `.zsep`, `.zreset`, `fitted`, `RH`/`FH` (the row-height prefs keys in use: `rowHP`/`fitHP` on a phone)
+- R-GRID-13: `daysOf`, `DAYS0`, `prefs.days`, `weekDays` (the days the grid draws), `rangeRow` (`.zdays`, `.zticks`), `hiddenInfo` (`wk` = on the days not shown)
 - R-GRID-11: `.foc`, `focusD`, `.dh.fo`, `.prv`, `.nxt`, `stepFocus`, `.wk`, `printDay`, `days = [focusD]`
 - R-GRID-12: `.lvrow`, `lvin`, `LV_SLACK`, `LV_PEEK`, `lvTime`, `lvOpen`, `lvDraw`, `.lvstem`, `liveTick`, `liveBusy`, `liveTop`, `LV_BACK`, `lvRet`, `liveBack`
 - R-NST-01: `nestPick`, `pplOf`

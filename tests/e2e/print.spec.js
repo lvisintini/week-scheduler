@@ -45,7 +45,7 @@ test.describe('R-PRN-02 Print schedule in print media', () => {
     const r = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('pr')); return { bg: cs.backgroundColor, fg: cs.color }; }); expect(r.bg).toBe('rgb(255, 255, 255)'); expect(r.fg).toBe('rgb(17, 17, 17)');
   });
   test('hidden early hours and the hidden weekend stay hidden on paper', async ({ page }) => {
-    await page.evaluate(() => { state.prefs.hideWeekend = true; render(); printSchedule(); }); await expect(page.locator('#pr .dh:not(.c)')).toHaveCount(5); await expect(page.locator('#pr .times span').first()).toHaveText('05:00');
+    await page.evaluate(() => { state.prefs.days[state.curId] = [0, 4]; render(); printSchedule(); }); await expect(page.locator('#pr .dh:not(.c)')).toHaveCount(5); await expect(page.locator('#pr .times span').first()).toHaveText('05:00');
   });
 });
 

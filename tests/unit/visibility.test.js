@@ -101,10 +101,10 @@ describe('R-PHS-02 Only one rhythm can be shown at a time', () => {
   });
 });
 
-describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by the hours not shown or the hidden weekend', () => {
+describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by the hours or the days not shown', () => {
   const hidden = (events, prefs = '') => {
     setData(app, blank({ events }));
-    ev(`state.prefs.hours={};state.prefs.hideWeekend=false;${prefs};render()`);
+    ev(`state.prefs.hours={};state.prefs.days={};${prefs};render()`);
     return ev('hiddenInfo()');
   };
   const at = (day, start, end, extra = {}) => ev1({ id: `e-${day}-${start}`, slots: [{ day, start, end, person: '' }], ...extra });
@@ -114,14 +114,14 @@ describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by the
   it('an event that is only partly before 05:00 is still partly visible and is not counted', () => {
     expect(hidden([at(0, 240, 360)]).n).toBe(0);
   });
-  it('an event on Saturday is counted while the weekend is hidden', () => {
-    expect(hidden([at(5, 600, 660)], 'state.prefs.hideWeekend=true').wk).toBe(1);
+  it('an event on Saturday is counted while only Monday to Friday are shown', () => {
+    expect(hidden([at(5, 600, 660)], 'state.prefs.days[state.curId]=[0,4]').wk).toBe(1);
   });
   it('an overnight event from Friday to Saturday is partly visible (Friday) and is not counted', () => {
-    expect(hidden([at(4, 1320, 1560)], 'state.prefs.hideWeekend=true').n).toBe(0);
+    expect(hidden([at(4, 1320, 1560)], 'state.prefs.days[state.curId]=[0,4]').n).toBe(0);
   });
   it('an overnight event from Saturday to Sunday is hidden completely and is counted', () => {
-    expect(hidden([at(5, 1320, 1560)], 'state.prefs.hideWeekend=true').wk).toBe(1);
+    expect(hidden([at(5, 1320, 1560)], 'state.prefs.days[state.curId]=[0,4]').wk).toBe(1);
   });
   it('an event hidden by the people filter is not counted', () => {
     setData(app, blank({ people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [ev1({ slots: [{ day: 0, start: 120, end: 240, person: 'B' }] })] }));
@@ -132,24 +132,24 @@ describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by the
     expect(hidden([at(0, 1080, 1140)], 'state.prefs.hours[state.curId]=[8,17]').er).toBe(1);
     expect(hidden([at(0, 960, 1080)], 'state.prefs.hours[state.curId]=[8,17]').n).toBe(0);
   });
-  it('nothing is counted once every hour and the weekend are shown again', () => {
+  it('nothing is counted once every hour and every day are shown again', () => {
     expect(hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.hours[state.curId]=[0,24]').n).toBe(0);
   });
-  it('phases are never counted as hidden events, even on the hidden weekend', () => {
+  it('phases are never counted as hidden events, even on days not shown', () => {
     setData(app, blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Sleep', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 0, end: 120 }] }] }));
     expect(ev('hiddenInfo().n')).toBe(0);
   });
-  it('the pill is visible with the number and its tooltip lists the weekend and the hours-not-shown counts', () => {
-    hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.hideWeekend=true');
+  it('the pill is visible with the number and its tooltip lists the days-not-shown and the hours-not-shown counts', () => {
+    hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.days[state.curId]=[0,4]');
     const pill = app.q('#hid');
     expect(pill.style.display).not.toBe('none'); expect(pill.textContent).toBe('2 hidden');
-    expect(pill.title).toMatch(/1 on the hidden weekend/); expect(pill.title).toMatch(/1 outside the hours shown/); expect(pill.title).toMatch(/change the hours shown/);
+    expect(pill.title).toMatch(/1 on the days not shown/); expect(pill.title).toMatch(/1 outside the hours shown/); expect(pill.title).toMatch(/change the hours shown/);
   });
-  it('clicking the pill with hours hiding something opens Zoom on the start knob; with only the weekend hiding something it opens Settings', () => {
+  it('clicking the pill opens View on the start knob of the hours shown; with only days hiding something, on the first-day knob', () => {
     hidden([at(0, 120, 240)], 'state.prefs.secZoom=true;state.prefs.collapsed=true;applyPrefs();renderSide()'); app.q('#hid').click();
-    expect(ev('[state.prefs.collapsed,state.prefs.secZoom]')).toEqual([false, false]); expect(app.d.activeElement).toBe(app.qa('#sbin .hrs2 input')[0]); expect(app.dlgOpen()).toBeFalsy();
-    hidden([at(5, 600, 660)], 'state.prefs.hideWeekend=true'); expect(app.q('#hid').title).toMatch(/open the settings/); app.q('#hid').click(); expect(app.dlgTitle()).toBe('Settings');
-    app.click('Close');
+    expect(ev('[state.prefs.collapsed,state.prefs.secZoom]')).toEqual([false, false]); expect(app.d.activeElement).toBe(app.qa('#sbin .zhrs .hrs2 input')[0]); expect(app.dlgOpen()).toBeFalsy();
+    hidden([at(5, 600, 660)], 'state.prefs.days[state.curId]=[0,4];state.prefs.secZoom=true;renderSide()'); expect(app.q('#hid').title).toMatch(/change the days shown/); app.q('#hid').click();
+    expect(ev('state.prefs.secZoom')).toBe(false); expect(app.d.activeElement).toBe(app.qa('#sbin .zdays .hrs2 input')[0]); expect(app.dlgOpen()).toBeFalsy();
   });
   it('the pill disappears when nothing is hidden', () => {
     hidden([at(0, 600, 660)]); expect(app.q('#hid').style.display).toBe('none');

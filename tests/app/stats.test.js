@@ -54,7 +54,7 @@ describe('R-STAT-02 How the week is counted', () => {
     expect(stats(a).planned).toBe(60);
   });
   it('hidden early hours and a hidden weekend still count; the people filter does not matter', () => {
-    const a = fresh(blank({ people: [{ ...people[0], visible: false }], events: [at('n', 6, 0, 300)] })); a.ev('state.prefs.hideWeekend=true;render()'); expect(stats(a).planned).toBe(300);
+    const a = fresh(blank({ people: [{ ...people[0], visible: false }], events: [at('n', 6, 0, 300)] })); a.ev('state.prefs.days[state.curId]=[0,4];render()'); expect(stats(a).planned).toBe(300);
   });
   it('events without a type go to "No type"; types deleted later are "No type" too', () => {
     const a = fresh(blank({ people, types, events: [at('x', 0, 600, 660)] })); expect(stats(a).by).toEqual({ '': 60 });

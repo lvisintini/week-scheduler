@@ -1,10 +1,10 @@
 // The sidebar. ES module (docs/architecture.md).
 import {state} from './state.js';
-import {L} from './i18n.js';
+import {DAY2,DAYS,L} from './i18n.js';
 import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
 import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
 import {loadMem} from './share.js';
-import {FH,FWK,HRS0,RH,WK,applyPrefs,cyc,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,shownSpan,toast,updLive,vrhythm,xdlg} from './model.js';
+import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
 import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
 import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
@@ -190,44 +190,50 @@ export function renderSide(){
     tck('colByP','colByPTip',()=>state.prefs.colBy==='p',v=>{state.prefs.colBy=v?'p':''});
     tck('lanesFix','lanesFixTip',()=>state.prefs.lanesFix,v=>{state.prefs.lanesFix=v});   // R-EVT-23
   }
-  // zoom (grid scale only; per-browser view state)
+  // view (R-GRID-07): the size of the grid, the days and hours it shows (R-GRID-13, R-GRID-02) and its text size; per-browser view state
   const s4=el('div','sec zsec',body);
   secHead(s4,'zoomH',null,'zoomNote','secZoom');
   if(!state.prefs.secZoom){
-    // each Fit box heads its own slider; while it is on, the slider is disabled and shows the fitted size (updZoomUI)
-    const zsl=(label,key,min,max,step,unit,off,cls)=>{const r=el('div','zrow'+(cls?' '+cls:''),s4);el('span','',r).textContent=L(label);
-      const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=state.prefs[key];i.dataset.z=key;i.disabled=!!off&&state.prefs[off];i.setAttribute('aria-label',L(label));i.title=L(i.disabled?(off.startsWith('fitW')?'zoomOffW':'zoomOffH'):key==='txt'?'zoomTxtTip':label);
+    // a slider under its label line; a size has its Fit switch on that line, and while it is on the slider is disabled and shows the fitted size (updZoomUI)
+    const zsl=(label,key,min,max,step,unit,fit,fitL,fitTip)=>{const r=el('div','zrow',s4);el('span','',r).textContent=L(label);
+      if(fit){const l=el('label','zck',r),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=state.prefs[fit];c.setAttribute('aria-label',L(fitL));el('span','',l).textContent=L('zoomFit');l.title=L(fitTip);
+        c.onchange=()=>{if(!c.checked)state.prefs[key]=fitted(key);state.prefs[fit]=c.checked;savePrefs();zoomRender();renderSide()}}   // unticking keeps the fitted size, so nothing jumps
+      const i=el('input','',r);i.type='range';i.min=min;i.max=max;i.step=step;i.value=state.prefs[key];i.dataset.z=key;i.disabled=!!fit&&state.prefs[fit];i.setAttribute('aria-label',L(label));i.title=L(i.disabled?(fit.startsWith('fitW')?'zoomOffW':'zoomOffH'):key==='txt'?'zoomTxtTip':label);
       const v=el('span','zv',r);v.textContent=state.prefs[key]+unit;i.oninput=()=>{state.prefs[key]=+i.value;v.textContent=i.value+unit;savePrefs();zoomRender()}};
-    const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=state.prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
-      c.onchange=()=>{if(!c.checked)state.prefs[size]=fitted(size);state.prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};   // unticking keeps the fitted size, so nothing jumps
-    ck('zoomFitW','zoomFitWTip',FWK(),WK());zsl('zoomCol',WK(),70,1000,10,' px',FWK(),'zsub');
-    hoursRow(s4);
-    ck('zoomFitH','zoomFitHTip',FH(),RH());zsl('zoomRow',RH(),24,120,4,' px/h',FH(),'zsub');
+    zsl('zoomCol',WK(),70,1000,10,' px',FWK(),'zoomFitW','zoomFitWTip');
+    zsl('zoomRow',RH(),24,120,4,' px/h',FH(),'zoomFitH','zoomFitHTip');
+    el('div','zsep',s4);
+    const ab=d=>DAYS[d].slice(0,3);
+    rangeRow(s4,{cls:'zdays',label:'zoomDays',tip:'zoomDaysTip',knobs:['daysFrom','daysTo'],min:0,max:6,gap:0,ticks:DAY2[state.lang],get:()=>daysOf(state.curId),
+      set:(a,b)=>{if(a===DAYS0[0]&&b===DAYS0[1])delete state.prefs.days[state.curId];else state.prefs.days[state.curId]=[a,b]},vt:d=>DAYS[d],txt:(a,b)=>a===b?ab(a):ab(a)+'–'+ab(b)});
+    rangeRow(s4,{cls:'zhrs',label:'zoomHrs',tip:'zoomHrsTip',knobs:['hrsFrom','hrsTo'],min:0,max:24,gap:1,get:()=>hrsOf(state.curId),
+      set:(a,b)=>{if(a===HRS0[0]&&b===HRS0[1])delete state.prefs.hours[state.curId];else state.prefs.hours[state.curId]=[a,b]},vt:h=>hourLabel(h%24),txt:(a,b)=>hourLabel(a)+'–'+hourLabel(b%24)});
     el('div','zsep',s4);zsl('zoomTxt','txt',80,160,10,' %');
+    el('div','zsep',s4);
     const rb=el('button','zreset',s4);rb.type='button';rb.textContent=L('zoomReset');rb.title=L(phone()?'zoomResetTipP':'zoomResetTip');
-    rb.onclick=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;delete state.prefs.hours[state.curId];savePrefs();zoomRender();renderSide()};
+    rb.onclick=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;delete state.prefs.hours[state.curId];delete state.prefs.days[state.curId];savePrefs();zoomRender();renderSide()};
     updZoomUI();
   }
   sb.scrollTop=st;
 }
-// Hours shown (R-GRID-02): two knobs on one track for this workspace's first hour and the hour the grid ends, at least an hour apart,
-// and Fit to what's shown; per-browser view state, never undoable
-function hoursRow(parent){
-  const r=el('div','zrow',parent);el('span','',r).textContent=L('zoomHrs');r.title=L('zoomHrsTip');
-  const t=el('div','hrs2',r),fill=el('div','fill',t),v=el('span','zv',r),ins=['hrsFrom','hrsTo'].map((k,j)=>{const i=el('input','',t);i.type='range';i.min=0;i.max=24;i.step=1;i.setAttribute('aria-label',L(k));i.title=L('zoomHrsTip');return i});
-  const show=()=>{const [a,b]=hrsOf(state.curId);ins[0].value=a;ins[1].value=b;ins.forEach(i=>i.setAttribute('aria-valuetext',hourLabel(+i.value%24)));v.textContent=hourLabel(a)+'–'+hourLabel(b%24);
-    t.style.setProperty('--a',a/24);t.style.setProperty('--b',b/24);t.classList.toggle('lo',a>12)};   // the start knob lies on top in the right half, so two close knobs can still be parted
-  const set=(a,b)=>{if(a===HRS0[0]&&b===HRS0[1])delete state.prefs.hours[state.curId];else state.prefs.hours[state.curId]=[a,b];savePrefs();show();zoomRender()};
-  ins[0].oninput=()=>{const b=hrsOf(state.curId)[1];set(Math.min(+ins[0].value,b-1),b)};
-  ins[1].oninput=()=>{const a=hrsOf(state.curId)[0];set(a,Math.max(+ins[1].value,a+1))};
+// Days shown (R-GRID-13) and Hours shown (R-GRID-02): two knobs on one track for this workspace's first and last day, or its first hour and the
+// hour the grid ends; they cannot cross (o.gap apart: days may meet, hours stay an hour apart); per-browser view state, never undoable
+function rangeRow(parent,o){
+  const r=el('div','zrow '+o.cls,parent);el('span','',r).textContent=L(o.label);r.title=L(o.tip);
+  const t=el('div','hrs2',r),fill=el('div','fill',t),v=el('span','zv',r),ins=o.knobs.map(k=>{const i=el('input','',t);i.type='range';i.min=o.min;i.max=o.max;i.step=1;i.setAttribute('aria-label',L(k));i.title=L(o.tip);return i});
+  if(o.ticks){const tk=el('div','zticks',t);tk.setAttribute('aria-hidden','true');o.ticks.forEach((x,k)=>{const n=el('span','',tk);n.textContent=x;n.style.setProperty('--k',k/(o.ticks.length-1))})}   // the day names under the knobs' places
+  const f=x=>(x-o.min)/(o.max-o.min);
+  const show=()=>{const [a,b]=o.get();ins[0].value=a;ins[1].value=b;ins.forEach(i=>i.setAttribute('aria-valuetext',o.vt(+i.value)));v.textContent=o.txt(a,b);
+    t.style.setProperty('--a',f(a));t.style.setProperty('--b',f(b));t.classList.toggle('lo',f(a)>.5)};   // the start knob lies on top in the right half, so two close knobs can still be parted
+  const set=(a,b)=>{o.set(a,b);savePrefs();show();zoomRender()};
+  ins[0].oninput=()=>{const b=o.get()[1];set(Math.min(+ins[0].value,b-o.gap),b)};
+  ins[1].oninput=()=>{const a=o.get()[0];set(a,Math.max(+ins[1].value,a+o.gap))};
   show();fill.setAttribute('aria-hidden','true');
-  const fb=el('button','zfit',parent);fb.type='button';fb.textContent=L('hrsFit');fb.title=L('hrsFitTip');
-  fb.onclick=()=>{const sp=shownSpan();if(sp)set(sp[0],sp[1]);else toast(L('hrsNone'))};
 }
-// the "N hidden" pill with hours not shown (R-GRID-09): opens the sidebar on Zoom and focuses the start knob
-export function goHours(){
+// the "N hidden" pill (R-GRID-09): opens the sidebar on View and focuses the start knob of the hours shown, or of the days shown when only days hide something
+export function goView(days){
   state.prefs.collapsed=false;state.prefs.secZoom=false;savePrefs();applyPrefs();renderSide();
-  const i=document.querySelector('#sbin .hrs2 input');if(i){if(i.scrollIntoView)i.scrollIntoView({block:'nearest'});i.focus()}
+  const i=document.querySelector(days?'#sbin .zdays input':'#sbin .zhrs input');if(i){if(i.scrollIntoView)i.scrollIntoView({block:'nearest'});i.focus()}
 }
 function delRhythm(rh){
   const lost=state.S.phases.filter(p=>p.rhythms.length===1&&p.rhythms[0]===rh.id).length;

@@ -116,7 +116,7 @@ describe('R-PHS-04 Lips: the label tab left of each day column', () => {
     const a = fresh(data({ phases: [phase({ desc: 'Eat something', slots: days([0, 1, 2, 3, 4], 720, 780) })] })); expect(lips(a, 0)[0].title).toBe('Lunch\nMon–Fri 12:00–13:00\nEat something');
   });
   it('with the weekend hidden, Friday and Monday are not neighbours, so a group never wraps around', () => {
-    const a = fresh(data({ phases: [phase({ slots: days([0, 4], 720, 780) })] })); a.ev('state.prefs.hideWeekend=true;render()');
+    const a = fresh(data({ phases: [phase({ slots: days([0, 4], 720, 780) })] })); a.ev('state.prefs.days[state.curId]=[0,4];render()');
     expect([0, 1, 2, 3, 4].map(d => lips(a, d).length)).toEqual([1, 0, 0, 0, 1]);
   });
   it('the lane exists (18 px) only while a rhythm is shown', () => {
@@ -130,7 +130,7 @@ describe('R-PHS-04 Lips: the label tab left of each day column', () => {
 
 describe('R-PHS-05 Phases are not "hidden events"', () => {
   it('a phase in the hidden early hours or on the hidden weekend never adds to the N hidden pill', () => {
-    const a = fresh(data({ phases: [phase({ slots: [{ day: 5, start: 120, end: 240 }] })] })); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.q('#hid').style.display).toBe('none');
+    const a = fresh(data({ phases: [phase({ slots: [{ day: 5, start: 120, end: 240 }] })] })); a.ev('state.prefs.days[state.curId]=[0,4];render()'); expect(a.q('#hid').style.display).toBe('none');
   });
   it('a phase that starts before 05:00 is drawn from the top of the visible hours like any other box', () => {
     const a = fresh(data({ phases: [phase({ slots: [{ day: 0, start: 180, end: 360 }] })] })); expect(a.q('.dw[data-d="0"] .phx').style.top).toBe('0px');

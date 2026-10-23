@@ -10,7 +10,7 @@ export const state={
   redoSt:[],
   memKey:null,       // the key of a protected browser memory while this page has it open, {key,salt,iter} (R-DATA-11)
   // view
-  prefs:{w:290,collapsed:false,hours:{},clock12:false,hideWeekend:false,theme:'auto',rowH:48,colW:110,fitW:true,fitH:true,rowHP:100,fitHP:false,colWP:110,fitWP:true,txt:100,hlNoType:false,colBy:'',lanesFix:false,nowLine:true},   // per-browser view settings, saved under their own key
+  prefs:{w:290,collapsed:false,hours:{},days:{},clock12:false,theme:'auto',rowH:48,colW:110,fitW:true,fitH:true,rowHP:100,fitHP:false,colWP:110,fitWP:true,txt:100,hlNoType:false,colBy:'',lanesFix:false,nowLine:true},   // per-browser view settings, saved under their own key
   lang:/^es/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'es':'en',   // 'en' or 'es'
   curWk:1,           // the week of the cycle shown (R-CYC-04)
   allWk:false,       // every week of the cycle side by side (R-CYC-19)

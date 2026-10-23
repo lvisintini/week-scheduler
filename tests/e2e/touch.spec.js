@@ -226,10 +226,21 @@ test.describe('R-GRID-12 Live View controls on a phone', () => {
   });
 });
 
+test.describe('R-GRID-13 The days shown on a phone', () => {
+  test('in the drawer both knobs of Days shown can be dragged with a finger, and the week then shows only those days', async ({ page }) => {
+    await page.locator('.sbtop .xpand').tap(); await page.evaluate(() => { state.prefs.secZoom = false; setFocus(null); });
+    const k = page.locator('#sbin .zdays .hrs2 input').nth(1); await k.scrollIntoViewIfNeeded(); const t = await page.locator('#sbin .zdays .hrs2').boundingBox(); expect(t.height).toBeGreaterThanOrEqual(24);
+    const at = d => ({ x: t.x + t.height / 2 + (t.width - t.height) * d / 6, y: t.y + t.height / 2 }), path = (a, b) => [...Array(13).keys()].map(i => ({ x: at(a).x + (at(b).x - at(a).x) * i / 12, y: at(a).y }));
+    await touch(page, path(6, 4)); expect(await page.evaluate(() => state.prefs.days[state.curId])).toEqual([0, 4]);
+    await touch(page, path(0, 2)); expect(await page.evaluate(() => state.prefs.days[state.curId])).toEqual([2, 4]);
+    await expect(page.locator('.day')).toHaveCount(3);
+  });
+});
+
 test.describe('R-GRID-02 The hours shown on a phone', () => {
   test('in the drawer both knobs of Hours shown can be dragged with a finger, and the knobs are big enough to hold', async ({ page }) => {
     await page.locator('.sbtop .xpand').tap(); await page.evaluate(() => { state.prefs.secZoom = false; renderSide(); });
-    const k = page.locator('#sbin .hrs2 input').nth(1); await k.scrollIntoViewIfNeeded(); const t = await page.locator('#sbin .hrs2').boundingBox(); expect(t.height).toBeGreaterThanOrEqual(24);
+    const k = page.locator('#sbin .zhrs .hrs2 input').nth(1); await k.scrollIntoViewIfNeeded(); const t = await page.locator('#sbin .zhrs .hrs2').boundingBox(); expect(t.height).toBeGreaterThanOrEqual(24);
     const at = h => ({ x: t.x + t.height / 2 + (t.width - t.height) * h / 24, y: t.y + t.height / 2 }), path = (a, b) => [...Array(13).keys()].map(i => ({ x: at(a).x + (at(b).x - at(a).x) * i / 12, y: at(a).y }));
     await touch(page, path(24, 18)); expect(await page.evaluate(() => [hrA(), hrB()])).toEqual([5, 18]);
     await touch(page, path(5, 7)); expect(await page.evaluate(() => [hrA(), hrB()])).toEqual([7, 18]);

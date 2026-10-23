@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, PREFS_KEY, createDrag, fillDialog } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, PREFS_KEY, createDrag, fillDialog } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const headers = a => a.qa('.dh:not(.c)').map(h => h.textContent);
@@ -22,13 +22,12 @@ describe('R-GRID-01 The week runs Monday to Sunday from left to right', () => {
   });
 });
 
-describe('R-GRID-02 Hours shown: hourly rows from 05:00 to midnight by default, two knobs in Zoom for each workspace, Fit to what\'s shown', () => {
-  const knobs = a => a.qa('#sbin .hrs2 input');
+describe('R-GRID-02 Hours shown: hourly rows from 05:00 to midnight by default, two knobs in View for each workspace', () => {
+  const knobs = a => a.qa('#sbin .zhrs .hrs2 input');
   const move = (a, i, v) => { const k = knobs(a)[i]; k.value = String(v); k.dispatchEvent(new a.w.Event('input')); };
   const labels = a => a.qa('.times span').map(s => s.textContent);
-  const shown = a => a.q('#sbin .hrs2').parentElement.querySelector('.zv').textContent;
+  const shown = a => a.q('#sbin .zhrs .zv').textContent;
   const hrs = (a, x, y) => a.ev(`state.prefs.hours[state.curId]=[${x},${y}];render();renderSide()`);
-  const fit = a => a.q('#sbin .zfit').click();
   const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY) || '{}');
   it('by default the time column labels run from 05:00 to 23:00', () => {
     const labels = fresh().qa('.times span').map(s => s.textContent);
@@ -77,7 +76,7 @@ describe('R-GRID-02 Hours shown: hourly rows from 05:00 to midnight by default, 
   });
   it('the knobs have their own accessible names and read their values as times, in AM/PM too', () => {
     const a = fresh(); expect(knobs(a).map(k => k.getAttribute('aria-label'))).toEqual(['Start of the hours shown', 'End of the hours shown']);
-    expect(knobs(a).map(k => k.getAttribute('aria-valuetext'))).toEqual(['05:00', '00:00']); expect(a.q('#sbin .hrs2').parentElement.title).toMatch(/school day/);
+    expect(knobs(a).map(k => k.getAttribute('aria-valuetext'))).toEqual(['05:00', '00:00']); expect(a.q('#sbin .zhrs').title).toMatch(/school day/);
     a.ev('state.prefs.clock12=true;renderSide()'); move(a, 0, 8); expect(knobs(a)[0].getAttribute('aria-valuetext')).toBe('8 AM'); expect(shown(a)).toBe('8 AM–12 AM');
   });
   it('each workspace keeps its own hours, this browser remembers them after a reload, and they are neither data nor undoable', () => {
@@ -95,23 +94,7 @@ describe('R-GRID-02 Hours shown: hourly rows from 05:00 to midnight by default, 
     a.ev('duplicateWorkspace()'); const copy = a.ev('state.curId'); expect(stored(a).hours).toEqual({ [first]: [8, 24], [copy]: [8, 24] }); expect(labels(a)[0]).toBe('08:00');
     a.w.confirm = () => true; a.ev('deleteWorkspace()'); expect(stored(a).hours).toEqual({ [first]: [8, 24] }); a.ev('clearMem()'); expect(stored(a).hours).toEqual({});
   });
-  it('Fit to what\'s shown sets whole hours around the visible events only: hidden people, the hidden weekend and the shown week are left out', () => {
-    const a = fresh(blank({ cycle: 2, people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [
-      ev1({ id: 'm', slots: [{ day: 0, start: 510, end: 600, person: 'A' }] }), ev1({ id: 't', slots: [{ day: 1, start: 1080, end: 1155, person: 'B' }] }),
-      ev1({ id: 'w', slots: [{ day: 5, start: 360, end: 420, person: 'A' }] }), ev1({ id: 'two', weeks: [2], slots: [{ day: 2, start: 120, end: 180, person: 'A' }] })] }));
-    fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([6, 20]); expect(shown(a)).toBe('06:00–20:00');
-    a.ev('state.prefs.hideWeekend=true;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([8, 20]);
-    a.ev('state.S.people[1].visible=false;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([8, 10]);
-    a.ev('state.curWk=2;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([2, 10]);   // week 2 adds its own time to the every-week one
-  });
-  it('Fit to what\'s shown in a focused day fits that day only', () => {
-    const a = fresh(blank({ events: [ev1({ id: 'm', slots: [{ day: 0, start: 510, end: 600, person: '' }] }), ev1({ id: 't', slots: [{ day: 1, start: 1080, end: 1155, person: '' }] })] }));
-    a.ev('setFocus(1)'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([18, 20]);
-  });
-  it('Fit to what\'s shown with nothing on the grid leaves the hours alone and says why', () => {
-    const a = fresh(blank()); move(a, 0, 7); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([7, 24]); expect(a.toast()).toContain('no events on the grid');
-  });
-  it('Reset zoom puts this workspace back to 05:00–00:00, and its tooltip says so', () => {
+  it('Reset view puts this workspace back to 05:00–00:00, and its tooltip says so', () => {
     const a = fresh(); move(a, 0, 8); move(a, 1, 17); expect(a.q('#sbin .zreset').title).toContain('05:00 to 00:00');
     a.q('#sbin .zreset').click(); expect(a.ev('[hrA(),hrB()]')).toEqual([5, 24]); expect(shown(a)).toBe('05:00–00:00'); expect(stored(a).hours).toEqual({});
   });
@@ -150,16 +133,11 @@ describe('R-GRID-03 Saturday and Sunday: only the header cells have a different 
     const css = fresh().d.querySelector('style').textContent; expect(css).toMatch(/\[data-theme="dark"\][^}]*--weh/); expect(css).toMatch(/prefers-color-scheme:dark[^}]*--weh/);
   });
   it('with the weekend hidden there are no weekend headers', () => {
-    const a = fresh(); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.qa('.dh.we')).toHaveLength(0);
+    const a = fresh(); a.ev('state.prefs.days[state.curId]=[0,4];render()'); expect(a.qa('.dh.we')).toHaveLength(0);
   });
 });
 
-describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line (a Tools switch)', () => {
-  it('hiding Saturday and Sunday removes both columns and their events from the grid', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [{ day: 5, start: 600, end: 660, person: '' }] })] }));
-    expect(a.qa('.day')).toHaveLength(7); a.ev('state.prefs.hideWeekend=true;render()');
-    expect(a.qa('.day')).toHaveLength(5); expect(headers(a)).not.toContain('Saturday'); expect(a.qa('.ev')).toHaveLength(0);
-  });
+describe('R-GRID-04 View settings: AM/PM clock in Settings, now line (a Tools switch)', () => {
   it('the AM/PM clock changes the time labels and the event times', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 810, end: 870, person: '' }] })] }));
     expect(a.q('.ev .tm').textContent).toBe('13:30–14:30'); a.ev('state.prefs.clock12=true;render()');
@@ -183,18 +161,79 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line (a Too
     freezeClock(a, 2026, 9, 14, 17, 0); a.ev('state.prefs.hours[state.curId]=[8,17];render()'); expect(a.qa('.now')).toHaveLength(0);
     freezeClock(a, 2026, 9, 14, 16, 59); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(1);
   });
-  it('on a hidden weekend day there is no now line', () => {
-    const a = fresh(); freezeClock(a, 2026, 9, 17, 10, 30); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.qa('.now')).toHaveLength(0);   // Saturday
-  });
-  it('the Settings dialog offers exactly these view options with explanations', () => {
+  it('the Settings dialog offers the AM/PM clock, with its explanation, next to the theme and the language; the days shown are not there', () => {
     const a = fresh(); a.ev('openSettings()');
-    const text = a.dlgText(); ['Use AM/PM clock', 'Hide Saturday and Sunday', 'Theme'].forEach(t => expect(text).toContain(t)); expect(text).not.toContain('"now" line'); expect(text).not.toMatch(/early hours|05:00/);
+    const text = a.dlgText(); ['Use AM/PM clock', 'AM/PM.', 'Theme', 'Language'].forEach(t => expect(text).toContain(t)); expect(text).not.toContain('"now" line'); expect(text).not.toMatch(/early hours|05:00|Saturday|weekend/);
   });
   it('view settings are remembered in the browser (not in the workspace data)', () => {
     const a = fresh(); a.ev('openSettings()');
     const boxes = a.qa('#xDlg .sopt input[type=checkbox]'); boxes[0].checked = true; boxes[0].onchange();
     expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).clock12).toBe(true);
     expect(a.ev('Object.keys(state.S)')).not.toContain('clock12');
+  });
+});
+
+describe('R-GRID-13 Days shown: two knobs in View choose the run of days the grid shows, for each workspace', () => {
+  const knobs = a => a.qa('#sbin .zdays .hrs2 input');
+  const move = (a, i, v) => { const k = knobs(a)[i]; k.value = String(v); k.dispatchEvent(new a.w.Event('input')); };
+  const shown = a => a.q('#sbin .zdays .zv').textContent;
+  const cols = a => a.qa('.day').map(c => +c.dataset.d);
+  const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY) || '{}');
+  it('by default the whole week is shown; the knobs have their own names, read full day names and sit over the short day names', () => {
+    const a = fresh(); expect(cols(a)).toEqual([0, 1, 2, 3, 4, 5, 6]); expect(shown(a)).toBe('Mon–Sun');
+    expect(knobs(a).map(k => [k.getAttribute('aria-label'), k.getAttribute('aria-valuetext'), k.min, k.max])).toEqual([['First day shown', 'Monday', '0', '6'], ['Last day shown', 'Sunday', '0', '6']]);
+    expect(a.qa('#sbin .zdays .zticks span').map(s => s.textContent)).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']); expect(a.q('#sbin .zdays').title).toMatch(/shop/);
+  });
+  it('Monday to Friday removes Saturday and Sunday and their events from the grid, and the pill counts them', () => {
+    const a = fresh(blank({ events: [ev1({ slots: [{ day: 5, start: 600, end: 660, person: '' }] })] }));
+    move(a, 1, 4); expect(cols(a)).toEqual([0, 1, 2, 3, 4]); expect(headers(a)).not.toContain('Saturday'); expect(a.qa('.ev')).toHaveLength(0);
+    expect(shown(a)).toBe('Mon–Fri'); expect(a.q('#hid').textContent).toBe('1 hidden'); expect(a.q('#hid').title).toContain('1 on the days not shown');
+  });
+  it('any run of days can be shown: Tuesday to Saturday leaves out Monday and Sunday, and Saturday keeps its weekend hue', () => {
+    const a = fresh(); move(a, 0, 1); move(a, 1, 5); expect(cols(a)).toEqual([1, 2, 3, 4, 5]); expect(shown(a)).toBe('Tue–Sat');
+    expect(a.qa('.dh.we').map(h => h.textContent)).toEqual(['Saturday']); expect(a.qa('.dh.wj')).toHaveLength(0);
+  });
+  it('the knobs cannot cross but may meet: both on one day show that day alone', () => {
+    const a = fresh(); move(a, 1, 2); move(a, 0, 5); expect(a.ev('daysOf(state.curId)')).toEqual([2, 2]); expect(knobs(a)[0].value).toBe('2');
+    expect(cols(a)).toEqual([2]); expect(shown(a)).toBe('Wed'); move(a, 1, 0); expect(a.ev('daysOf(state.curId)')).toEqual([2, 2]); expect(knobs(a)[1].value).toBe('2');
+  });
+  it('the start knob lies on top in the right half of the track, so two knobs that meet there can still be parted', () => {
+    const a = fresh(); move(a, 0, 6); expect(a.q('#sbin .zdays .hrs2').classList.contains('lo')).toBe(true);
+    move(a, 0, 1); expect(a.q('#sbin .zdays .hrs2').classList.contains('lo')).toBe(false);
+  });
+  it('each workspace keeps its own days, this browser remembers them after a reload, and they are neither data nor undoable', () => {
+    const a = fresh(); a.ev('addWorkspace();switchWs(state.WS[0].id)'); a.ev("saveMem('all')"); const depth = a.ev('state.undoSt.length');
+    move(a, 1, 4); expect(a.ev('state.undoSt.length')).toBe(depth); expect(a.ev('anyDirty()')).toBe(false); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/"days"/);
+    a.ev('switchWs(state.WS[1].id)'); expect(cols(a)).toHaveLength(7); expect(shown(a)).toBe('Mon–Sun');
+    a.ev('switchWs(state.WS[0].id)'); expect(cols(a)).toHaveLength(5); const id = a.ev('state.curId'); expect(stored(a).days).toEqual({ [id]: [0, 4] });
+    const b = openApp({ storage: a.storage() }); b.ev(`switchWs('${id}')`); expect(b.qa('.day')).toHaveLength(5);
+  });
+  it('the whole week again forgets the entry; duplicating a workspace copies its days, deleting one forgets them, Clear memory forgets them all', () => {
+    const a = fresh(); a.ev('addWorkspace()'); move(a, 0, 2); expect(Object.keys(stored(a).days)).toHaveLength(1); move(a, 0, 0); expect(stored(a).days).toEqual({});
+    move(a, 1, 4); const first = a.ev('state.curId'); a.ev('duplicateWorkspace()'); const copy = a.ev('state.curId');
+    expect(stored(a).days).toEqual({ [first]: [0, 4], [copy]: [0, 4] }); expect(cols(a)).toHaveLength(5);
+    a.w.confirm = () => true; a.ev('deleteWorkspace()'); expect(stored(a).days).toEqual({ [first]: [0, 4] }); a.ev('clearMem()'); expect(stored(a).days).toEqual({});
+  });
+  it('Reset view shows the whole week again, and its tooltip says so', () => {
+    const a = fresh(); move(a, 1, 4); expect(a.q('#sbin .zreset').title).toContain('the whole week');
+    a.q('#sbin .zreset').click(); expect(cols(a)).toHaveLength(7); expect(shown(a)).toBe('Mon–Sun'); expect(stored(a).days).toEqual({});
+  });
+  it('a stored range that makes no sense is dropped, and the retired hideWeekend is never read', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ hideWeekend: true, days: { a: [4, 1], b: [0, 7], c: 'x', d: [1.5, 3], e: [-1, 3] } }) } });
+    expect(a.ev('JSON.stringify(state.prefs.days)')).toBe('{}'); expect(a.qa('.day')).toHaveLength(7);
+    expect(openApp({ storage: { [PREFS_KEY]: JSON.stringify({ days: { a: [3, 3] } }) } }).ev('JSON.stringify(state.prefs.days)')).toBe('{"a":[3,3]}');
+  });
+  it('on a day not shown there is no now line', () => {
+    const a = fresh(); freezeClock(a, 2026, 9, 17, 10, 30); a.ev('state.prefs.days[state.curId]=[0,4];render()'); expect(a.qa('.now')).toHaveLength(0);   // Saturday
+  });
+  it('a focused day is shown even when it is not one of the days shown, and stepping goes on to the days shown (Tuesday to Thursday)', () => {
+    const a = fresh(); a.ev('state.prefs.days[state.curId]=[1,3];setFocus(6)'); expect(cols(a)).toEqual([6]);
+    a.q('.dh .nxt').click(); expect(cols(a)).toEqual([1]); a.q('.dh .prv').click(); expect(cols(a)).toEqual([3]); a.q('.dh .nxt').click(); expect(cols(a)).toEqual([1]);
+  });
+  it('in Spanish the row reads Días visibles, with Spanish day names', () => {
+    const a = fresh(); a.ev("setLang('es');renderSide()"); move(a, 1, 4);
+    expect(a.q('#sbin .zdays > span').textContent).toBe('Días visibles'); expect(shown(a)).toBe('Lun–Vie');
+    expect(a.qa('#sbin .zdays .zticks span').map(s => s.textContent)).toEqual(['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']); expect(knobs(a)[1].getAttribute('aria-valuetext')).toBe('Viernes');
   });
 });
 
@@ -226,9 +265,9 @@ describe('R-GRID-06 Grid basics: hour lines, snapping, header agenda icon', () =
   });
 });
 
-describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the grid text size', () => {
+describe('R-GRID-07 View: Fit width / Fit height with their sliders, the days and hours shown, and the grid text size', () => {
   const sec = a => a.qa('#sbin .sec').at(-1);
-  const box = (a, label) => a.qa('#sbin .zck').find(l => l.textContent === label).querySelector('input');
+  const box = (a, label) => a.qa('#sbin .zsec .zck input').find(i => i.getAttribute('aria-label') === label);
   const slider = (a, label) => a.qa('#sbin .zrow input').find(i => i.getAttribute('aria-label') === label);
   const tick = (a, label, on) => { const c = box(a, label); c.checked = on; c.dispatchEvent(new a.w.Event('change')); };
   const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY));
@@ -258,12 +297,14 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
     expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);
   });
-  it('the Zoom section lists Fit width + Column width, Hours shown + Fit to what\'s shown, Fit height + Row height, then Text size and Reset, each slider under its box', () => {
-    const a = fresh(); const s = sec(a); expect(s.querySelector('.shbtn span').textContent).toBe('Zoom');
-    expect([...s.querySelectorAll('.zck, .zrow > span:first-child, .zfit, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
-      .toEqual(['Fit width', 'Column width', 'Hours shown', 'Fit to what\'s shown', 'Fit height', 'Row height', '—', 'Text size', 'Reset zoom']);
-    expect([...s.querySelectorAll('.zrow')].map(r => r.classList.contains('zsub'))).toEqual([true, false, true, false]);
+  it('the View section lists the sizes, a line, the days and hours shown, a line, the text size, a line and Reset view; each Fit switch sits on its slider\'s label line', () => {
+    const a = fresh(); const s = sec(a); expect(s.querySelector('.shbtn span').textContent).toBe('View');
+    expect([...s.querySelectorAll('.zrow > span:first-child, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
+      .toEqual(['Column width', 'Row height', '—', 'Days shown', 'Hours shown', '—', 'Text size', '—', 'Reset view']);
+    expect([...s.querySelectorAll('.zrow')].map(r => [...r.children].map(c => c.tagName === 'LABEL' ? c.textContent : c.tagName === 'INPUT' ? 'slider' : c.className || 'label')))
+      .toEqual([['label', 'Fit', 'slider', 'zv'], ['label', 'Fit', 'slider', 'zv'], ['label', 'hrs2', 'zv'], ['label', 'hrs2', 'zv'], ['label', 'slider', 'zv']]);
     expect(box(a, 'Fit width').parentElement.title).toMatch(/sideways/); expect(box(a, 'Fit height').parentElement.title).toMatch(/height of the window/);
+    expect(cssRule(a, '.zreset').style.getPropertyValue('margin')).not.toMatch(/auto/);   // on the left: no auto margin pushes it right
     s.querySelector('.shbtn').click(); expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(stored(a).secZoom).toBe(true);
   });
   it('with "Fit width" on the columns share the window width with a 40 px minimum, whatever the slider says', () => {
@@ -277,7 +318,7 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     const a = fresh(blank()); wrapH(a, 738); a.ev('render()');   // the fake day columns are 100 px wide
     const c = slider(a, 'Column width'), r = slider(a, 'Row height');
     expect([c.value, c.nextElementSibling.textContent]).toEqual(['100', '100 px']); expect(r.nextElementSibling.textContent).toBe(`${Math.floor((738 - 38) / 19)} px/h`);
-    expect(c.title).toContain('Untick "Fit width"'); expect(r.title).toContain('Untick "Fit height"');
+    expect(c.title).toBe('Switch off "Fit" to choose the width yourself.'); expect(r.title).toBe('Switch off "Fit" to choose the height yourself.');
   });
   it('unticking "Fit width" keeps the fitted column width, enables the slider and is remembered per browser', () => {
     const a = fresh(blank()); tick(a, 'Fit width', false);
@@ -320,7 +361,7 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     expect(cssRule(a, '.dh').style.getPropertyValue('font-size')).toBe('calc(14px * var(--ts,1))'); expect(cssRule(a, '.ev .flags svg').style.getPropertyValue('width')).toMatch(/var\(--ts/);
     expect(fs('.lip')).toBe('10px'); expect(fs('.bgs span')).toBe('10px');
   });
-  it('"Reset zoom" ticks both Fit boxes again and restores 48 px per hour, 110 px columns and 100 % text', () => {
+  it('"Reset view" ticks both Fit boxes again and restores 48 px per hour, 110 px columns and 100 % text', () => {
     const a = fresh(); a.ev('state.prefs.rowH=100;state.prefs.colW=200;state.prefs.fitW=false;state.prefs.fitH=false;state.prefs.txt=140;render()'); a.q('#sbin .zreset').click();
     expect(a.ev('[state.prefs.rowH,state.prefs.colW,state.prefs.fitW,state.prefs.fitH,state.prefs.txt]')).toEqual([48, 110, true, true, 100]);
   });
@@ -340,7 +381,7 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
   });
   it('the Settings dialog has nothing about zoom any more', () => {
     const a = fresh(); a.ev('openSettings()'); expect(a.qa('#xDlg .zrow, #xDlg .zck, #xDlg input[type=range]')).toHaveLength(0);
-    expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit height|Text size|Reset zoom/);   // "Fit width" is named in the side-by-side explanation
+    expect(a.qa('#xDlg .stabs button').map(b => b.textContent)).not.toContain('Zoom'); expect(a.dlgText()).not.toMatch(/Row height|Fit height|Text size|Reset view|Days shown|Hours shown/);   // "Fit width" is named in the side-by-side explanation
   });
   it('printing ignores the exact width and stretches the default 110 px columns over the page', () => {
     const a = fresh(blank()); a.ev('state.prefs.fitW=false;state.prefs.colW=200;state.printMode=true;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(110px,1fr))'); a.ev('state.printMode=false;render()');
@@ -508,7 +549,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   });
   it('at midnight it moves on to the next day, also onto a hidden weekend day', () => {
     const a = fresh(); at(a, 2, 23, 59); start(a); at(a, 3, 0, 0); a.ev('liveTick()'); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['3']);
-    const b = fresh(); b.ev('state.prefs.hideWeekend=true;render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
+    const b = fresh(); b.ev('state.prefs.days[state.curId]=[0,4];render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
   });
   it('on a phone the pill and Esc leave it for the day view of the day it showed, not the week, which is too wide', () => {
     const a = fresh(day(), { phone: true }); at(a, 2, 10, 0); a.q('#lvR').click(); expect(a.ev('[state.live,state.focusD]')).toEqual([true, 2]);
@@ -556,7 +597,7 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
     btn(a, 'prv').click(); expect(shown(a)).toEqual([6]); btn(a, 'prv').click(); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
   });
   it('with the weekend hidden, stepping skips Saturday and Sunday (Friday → Monday)', () => {
-    const a = fresh(); a.ev('state.prefs.hideWeekend=true;render()'); focus(a, 4); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
+    const a = fresh(); a.ev('state.prefs.days[state.curId]=[0,4];render()'); focus(a, 4); btn(a, 'nxt').click(); expect(shown(a)).toEqual([0]); btn(a, 'prv').click(); expect(shown(a)).toEqual([4]);
   });
   it('the Week button brings all days back', () => {
     const a = fresh(); focus(a, 3); btn(a, 'wk').click(); expect(shown(a)).toEqual([0, 1, 2, 3, 4, 5, 6]); expect(a.qa('.dh.fo')).toHaveLength(0);
