@@ -1,11 +1,17 @@
-// The event/phase dialog and the copy dialog. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// The event/phase dialog and the copy dialog. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {DAYS,L,tr} from './i18n.js';
+import {$,ICON_RHYTHM,ICON_USER,ICON_WARN,PAL,SNAP,el,esc,normHex,pTag,pickColor,randomColor,sTag,shiftColor,tIcon,uid} from './basics.js';
+import {carryEvents,cw,hist,normWk,pushUndoWs,sameSet,wkChip,wkCol,wkDesc,wkI,wkLabel,wkTip,wksText} from './data.js';
+import {cyc,cycSl,endLabel,fmt,fmtEnd,fmtMg,inCyc,ink,kept,ourPeople,overlapSet,phone,pname,stgSl,stgWks,toast,vrhythm,xdlg} from './model.js';
+import {tuSum,turnsOf} from './stats.js';
+import {chip} from './sidebar.js';
+import {render} from './grid.js';
 /* ---------- event dialog ---------- */
-$('f').onsubmit=()=>false;   // the dialog's form never submits (set here, not as an inline handler, which the CSP forbids: R-SEC-01)
 let cur=null;
-function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
+export function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
 const pOpts=()=>[['',L('none')],...state.S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
 const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c;updCols()};
-$('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
 let curStl=[],curEtl=[],dkind='event';
 /* the day table (R-UI-07, R-REP-02): one row per day; a day's first time sits in its row, further times on lines below it (+ adds, ✕ removes).
    Every time holds that repetition's own values — times, who performs it (the event's owner by default, R-EVT-20), its own With list
@@ -89,7 +95,7 @@ function rowSub(o,r){   // the margins of flexible start/end, on a line of their
   [o.fsS,o.feS].forEach(x=>{fillSel(x,MGS.map(m=>[m,fmtMg(m)]));x.onchange=()=>{tmSet(o,'edge',+o.fsS.value,+o.feS.value);updWarn()}});
   tmSet(o,'');o.inv=null;   // texts come from rowTexts once the day is known
 }
-function rowTexts(o,day,k){   // labels and tooltips (also after a language change); k = the index of a further time of that day
+export function rowTexts(o,day,k){   // labels and tooltips (also after a language change); k = the index of a further time of that day
   fillSel(o.tsel,[['',L('tmFixed')],['edge',L('tmEdge')],['flex',L('tmAround')]]);o.tsel.value=o.tm||'';
   o.subA.textContent=L('tmLate');o.subB.textContent=L('tmLate2');o.subC.textContent=L('tmEarly');o.fsS.setAttribute('aria-label',L('tmFsA'));o.feS.setAttribute('aria-label',L('tmFeA'));
   const t=(b,txt)=>{if(b){b.title=b.__t=txt;b.setAttribute('aria-label',txt)}};t(o.cp,L('cpyTip'));t(o.ad,L('addTime',{d:DAYS[day.i]}));t(o.x,L('rmTime'));t(o.rx,L('rmTime'));o.wn.title=L('ovRowTip');
@@ -180,12 +186,13 @@ function wPop(o){   // a row's own With list: "Use the event's list" or chips
   setTimeout(()=>document.addEventListener('pointerdown',out,true));
   const f=pop.querySelector('input');if(f)f.focus();
 }
-const rows=DAYS.map((n,i)=>{
+export let rows=[];   // the seven days of the day table (dayRow), built by initDialog
+const dayRow=(n,i)=>{
   const r=el('div','dr'+(i%2?' alt':''),$('fDays')),dc=el('span','dcell',r),l=el('label','',dc),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
   const o={r,cb,lt,i,more:[],wk:1};cardHead(o,dc);wkCtl(o,wcell(r),o);rowCtl(o,r,o);rowSub(o,r);   // alt: the day band (R-UI-07)
   o.upd=()=>{const on=cb.checked;[o,...o.more].forEach(x=>{x.r.classList.toggle('off',!on);[x.s,x.en,x.ps,x.wb,x.tsel,x.cp,x.ad,x.x,x.wkb].forEach(c=>{if(c)c.disabled=!on});x.sub.style.display=on&&x.tm==='edge'?'':'none'})};
   cb.onchange=()=>{if(cb.checked)newDay(o);o.upd();updWarn();updOc()};
-  return o});
+  return o};
 /* a phone (R-UI-07): each time is a card that folds to its header — a button with its title and, folded, a summary (10:00–11:00 · Ann);
    one card is open at a time. Times are added with "+ Add a time" (a day, and a week with different times per week) and removed with ✕. */
 function cardHead(x,c){x.sb=el('button','sum',c);x.sb.type='button';x.dn=el('b','dn',x.sb);x.sm=el('span','sm',x.sb);x.sb.setAttribute('aria-expanded','false');x.sb.onclick=()=>cardOpen(x.r.classList.contains('open')?null:x)}
@@ -211,7 +218,6 @@ function addPop(){   // "+ Add a time": the week (with different times per week)
   const rc=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(rc.left,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(rc.top-m.offsetHeight-4,innerHeight-m.offsetHeight-6))+'px';
   setTimeout(()=>document.addEventListener('pointerdown',out,true));m.querySelector('.addd .oi').focus();
 }
-$('fAddT').onclick=addPop;
 function addTime(o,sl){   // a further time on day o, on a line of its own below the day's last line
   const last=[o,...o.more].at(-1),x={wk:sl&&sl.wk||last.wk},r=document.createElement('div');r.className='dr dx'+(o.i%2?' alt':'');last.r.after(r);x.r=r;const dl=el('span','dl',r);cardHead(x,dl);wkCtl(x,wcell(r),o);
   rowCtl(x,r,o);rowSub(x,r);fillSel(x.s,curStl);fillSel(x.en,curEtl);fillSel(x.ps,perfOpts());o.more.push(x);rowTexts(x,o,o.more.length-1);
@@ -226,7 +232,6 @@ function newDay(o){   // a newly ticked day: the times of the nearest ticked day
   rowLoad(o,{start:t?+t.s.value:540,end:t?+t.en.value:600,fo:true});wkSet(o,Math.min(state.curWk,cyc()));   // with different times per week, in the week shown
 }
 function updTyIc(){const t=state.S.types.find(x=>x.id===$('fTy').value);$('fTyIc').innerHTML=t?tIcon(t.icon):'';$('fTyIc').style.color=t?t.color:''}
-$('fTy').onchange=()=>{updTyIc();updCols()};
 function updEnd(sSel,eSel){[...eSel.options].forEach(o=>{o.disabled=+o.value<=+sSel.value})}
 function formSlots(){const a=[];rows.forEach((o,i)=>{if(o.cb.checked)[o,...o.more].forEach(x=>a.push({day:i,...rowSlot(x)}))});return a}
 function updWarn(){
@@ -248,24 +253,21 @@ function updOwn(){   // the owner's icon, and "Owner (name)" in every performer 
   const q=state.S.people.find(x=>x.id===$('fOw').value);$('fOwIc').innerHTML=q?ICON_USER:'';$('fOwIc').style.color=q?q.color:'';
   rows.flatMap(o=>[o,...o.more]).forEach(o=>{const op=o.ps.querySelector(`option[value="${OWN}"]`);if(op)op.textContent=ownLbl()});
 }
-$('fOw').onchange=()=>{updOwn();updCols();updWarn()};$('fOnCall').onchange=updWarn;$('fTuM').onchange=updWarn;
 const updBg=()=>{$('fNest').disabled=$('fBg').checked||$('fAw').checked;updOc()};   // strips never nest (R-EVT-19, R-EVT-24)
-['fBox','fBg','fAw'].forEach(k=>$(k).onchange=updBg);
 // "only on call" matters only while somebody is involved, by default or on some day
 const updOc=()=>{$('fOcRow').style.display=!$('fAw').checked&&(defInv().length||tmItems().some(o=>o.inv&&o.inv.length))?'':'none'};   // on call does not apply to Away (R-EVT-24)
-$('fInv').onchange=()=>{rows.flatMap(o=>[o,...o.more]).forEach(o=>wSet(o,o.inv));refreshDlg()};
 // R-UI-10: the event/phase dialog can be dragged aside (by its grip bar or an empty part of it) to look at the grid behind it. It is placed
 // with left/top, not a transform, so the fixed-position menus inside it keep their viewport coordinates; it opens in the middle every time.
 function dlgPlace(x,y){const d=$('dlg');if(x==null){d.classList.remove('moved');d.style.left=d.style.top='';return}
   const r=d.getBoundingClientRect(),w=r.width||0,k=120;   // at least 120 px of it (and the grip bar's height) stay in the window
   d.classList.add('moved');d.style.left=Math.round(Math.max(k-w,Math.min(innerWidth-k,x)))+'px';d.style.top=Math.round(Math.max(0,Math.min(innerHeight-40,y)))+'px'}
 const DLG_NODRAG='input,select,textarea,label,a,button:not(.dgrip),.chips,#paneQ,.omenu,.cpop,.wpop';
-$('dlg').addEventListener('pointerdown',ev=>{const d=$('dlg');if(phone()||ev.button||ev.target.closest(DLG_NODRAG))return;   // full screen on a phone (R-UI-14)
+function dragDlg(ev){const d=$('dlg');if(phone()||ev.button||ev.target.closest(DLG_NODRAG))return;   // full screen on a phone (R-UI-14)
   ev.preventDefault();const r=d.getBoundingClientRect(),ox=ev.clientX-r.left,oy=ev.clientY-r.top,g=ev.target.closest('.dgrip');if(g)g.focus();
   const mv=e=>dlgPlace(e.clientX-ox,e.clientY-oy),up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up)};
-  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)});
-$('dGrip').onkeydown=ev=>{const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v||phone())return;ev.preventDefault();
-  const r=$('dlg').getBoundingClientRect();dlgPlace(r.left+v[0],r.top+v[1])};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)}
+function gripKey(ev){const v={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[ev.key];if(!v||phone())return;ev.preventDefault();
+  const r=$('dlg').getBoundingClientRect();dlgPlace(r.left+v[0],r.top+v[1])}
 // R-UI-14: on a phone the event dialog shows one tab at a time (Event · When · More; the CSS hides the other panes and, on a desktop, the
 // tab row). Every open starts on Event; the jump to the clicked repetition (R-UI-12) waits until When is first shown, as a hidden pane can't scroll
 let dJump=null;
@@ -275,9 +277,8 @@ function dlgTab(k,focus){
   dTabs().forEach(b=>{const on=b.dataset.p===k;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on&&focus)b.focus()});
   if(k==='wh'&&dJump){const s=dJump;dJump=null;dlgJump(s)}
 }
-dTabs().forEach(b=>b.onclick=()=>dlgTab(b.dataset.p));
-$('dlg').querySelector('.dtabs').onkeydown=ev=>{const d=ev.key==='ArrowRight'?1:ev.key==='ArrowLeft'?-1:0;if(!d)return;ev.preventDefault();
-  const bs=dTabs(),i=bs.findIndex(b=>b.classList.contains('on'));dlgTab(bs[(i+d+bs.length)%bs.length].dataset.p,true)};
+function tabKey(ev){const d=ev.key==='ArrowRight'?1:ev.key==='ArrowLeft'?-1:0;if(!d)return;ev.preventDefault();
+  const bs=dTabs(),i=bs.findIndex(b=>b.classList.contains('on'));dlgTab(bs[(i+d+bs.length)%bs.length].dataset.p,true)}
 // a failed save shows its message on the tab with the field it is about, and marks that tab until the next save or open
 const dErr=(k,msg)=>{$('err').textContent=msg;dlgTab(k);dTabs().find(b=>b.dataset.p===k).classList.add('bad')};
 // R-UI-12: opening a repeating event (or phase) from the grid brings the clicked repetition's line into view, centred in the day table only
@@ -290,7 +291,7 @@ function dlgJump(s){
     if(top<v0-1||bot>v1+1)p.scrollTop+=(top+bot)/2-(v0+v1)/2}
   const r=ln.r;r.classList.remove('pulse');void r.offsetWidth;r.classList.add('pulse');clearTimeout(r._pt);r._pt=setTimeout(()=>r.classList.remove('pulse'),1600);
 }
-function openDlg(e,def,src){   // src: the repetition that was clicked, to jump to in the day table (R-UI-12)
+export function openDlg(e,def,src){   // src: the repetition that was clicked, to jump to in the day table (R-UI-12)
   const kind=e?(e.rhythms?'phase':'event'):(state.editMode==='phases'?'phase':'event');
   if(kind==='phase'&&!e&&!state.S.rhythms.length){toast(L('noRh'));return}
   dkind=kind;state.MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
@@ -322,7 +323,7 @@ function openDlg(e,def,src){   // src: the repetition that was clicked, to jump 
   {const on=allLines().filter(x=>rows[0]&&!x.r.classList.contains('off')),s=on.find(x=>src&&x.src===src);cardOpen(s||(on.length===1?on[0]:null))}   // the card that opens on a phone
   dlgPlace(null);$('dlg').showModal();$('fT').focus();if(e&&src&&e.slots.length>1){if(phone())dJump=src;else dlgJump(src)}
 }
-$('fOk').onclick=()=>{
+function saveDlg(){
   const title=$('fT').value.trim(),sch=[...$('fSch').querySelectorAll('input:checked')].map(i=>i.value);dTabs().forEach(b=>b.classList.remove('bad'));
   const slots=formSlots().sort((a,b)=>a.day-b.day||(a.wk||0)-(b.wk||0)||a.start-b.start);
   if(!title)return dErr('ev',L('errTitle'));
@@ -341,17 +342,30 @@ $('fOk').onclick=()=>{
   if(cur)Object.assign(cur,d);else (dkind==='phase'?state.S.phases:state.S.events).push({id:uid(),...d});
   normWk(cur||(dkind==='phase'?state.S.phases:state.S.events).at(-1),kept());
   $('dlg').close();render();
-};
-$('fCancel').onclick=()=>$('dlg').close();
+}
 // R-CYC-23: an event or phase that also happens in staged weeks asks whether those go too, or stay as they are
-$('fDel').onclick=()=>{const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)state.S.phases=state.S.phases.filter(x=>x!==e);else state.S.events=state.S.events.filter(x=>x!==e);render()};$('dlg').close();
+function delDlg(){const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)state.S.phases=state.S.phases.filter(x=>x!==e);else state.S.events=state.S.events.filter(x=>x!==e);render()};$('dlg').close();
   const sg=stgWks(e);if(!sg.length){del();return}
   const keep=()=>{hist();if(e.slots.some(x=>x.wk))e.slots=e.slots.filter(stgSl);else e.weeks=sg;normWk(e,kept());render()};
   setTimeout(()=>xdlg({title:L(ph?'delPhT':'delEvT'),body:`<p>${esc(L('delStgBody',{t:e.title,w:wksText(sg)}))}</p>`,stack:true,
-    buttons:[{label:L('delCyc',{w:wksText(sg)}),cls:'p',fn:keep},{label:L('delAll'),fn:del},{label:L('cancel'),dismiss:true}]}),0)};
-$('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
+    buttons:[{label:L('delCyc',{w:wksText(sg)}),cls:'p',fn:keep},{label:L('delAll'),fn:del},{label:L('cancel'),dismiss:true}]}),0)}
+// wiring of the dialog's own controls (called once by main.js; handlers are set here, never as inline handlers, which the CSP forbids: R-SEC-01)
+export function initDialog(){
+  $('f').onsubmit=()=>false;   // the dialog's form never submits
+  $('fC').onclick=()=>pickColor($('fC'),$('fC').dataset.v,setFC);
+  rows=DAYS.map(dayRow);
+  $('fAddT').onclick=addPop;
+  $('fTy').onchange=()=>{updTyIc();updCols()};
+  $('fOw').onchange=()=>{updOwn();updCols();updWarn()};$('fOnCall').onchange=updWarn;$('fTuM').onchange=updWarn;
+  ['fBox','fBg','fAw'].forEach(k=>$(k).onchange=updBg);
+  $('fInv').onchange=()=>{rows.flatMap(o=>[o,...o.more]).forEach(o=>wSet(o,o.inv));refreshDlg()};
+  $('dlg').addEventListener('pointerdown',dragDlg);$('dGrip').onkeydown=gripKey;
+  dTabs().forEach(b=>b.onclick=()=>dlgTab(b.dataset.p));$('dlg').querySelector('.dtabs').onkeydown=tabKey;
+  $('fOk').onclick=saveDlg;$('fCancel').onclick=()=>$('dlg').close();$('fDel').onclick=delDlg;
+  $('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
+}
 /* ---------- copy dialog ---------- */
-function openCopy(src){
+export function openCopy(src){
   const isPh=!!src.rhythms,mem=isPh?src.rhythms:src.schedules;let lst=isPh?state.S.rhythms:state.S.schedules,tw=null;   // tw: another workspace (events only, R-DATA-04)
   const body=el('div');el('p','note',body).textContent=L('cpNote');
   let wsel=null;if(!isPh&&state.WS.length>1){el('label','',body).textContent=L('cpWs');wsel=el('select','',body);fillSel(wsel,state.WS.map(w=>[w.id,w.id===state.curId?L('cpThis',{n:w.name}):w.name]));wsel.value=state.curId;wsel.setAttribute('aria-label',L('cpWs'))}

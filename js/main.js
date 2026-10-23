@@ -1,5 +1,16 @@
-// Wiring and startup (runs last). Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// Wiring and startup: the entry point, the one file index.html loads (its imports bring in the rest); runs after every other file. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {DAYN,DAYS,L,applyStatic} from './i18n.js';
+import {$,el} from './basics.js';
+import {FMT,errKey,initDefault,isSealed,loadStore,openImport,parseWorkspace,readStore,redo,undo,verOf} from './data.js';
+import {askPassword,askUnlock,handleShareLink,hasCrypto,sealedOk,unb64u} from './share.js';
+import {FH,FWK,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,openSettings,phone,phoneFit,savePrefs,setFocus,setLive,today,todayWk} from './model.js';
+import {agDay,agFn,agWk,doPrint,printDay} from './stats.js';
+import {oneWeek,renderSide} from './sidebar.js';
+import {render,zoomRender} from './grid.js';
+import {initDialog,rowTexts,rows} from './dialog.js';
 /* ---------- wiring & startup ---------- */
+loadPrefs();initLive();initDialog();   // the code that runs once at startup lives here, not at the top level of the other files (docs/architecture.md)
 $('hid').onclick=openSettings;
 $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agFn();doPrint(d,false)};
@@ -33,7 +44,7 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
   else if((e.ctrlKey||e.metaKey)&&k==='y'){e.preventDefault();redo()}
 });
-function setLang(l){
+export function setLang(l){
   state.lang=l;DAYS.splice(0,7,...DAYN[l]);document.documentElement.lang=l;document.title=L('appTitle');$('wrap').setAttribute('aria-label',L('gridLbl'));
   rows.forEach((o,i)=>{o.lt.nodeValue=DAYS[i].slice(0,3);rowTexts(o,o);o.more.forEach((x,k)=>rowTexts(x,o,k))});
   render();applyStatic();

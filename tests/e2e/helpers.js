@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { moduleOrder } from '../helpers/modules.js';
 
 export const PASSWORD = 'k7Qm9-xTa2L-wdR4n-Hy6Be-Zc8Vp';
 export const sched = (o = {}) => ({ id: 's1', name: 'S1', color: '#3b6df0', opacity: 1, locked: false, visible: true, ...o });
@@ -12,6 +13,7 @@ export const slot = (day, start, end, person = '') => ({ day, start, end, person
  *  pass `defaults: true` to get the app's own zoom defaults (both on, R-GRID-07). */
 export async function openApp(page, { prefs, clock, storage, defaults = false } = {}) {
   if (!defaults) prefs = { fitW: false, fitH: false, ...prefs };
+  await bridge(page);
   if (clock) await page.clock.setFixedTime(clock);
   if (prefs || storage) await page.addInitScript(({ p, st }) => {
     if (sessionStorage.getItem('seeded')) return;   // seed only on the first load, so reloads keep what the app saved
@@ -20,13 +22,27 @@ export async function openApp(page, { prefs, clock, storage, defaults = false } 
     sessionStorage.setItem('seeded', '1');
   }, { p: prefs, st: storage });
   await page.goto('/');
-  await expect(page.locator('.dh:not(.c)').first()).toBeVisible();
+  await expect(page.locator('.dh:not(.c)').first()).toBeVisible(); await bridged(page);
 }
 
+/** The test bridge (not part of the app). The app's ES modules keep their names to themselves, so on every load of the page (reloads too)
+ *  this imports the same modules again, which gives the page's own instances, and puts each name they export on window, read live: then
+ *  page.evaluate(() => openDlg(state.S.events[0])) works. Modules run before DOMContentLoaded, so they are complete by then. The addresses
+ *  are absolute because WebKit resolves an init script's relative import against web-inspector://, not the page. */
+export async function bridge(page) {
+  if (page.__bridge) return; page.__bridge = true;
+  await page.addInitScript(files => addEventListener('DOMContentLoaded', () => Promise.all(files.map(f => import(new URL(f, location.href).href))).then(ms => {
+    for (const m of ms) for (const k of Object.keys(m)) Object.defineProperty(window, k, { get: () => m[k], configurable: true });
+    window.__bridged = true;
+  })), moduleOrder());
+}
+/** Waits until the bridge is in place after a load (openApp does this; call it after page.reload() before evaluating app names). */
+export const bridged = page => page.waitForFunction(() => window.__bridged === true);
+
 /** Replaces the current workspace's data with validated data and redraws. */
-export const seed = (page, data) => page.evaluate(d => { const x = parseData(d); state.S = x; cw().data = x; render(); }, data);
-export const data = page => page.evaluate(() => JSON.parse(JSON.stringify(state.S)));
-export const slots = (page, i = 0) => page.evaluate(n => JSON.parse(JSON.stringify(state.S.events[n].slots)), i);
+export const seed = async (page, data) => { await bridged(page); return page.evaluate(d => { const x = parseData(d); state.S = x; cw().data = x; render(); }, data); };
+export const data = async page => { await bridged(page); return page.evaluate(() => JSON.parse(JSON.stringify(state.S))); };
+export const slots = async (page, i = 0) => { await bridged(page); return page.evaluate(n => JSON.parse(JSON.stringify(state.S.events[n].slots)), i); };
 
 /** Viewport coordinates of minute `min` in the n-th displayed day column (x = middle of the column). */
 export async function pt(page, col, min) {

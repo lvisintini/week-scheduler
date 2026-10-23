@@ -7,6 +7,8 @@ const appGlobals = Object.fromEntries(['state', 'cw', 'render', 'hist', 'parseDa
 export default [
   { ignores: ['node_modules/', 'test-results/', 'playwright-report/', 'index.html'] },
   js.configs.recommended,
-  { files: ['**/*.js', '**/*.mjs'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } }, rules: { 'no-unused-vars': ['warn', { args: 'none', varsIgnorePattern: '^_' }], 'no-empty': ['error', { allowEmptyCatch: true }] } },
+  { files: ['**/*.js', '**/*.mjs'], ignores: ['js/**'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } }, rules: { 'no-unused-vars': ['warn', { args: 'none', varsIgnorePattern: '^_' }], 'no-empty': ['error', { allowEmptyCatch: true }] } },
+  // the app: ES modules in a browser; a name used but not imported (no-undef) or an assignment to an imported name (no-import-assign) is an error
+  { files: ['js/**/*.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.browser } }, rules: { 'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none', varsIgnorePattern: '^_' }], 'no-empty': ['error', { allowEmptyCatch: true }] } },
   { files: ['tests/e2e/**/*.js'], languageOptions: { globals: { ...globals.browser, ...appGlobals } } },
 ];

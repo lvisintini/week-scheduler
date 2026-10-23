@@ -1,6 +1,13 @@
 // Calendar export (R-SHARE-09): Save… → Calendar file, an iCalendar (.ics) file for Google Calendar, Apple Calendar or Outlook. An export
-// only: it never opens in the app again and is never a backup. Classic script: shares the global scope with the other files in js/, loaded in
-// the order of index.html (docs/architecture.md); only definitions here, so it may use what later files define.
+// only: it never opens in the app again and is never a backup. ES module
+// (docs/architecture.md).
+import {state} from './state.js';
+import {L} from './i18n.js';
+import {el,esc} from './basics.js';
+import {wkLabel} from './data.js';
+import {incPicker,shareOf} from './share.js';
+import {askLiveWeek,cyc,dnum,edgeNote,fileDay,invOf,pad,savePrefs,toast,todayWk,wkAt,xdlg,ymd} from './model.js';
+import {fillSel} from './dialog.js';
 /* Dates are local calendar days counted from 1 Jan 1970 (a Thursday), like ymd/dnum: the export runs from a chosen day (From) and, if given,
    until another (Until). Times are floating (no time zone): 07:30 stays 07:30 wherever the calendar is. Each event becomes one weekly series
    per group of days that share times, people and timing (BYDAY), every n weeks for the weeks of a cycle. */
@@ -43,7 +50,7 @@ function icsText(f,o){
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Weekly Schedules//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+icsEsc(f.name),...out,'END:VCALENDAR'].map(icsFold).join('\r\n')+'\r\n';
 }
 const icsShow=t=>new Date(dnum(t)*864e5).toLocaleDateString(state.lang,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});   // a 'YYYY-MM-DD' for people
-function openIcs(){
+export function openIcs(){
   if(cyc()>1&&todayWk()==null){askLiveWeek(()=>setTimeout(openIcs,0),null,{body:'icsWkBody',btn:'icsWkGo'});return}   // the dates follow today's week (R-CYC-05)
   const body=el('div'),tday=ymd(new Date()),last=state.prefs.icsLast[state.curId];
   el('p','note',body).textContent=L('icsBody');

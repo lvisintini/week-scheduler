@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { openApp, seed, data, blank, ev, slot, sched, person, toolbar, dialogButton, allowClipboard, readClipboard, PASSWORD } from './helpers.js';
+import { openApp, seed, data, bridge, blank, ev, slot, sched, person, toolbar, dialogButton, allowClipboard, readClipboard, PASSWORD } from './helpers.js';
 
 const rich = () => blank({ people: [person({ id: 'A', name: 'Granny Rose' })], schedules: [sched({ id: 's1', name: 'Care' })], events: [ev({ title: 'Doctor visit', desc: 'door code 4711', involved: ['A'], slots: [slot(1, 600, 660, 'A')] })] });
 const BASE = 'http://localhost:4173';
@@ -20,7 +20,7 @@ async function saveFile(page, { anon = false } = {}) {
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), dialogButton(page, 'Save file').click()]);
   return dl;
 }
-async function visitor(browser) { const ctx = await browser.newContext({ locale: 'en-US' }); const page = await ctx.newPage(); return { ctx, page }; }
+async function visitor(browser) { const ctx = await browser.newContext({ locale: 'en-US' }); const page = await ctx.newPage(); await bridge(page); return { ctx, page }; }
 
 test.describe('R-SHARE-06 Encrypted JSON files, downloaded and opened for real', () => {
   test.beforeEach(async ({ page }) => { await openApp(page); await seed(page, rich()); });

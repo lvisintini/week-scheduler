@@ -1,27 +1,36 @@
-// Data: state and history, the data format and its upgrades (MIG, parseData), workspaces, the cycle of weeks, import and transfers. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// Data: state and history, the data format and its upgrades (MIG, parseData), workspaces, the cycle of weeks, import and transfers. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {L} from './i18n.js';
+import {$,ICON_CHECK,ICON_PLUS,ICON_WEEK,ICON_WS,PAL,SNAP,TICONS,el,esc,normHex,pIcon,pickColor,uid} from './basics.js';
+import {b64u,openProtect,seal,unb64u,unseal} from './share.js';
+import {openIcs} from './ics.js';
+import {cyc,fitMg,kept,liveTick,lvCloseAll,lvRet,poolOf,savePrefs,setAnchor,toast,today,todayWk,updLive,wksOf,xdlg} from './model.js';
+import {renderSide,rowGrip,rowMenu} from './sidebar.js';
+import {render} from './grid.js';
+import {fillSel} from './dialog.js';
 /* ---------- state, history, persistence ---------- */
-const WKEY='weekly-schedules-workspaces',PKEY='weekly-schedules-prefs';
-const isAdv=sl=>new Set(sl.map(s=>(s.wk||0)*7+s.day)).size<sl.length;   // some day has two times (per week of the cycle, R-CYC-09)
-const sameDay=(x,y,day=y.day)=>x.day===day&&(x.wk||0)===(y.wk||0);
+export const WKEY='weekly-schedules-workspaces',PKEY='weekly-schedules-prefs';
+export const isAdv=sl=>new Set(sl.map(s=>(s.wk||0)*7+s.day)).size<sl.length;   // some day has two times (per week of the cycle, R-CYC-09)
+export const sameDay=(x,y,day=y.day)=>x.day===day&&(x.wk||0)===(y.wk||0);
 // moving by days (R-CYC-09): a repetition with its own week moves along the cycle (Sunday of week 1 + 1 = Monday of week 2), any other mod 7
-const absD=s=>((s.wk||1)-1)*7+s.day;
-function shiftDay(s,dD){if(!s.wk){s.day=((s.day+dD)%7+7)%7;return}const n=cyc()*7,x=((absD(s)+dD)%n+n)%n;s.wk=Math.floor(x/7)+1;s.day=x%7}
-const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
-const keyOf=d=>JSON.stringify({wsc:d.color||'',wsd:d.desc||'',cycle:d.cycle||1,pool:poolOf(d),weekInfo:wiNorm(d.weekInfo,poolOf(d)),schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
+export const absD=s=>((s.wk||1)-1)*7+s.day;
+export function shiftDay(s,dD){if(!s.wk){s.day=((s.day+dD)%7+7)%7;return}const n=cyc()*7,x=((absD(s)+dD)%n+n)%n;s.wk=Math.floor(x/7)+1;s.day=x%7}
+export const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
+export const keyOf=d=>JSON.stringify({wsc:d.color||'',wsd:d.desc||'',cycle:d.cycle||1,pool:poolOf(d),weekInfo:wiNorm(d.weekInfo,poolOf(d)),schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
 const dataKey=()=>keyOf(state.S);
-const cw=()=>state.WS.find(w=>w.id===state.curId);
+export const cw=()=>state.WS.find(w=>w.id===state.curId);
 const wsData=w=>w.id===state.curId?state.S:w.data;
 const wsDirty=w=>{const k=keyOf(wsData(w));return k!==w.lb&&k!==w.lf};
-const isDirty=()=>{const w=cw();return !!w&&wsDirty(w)};
-const anyDirty=()=>state.WS.some(wsDirty);
+export const isDirty=()=>{const w=cw();return !!w&&wsDirty(w)};
+export const anyDirty=()=>state.WS.some(wsDirty);
 function syncWs(){const w=cw();if(w){w.data=state.S;w.undo=state.undoSt;w.redo=state.redoSt}}
-function newWs(name,data,saved){return {id:uid(),name,data,lb:null,lf:saved?keyOf(data):null,undo:[],redo:[]}}
+export function newWs(name,data,saved){return {id:uid(),name,data,lb:null,lf:saved?keyOf(data):null,undo:[],redo:[]}}
 function switchWs(id){if(id===state.curId||!state.WS.some(w=>w.id===id))return;syncWs();state.curId=id;const w=cw();state.S=w.data;state.undoSt=w.undo||[];state.redoSt=w.redo||[];state.selK=null;state.curWk=todayWk()||state.curWk;render();if(state.live)setTimeout(liveTick,0)}   // on today's week of that workspace, when known (R-CYC-05)
-function pushUndoWs(w){if(w.id===state.curId){hist();return}w.undo=w.undo||[];w.undo.push(JSON.stringify(w.data));if(w.undo.length>100)w.undo.shift();w.redo=[]}
+export function pushUndoWs(w){if(w.id===state.curId){hist();return}w.undo=w.undo||[];w.undo.push(JSON.stringify(w.data));if(w.undo.length>100)w.undo.shift();w.redo=[]}
 const uniqueName=(base,names)=>{let n=base,i=2;while(names.includes(n))n=base+' ('+(i++)+')';return n};
-function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!state.undoSt.length;if(r)r.disabled=!state.redoSt.length}
-function pushUndo(str){state.undoSt.push(str);if(state.undoSt.length>100)state.undoSt.shift();state.redoSt=[];updUR()}
-const hist=()=>pushUndo(JSON.stringify(state.S));
+export function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!state.undoSt.length;if(r)r.disabled=!state.redoSt.length}
+export function pushUndo(str){state.undoSt.push(str);if(state.undoSt.length>100)state.undoSt.shift();state.redoSt=[];updUR()}
+export const hist=()=>pushUndo(JSON.stringify(state.S));
 function restoreState(str){
   const old=state.S;state.S=JSON.parse(str);
   state.S.schedules.forEach(s=>{const o=old.schedules.find(x=>x.id===s.id);if(o){s.visible=o.visible;s.opacity=o.opacity}});
@@ -30,12 +39,12 @@ function restoreState(str){
   state.S.phaseOpacity=old.phaseOpacity;state.S.rhythms.forEach(s=>{const o=old.rhythms.find(x=>x.id===s.id);s.visible=o?o.visible:false});
 }
 // an entry is the state as JSON, or {s, wp} for a new order of the weeks (R-CYC-20): undoing or redoing it also moves the shown week and today's week
-function undo(){if(!state.undoSt.length)return;state.selK=null;const x=state.undoSt.pop();state.redoSt.push(x.wp?{s:JSON.stringify(state.S),wp:x.wp}:JSON.stringify(state.S));restoreState(x.s||x);if(x.wp)wkFollow(Object.fromEntries(x.wp.map((o,i)=>[i+1,o])));render()}
-function redo(){if(!state.redoSt.length)return;state.selK=null;const x=state.redoSt.pop();state.undoSt.push(x.wp?{s:JSON.stringify(state.S),wp:x.wp}:JSON.stringify(state.S));restoreState(x.s||x);if(x.wp)wkFollow(Object.fromEntries(x.wp.map((o,i)=>[o,i+1])));render()}
+export function undo(){if(!state.undoSt.length)return;state.selK=null;const x=state.undoSt.pop();state.redoSt.push(x.wp?{s:JSON.stringify(state.S),wp:x.wp}:JSON.stringify(state.S));restoreState(x.s||x);if(x.wp)wkFollow(Object.fromEntries(x.wp.map((o,i)=>[i+1,o])));render()}
+export function redo(){if(!state.redoSt.length)return;state.selK=null;const x=state.redoSt.pop();state.undoSt.push(x.wp?{s:JSON.stringify(state.S),wp:x.wp}:JSON.stringify(state.S));restoreState(x.s||x);if(x.wp)wkFollow(Object.fromEntries(x.wp.map((o,i)=>[o,i+1])));render()}
 /* Data format (R-DATA-08): FMT is the version of a workspace record (files, links, each workspace in browser memory; the store wrapper
    carries the same number). Raise it on ANY change to what is stored, even an added field (an older app would drop it and then save),
    add MIG[FMT-1] and a folder of sample files under tests/fixtures/. Data newer than FMT is refused, never half-read (R-DATA-09). */
-const FMT=15;
+export const FMT=15;
 const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON before parseData. Never delete one.
   1:j=>j,   // 2 added event.nest (R-NST-01); version-1 data has none
   2:j=>j,   // 3 added event.bg (R-EVT-19); version-2 data has none
@@ -64,19 +73,19 @@ const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON
   13:j=>j,   // 14 added browser memory protected with a passphrase (R-DATA-11); a workspace record is unchanged
   14:j=>j,   // 15 added pool, the staged weeks kept after the cycle (R-CYC-21); version-14 data has none
 };
-const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
-function migrate(j,v,to=FMT,steps=MIG){   // raw record of version v -> current version (to/steps: for tests only)
+export const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
+export function migrate(j,v,to=FMT,steps=MIG){   // raw record of version v -> current version (to/steps: for tests only)
   if(!j||typeof j!=='object'||Array.isArray(j))throw new Error('bad');
   if(!Number.isInteger(v)||v<1)throw new Error('bad');
   if(v>to)throw new Error('newer');
   for(;v<to;v++)j=steps[v](j);
   return j;
 }
-const errKey=(e,fb)=>e&&e.message==='limit'?'tooBig':e&&e.message==='newer'?'newer':fb;
+export const errKey=(e,fb)=>e&&e.message==='limit'?'tooBig':e&&e.message==='newer'?'newer':fb;
 const LIM={schedules:100,people:500,types:100,events:5000,rhythms:100,phases:2000,slots:200};   // applied to imported files and links
 /* the weeks of an event in a cycle of n weeks (R-CYC-02/03): a week pattern (event.weeks, absent = every week) or a week on every
    repetition (slot.wk, 1..n); the mode is inferred from the repetitions. Returns the event normalised, or null when nothing is left. */
-function normWk(e,n){
+export function normWk(e,n){
   const ok=k=>Number.isInteger(k)&&k>=1&&k<=n,per=e.slots.some(s=>s.wk!=null);
   if(per){delete e.weeks;e.slots=e.slots.filter(s=>{const k=s.wk==null?1:Math.round(+s.wk)||1;if(k>n)return false;if(n>1)s.wk=Math.max(1,k);else delete s.wk;return true})}
   else if(e.weeks!==undefined){const w=Array.isArray(e.weeks)?[...new Set(e.weeks.map(Number).filter(ok))].sort((a,b)=>a-b):[];
@@ -88,7 +97,7 @@ function normWk(e,n){
 const wiNorm=(x,n)=>{const out=(Array.isArray(x)?x:[]).slice(0,n).map(w=>{const o={};if(!w||typeof w!=='object')return o;
     const s=(v,m)=>typeof v==='string'?v.trim().slice(0,m):'',nm=s(w.name,40),ds=s(w.desc,300),c=normHex(w.color);if(nm)o.name=nm;if(ds)o.desc=ds;if(c)o.color=c;return o});
   while(out.length&&!Object.keys(out.at(-1)).length)out.pop();return n>1?out:[]};
-function parseData(j,strict){
+export function parseData(j,strict){
   if(!j||!Array.isArray(j.schedules)||!Array.isArray(j.events))throw new Error('bad');
   const arr=x=>Array.isArray(x)?x:[],clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const lim=(x,n)=>{const a=arr(x);if(strict&&a.length>n)throw new Error('limit');return a};
@@ -124,17 +133,17 @@ function defaultTypes(){
   return [['tSleep','#3f51b5','moon'],['tMeal','#e8912d','meal'],['tWork','#2fa66a','work'],['tFocus','#8e4ec6','target'],['tChore','#a1662f','broom'],['tFree','#12a5b5','sun',true],['tSocial','#e5484d','people'],['tCare','#d6409f','drop'],['tTravel','#607d8b','car']]
     .map(([k,color,icon,soft])=>({id:uid(),name:L(k),color,icon,...(soft?{soft:true}:{}),visible:true}));
 }
-function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],types:defaultTypes(),...defaultRhythm(),phaseOpacity:.3,cycle:1,weekInfo:[]}}
-function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);state.WS=[w];state.curId=w.id;state.S=w.data;state.undoSt=w.undo;state.redoSt=w.redo}
+export function defaultData(){return {schedules:[{id:uid(),name:L('sched1'),color:PAL[0],opacity:1,locked:false,visible:true}],events:[],people:[],types:defaultTypes(),...defaultRhythm(),phaseOpacity:.3,cycle:1,weekInfo:[]}}
+export function initDefault(){const w=newWs(L('wsDefault'),defaultData(),true);state.WS=[w];state.curId=w.id;state.S=w.data;state.undoSt=w.undo;state.redoSt=w.redo}
 /* ---------- workspaces: several named data sets in browser memory ---------- */
-const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};   // as stored: plain, protected or newer
-const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
+export const readStore=()=>{try{const s=localStorage.getItem(WKEY);return s?JSON.parse(s):null}catch(e){return null}};   // as stored: plain, protected or newer
+export const memGet=()=>{try{return localStorage.getItem(WKEY)}catch(e){return null}};
 // R-DATA-11: browser memory may be protected with a passphrase, {version, sealed:<base64url blob of the plain store>} under the same key.
 // The key is derived when it is opened and lives only in this page (state.memKey, {key,salt,iter}); every save reuses it with a new IV.
-const isSealed=st=>!!st&&typeof st.sealed==='string';
+export const isSealed=st=>!!st&&typeof st.sealed==='string';
 // runs fn with the plain store (null when nothing is stored; a newer one as it is, for its own checks). When another tab has protected,
 // unprotected or re-protected browser memory since this page opened it, nothing is read or written: the page has to be reloaded
-function withStore(fn){
+export function withStore(fn){
   const st=readStore();
   if(st&&verOf(st)>FMT)return fn(st);
   if(st&&isSealed(st)!==!!state.memKey){alert(L('memTab'));return}
@@ -142,13 +151,13 @@ function withStore(fn){
   return unseal(unb64u(st.sealed),null,state.memKey).then(fn,e=>alert(L(e&&e.message==='salt'?'memTab':'badFile')));
 }
 // the outer version is always this app's, so an older cached page refuses a protected store instead of saving over it (R-DATA-09)
-const writeStore=st=>state.memKey?seal(st,null,state.memKey).then(b=>localStorage.setItem(WKEY,JSON.stringify({version:FMT,sealed:b64u(b)}))):localStorage.setItem(WKEY,JSON.stringify(st));
+export const writeStore=st=>state.memKey?seal(st,null,state.memKey).then(b=>localStorage.setItem(WKEY,JSON.stringify({version:FMT,sealed:b64u(b)}))):localStorage.setItem(WKEY,JSON.stringify(st));
 const pickData=d=>{const wi=wiNorm(d.weekInfo,poolOf(d));return {...(d.color?{color:d.color}:{}),...(d.desc?{desc:d.desc}:{}),schedules:d.schedules,people:d.people,types:d.types,events:d.events,rhythms:d.rhythms,phases:d.phases,phaseOpacity:d.phaseOpacity,...(d.cycle>1?{cycle:d.cycle}:{}),...(poolOf(d)>(d.cycle||1)?{pool:poolOf(d)}:{}),...(wi.length?{weekInfo:wi}:{})}};
 const wsEntry=w=>({id:w.id,name:w.name,...pickData(wsData(w))});
-function buildFile(){syncWs();const w=cw();return {version:FMT,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
-const parseWorkspace=(j,fallbackName)=>{j=migrate(j,verOf(j));return {id:j.id?String(j.id):null,name:String(j.name||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)}};
+export function buildFile(){syncWs();const w=cw();return {version:FMT,id:w.id,name:w.name,...pickData(w.data)}}   // file / link = one workspace
+export const parseWorkspace=(j,fallbackName)=>{j=migrate(j,verOf(j));return {id:j.id?String(j.id):null,name:String(j.name||fallbackName||L('wsImported')).slice(0,200),data:parseData(j,true)}};
 const memNewer=()=>{const st=readStore();return !!st&&verOf(st)>FMT};   // browser memory written by a newer app: never read or overwritten (R-DATA-09)
-function loadStore(st=readStore()){  // fills WS from the plain store of browser memory; falls back to the default workspace
+export function loadStore(st=readStore()){  // fills WS from the plain store of browser memory; falls back to the default workspace
   try{
     if(st&&verOf(st)>FMT){alert(L('memNewer'));throw 0}   // also a protected one (R-DATA-11), which has no list outside
     if(!st||!Array.isArray(st.workspaces)||!st.workspaces.length)throw 0;
@@ -157,7 +166,7 @@ function loadStore(st=readStore()){  // fills WS from the plain store of browser
     const w=cw();state.S=w.data;state.undoSt=w.undo;state.redoSt=w.redo;
   }catch(e){initDefault()}
 }
-function saveMem(scope){   // synchronous for plain browser memory; a promise when it is protected (R-DATA-11)
+export function saveMem(scope){   // synchronous for plain browser memory; a promise when it is protected (R-DATA-11)
   syncWs();
   if(memNewer()){alert(L('memNewerSave'));return}
   return withStore(st=>{try{
@@ -169,13 +178,13 @@ function saveMem(scope){   // synchronous for plain browser memory; a promise wh
     const p=writeStore(st);if(p)return p.then(done,()=>toast(L('memFail')));done();
   }catch(e){toast(L('memFail'))}});
 }
-function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
+export function saveTo(target){   // files and links always hold just the current workspace; browser memory can save one or all
   if(target==='file'||target==='link'){setTimeout(()=>openProtect(target),0);return}
   if(target==='ics'){setTimeout(openIcs,0);return}   // a calendar file: an export, not a save (R-SHARE-09)   // open after the Save dialog has closed (a dialog opened from inside a button handler would be closed again by it)
   if(state.WS.length<2){saveMem('all');return}   // with a single workspace "current" and "all" are the same, and saving all also drops deleted workspaces from the store
   setTimeout(()=>xdlg({title:L('scopeTitle'),body:`<p>${esc(L('scopeBody'))}</p>`,buttons:[{label:L('scopeCur',{n:cw().name}),cls:'p',fn:()=>saveMem('current')},{label:L('scopeAll',{n:state.WS.length}),fn:()=>saveMem('all')},{label:L('cancel'),dismiss:true}]}),0);
 }
-function addWorkspace(){
+export function addWorkspace(){
   const n=prompt(L('pWs'),uniqueName(L('wsDefault'),state.WS.map(w=>w.name)));if(!n)return;
   syncWs();const w=newWs(uniqueName(n.trim().slice(0,200),state.WS.map(x=>x.name)),defaultData(),true);state.WS.push(w);switchWs(w.id);
 }
@@ -248,7 +257,7 @@ function setCycle(n,extend,wi){   // wi: the weeks' info as edited in the dialog
   state.S.cycle=n;normAll(state.S);render();
   toast(n>1?L('cyDone',{n}):L('cyDone1'));
 }
-function openCycle(){
+export function openCycle(){
   const body=el('div'),n0=cyc(),p0=kept(),used=state.S.events.some(chosenWk)||state.S.phases.some(chosenWk),cur=wiNorm(state.S.weekInfo,p0);
   // rows: the kept weeks in their order as edited here (o = the week it was, 0 = a staged week added here; w = its name, description and colour,
   // R-CYC-17); more[k]: week k+1 when a longer cycle adds it beyond the rows, which follows the extension rule until edited (touched)
@@ -315,15 +324,15 @@ function askGone(ks,lost,cb){
 // "Weeks 1 and 3" (R-CYC-02); ws = sorted week numbers
 // R-CYC-17: a week's name, description and colour (only while the cycle is longer than one week); wkLabel = "Week 2 · At Dad's",
 // wkShortL = "W2 At Dad's" (table headers), wkChip = a small swatch of its colour (HTML), wkTip = label and description
-const wkI=w=>(cyc()>1||w>cyc())&&(state.S.weekInfo||[])[w-1]||{};   // a staged week keeps its name also beside a cycle of one week (R-CYC-21)
-const wkCol=w=>wkI(w).color||null,wkDesc=w=>wkI(w).desc||'';
-const wkLabel=w=>L('wkName',{n:w})+(wkI(w).name?' · '+wkI(w).name:''),wkShortL=w=>L('wkShort',{n:w})+(wkI(w).name?' '+wkI(w).name:'');
-const wkTip=w=>wkLabel(w)+(wkDesc(w)?': '+wkDesc(w):'');
-const wkChip=w=>wkCol(w)?`<i class="wkchip" style="background:${esc(wkCol(w))}"></i>`:'';
-const wksText=ws=>ws.some(w=>wkI(w).name)?ws.map(wkLabel).join(', '):ws.length===1?L('wkName',{n:ws[0]}):L('wksName',{l:ws.slice(0,-1).join(', '),z:ws.at(-1)});
-const wksHTML=ws=>ws.map(wkChip).join('')+esc(wksText(ws));   // the peek card and agenda: chips before the weeks
-const wkNote=(e,s)=>{const ws=cyc()>1&&wksOf(e,s);return ws&&ws.length<cyc()?wksText(ws):''};
-const wkNoteH=(e,s)=>{const ws=cyc()>1&&wksOf(e,s);return ws&&ws.length<cyc()?wksHTML(ws):''};   // with the weeks' colour chips (R-CYC-17)   // the weeks of an occurrence that is not every week (R-CYC-02/03)
+export const wkI=w=>(cyc()>1||w>cyc())&&(state.S.weekInfo||[])[w-1]||{};   // a staged week keeps its name also beside a cycle of one week (R-CYC-21)
+export const wkCol=w=>wkI(w).color||null,wkDesc=w=>wkI(w).desc||'';
+export const wkLabel=w=>L('wkName',{n:w})+(wkI(w).name?' · '+wkI(w).name:''),wkShortL=w=>L('wkShort',{n:w})+(wkI(w).name?' '+wkI(w).name:'');
+export const wkTip=w=>wkLabel(w)+(wkDesc(w)?': '+wkDesc(w):'');
+export const wkChip=w=>wkCol(w)?`<i class="wkchip" style="background:${esc(wkCol(w))}"></i>`:'';
+export const wksText=ws=>ws.some(w=>wkI(w).name)?ws.map(wkLabel).join(', '):ws.length===1?L('wkName',{n:ws[0]}):L('wksName',{l:ws.slice(0,-1).join(', '),z:ws.at(-1)});
+export const wksHTML=ws=>ws.map(wkChip).join('')+esc(wksText(ws));   // the peek card and agenda: chips before the weeks
+export const wkNote=(e,s)=>{const ws=cyc()>1&&wksOf(e,s);return ws&&ws.length<cyc()?wksText(ws):''};
+export const wkNoteH=(e,s)=>{const ws=cyc()>1&&wksOf(e,s);return ws&&ws.length<cyc()?wksHTML(ws):''};   // with the weeks' colour chips (R-CYC-17)   // the weeks of an occurrence that is not every week (R-CYC-02/03)
 const evWks=e=>e.weeks||[...new Set(e.slots.map(s=>s.wk).filter(Boolean))].sort((a,b)=>a-b);
 function moveWeeks(d,lost,ks){   // a copy per week of ks, in a schedule (events) or a rhythm (phases, R-CYC-16) of its own, holding that week's occurrences as week 1 (R-CYC-10/13/21)
   ks.forEach(k=>{
@@ -370,11 +379,11 @@ function shrinkCycle(n,wi){   // wi: the weeks' info as edited in the cycle dial
   }},{label:L('cancel'),dismiss:true}]});
 }
 // the week switcher (R-CYC-04) in the grid's corner cell: which week of the cycle the grid shows
-function setWeek(w){
+export function setWeek(w){
   if(state.live){setAnchor(w);clearTimeout(lvRet);lvCloseAll(true);state.livePaused=false;state.focusD=today()}   // correcting Live View's week: today's day and now point in that week
   state.curWk=w;state.allWk=false;render();updLive()}
-function setAllWk(on){state.allWk=on&&cyc()>1&&!state.live;render()}   // every week of the cycle side by side (R-CYC-19)
-function wkMenu(anchor){rowMenu(anchor,(m,mi)=>{
+export function setAllWk(on){state.allWk=on&&cyc()>1&&!state.live;render()}   // every week of the cycle side by side (R-CYC-19)
+export function wkMenu(anchor){rowMenu(anchor,(m,mi)=>{
   for(let w=1;w<=cyc();w++){mi((w===state.curWk?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+wkChip(w),wkLabel(w)+(w===todayWk()?' · '+L('wkLiveMark'):''),()=>setWeek(w));
     if(wkDesc(w)){const b=m.lastElementChild;b.title=wkDesc(w);el('small','wkd',b).textContent=wkDesc(w)}}   // the description under its name (R-CYC-17)
   if(!state.live){mi((state.allWk?ICON_CHECK:'<span class="ic" style="margin:0"></span>'),L('wkAllM'),()=>setAllWk(true));m.lastElementChild.title=L('wkAllMTip');   // R-CYC-19
@@ -382,7 +391,7 @@ function wkMenu(anchor){rowMenu(anchor,(m,mi)=>{
 })}
 // R-DATA-10: the order of the workspaces is this browser's (prefs.wsOrder: ids); unknown ones keep their place after the known ones
 function orderWs(){const o=state.prefs.wsOrder||[],at=w=>{const i=o.indexOf(w.id);return i<0?1e9:i};state.WS=state.WS.map((w,i)=>[w,i]).sort((a,b)=>at(a[0])-at(b[0])||a[1]-b[1]).map(x=>x[0])}
-function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
+export function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
   state.WS.forEach(w=>{const d=wsData(w);mi((w.id===state.curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+(d.color?`<i class="wkchip" style="background:${esc(d.color)}"></i>`:''),w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id));
     if(d.desc){const b=m.lastElementChild;b.title=d.desc;el('small','wkd',b).textContent=d.desc}});   // its colour and description (R-DATA-10)
   el('hr','',m);mi(ICON_WS,L('wsMg'),()=>setTimeout(openWorkspaces,0));
@@ -391,7 +400,7 @@ function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
 /* import: files and links share one dialog (new workspace / insert / replace matching); nothing is ever merged */
 const matchesOf=w=>{const out=[],byId=w.id&&state.WS.find(x=>x.id===w.id);if(byId)out.push(byId);state.WS.forEach(x=>{if(x.name.toLowerCase()===w.name.toLowerCase()&&!out.includes(x))out.push(x)});return out};
 const flagLbl=(w,t)=>{const f=[];if(t.id===state.curId)f.push(L('flagActive'));if(w.id&&t.id===w.id)f.push(L('flagId'));if(t.name.toLowerCase()===w.name.toLowerCase())f.push(L('flagName'));return t.name+(f.length?'  ('+f.join(', ')+')':'')};
-function adoptWs(w,source){   // first-time visitor with an untouched default workspace: the imported workspace takes its place
+export function adoptWs(w,source){   // first-time visitor with an untouched default workspace: the imported workspace takes its place
   const r=newWs(w.name,w.data,source==='file');if(w.id)r.id=w.id;state.WS=[r];state.curId=r.id;state.S=r.data;state.undoSt=r.undo;state.redoSt=r.redo;state.selK=null;render();
 }
 function applyImport(w,target,source){   // target = existing workspace to replace, or null = import as a new workspace
@@ -426,7 +435,7 @@ function confirmReplace(w,tg,source){
   const body=el('div');el('p','',body).textContent=L('impConf1',{t:tg.name,s:w.name});el('p','note',body).textContent=L('impConfUndo');
   xdlg({title:L('impConfTitle'),body,buttons:[{label:L('impReplace'),cls:'p',fn:()=>applyImport(w,tg,source)},{label:L('cancel'),dismiss:true}]});
 }
-function openImport(w,source){   // files and links hold one workspace: import as new, insert into the current one, or replace an existing one
+export function openImport(w,source){   // files and links hold one workspace: import as new, insert into the current one, or replace an existing one
   const body=el('div'),d=w.data;
   el('p','',body).textContent=L('impBodyOne',{n:w.name,c:L('impCounts',{s:d.schedules.length,e:d.events.length,p:d.people.length,r:d.rhythms.length,h:d.phases.length})});
   const rd=el('div','radios',body);
@@ -441,7 +450,7 @@ function openImport(w,source){   // files and links hold one workspace: import a
 /* copy / move schedules (with their events) and rhythms (with their phases) to another workspace */
 function removeSchedule(d,s){d.schedules=d.schedules.filter(x=>x!==s);d.events.forEach(e=>e.schedules=e.schedules.filter(i=>i!==s.id));d.events=d.events.filter(e=>e.schedules.length)}
 function removeRhythm(d,r){d.rhythms=d.rhythms.filter(x=>x!==r);d.phases.forEach(p=>p.rhythms=p.rhythms.filter(i=>i!==r.id));d.phases=d.phases.filter(p=>p.rhythms.length)}
-function openTransfer(kind,obj){
+export function openTransfer(kind,obj){
   const others=state.WS.filter(w=>w.id!==state.curId);
   if(!others.length){toast(L('trNeed'));return}
   const body=el('div');el('label','',body).textContent=L('trTarget');
@@ -452,7 +461,7 @@ function openTransfer(kind,obj){
   xdlg({title:L('trTitle')+': '+(obj.name||obj.title),full:true,body,buttons:[{label:L('trGo'),cls:'p',fn:()=>{const tw=state.WS.find(w=>w.id===sel.value),mv=rm.checked;setTimeout(()=>doTransfer(kind,obj,tw,mv),0)}},{label:L('cancel'),dismiss:true}]});
 }
 // R-DATA-04: people copied to another workspace (name, colour, external mark); a name the target already has is shown and skipped. Copy only.
-function openPeopleCopy(q){
+export function openPeopleCopy(q){
   const others=state.WS.filter(w=>w.id!==state.curId);if(!others.length){toast(L('trNeed'));return}
   const body=el('div');el('label','',body).textContent=L('trTarget');const sel=el('select','',body);fillSel(sel,others.map(w=>[w.id,w.name]));sel.setAttribute('aria-label',L('trTarget'));
   el('div','partgh',body).textContent=L('pcWho');const list=el('div','partg pcl',body),pick=new Set([q.id]);
@@ -472,7 +481,7 @@ function askPeople(src,tw,pids,cb){
 }
 // events of the current workspace carried into workspace tw (R-DATA-04): the people they use are mapped first (askPeople), activity types go by
 // name, weeks beyond tw's cycle are asked about (R-CYC-13). place(td) gives the target schedule's id (creating it when needed); done() runs after
-function carryEvents(evs,tw,place,done){
+export function carryEvents(evs,tw,place,done){
   syncWs();const src=state.S,td=tw.data,ids=new Set();
   evs.forEach(e=>{e.involved.forEach(i=>ids.add(i));if(e.owner)ids.add(e.owner);e.slots.forEach(s=>{if(s.person)ids.add(s.person);(s.inv||[]).forEach(i=>ids.add(i))})});
   const pids=[...ids].filter(i=>src.people.some(q=>q.id===i));

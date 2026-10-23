@@ -1,6 +1,14 @@
-// The grid: render(), pointer interactions, touch, the peek card, zoom and dragging. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// The grid: render(), pointer interactions, touch, the peek card, zoom and dragging. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {DAY2,DAYS,L} from './i18n.js';
+import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
+import {absD,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
+import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,vs,weekDays} from './model.js';
+import {openAgenda,withWk} from './stats.js';
+import {renderSide} from './sidebar.js';
+import {openCopy,openDlg} from './dialog.js';
 /* ---------- grid ---------- */
-function render(){
+export function render(){
   if(state.curWk>cyc())state.curWk=cyc();   // a shorter cycle, another workspace, an undo (R-CYC-04)
   if(state.allWk&&(cyc()<2||state.live))state.allWk=false;   // every week side by side: only with a cycle, never live (R-CYC-19)
   if(!state.skipSide)renderSide();
@@ -40,7 +48,7 @@ function render(){
   const tm=el('div','times',g);tm.style.height=hrs*state.HH+'px';
   for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*state.HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e));return ovCache.get(e)};
-  const vsel=vrhythm(),fitList=[];laneMap=new Map();gutMap={};nestMap=new Map();sqMap=new Set();const sqc=new Map();
+  const vsel=vrhythm(),fitList=[];newMaps();const sqc=new Map();
   const lanePos=(x,v)=>{if(v.n<2)return;const l1=v.l1??v.l;x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + (100% - 6px - var(--gut,0px)) * ${v.l/v.n})`;x.style.right='auto';x.style.width=`calc((100% - 6px - var(--gut,0px)) * ${(l1-v.l+1)/v.n} - ${l1<v.n-1?2:0}px)`};
   // a nested box (R-NST-02) sits inside its host's lanes, indented on the left by NI px (also in a single-lane column)
   const insetPos=(x,v)=>{const l1=v.l1??v.l,w='(100% - 6px - var(--gut,0px))';if(v.n>1)x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + ${w} * ${v.l/v.n} + ${NI}px)`;x.style.right='auto';x.style.width=`calc(${w} * ${(l1-v.l+1)/v.n} - ${(l1<v.n-1?2:0)+NI}px)`};
@@ -186,13 +194,13 @@ function render(){
   drawNow();
   const hi=state.allWk?[...Array(cyc()).keys()].map(k=>withWk(k+1,hiddenInfo)).reduce((x,y)=>({n:x.n+y.n}),{n:0}):hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
   hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
-  updLive();if(lvOn){lvRects=[];lvOpen.slice().forEach(o=>lvDraw(o,false));if(!state.livePaused&&!liveBusy())liveScroll()}
+  updLive();if(lvOn){lvRects.length=0;lvOpen.slice().forEach(o=>lvDraw(o,false));if(!state.livePaused&&!liveBusy())liveScroll()}
   if(!state.printMode)updZoomUI();
 }
 /* ---------- pointer interactions ---------- */
 function colAt(x){const cs=[...document.querySelectorAll('.day')];let c=cs.find(c=>x<c.getBoundingClientRect().right)||cs[cs.length-1];atCol(c);return c}
 const atCol=c=>{if(state.allWk&&c&&c.dataset.w)state.curWk=+c.dataset.w};   // with every week side by side the column under the pointer is the week (R-CYC-19)
-const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/state.HH*60;
+export const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/state.HH*60;
 const snapM=m=>Math.round(m/SNAP)*SNAP;
 const rzMin=()=>((window.matchMedia&&matchMedia('(pointer:coarse)').matches)?16:7)/state.HH*60+1;
 /* touch: scroll natively; long-press (0.4 s) starts create / move / resize; tap opens */
@@ -250,7 +258,7 @@ function fitAll(list){
   const m1=list.map(fitMeasure);list.forEach((d,i)=>fitMove(d,m1[i]));
   const m2=list.map((d,i)=>m1[i]&&m1[i].mv?fitMeasure(d):m1[i]);list.forEach((d,i)=>fitApply(d,m2[i]));
 }
-function fitBox(d){fitAll([d])}
+export function fitBox(d){fitAll([d])}   // one box at a time: only tests/e2e/perf.spec.js uses it, to compare with fitAll
 // lip text that does not fit its phase gets smaller, 8 px and then 7 px, before it is cut short (R-PHS-10); every lip is measured before any of them changes
 function fitLips(g){
   let ls=[...g.querySelectorAll('.lip:not(.s0)')];
@@ -260,7 +268,7 @@ function fitLips(g){
 /* hover peek card (mouse only) */
 let peekT=null,peekKey='';
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}
-function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card (R-GRID-12): no schedules, warnings or how-to lines
+export function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card (R-GRID-12): no schedules, warnings or how-to lines
     const time=piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end);
     const inv=invOf(e,s).map(pTag).filter(Boolean),rows=[`<div class="pt1"><i style="background:${esc(colOf(e,s))}"></i>${s.person?pIc(s.person):''}${esc(e.title)}</div>`,`<div>${esc(time)}</div>`];
     if(wkNote(e,s))rows.push(`<div>${wkNoteH(e,s)}</div>`);
@@ -296,15 +304,15 @@ function peekMove(ev,di,col){
 }
 /* zoom: grid scale and grid text size (R-GRID-07) */
 // the size a Fit box produced: the drawn row height, or the drawn width of a week's day column (without the lip lane); clamped to its slider
-function fitted(k){const v=k.startsWith('rowH')?state.HH:state.focusD==null&&Math.round($('grid').querySelector('.day')?.getBoundingClientRect().width||0)||state.prefs[WK()];   // a focused day is not a week column
+export function fitted(k){const v=k.startsWith('rowH')?state.HH:state.focusD==null&&Math.round($('grid').querySelector('.day')?.getBoundingClientRect().width||0)||state.prefs[WK()];   // a focused day is not a week column
 return k.startsWith('rowH')?Math.min(120,Math.max(24,v)):Math.min(1000,Math.max(70,v))}
-function updZoomUI(){document.querySelectorAll('#sbin .zrow input[data-z]').forEach(i=>{if(!i.disabled)return;const k=i.dataset.z,h=k.startsWith('rowH'),v=h?state.HH:fitted(k);i.value=v;i.nextElementSibling.textContent=v+(h?' px/h':' px')})}
-function zoomRender(){
+export function updZoomUI(){document.querySelectorAll('#sbin .zrow input[data-z]').forEach(i=>{if(!i.disabled)return;const k=i.dataset.z,h=k.startsWith('rowH'),v=h?state.HH:fitted(k);i.value=v;i.nextElementSibling.textContent=v+(h?' px/h':' px')})}
+export function zoomRender(){
   const w=$('wrap'),hrs=(w.scrollTop+w.clientHeight/2)/state.HH,fx=(w.scrollLeft+w.clientWidth/2)/Math.max(1,w.scrollWidth);
   state.skipSide=true;render();state.skipSide=false;
   w.scrollTop=hrs*state.HH-w.clientHeight/2;w.scrollLeft=fx*w.scrollWidth-w.clientWidth/2;if(state.live&&!state.livePaused)liveScroll();
 }
-function withPrintScale(fn){
+export function withPrintScale(fn){
   const w=$('wrap'),st=w.scrollTop,sl=w.scrollLeft;state.printMode=true;state.skipSide=true;
   try{render();return fn()}finally{state.printMode=false;render();state.skipSide=false;w.scrollTop=st;w.scrollLeft=sl}
 }

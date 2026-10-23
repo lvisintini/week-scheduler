@@ -1,7 +1,14 @@
-// Sharing: links, encryption, saving to and loading from files and browser memory. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// Sharing: links, encryption, saving to and loading from files and browser memory. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {L} from './i18n.js';
+import {$,el,esc,uid} from './basics.js';
+import {FMT,WKEY,adoptWs,anyDirty,buildFile,cw,errKey,hist,initDefault,isDirty,isSealed,keyOf,loadStore,memGet,migrate,openImport,parseData,parseWorkspace,readStore,verOf,withStore,writeStore} from './data.js';
+import {fileDay,savePrefs,toast,xdlg} from './model.js';
+import {renderSide} from './sidebar.js';
+import {render} from './grid.js';
 /* ---------- shareable link: data lives in the URL fragment (#data=...), compressed when the browser supports it ---------- */
-const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
-const unb64u=str=>{str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const s=atob(str),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+export const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+export const unb64u=str=>{str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const s=atob(str),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
 async function inflate(bytes){
   const ds=new DecompressionStream('deflate-raw'),wr=ds.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});
   const rd=ds.readable.getReader(),chunks=[];let n=0;
@@ -9,7 +16,7 @@ async function inflate(bytes){
   const out=new Uint8Array(n);let o=0;chunks.forEach(c=>{out.set(c,o);o+=c.length});return out;
 }
 /* ---------- encryption (Web Crypto): PBKDF2-SHA256 -> AES-256-GCM. Links and exported files are always password-protected ---------- */
-const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
+export const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
 const PBKDF2_ITER=600000,ALPHA='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 function genPassword(){   // 25 random characters (~145 bits) in 5 groups, no look-alike characters, unbiased
   const out=[],buf=new Uint8Array(64);
@@ -30,7 +37,7 @@ async function encryptBytes(plain,pw,k){   // blob = [1][iterations u32][salt 16
   const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:head},k.key,plain));
   const out=new Uint8Array(33+ct.length);out.set(head);out.set(ct,33);return out;
 }
-const sealedOk=b=>b.length>=50&&b[0]===1;   // the shape of an encrypted blob, checked before asking for its password
+export const sealedOk=b=>b.length>=50&&b[0]===1;   // the shape of an encrypted blob, checked before asking for its password
 async function decryptBytes(blob,pw,k){   // k: a ready key, only for blobs sealed with it (another salt: the passphrase was changed elsewhere)
   if(blob[0]>1)throw new Error('newer');   // a later encryption layout
   if(!sealedOk(blob))throw new Error('format');
@@ -41,12 +48,12 @@ async function decryptBytes(blob,pw,k){   // k: a ready key, only for blobs seal
   try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:blob.slice(21,33),additionalData:head},key,blob.slice(33)))}catch(e){throw new Error('password')}
 }
 async function deflate(bytes){const cs=new CompressionStream('deflate-raw'),wr=cs.writable.getWriter();wr.write(bytes).catch(()=>{});wr.close().catch(()=>{});return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
-async function seal(obj,pw,k){   // JSON -> (deflate) -> encrypt
+export async function seal(obj,pw,k){   // JSON -> (deflate) -> encrypt
   const json=new TextEncoder().encode(JSON.stringify(obj));let flag=0,data=json;
   if(typeof CompressionStream!=='undefined'){flag=1;data=await deflate(json)}
   const inner=new Uint8Array(1+data.length);inner[0]=flag;inner.set(data,1);return encryptBytes(inner,pw,k);
 }
-async function unseal(blob,pw,k){
+export async function unseal(blob,pw,k){
   const inner=await decryptBytes(blob,pw,k);let data=inner.slice(1);
   if(inner[0]===1)data=await inflate(data);else if(inner[0]>1)throw new Error('newer');else if(inner[0]!==0)throw new Error('format');
   if(data.length>2e6)throw new Error('big');
@@ -66,8 +73,8 @@ function partOf(f,inc){
   c.people=c.people.filter(q=>used.has(q.id));const ty=new Set(c.events.map(e=>e.type).filter(Boolean));c.types=c.types.filter(t=>ty.has(t.id));
   return c;
 }
-const shareOf=(inc,anon)=>{let f=buildFile();if(inc)f=partOf(f,inc);return anon?anonymised(f):f};   // what a file or link holds
-function askPassword(blob,onOpen,onCancel){   // ask for the password of an encrypted file/link, retry on mistakes
+export const shareOf=(inc,anon)=>{let f=buildFile();if(inc)f=partOf(f,inc);return anon?anonymised(f):f};   // what a file or link holds
+export function askPassword(blob,onOpen,onCancel){   // ask for the password of an encrypted file/link, retry on mistakes
   const body=el('div');el('p','',body).textContent=L('pwAsk');
   const pw=el('input','',body);pw.type='password';pw.autocomplete='off';pw.style.cssText='width:100%;margin-top:8px';
   const sl=el('label','sopt',body),sc=el('input','',sl);sc.type='checkbox';sl.append(' '+L('pwShow'));sc.onchange=()=>{pw.type=sc.checked?'text':'password'};
@@ -83,7 +90,7 @@ function askPassword(blob,onOpen,onCancel){   // ask for the password of an encr
 }
 // what to include (R-SHARE-08): everything, or chosen schedules and rhythms, and only some people's activities. ics: the calendar export,
 // which has no phases (no Rhythms list) and is no copy of the workspace (its own summary, R-SHARE-09). inc() = null for everything
-function incPicker(body,ics){
+export function incPicker(body,ics){
   const inc={sch:new Set(state.S.schedules.map(s=>s.id)),rh:new Set(state.S.rhythms.map(r=>r.id)),ppl:new Set()};let part=false;
   const pb=el('div','partbox',body);el('div','parth',pb).textContent=L('partH');
   const ps=el('div','seg partsel',pb),pl=el('div','partl',pb),sum=el('p','note partsum',pb);
@@ -96,7 +103,7 @@ function incPicker(body,ics){
   drawPart();
   return {sum,inc:()=>part?inc:null};
 }
-function openProtect(kind){   // options + password for a link or file; files may also be saved unencrypted (links never)
+export function openProtect(kind){   // options + password for a link or file; files may also be saved unencrypted (links never)
   const cry=hasCrypto();if(!cry&&kind==='link'){alert(L('noCrypto'));return}
   let plain=!cry;
   const body=el('div'),intro=el('p','note',body);intro.textContent=L(kind==='link'?'protBodyLink':'protBodyFile');
@@ -136,7 +143,7 @@ async function openShare(pw,anon,inc){
   xdlg({title:L('shareTitle'),body,buttons:[{label:L('shareCopy'),cls:'p',fn:()=>{copy(link,0);return false}},{label:L('shareCopyPw'),fn:()=>{copy(pw,1);return false}},{label:L('closeB'),dismiss:true}]});
   setTimeout(()=>ta.select(),0);
 }
-async function handleShareLink(){
+export async function handleShareLink(){
   if(!location.hash.startsWith('#data='))return;
   const raw=location.hash.slice(6),clean=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
   const m=/^e(\d+)\./.exec(raw);
@@ -157,7 +164,7 @@ async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file
   if(!anon&&!inc)cw().lf=keyOf(state.S);   // an anonymised or partial copy is not a backup of this workspace
   toast(L('savedFile'));renderSide();
 }
-function loadMem(){  // reverts the current workspace to its saved copy in browser memory
+export function loadMem(){  // reverts the current workspace to its saved copy in browser memory
   return withStore(st=>{
     if(st&&verOf(st)>FMT){alert(L('memNewer'));return}
     const e=st&&Array.isArray(st.workspaces)&&st.workspaces.find(x=>x.id===state.curId);
@@ -165,12 +172,12 @@ function loadMem(){  // reverts the current workspace to its saved copy in brows
     try{const d=parseData(migrate(e,verOf(st)));hist();state.S=d;cw().lb=keyOf(d);render();toast(L('loadedMem'))}catch(_){alert(L('badFile'))}
   });
 }
-function restart(){
+export function restart(){
   if(anyDirty()&&!confirm(L('confRestart')))return;
   return withStore(st=>{loadStore(st);state.selK=null;state.editMode='events';render();toast(L('restarted'))});
 }
 const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}state.memKey=null;state.prefs.lvAnchor=Object.create(null);state.prefs.icsLast=Object.create(null);savePrefs()};
-function clearMem(){
+export function clearMem(){
   if(!confirm(L('confClear')))return;
   eraseMem();initDefault();state.selK=null;state.editMode='events';render();toast(L('clearedMem'));
 }
@@ -191,7 +198,7 @@ async function protectMem(pw){   // seals what is stored, or an empty store, so 
 async function changePass(old,pw){const plain=await storeWith(old),k=await newKey(pw),k0=state.memKey;state.memKey=k;try{await writeStore(plain)}catch(e){state.memKey=k0;throw e}}
 async function unprotectMem(old){const plain=await storeWith(old);state.memKey=null;localStorage.setItem(WKEY,JSON.stringify(plain))}
 // mode 'on': protect; 'change': the current passphrase and a new one; 'off': the current one, to store it readable again
-function openPassphrase(mode){
+export function openPassphrase(mode){
   const body=el('div');el('p','',body).textContent=L({on:'prBody',change:'chBody',off:'unBody'}[mode]);
   const cur=mode!=='on'?pwInput(body,'prCur','current-password'):null,p1=mode!=='off'?pwInput(body,'prNew','new-password'):null,p2=p1&&pwInput(body,'prAgain','new-password');
   const ins=[cur,p1,p2].filter(Boolean),sc=pwShowBox(body,ins);
@@ -210,7 +217,7 @@ function openPassphrase(mode){
   setTimeout(()=>ins[0].focus(),0);
 }
 // the page cannot go on without the passphrase, except by erasing browser memory; onOpen gets the plain store (null after erasing)
-function askUnlock(onOpen){
+export function askUnlock(onOpen){
   const st=readStore();if(!isSealed(st)){onOpen(st);return}   // (another tab removed the protection meanwhile)
   const body=el('div');el('p','',body).textContent=L('ulBody');
   const pw=pwInput(body,'ulPass','current-password');pwShowBox(body,[pw]);
@@ -227,7 +234,7 @@ function askUnlock(onOpen){
   xdlg({title:L('ulTitle'),body,keep:true,buttons:[{label:L('pwOpen'),cls:'p',fn:()=>{go();return false}}],onDismiss:()=>{if(!fin)setTimeout(()=>askUnlock(onOpen),0)}});
   setTimeout(()=>pw.focus(),0);
 }
-function lockNow(){   // drops the key and the data from this page; the passphrase opens them again
+export function lockNow(){   // drops the key and the data from this page; the passphrase opens them again
   if(anyDirty()&&!confirm(L('lockConf')))return;
   state.memKey=null;initDefault();state.selK=null;state.editMode='events';render();askUnlock(st=>{loadStore(st);render()});
 }

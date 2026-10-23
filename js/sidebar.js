@@ -1,10 +1,19 @@
-// The sidebar. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// The sidebar. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {L} from './i18n.js';
+import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
+import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
+import {loadMem} from './share.js';
+import {FH,FWK,RH,WK,applyPrefs,cyc,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
+import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
+import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
+import {openDlg} from './dialog.js';
 /* ---------- sidebar ---------- */
 function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
 function sbtn(parent,label,tip,fn,cls,icon){const b=el('button',cls||'',parent);if(icon)b.innerHTML=icon;b.append(label);b.title=tip;b.onclick=fn;return b}
 function h2(parent,text,tip){const h=el('h2','',parent);h.append(text+' ');if(tip){const t=el('span','tip',h);t.textContent='ⓘ';t.title=tip}return h}
 // a dialog row's grip (drag it, or focus it and use the arrow keys): rows() = the rows that can be reordered, move(from,to) reorders and redraws
-function rowGrip(r,k,rows,move,tip,lbl){
+export function rowGrip(r,k,rows,move,tip,lbl){
   const g=el('button','grip',r);g.type='button';g.innerHTML=ICON_GRIP;g.title=g.__t=tip;g.setAttribute('aria-label',lbl);
   g.onkeydown=ev=>{const d=ev.key==='ArrowUp'?-1:ev.key==='ArrowDown'?1:0;if(!d)return;ev.preventDefault();move(k,k+d)};
   g.onpointerdown=ev=>{if(ev.button)return;ev.preventDefault();const rs=rows();let to=k;r.classList.add('dragging');
@@ -14,7 +23,7 @@ function rowGrip(r,k,rows,move,tip,lbl){
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)};
   return g;
 }
-function rowMenu(anchor,build){
+export function rowMenu(anchor,build){
   document.querySelectorAll('.omenu').forEach(x=>x.remove());
   const m=el('div','omenu',document.body);
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true);renderSide()};
@@ -26,7 +35,7 @@ function rowMenu(anchor,build){
   m.style.top=Math.max(6,Math.min(r.bottom+4,innerHeight-m.offsetHeight-6))+'px';
   setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)});
 }
-const chip=c=>`<i style="background:${esc(c)}"></i>`;
+export const chip=c=>`<i style="background:${esc(c)}"></i>`;
 function schMenu(anchor,s){rowMenu(anchor,(m,mi)=>{
   mi(chip(s.color),L('mColor'),()=>pickColor(anchor,s.color,v=>{hist();s.color=v;render()}));
   const ow=el('div','oi opw',m);ow.title=L('opTip');ow.innerHTML=ICON_OPAC;
@@ -83,7 +92,7 @@ function secHead(parent,key,count,tipKey,ck,addFn,addTip){
   const tp=el('span','tip',h);tp.textContent='ⓘ';tp.title=L(tipKey);
   if(addFn){const a=el('button','eye',h);a.innerHTML=ICON_PLUS;a.title=L(addTip);a.onclick=addFn}
 }
-function renderSide(){
+export function renderSide(){
   const sb=$('sbin'),st=sb.scrollTop;sb.innerHTML='';
   const top=el('div','sbtop',sb);
   const fav=el('img','fav',top);fav.src=FAV;fav.alt='';
@@ -209,15 +218,15 @@ function delRhythm(rh){
   state.S.phases=state.S.phases.filter(p=>p.rhythms.length);
   render();
 }
-const wkSuf=()=>cyc()>1?' — '+(state.allWk?L('wkAllT'):wkLabel(state.curWk)):'';
-const wkH1=txt=>{const c=!state.allWk&&wkCol(state.curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
+export const wkSuf=()=>cyc()>1?' — '+(state.allWk?L('wkAllT'):wkLabel(state.curWk)):'';
+export const wkH1=txt=>{const c=!state.allWk&&wkCol(state.curWk);return c?`<h1 class="wkh" style="--wkc:${esc(c)}">${esc(txt)}</h1>`:'<h1>'+esc(txt)+'</h1>'};   // printed titles carry the week's colour (R-CYC-17)   // printed titles name the week of a cycle (R-CYC-12)
 function schedPage(){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
   const w=el('div');w.innerHTML=wkH1(L('printTitle')+wkSuf())+metaLine();w.append(c);return w;
 }
-function printSchedule(){doPrint(schedPage(),state.allWk)}   // every week side by side prints across the page (R-CYC-19)
+export function printSchedule(){doPrint(schedPage(),state.allWk)}   // every week side by side prints across the page (R-CYC-19)
 // fn drawn with one week shown (w), as when every week is side by side a page or day view is printed (R-CYC-19)
-function oneWeek(w,fn){const a=state.allWk,c=state.curWk;state.allWk=false;state.curWk=w;try{return fn()}finally{state.allWk=a;state.curWk=c;render()}}
+export function oneWeek(w,fn){const a=state.allWk,c=state.curWk;state.allWk=false;state.curWk=w;try{return fn()}finally{state.allWk=a;state.curWk=c;render()}}
 function printAll(){   // every week of the cycle, one page each (the focused day of each week while focused)
   const w0=state.curWk,a0=state.allWk,out=el('div');state.allWk=false;
   try{for(let w=1;w<=cyc();w++){state.curWk=w;const pg=state.focusD!=null?dayPage(state.focusD):schedPage();if(w>1)pg.className='pgb';out.append(pg)}}finally{state.curWk=w0;state.allWk=a0;render()}

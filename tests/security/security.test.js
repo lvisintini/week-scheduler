@@ -17,7 +17,7 @@ describe('R-SEC-01 Content-Security-Policy confines the page to itself', () => {
   it('the page has no inline script and no inline event handlers, which the policy would refuse', () => {
     expect(rawHtml).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/i); expect(rawHtml).not.toMatch(/\son[a-z]+=/i);
   });
-  it('the scripts, run one by one in the order of index.html, start the app without a single error', () => {
+  it('the modules, run in the order a browser runs them, start the app without a single error', () => {
     const a = openApp(); expect(a.log.errors).toEqual([]); expect(a.qa('.dh:not(.c)')).toHaveLength(7); expect(a.qa('script')).toHaveLength(scriptFiles.length);
   });
   it('it loads only its own files: the stylesheet and the scripts in js/, by relative address', () => {

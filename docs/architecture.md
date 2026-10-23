@@ -1,7 +1,7 @@
 # Code map
 
 ## Files
-The app is static files served as they are (no build): `index.html` (markup, the static dialogs, the CSP), `app.css` (all styles; `#pgStyle` in `index.html` is the print page size, set at runtime) and classic scripts in `js/`, loaded with `<script src defer>` in this order. They share **one global scope** (top-level `function`/`const`/`let` of every file are visible to the others), so a function may call one from any file, but a top-level statement that **runs at load** may only use what earlier files define. Not ES modules yet (parked). The state that several files share is one object, `state` (`js/state.js`); state that one file owns stays a private variable of that file.
+The app is static files served as they are (no build): `index.html` (markup, the static dialogs, the CSP), `app.css` (all styles; `#pgStyle` in `index.html` is the print page size, set at runtime) and ES modules in `js/` (R-CODE-01). `index.html` loads one, `<script type="module" src="js/main.js">`; each file imports by name what it uses from the others, one `import {…} from './x.js';` line per file at the top, and exports what they use. The imports are circular (most files use each other), and a browser runs the files depth first from `main.js` (`moduleOrder()` in `tests/helpers/modules.js` computes the same order), so **code at the top level of a file only defines things** and may read `state`; whatever uses another file at startup is a function that `main.js` calls first: `loadPrefs` (the per-browser prefs, model.js), `initLive` (Live View's listeners, model.js), `initDialog` (the event dialog's controls and day table, dialog.js). `tests/unit/modules.test.js` checks these rules and ESLint (`no-undef`, `no-import-assign`) the imports. The state that several files share is one object, `state` (`js/state.js`, the only file without imports); state that one file owns stays a private variable of that file (changed only by that file: `newMaps()` gives `render()` fresh lane maps).
 
 | File | Holds |
 |---|---|
@@ -11,14 +11,14 @@ The app is static files served as they are (no build): `index.html` (markup, the
 | `js/data.js` | history (`hist`, `undo`/`redo`, `restoreState`), `FMT`/`MIG`/`migrate`/`parseData`, workspaces, browser memory (`readStore`, `withStore`, `writeStore`, `memKey`/`isSealed` for a protected store, R-DATA-11), the cycle of weeks (`setCycle`, `reorderWeeks`, `shrinkCycle`…), import and transfers |
 | `js/share.js` | what to include (`incPicker`, `partOf`, `shareOf`), links (`inflate`), encryption (`seal`/`unseal` with an optional reused key, `newKey`/`keyFor`, `sealedOk`), `askPassword`, `openProtect`, `openShare`, `saveFile`, `loadMem`, `restart`, `clearMem`/`eraseMem`, the passphrase of browser memory (`askUnlock`, `openPassphrase`, `protectMem`/`changePass`/`unprotectMem`, `lockNow`) |
 | `js/ics.js` | the calendar export (R-SHARE-09): `icsText` (a workspace record → the `.ics` text; pure), `icsFold`, `icsEsc`, `openIcs` (the dialog), `saveIcs` (the download) |
-| `js/model.js` | `prefs`, theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
+| `js/model.js` | the prefs (`loadPrefs`, `savePrefs`, `applyPrefs`), theme, `toast`, helpers (`fmt`, `piecesOf`, weeks `wksOf`/`inWk`, flexible time, `overlapSet`), lanes, nesting, Live View, `xdlg`, the agendas' helpers |
 | `js/stats.js` | statistics (`personStats`, `openStats`, turns), agendas and printing |
 | `js/sidebar.js` | `renderSide` and the sidebar menus |
 | `js/grid.js` | `render`, pointer and touch interactions, the peek card, zoom, dragging |
-| `js/dialog.js` | the event/phase dialog (`openDlg`, the day table) and the copy dialog |
-| `js/main.js` | wiring and startup (runs last): a protected browser memory asks `askUnlock` first, then `afterStore` (today's week, Live View, a shared link) |
+| `js/dialog.js` | the event/phase dialog (`openDlg`, the day table `rows`/`dayRow`, the controls' wiring `initDialog` with the handlers `saveDlg`, `delDlg`, `dragDlg`, `gripKey`, `tabKey`) and the copy dialog |
+| `js/main.js` | the entry: wiring and startup (runs last; calls `loadPrefs`, `initLive`, `initDialog` first): a protected browser memory asks `askUnlock` first, then `afterStore` (today's week, Live View, a shared link) |
 
-The test harness (`tests/helpers/app.js`) gives jsdom one document with `app.css` and each script inlined in this order (one `<script>` per file, as a browser runs them); `tests/e2e/serve.js` serves exactly these files, like GitHub Pages.
+The jsdom harness (`tests/helpers/app.js`) gives jsdom, which can't run modules, one document with `app.css` and each module inlined as a classic script (imports and `export` removed, strict) in the order a browser runs them, so the tests reach every name with `a.ev('…')`; the Playwright tests reach them through a test-only bridge (`bridge` in `tests/e2e/helpers.js`); `tests/e2e/serve.js` serves exactly these files, like GitHub Pages.
 
 ## Map
 
@@ -48,6 +48,7 @@ The test harness (`tests/helpers/app.js`) gives jsdom one document with `app.css
 
 Implementation names that the requirement files describe in words (functions, variables, constants, CSS classes and custom properties), listed under the requirement they implement. Search `index.html` for them.
 
+- R-CODE-01: `state` (`js/state.js`), `loadPrefs`, `initLive`, `initDialog`, `newMaps`; tests: `moduleOrder`/`classic` (`tests/helpers/modules.js`), `bridge`/`bridged` (`tests/e2e/helpers.js`)
 - R-CYC-03: `normWk`
 - R-CYC-04: `curWk`, `.wkb`, `wkMenu`
 - R-CYC-05: `todayWk`, `wkAt` (the week of any date, also used by the calendar export), `liveWk`, `setAnchor`, `askLiveWeek` (optional texts, for the calendar export), `prefs.lvAnchor`

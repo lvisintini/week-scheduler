@@ -33,6 +33,7 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `data.md` | R-DATA-01…11, the workspace data shape |
 | `sharing.md` | R-SHARE-01…09 |
 | `security.md` | R-SEC-01…05 |
+| `product.md` | R-CODE-01 |
 | `printing-i18n.md` | R-PRN-01…04, R-I18N-01…02 |
 
 The prefix of an ID is where the requirement was first filed, not necessarily the file it lives in now (e.g. R-EVT-13 is in `lanes.md`); IDs are never renumbered.

@@ -1,87 +1,98 @@
-// Model and view helpers: per-browser prefs, time and pieces, weeks, flexible time, lanes, nesting, Live View, the generic dialog. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
-try{Object.assign(state.prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
-state.prefs.rowH=Math.min(120,Math.max(24,+state.prefs.rowH||48));state.prefs.colW=Math.min(1000,Math.max(70,+state.prefs.colW||110));state.prefs.fitW=state.prefs.fitW!==false;state.prefs.fitH=state.prefs.fitH!==false;state.prefs.colWP=Math.min(1000,Math.max(70,+state.prefs.colWP||110));state.prefs.fitWP=state.prefs.fitWP!==false;state.prefs.rowHP=Math.min(120,Math.max(24,+state.prefs.rowHP||100));state.prefs.fitHP=state.prefs.fitHP===true;state.prefs.txt=Math.min(160,Math.max(80,Math.round((+state.prefs.txt||100)/10)*10));   // fillW and fit are retired keys: no longer read (R-GRID-07)
+// Model and view helpers: per-browser prefs, time and pieces, weeks, flexible time, lanes, nesting, Live View, the generic dialog. ES module (docs/architecture.md).
+// this browser's view settings, read once at startup (main.js); every value is checked, as anything stored can be edited
+import {state} from './state.js';
+import {L} from './i18n.js';
+import {$,ICON_CAM,ICON_STOP,SNAP,el,esc,normHex,tyOf} from './basics.js';
+import {FMT,PKEY,wkLabel} from './data.js';
+import {clearMem,lockNow,openPassphrase,restart} from './share.js';
+import {minAt,peekRows,render} from './grid.js';
+import {fillSel} from './dialog.js';
+import {setLang} from './main.js';
+export function loadPrefs(){
+  try{Object.assign(state.prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+  state.prefs.rowH=Math.min(120,Math.max(24,+state.prefs.rowH||48));state.prefs.colW=Math.min(1000,Math.max(70,+state.prefs.colW||110));state.prefs.fitW=state.prefs.fitW!==false;state.prefs.fitH=state.prefs.fitH!==false;state.prefs.colWP=Math.min(1000,Math.max(70,+state.prefs.colWP||110));state.prefs.fitWP=state.prefs.fitWP!==false;state.prefs.rowHP=Math.min(120,Math.max(24,+state.prefs.rowHP||100));state.prefs.fitHP=state.prefs.fitHP===true;state.prefs.txt=Math.min(160,Math.max(80,Math.round((+state.prefs.txt||100)/10)*10));   // fillW and fit are retired keys: no longer read (R-GRID-07)
+  {const o=state.prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});state.prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
+  {const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
+  state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
+  state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
+}
 // a phone-sized window has its own row height (R-GRID-07): 100 px per hour and Fit height off by default, about 7 hours on the screen
-const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
+export const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
 // and its own width (R-GRID-07): Fit width follows the view there, on in the day view and off in the week view (the column width kept)
-const WK=()=>phone()?'colWP':'colW',FWK=()=>phone()?'fitWP':'fitW';
-const phoneFit=()=>{if(phone()&&state.prefs.fitWP!==(state.focusD!=null)){state.prefs.fitWP=state.focusD!=null;savePrefs()}};
-{const o=state.prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});state.prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
-{const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
-state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
-state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
-const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(state.prefs))}catch(e){}};
-function applyTheme(){const h=document.documentElement;if(state.prefs.theme==='light'||state.prefs.theme==='dark')h.dataset.theme=state.prefs.theme;else delete h.dataset.theme}
-const phone=()=>!!(window.matchMedia&&matchMedia('(max-width:600px)').matches);   // a phone-sized window (R-UI-13)
-function applyPrefs(){$('sb').style.setProperty('--sbw',state.prefs.w+'px');$('sb').classList.toggle('collapsed',!!state.prefs.collapsed)}
-function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
+export const WK=()=>phone()?'colWP':'colW',FWK=()=>phone()?'fitWP':'fitW';
+export const phoneFit=()=>{if(phone()&&state.prefs.fitWP!==(state.focusD!=null)){state.prefs.fitWP=state.focusD!=null;savePrefs()}};
+export const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(state.prefs))}catch(e){}};
+export function applyTheme(){const h=document.documentElement;if(state.prefs.theme==='light'||state.prefs.theme==='dark')h.dataset.theme=state.prefs.theme;else delete h.dataset.theme}
+export const phone=()=>!!(window.matchMedia&&matchMedia('(max-width:600px)').matches);   // a phone-sized window (R-UI-13)
+export function applyPrefs(){$('sb').style.setProperty('--sbw',state.prefs.w+'px');$('sb').classList.toggle('collapsed',!!state.prefs.collapsed)}
+export function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
   (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
   t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),acts?7000:2200)}
 /* ---------- helpers ---------- */
-const qa=s=>[...document.querySelectorAll(s)];
-const pad=n=>String(n).padStart(2,'0');
-const fileDay=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};   // today's local date, in the names of downloaded files
-const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!state.prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
-const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
-const endLabel=m=>fmtEnd(m);   // the End list says what boxes, agendas and tooltips say: midnight closes its day, later ends carry (Next day) (R-REP-04)
-const hourLabel=h=>state.prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
-const vs=()=>state.prefs.showEarly?0:5;
+export const qa=s=>[...document.querySelectorAll(s)];
+export const pad=n=>String(n).padStart(2,'0');
+export const fileDay=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};   // today's local date, in the names of downloaded files
+export const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!state.prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
+export const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
+export const endLabel=m=>fmtEnd(m);   // the End list says what boxes, agendas and tooltips say: midnight closes its day, later ends carry (Next day) (R-REP-04)
+export const hourLabel=h=>state.prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
+export const vs=()=>state.prefs.showEarly?0:5;
 const pvis=id=>{const p=state.S.people.find(x=>x.id===id);return !!p&&p.visible};
-const pname=id=>(state.S.people.find(p=>p.id===id)||{}).name||'';
+export const pname=id=>(state.S.people.find(p=>p.id===id)||{}).name||'';
 // no responsible person -> always shown; otherwise shown if the responsible person or any involved person is visible
 // the grid's filters: the activity type's eye (R-TYP-04; untyped events always pass) and the people filter (R-PPL-01); statistics use neither
 const tvis=e=>{const t=tyOf(e);return !t||t.visible!==false};
-const slotVisible=(e,s)=>tvis(e)&&(!s.person||pvis(s.person)||invOf(e,s).some(pvis));
-const vrhythm=()=>state.S.rhythms.find(s=>s.visible);
-const phVis=p=>{const v=vrhythm();return !!v&&p.rhythms.includes(v.id)};
-const eVis=e=>e.rhythms?phVis(e):visible(e);
-const eLock=e=>e.rhythms?false:isLocked(e);
-const sVis=(e,s)=>e.rhythms?true:slotVisible(e,s);
-const act=()=>state.editMode==='phases'?state.S.phases:state.S.events;
+export const slotVisible=(e,s)=>tvis(e)&&(!s.person||pvis(s.person)||invOf(e,s).some(pvis));
+export const vrhythm=()=>state.S.rhythms.find(s=>s.visible);
+export const phVis=p=>{const v=vrhythm();return !!v&&p.rhythms.includes(v.id)};
+export const eVis=e=>e.rhythms?phVis(e):visible(e);
+export const eLock=e=>e.rhythms?false:isLocked(e);
+export const sVis=(e,s)=>e.rhythms?true:slotVisible(e,s);
+export const act=()=>state.editMode==='phases'?state.S.phases:state.S.events;
 const lum=c=>{const v=[1,3,5].map(i=>{const x=parseInt(c.slice(i,i+2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
-const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/.05>1.05/(L+.05)?'#000':'#fff'};   // black or white, whichever contrasts more: always at least 4.58:1 (WCAG contrast (relative luminance)
-const visible=e=>e.schedules.some(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.visible});
-const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.locked});
-const evOp=e=>Math.max(...e.schedules.map(id=>state.S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
+export const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/.05>1.05/(L+.05)?'#000':'#fff'};   // black or white, whichever contrasts more: always at least 4.58:1 (WCAG contrast (relative luminance)
+export const visible=e=>e.schedules.some(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.visible});
+export const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.locked});
+export const evOp=e=>Math.max(...e.schedules.map(id=>state.S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
 const W=10080;
-const piecesOf=s=>{const p=[{p:0,day:s.day,a:s.start,b:Math.min(s.end,1440)}];if(s.end>1440)p.push({p:1,day:(s.day+1)%7,a:0,b:s.end-1440});return p};
+export const piecesOf=s=>{const p=[{p:0,day:s.day,a:s.start,b:Math.min(s.end,1440)}];if(s.end>1440)p.push({p:1,day:(s.day+1)%7,a:0,b:s.end-1440});return p};
 /* a cycle of several weeks (R-CYC): the grid shows week curWk (view state, never stored, R-CYC-04). An event happens in the weeks of its
    pattern (event.weeks, absent = every week) or each repetition in its own week (slot.wk); phases are weekly (R-CYC-16). */
-const cyc=()=>state.S.cycle||1;
+export const cyc=()=>state.S.cycle||1;
 /* staged weeks (R-CYC-21): a workspace keeps pool weeks; 1..cycle are the cycle, the rest are staged after it, kept but never shown, counted
    or changed by edits in the cycle (R-CYC-22). An event's pattern and a time's week may name staged weeks; wksOf gives only the cycle's. */
-const poolOf=d=>Math.max(d.cycle||1,d.pool||1),kept=()=>poolOf(state.S);
-const inCyc=k=>k<=cyc(),stgSl=s=>s.wk>cyc();   // stgSl: a time of a staged week
-const cycSl=sl=>sl.filter(s=>!stgSl(s));
-const wksOf=(e,s)=>{const w=s&&s.wk?[s.wk]:e.weeks||null;return w&&kept()>cyc()?w.filter(inCyc):w};   // null = every week (events and phases alike, R-CYC-16)
-const stgWks=e=>{const n=cyc(),w=e.slots.some(x=>x.wk)?e.slots.map(x=>x.wk):e.weeks||[...Array(kept()).keys()].map(k=>k+1);return [...new Set(w.filter(k=>k>n))].sort((a,b)=>a-b)};   // the staged weeks it happens in (R-CYC-23)
+export const poolOf=d=>Math.max(d.cycle||1,d.pool||1),kept=()=>poolOf(state.S);
+export const inCyc=k=>k<=cyc(),stgSl=s=>s.wk>cyc();   // stgSl: a time of a staged week
+export const cycSl=sl=>sl.filter(s=>!stgSl(s));
+export const wksOf=(e,s)=>{const w=s&&s.wk?[s.wk]:e.weeks||null;return w&&kept()>cyc()?w.filter(inCyc):w};   // null = every week (events and phases alike, R-CYC-16)
+export const stgWks=e=>{const n=cyc(),w=e.slots.some(x=>x.wk)?e.slots.map(x=>x.wk):e.weeks||[...Array(kept()).keys()].map(k=>k+1);return [...new Set(w.filter(k=>k>n))].sort((a,b)=>a-b)};   // the staged weeks it happens in (R-CYC-23)
 const onCyc=(e,s)=>{const w=wksOf(e,s);return !w||w.length>0};   // happens in some week of the cycle
 const prevWk=w=>(w+cyc()-2)%cyc()+1;
 // does piece q of repetition s appear in week w? The part after midnight of a Sunday lies in the next week (R-CYC-06)
-const inWk=(e,s,q,w=state.curWk)=>{const ws=wksOf(e,s);return !ws||ws.includes(q.p&&s.day===6?prevWk(w):w)};
+export const inWk=(e,s,q,w=state.curWk)=>{const ws=wksOf(e,s);return !ws||ws.includes(q.p&&s.day===6?prevWk(w):w)};
 /* flexible start/end (R-EVT-15): slot.fs / slot.fe = flexible minutes after the start / before the end (stored only when > 0).
    The slot keeps its outer times; the core is what is left. Only cores count for clashes (stripes, ⚠, double-booked statistics).
    "Around these times" (R-EVT-12) is all margin: it has no core (unless it is squeezed out, see sqPick). */
 const coreOf=s=>s.flex?[s.start,s.start]:[s.start+(s.fs||0),s.end-(s.fe||0)];
-function fitMg(s){   // keep at least 15 minutes of core: shrink the end margin first, then the start margin
+export function fitMg(s){   // keep at least 15 minutes of core: shrink the end margin first, then the start margin
   let fs=s.fs||0,fe=s.fe||0;const over=fs+fe-(s.end-s.start-SNAP);
   if(over>0){const d=Math.min(fe,over);fe-=d;fs=Math.max(0,fs-(over-d))}
   if(fs>0)s.fs=fs;else delete s.fs;if(fe>0)s.fe=fe;else delete s.fe;return s;
 }
-function setMg(s,k,v){   // k = 'fs' or 'fe': set that margin, keeping 15 minutes of core; 0 removes it
+export function setMg(s,k,v){   // k = 'fs' or 'fe': set that margin, keeping 15 minutes of core; 0 removes it
   v=Math.max(0,Math.min(v,s.end-s.start-(s[k==='fs'?'fe':'fs']||0)-SNAP));if(v>0)s[k]=v;else delete s[k];return s;
 }
 // where the core of a repetition starts ('fs') or ends ('fe') within piece q, when that edge has a margin beside it and lies in q (R-EVT-15)
-const coreEdge=(s,q,k)=>{if(s.flex||!s[k])return null;const x=coreOf(s)[k==='fs'?0:1]-1440*q.p;return x>=q.a&&x<=q.b?x:null};
-const coreIn=(s,q)=>{const o=q.p*1440,[c0,c1]=coreOf(s);return [Math.max(q.a,c0-o),Math.min(q.b,c1-o)]};   // core within a piece; empty when [0] >= [1]
-const fmtMg=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'');
-const edgeNote=s=>[s.fs&&L('fsNote',{a:fmtEnd(s.start),b:fmtEnd(s.start+s.fs)}),s.fe&&L('feNote',{a:fmtEnd(s.end-s.fe),b:fmtEnd(s.end)})].filter(Boolean).join(' · ');
+export const coreEdge=(s,q,k)=>{if(s.flex||!s[k])return null;const x=coreOf(s)[k==='fs'?0:1]-1440*q.p;return x>=q.a&&x<=q.b?x:null};
+export const coreIn=(s,q)=>{const o=q.p*1440,[c0,c1]=coreOf(s);return [Math.max(q.a,c0-o),Math.min(q.b,c1-o)]};   // core within a piece; empty when [0] >= [1]
+export const fmtMg=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'');
+export const edgeNote=s=>[s.fs&&L('fsNote',{a:fmtEnd(s.start),b:fmtEnd(s.start+s.fs)}),s.fe&&L('feNote',{a:fmtEnd(s.end-s.fe),b:fmtEnd(s.end)})].filter(Boolean).join(' · ');
 // the core of a repetition (win: its whole window) on the timeline of the whole cycle (R-CYC-06): one interval per week it happens in, wrapping at the end
 const ivs=(s,e,win)=>{const n=cyc(),Wn=W*n,ws=(e&&wksOf(e,s))||[...Array(n).keys()].map(k=>k+1),[c0,c1]=win?[s.start,s.end]:coreOf(s);if(c1<=c0)return [];
   return ws.flatMap(k=>{const a=((k-1)*7+s.day)*1440+c0,b=a+c1-c0;return b>Wn?[[a,Wn],[0,b-Wn]]:[[a,b]]})};
 // repetitions of one event whose cores overlap and that clash by the people rule (R-REP-05, R-EVT-10): repetitions performed by
 // different people who share nobody are parallel, not a problem; phases have no people, so theirs always clash
-function overlapSet(e,slots=e.slots){
+export function overlapSet(e,slots=e.slots){
   const out=new Set();
   for(let i=0;i<slots.length;i++)for(let j=i+1;j<slots.length;j++)
     if(ivs(slots[i],e).some(([a,b])=>ivs(slots[j],e).some(([c,d])=>a<d&&c<b))&&clash({e,s:slots[i]},{e,s:slots[j]})){out.add(slots[i]);out.add(slots[j])}
@@ -93,34 +104,34 @@ function overlapSet(e,slots=e.slots){
 /* side-by-side layout of one day column. Overlapping occurrences that may clash (a shared person — responsible or
    involved — or either without a responsible person; repetitions of one event follow the same rule) are bundled and drawn on top of each other with stripes; bundles that overlap in time but share
    nobody are placed next to each other in lanes, packed per group of overlapping bundles, ordered by the People list. */
-const invOf=(e,s)=>s&&s.inv||e.involved||[];   // the occurrence's involved people: its own list, else the event's default (R-EVT-21)
+export const invOf=(e,s)=>s&&s.inv||e.involved||[];   // the occurrence's involved people: its own list, else the event's default (R-EVT-21)
 // an occurrence's colour (R-EVT-22): its own, the performer's ('p', the event's when nobody performs it), the activity type's ('t', the
 // event's when it has no type), else the event's
 const colRaw=(e,s)=>{const c=s&&s.col;if(c==='p'){const q=s.person&&state.S.people.find(x=>x.id===s.person);return q?q.color:e.color}if(c==='t'){const t=tyOf(e);return t?t.color:e.color}return c||e.color};
 // what is drawn: Tools can colour every occurrence by its activity type or by its performer for a while (R-UI-11); without one, the
 // statistics' "No type" grey. The stored colours (colRaw, which the dialog shows) are untouched.
-const NOTY='#9aa0a6';
-const colOf=(e,s)=>{if(state.prefs.colBy==='t'){const t=tyOf(e);return t?t.color:NOTY}if(state.prefs.colBy==='p'){const q=s&&s.person&&state.S.people.find(x=>x.id===s.person);return q?q.color:NOTY}return colRaw(e,s)};
+export const NOTY='#9aa0a6';
+export const colOf=(e,s)=>{if(state.prefs.colBy==='t'){const t=tyOf(e);return t?t.color:NOTY}if(state.prefs.colBy==='p'){const q=s&&s.person&&state.S.people.find(x=>x.id===s.person);return q?q.color:NOTY}return colRaw(e,s)};
 const pplOf=it=>[it.s.person,...(it.e.oncall?[]:invOf(it.e,it.s))].filter(Boolean);   // people on call (R-EVT-16) are available, not busy: they never make it clash
 // two occurrences clash (R-EVT-10) when either has no responsible person (it concerns everyone) or they share a person; being the same event does not count
 const clash=(x,y)=>!x.s.person||!y.s.person||(p=>pplOf(y).some(q=>p.includes(q)))(pplOf(x));
-const isExt=id=>{const q=state.S.people.find(x=>x.id===id);return !!q&&!!q.external};
-const ourPeople=()=>state.S.people.filter(q=>!q.external);   // external people (R-PPL-03) are left out of the statistics
-const isBg=(e,s)=>!e.rhythms&&(!!e.bg||!!e.away);   // drawn as a strip (R-EVT-17): marked "In the background" (R-EVT-19) or "Away" (R-EVT-24)
+export const isExt=id=>{const q=state.S.people.find(x=>x.id===id);return !!q&&!!q.external};
+export const ourPeople=()=>state.S.people.filter(q=>!q.external);   // external people (R-PPL-03) are left out of the statistics
+export const isBg=(e,s)=>!e.rhythms&&(!!e.bg||!!e.away);   // drawn as a strip (R-EVT-17): marked "In the background" (R-EVT-19) or "Away" (R-EVT-24)
 /* Away (R-EVT-24): its performer and involved people are not at home. An Away strip clashes with an occurrence whose core overlaps its core
    and that names an away person (performer or involved, on call too) or has no responsible person (it concerns everyone). */
-const isAway=e=>!e.rhythms&&!!e.away;
-const awayPpl=(e,s)=>[s.person,...invOf(e,s)].filter(Boolean);
-const awayHits=(it,aws)=>aws.filter(a=>a.e!==it.e&&a.c0<a.c1&&it.c0<it.c1&&a.c0<it.c1&&it.c0<a.c1&&(!it.s.person||[it.s.person,...invOf(it.e,it.s)].some(p=>awayPpl(a.e,a.s).includes(p))));
+export const isAway=e=>!e.rhythms&&!!e.away;
+export const awayPpl=(e,s)=>[s.person,...invOf(e,s)].filter(Boolean);
+export const awayHits=(it,aws)=>aws.filter(a=>a.e!==it.e&&a.c0<a.c1&&it.c0<it.c1&&a.c0<it.c1&&it.c0<a.c1&&(!it.s.person||[it.s.person,...invOf(it.e,it.s)].some(p=>awayPpl(a.e,a.s).includes(p))));
 // the Away pieces of a day of week w as drawn (visible schedules, people and type filters)
 const awayPieces=(di,w=state.curWk)=>state.S.events.filter(e=>isAway(e)&&visible(e)).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q,w)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,c0,c1}})));
-const awayOf=(e,s,q,w=state.curWk)=>{if(isBg(e,s))return [];const [c0,c1]=sqOf(e,s,q.p,w)?[q.a,q.b]:coreIn(s,q);return awayHits({e,s,c0,c1},awayPieces(q.day,w))};
-const awayLine=a=>L('awHit',{n:awayPpl(a.e,a.s).map(pname).filter(Boolean).join(', '),t:a.e.title});
+export const awayOf=(e,s,q,w=state.curWk)=>{if(isBg(e,s))return [];const [c0,c1]=sqOf(e,s,q.p,w)?[q.a,q.b]:coreIn(s,q);return awayHits({e,s,c0,c1},awayPieces(q.day,w))};
+export const awayLine=a=>L('awHit',{n:awayPpl(a.e,a.s).map(pname).filter(Boolean).join(', '),t:a.e.title});
 /* nested activities (R-NST-01): an occurrence of an event marked "nest" whose core lies entirely within the windows of other activities of
    its responsible person (responsible or involved, not on call; one or several back to back) is done during them: drawn inside, never a clash.
    its = the pieces of one day {e,s,start,end,c0,c1} without background strips; returns Map nested piece -> host (the one covering the core's start).
    Hosts are never nested events themselves (no chains). */
-function nestPick(its){
+export function nestPick(its){
   const out=new Map();
   its.forEach(x=>{
     const [c0,c1]=x.s.flex?[x.start,x.end]:[x.c0,x.c1];   // "around these times" has no core: its whole window must be covered (R-EVT-12)
@@ -132,15 +143,15 @@ function nestPick(its){
   });
   return out;
 }
-const nkey=(e,s,p)=>e.id+'|'+e.slots.indexOf(s)+'|'+p;
+export const nkey=(e,s,p)=>e.id+'|'+e.slots.indexOf(s)+'|'+p;
 // the pieces of a day for nestPick: visible schedules; vis = also the people filter (as drawn)
-const dayPieces=(di,vis,w=state.curWk)=>state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q,w)&&(!vis||slotVisible(e,s))&&!isBg(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,start:q.a,end:q.b,c0,c1}})));
-const nestOfDay=(di,vis,w=state.curWk)=>new Map([...nestPick(dayPieces(di,vis,w))].map(([x,h])=>[nkey(x.e,x.s,x.piece),{x,h}]));
+export const dayPieces=(di,vis,w=state.curWk)=>state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q,w)&&(!vis||slotVisible(e,s))&&!isBg(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,start:q.a,end:q.b,c0,c1}})));
+export const nestOfDay=(di,vis,w=state.curWk)=>new Map([...nestPick(dayPieces(di,vis,w))].map(([x,h])=>[nkey(x.e,x.s,x.piece),{x,h}]));
 /* "around these times" (R-EVT-12) is all margin, so what overlaps it does not clash with it, until no minute is left: an occurrence whose
    every piece is covered by the cores of occurrences it clashes with (R-EVT-10) and by Away strips of its people (R-EVT-24) is squeezed out
    and counts as a core again (stripes, ⚠). its = the pieces of one day {e,s,piece,start,end,c0,c1}, aws = its Away pieces; returns
    Map flexible piece -> the titles of what covers it. Only real cores cover: a squeezed piece never squeezes another. */
-const covers=(a,b,iv)=>{let t=a;for(const [x,y] of [...iv].sort((p,q)=>p[0]-q[0])){if(x>t)break;if(y>t)t=y}return t>=b};   // does the union of the intervals cover [a, b]?
+export const covers=(a,b,iv)=>{let t=a;for(const [x,y] of [...iv].sort((p,q)=>p[0]-q[0])){if(x>t)break;if(y>t)t=y}return t>=b};   // does the union of the intervals cover [a, b]?
 function sqPick(its,aws){
   const out=new Map(),on=(x,a,b)=>a<b&&a<x.end&&x.start<b;
   its.forEach(x=>{if(!x.s.flex||isBg(x.e,x.s))return;
@@ -151,7 +162,7 @@ function sqPick(its,aws){
 }
 // is the occurrence of s whose piece `piece` is shown in week w squeezed out? Every piece must be (past midnight too), and a nested one never is
 // (R-NST-01). Returns the titles of what covers it, or null; cache: day|week -> that day's pieces, shared by the calls of one redraw
-const sqOf=(e,s,piece,w=state.curWk,cache=new Map())=>{
+export const sqOf=(e,s,piece,w=state.curWk,cache=new Map())=>{
   if(!s.flex||isBg(e,s))return null;const w0=piece&&s.day===6?prevWk(w):w,ts=new Set();
   for(const q of piecesOf(s)){const wq=q.p&&s.day===6?w0%cyc()+1:w0,k=q.day+'|'+wq;
     if(!cache.has(k)){const its=dayPieces(q.day,true,wq);cache.set(k,{its,sq:sqPick(its,awayPieces(q.day,wq)),nst:nestOfDay(q.day,true,wq)})}
@@ -159,8 +170,8 @@ const sqOf=(e,s,piece,w=state.curWk,cache=new Map())=>{
     if(!hit)return null;hit.forEach(v=>ts.add(v))}
   return [...ts];
 };
-const sqLine=ts=>L('sqNote',{t:ts.join(', ')});
-function laneLayout(its){
+export const sqLine=ts=>L('sqNote',{t:ts.join(', ')});
+export function laneLayout(its){
   // R-EVT-10: occurrences that clash (shared person, or either without a responsible person) overlap with stripes;
   // the rest go side by side. Each occurrence gets a range of lanes [l..l1]: parallel ones never share a lane, clashing ones share
   // at least one, so an occurrence that clashes with several parallel ones spans their lanes. Impossible cases fall back to merging.
@@ -219,9 +230,9 @@ function laneLayout(its){
 // one without a responsible person concerns everyone and takes every lane. Overlapping in a lane then always means sharing a person,
 // so stripes stay where clashes are.
 // our visible people always have a lane; an external one only when they have an activity on the grid that is not in the background (a strip)
-function fixIds(){const busy=new Set(state.S.events.filter(e=>visible(e)&&!e.bg&&!e.away).flatMap(e=>e.slots.filter(s=>slotVisible(e,s)&&onCyc(e,s)).flatMap(s=>pplOf({e,s}))));
+export function fixIds(){const busy=new Set(state.S.events.filter(e=>visible(e)&&!e.bg&&!e.away).flatMap(e=>e.slots.filter(s=>slotVisible(e,s)&&onCyc(e,s)).flatMap(s=>pplOf({e,s}))));
   return [...ourPeople(),...state.S.people.filter(q=>q.external&&busy.has(q.id))].filter(q=>q.visible).map(q=>q.id)}
-function fixedLayout(its){
+export function fixedLayout(its){
   const ids=fixIds(),n=Math.max(1,ids.length),all=[...Array(n).keys()],out=new Map();
   const at=ps=>[...new Set(ps.map(p=>ids.indexOf(p)).filter(k=>k>=0))].sort((x,y)=>x-y);
   its.forEach(it=>{let ks=!it.s.person||!ids.length?all:at(pplOf(it));if(!ks.length)ks=at(invOf(it.e,it.s));if(!ks.length)ks=all;
@@ -229,31 +240,32 @@ function fixedLayout(its){
     out.set(it,{l:segs[0][0],l1:segs.at(-1)[1],n,g:0,segs,ids})});
   return out;
 }
-const NI=14;   // left indent of a nested box inside its host (px)
-let laneMap=new Map(),gutMap={},fxW=0,nestMap=new Map(),sqMap=new Set();
-const gk=k=>state.curWk+'#'+k;   // a key of the last drawn grid: with every week side by side (R-CYC-19) a piece appears in several columns   // sqMap: nkeys of the squeezed-out pieces of the last drawn grid (R-EVT-12)
+export const NI=14;   // left indent of a nested box inside its host (px)
+export let laneMap=new Map(),gutMap={},fxW=0,nestMap=new Map(),sqMap=new Set();
+export const newMaps=()=>{laneMap=new Map();gutMap={};nestMap=new Map();sqMap=new Set()};   // render() starts each redraw with empty maps
+export const gk=k=>state.curWk+'#'+k;   // a key of the last drawn grid: with every week side by side (R-CYC-19) a piece appears in several columns   // sqMap: nkeys of the squeezed-out pieces of the last drawn grid (R-EVT-12)
    // nestMap: nkey of a nested piece -> {x, h: its host} in the last drawn grid (R-NST-01)
    // gutMap: day -> strip gutter (px); fxW: width of the column last measured by fxAt   // 'eventId|slotIndex|piece' -> [first lane, last lane, lanes] of the last drawn grid, for hit-testing by x
-const inLane=(e,i,p,fx,di)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(gk(e.id+'|'+i+'|'+p));if(!v)return true;
+export const inLane=(e,i,p,fx,di)=>{if(fx==null||e.rhythms)return true;const v=laneMap.get(gk(e.id+'|'+i+'|'+p));if(!v)return true;
   const fr=(1-fx)*fxW,g=gutMap[gk(di)]||0;   // distance from the right edge (px): strips live there, boxes stop before the gutter
   if(v[0]==='s')return fr>=v[1]&&fr<v[2];
   if(g&&fxW){if(fr<g)return false;fx=fx*fxW/(fxW-g)}
   if(v[0]==='m')return v[1].some(([x,y])=>fx>=x/v[2]&&fx<(y+1)/v[2]);   // fixed lanes: one box per run of lanes (R-EVT-23)
   if(v[0]==='n')return fx>=v[1]/v[3]+(fxW>g?NI/(fxW-g):0)&&fx<(v[2]+1)/v[3];   // a nested box: its host's lanes minus the indent (R-NST-02)
   return fx>=v[0]/v[2]&&fx<(v[1]+1)/v[2]};
-const fxAt=(c,x)=>{const r=c.getBoundingClientRect();fxW=r.width;return r.width?(x-r.left)/r.width:null};
+export const fxAt=(c,x)=>{const r=c.getBoundingClientRect();fxW=r.width;return r.width?(x-r.left)/r.width:null};
 const isNestK=x=>(laneMap.get(gk(x.e.id+'|'+x.i+'|'+x.piece))||[])[0]==='n';
-const nestFirst=its=>{const nb=its.filter(isNestK);return nb.length?nb:its};   // a nested box lies on top of its host (R-NST-02)
-const piecesAt=(di,m,all,fx,list=act())=>{
+export const nestFirst=its=>{const nb=its.filter(isNestK);return nb.length?nb:its};   // a nested box lies on top of its host (R-NST-02)
+export const piecesAt=(di,m,all,fx,list=act())=>{
   let its=list.filter(e=>eVis(e)&&(all||!eLock(e))).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>q.day===di&&q.a<=m&&m<q.b&&inWk(e,s,q)&&sVis(e,s)&&inLane(e,i,q.p,fx,di)).map(q=>({e,s,i,piece:q.p,core:sqMap.has(gk(nkey(e,s,q.p)))||(([a,b])=>a<=m&&m<b)(coreIn(s,q))}))));
   its=nestFirst(its);
   return its.some(x=>x.core)?its.filter(x=>x.core):its;   // a core covers the flexible margins of other events (R-EVT-15)
 };
-const itemsAt=(di,m,fx)=>piecesAt(di,m,false,fx);
-const weekDays=()=>state.prefs.hideWeekend?[0,1,2,3,4]:[0,1,2,3,4,5,6];
-function setFocus(di){if(state.live){clearTimeout(lvRet);lvCloseAll(true);state.live=false;state.livePaused=false;state.prefs.live=false;savePrefs()}state.focusD=di;phoneFit();render()}   // leaving ends live view (R-GRID-12)
-function stepFocus(d){const ds=weekDays();let x=state.focusD;do{const nx=(x+d+7)%7;if(d>0&&nx<x)state.curWk=state.curWk%cyc()+1;else if(d<0&&nx>x)state.curWk=prevWk(state.curWk);x=nx}while(!ds.includes(x));setFocus(x)}   // wraps around the week (into the next or previous week of a cycle, R-CYC-04), skipping a hidden weekend
-function hiddenInfo(){
+export const itemsAt=(di,m,fx)=>piecesAt(di,m,false,fx);
+export const weekDays=()=>state.prefs.hideWeekend?[0,1,2,3,4]:[0,1,2,3,4,5,6];
+export function setFocus(di){if(state.live){clearTimeout(lvRet);lvCloseAll(true);state.live=false;state.livePaused=false;state.prefs.live=false;savePrefs()}state.focusD=di;phoneFit();render()}   // leaving ends live view (R-GRID-12)
+export function stepFocus(d){const ds=weekDays();let x=state.focusD;do{const nx=(x+d+7)%7;if(d>0&&nx<x)state.curWk=state.curWk%cyc()+1;else if(d<0&&nx>x)state.curWk=prevWk(state.curWk);x=nx}while(!ds.includes(x));setFocus(x)}   // wraps around the week (into the next or previous week of a cycle, R-CYC-04), skipping a hidden weekend
+export function hiddenInfo(){
   // counts only occurrences that are not shown purely because of the hidden weekend / hidden early hours (never partially visible ones)
   let wk=0,er=0;
   state.S.events.filter(visible).forEach(e=>e.slots.forEach(s=>{
@@ -265,7 +277,7 @@ function hiddenInfo(){
   }));
   return {wk,er,n:wk+er};
 }
-function drawNow(){
+export function drawNow(){
   document.querySelectorAll('.now').forEach(n=>n.remove());if(!state.nowOn&&!state.live)return;   // live view always shows the line (R-GRID-12)
   const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
   const tw=todayWk();if(tw&&!state.allWk&&tw!==state.curWk)return;   // with today's week known, only in that week (R-CYC-05); all weeks side by side: in its column (R-CYC-19)
@@ -276,37 +288,37 @@ setInterval(()=>{drawNow();liveTick()},30000);
 /* live view (R-GRID-12), for a public screen: today's day view, read-only, following the now line a third of the way down, with live
    cards of what the line is over. A manual scroll pauses it; it comes back after a minute or with the Now button. Remembered per browser;
    left only with the Live View Mode pill, Stop Live View or Esc (back to the week). */
-let liveTop=-1,liveWant=0,ptrHeld=false,lvRet=null;   // liveTop: the scroll position live view last set; liveWant: the one it aimed for
+export let liveTop=-1,liveWant=0,ptrHeld=false,lvRet=null;   // liveTop: the scroll position live view last set; liveWant: the one it aimed for
 const LV_BACK=60000;   // a manual scroll pauses following for this long
-const today=()=>(new Date().getDay()+6)%7;
+export const today=()=>(new Date().getDay()+6)%7;
 /* Today's week of the cycle (R-CYC-05), one of the two dates the app keeps (the other: the last calendar export, R-SHARE-09): the first Live View of a workspace with a cycle asks which week today
    is in, and the answer is remembered in this browser as an anchor, the Monday of a week 1 (local date YYYY-MM-DD), in prefs.lvAnchor by
    workspace id; never in the data, files or links. The week is worked out from today's date, so midnight, Sunday and a tablet that slept
    for days need nothing more. Days are counted as days since 1970 of the local date (clock changes cannot move them). */
-const ymd=d=>Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
-const dnum=t=>{const [y,m,d]=t.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)};
+export const ymd=d=>Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
+export const dnum=t=>{const [y,m,d]=t.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)};
 const thisMon=()=>ymd(new Date())-today();
-const wkAt=dn=>{if(cyc()<2)return 1;const t=state.prefs.lvAnchor[state.curId];if(!t)return null;const n=cyc(),k=Math.floor((dn-(dn+3)%7-dnum(t))/7);return (k%n+n)%n+1};   // the week of the cycle of local day dn (1 Jan 1970 was a Thursday); null: not known in this browser
-const todayWk=()=>wkAt(ymd(new Date()));
+export const wkAt=dn=>{if(cyc()<2)return 1;const t=state.prefs.lvAnchor[state.curId];if(!t)return null;const n=cyc(),k=Math.floor((dn-(dn+3)%7-dnum(t))/7);return (k%n+n)%n+1};   // the week of the cycle of local day dn (1 Jan 1970 was a Thursday); null: not known in this browser
+export const todayWk=()=>wkAt(ymd(new Date()));
 const liveWk=()=>todayWk()||1;
-function setAnchor(w){state.prefs.lvAnchor[state.curId]=new Date((thisMon()-(w-1)*7)*864e5).toISOString().slice(0,10);savePrefs()}
-function askLiveWeek(onYes,onNo,o={}){   // which week of the cycle is today in? (R-CYC-05); o.body, o.btn: the calendar export asks it too (R-SHARE-09)
+export function setAnchor(w){state.prefs.lvAnchor[state.curId]=new Date((thisMon()-(w-1)*7)*864e5).toISOString().slice(0,10);savePrefs()}
+export function askLiveWeek(onYes,onNo,o={}){   // which week of the cycle is today in? (R-CYC-05); o.body, o.btn: the calendar export asks it too (R-SHARE-09)
   const body=el('div');el('p','',body).textContent=L(o.body||'lwBody');
   const row=el('label','cyrow',body);row.append(L('lwToday')+' ');const sel=el('select','',row);fillSel(sel,[...Array(cyc()).keys()].map(k=>[k+1,wkLabel(k+1)]));sel.value=state.curWk;
   xdlg({title:L('lwTitle'),body,onDismiss:onNo,buttons:[{label:L(o.btn||(state.live?'lwSet':'lwStart')),cls:'p',fn:()=>{setAnchor(+sel.value);onYes()}},{label:L('cancel'),dismiss:true}]});
 }
-const liveBusy=()=>ptrHeld||!!document.querySelector('dialog[open],.omenu');   // never move under a dialog, a menu or a held pointer (drag)
-function liveScroll(){
+export const liveBusy=()=>ptrHeld||!!document.querySelector('dialog[open],.omenu');   // never move under a dialog, a menu or a held pointer (drag)
+export function liveScroll(){
   const w=$('wrap'),d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60,hd=document.querySelector('#grid .dh'),hh=hd?hd.offsetHeight:0;
   liveWant=m<a?0:Math.max(0,Math.round((m-a)/60*state.HH-(w.clientHeight-hh)/3));w.scrollTop=liveWant;liveTop=w.scrollTop;
 }
-function setLive(on){
+export function setLive(on){
   if(on&&todayWk()==null){askLiveWeek(()=>setLive(true));return}   // which week of the cycle is today in? (R-CYC-05)
   clearTimeout(lvRet);lvCloseAll(true);state.live=on;state.livePaused=false;state.prefs.live=on;savePrefs();if(on){state.selK=null;state.focusD=today();state.curWk=liveWk()}else if(!phone())state.focusD=null;phoneFit();render()}   // a phone stays on the day it showed (R-GRID-12)
-function liveBack(){clearTimeout(lvRet);if(!state.live)return;state.livePaused=false;liveScroll();updLive()}
-function liveTick(){if(!state.live||liveBusy())return;if(todayWk()==null){askLiveWeek(()=>{state.curWk=liveWk();render()},()=>setLive(false));return}   // another workspace or a new cycle: which week is it?
+export function liveBack(){clearTimeout(lvRet);if(!state.live)return;state.livePaused=false;liveScroll();updLive()}
+export function liveTick(){if(!state.live||liveBusy())return;if(todayWk()==null){askLiveWeek(()=>{state.curWk=liveWk();render()},()=>setLive(false));return}   // another workspace or a new cycle: which week is it?
   if(state.focusD!==today()||state.curWk!==liveWk()){lvCloseAll(true);state.focusD=today();state.curWk=liveWk();render();return}if(!state.livePaused)liveScroll()}   // midnight: on to the next day (after Sunday, the next week of a cycle, R-CYC-05)
-function updLive(){
+export function updLive(){
   const pl=$('lvPill');pl.style.display=state.live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
   {const s=$('sb');if(s){s.classList.toggle('lv',state.live);s.classList.toggle('paused',state.live&&state.livePaused)}const f=$('lvF');if(f){f.title=L('lvNowTip');f.setAttribute('aria-label',L('lvNow'))}}
   {const r=$('lvR');if(r){r.innerHTML=state.live?ICON_STOP:ICON_CAM;r.title=L(state.live?'lvStopTip':'lvStartTip');r.setAttribute('aria-label',L(state.live?'lvStop':'lvStart'));r.classList.toggle('on',state.live);r.setAttribute('aria-pressed',String(state.live))}}
@@ -318,11 +330,11 @@ function updLive(){
    per occurrence there. Several may be open; each fades out after a minute, or at a tap on it or on empty space. They survive redraws.
    Placement: above or below the tap, never over another bubble if possible, covering as little of the boxes' text as possible. */
 const LV_AR=9,LV_PEEK=60000,LV_SLACK=6;   // arrow height; how long a bubble stays; how far the arrow tip may sit from the tap (room at the column edges)
-let lvOpen=[],lvRects=[],lvDown=null;   // lvOpen: {keys, fx, m, timer, el}; lvRects: bubbles drawn in this redraw
+export let lvOpen=[],lvRects=[],lvDown=null;   // lvOpen: {keys, fx, m, timer, el}; lvRects: bubbles drawn in this redraw
 function lvClose(o,now){clearTimeout(o.timer);lvOpen=lvOpen.filter(x=>x!==o);const b=o.el;if(!b)return;if(b._st)b._st.remove();if(now){b.remove();return}b.classList.add('out');setTimeout(()=>b.remove(),300)}
 function lvTime(o){clearTimeout(o.timer);const t=setTimeout(()=>{if(o.timer===t)lvClose(o)},LV_PEEK);o.timer=t}   // a minute from now; only the latest timer counts
-function lvCloseAll(now){lvOpen.slice().forEach(o=>lvClose(o,now))}
-function lvDraw(o,fresh){
+export function lvCloseAll(now){lvOpen.slice().forEach(o=>lvClose(o,now))}
+export function lvDraw(o,fresh){
   const col=document.querySelector(`#grid .day[data-d="${state.focusD}"]`);if(!col)return;
   const its=o.keys.map(k=>{const [id,i,p]=k.split('|'),e=state.S.events.find(x=>x.id===id),s=e&&e.slots[+i];return s&&{e,s,piece:+p}}).filter(Boolean).sort((x,y)=>x.s.start-y.s.start);
   if(!its.length){lvClose(o,true);return}
@@ -357,17 +369,19 @@ function liveTap(x,y,tg){
     if(same.el){same.el.remove();if(same.el._st)same.el._st.remove()}lvRects=lvRects.filter(r=>r!==same.r);lvDraw(same,false);return}
   const o={keys,fx,m};lvOpen.push(o);lvTime(o);lvDraw(o,true);
 }
-// while live the grid is read-only: presses only open bubbles (taps) or scroll; nothing reaches the boxes' own handlers
-{const g=$('grid'),stop=ev=>{if(!state.live||ev.target.closest&&ev.target.closest('.wkb'))return false;ev.stopPropagation();return true};   // the corner week switcher stays pressable (R-CYC-05)
+// while live the grid is read-only: presses only open bubbles (taps) or scroll; nothing reaches the boxes' own handlers (wired once by main.js)
+export function initLive(){
+ {const g=$('grid'),stop=ev=>{if(!state.live||ev.target.closest&&ev.target.closest('.wkb'))return false;ev.stopPropagation();return true};   // the corner week switcher stays pressable (R-CYC-05)
  g.addEventListener('pointerdown',ev=>{if(stop(ev))lvDown={x:ev.clientX,y:ev.clientY,tg:ev.target}},true);
  g.addEventListener('pointerup',ev=>{if(!stop(ev))return;const d=lvDown;lvDown=null;if(d&&Math.hypot(ev.clientX-d.x,ev.clientY-d.y)<=8)liveTap(ev.clientX,ev.clientY,d.tg)},true);
  ['pointermove','click','dblclick','contextmenu'].forEach(t=>g.addEventListener(t,ev=>{if(stop(ev)&&t!=='pointermove')ev.preventDefault()},true))}
-$('lvPill').onclick=()=>setLive(false);
-$('wrap').addEventListener('scroll',()=>{if(!state.live||Math.abs($('wrap').scrollTop-liveTop)<=2)return;if(!state.livePaused){state.livePaused=true;updLive()}clearTimeout(lvRet);lvRet=setTimeout(liveBack,LV_BACK)},{passive:true});
-document.addEventListener('pointerdown',()=>{ptrHeld=true},true);['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{ptrHeld=false},true));
+ $('lvPill').onclick=()=>setLive(false);
+ $('wrap').addEventListener('scroll',()=>{if(!state.live||Math.abs($('wrap').scrollTop-liveTop)<=2)return;if(!state.livePaused){state.livePaused=true;updLive()}clearTimeout(lvRet);lvRet=setTimeout(liveBack,LV_BACK)},{passive:true});
+ document.addEventListener('pointerdown',()=>{ptrHeld=true},true);['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{ptrHeld=false},true));
+}
 /* generic dialog */
 let xTok=0;   // identifies the dialog currently shown, so a button handler that opens another dialog doesn't get it closed again
-function xdlg(o){
+export function xdlg(o){
   const d=$('xDlg');d.innerHTML='';let done=false;const tok=++xTok;
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
@@ -379,7 +393,7 @@ function xdlg(o){
   if(!d.open)d.showModal();
 }
 let setTab='viewH';   // last Settings tab shown (kept while the page is open)
-function openSettings(){
+export function openSettings(){
   // tabs keep one size: all panes share a grid cell, the hidden ones are invisible (not removed), so the largest decides the size
   const body=el('div','settings'),tabs=el('div','stabs',body),wrap=el('div','spanes',body),panes={};tabs.setAttribute('role','tablist');
   const show=k=>{setTab=k;Object.entries(panes).forEach(([n,p])=>{const on=n===k;p.classList.toggle('off',!on);p.toggleAttribute('inert',!on);p.setAttribute('aria-hidden',String(!on));p._b.classList.toggle('on',on);p._b.setAttribute('aria-selected',String(on));p._b.tabIndex=on?0:-1})};
@@ -417,7 +431,7 @@ function openSettings(){
   show(panes[setTab]?setTab:'viewH');
   xdlg({title:L('settings'),full:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }
-function openHelp(){
+export function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
   for(let i=1;i<=23;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});

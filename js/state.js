@@ -1,7 +1,7 @@
 // The shared state: everything that several files read or change, in one object (docs/architecture.md). State that one file owns stays a
 // private variable of that file. Data = the workspaces and their history; view = this browser's view of them (not undoable, not an
-// unsaved change, ignored by dataKey). Classic script: shares the global scope with the other files in js/, loaded first.
-const state={
+// unsaved change, ignored by dataKey). ES module with no imports, so it is ready before any other file runs.
+export const state={
   // data
   S:{schedules:[],events:[],people:[],types:[],rhythms:[],phases:[],phaseOpacity:.3},   // the current workspace's data
   WS:[],             // every workspace open in this page: {id, name, data, lb, lf, undo, redo} (newWs)

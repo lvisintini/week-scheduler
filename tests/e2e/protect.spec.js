@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, person } from './helpers.js';
+import { openApp, seed, blank, ev, person, bridged } from './helpers.js';
 
 const PASS = 'correct horse battery';
 const settingsData = async page => { await page.evaluate(() => openSettings()); await page.locator('#xDlg .stabs button', { hasText: 'Data' }).click(); };
@@ -13,7 +13,7 @@ async function protect(page) {
 test.describe('R-DATA-11 Browser memory protected with a passphrase, in a real browser', () => {
   test('after a reload the page asks for the passphrase, Escape keeps it, and the right one brings everything back', async ({ page }) => {
     await protect(page); const raw = await page.evaluate(() => localStorage.getItem('weekly-schedules-workspaces')); expect(raw).toMatch(/"sealed"/); expect(raw).not.toMatch(/Granny|Doctor|4711/);
-    await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); expect(await page.evaluate(() => state.S.events.length)).toBe(0);
+    await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); await bridged(page); expect(await page.evaluate(() => state.S.events.length)).toBe(0);
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await expect(page.locator('#xDlg')).toBeVisible(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected');
     await page.locator('#xDlg .pwl input').fill('not the passphrase'); await page.keyboard.press('Enter'); await expect(page.locator('#xDlg .err')).toHaveText('Wrong passphrase. Try again.');
     await page.locator('#xDlg .pwl input').fill(PASS); await page.locator('#xDlg button', { hasText: 'Open' }).click();

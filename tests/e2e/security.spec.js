@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import fs from 'node:fs';
+import { moduleOrder } from '../helpers/modules.js';
 import { openApp, seed, blank, ev, slot, person, toolbar, dialogButton, allowClipboard, PASSWORD } from './helpers.js';
 
 const BASE = 'http://localhost:4173';
 // the app's own files, as index.html loads them (R-SEC-01): the page, its stylesheet and its scripts
-const SCRIPTS = [...fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8').matchAll(/<script src="([^"]+)" defer><\/script>/g)].map(m => m[1]);
+const SCRIPTS = moduleOrder();   // every file of js/ that main.js brings in
 const OWN = [BASE + '/', BASE + '/app.css', ...SCRIPTS.map(f => BASE + '/' + f)].sort();
 /** Records every network request and every Content-Security-Policy violation the page produces. */
 async function watch(page) {
@@ -97,7 +97,7 @@ test.describe('R-SEC-02 Hostile text in every field never runs in a real browser
     for (const open of [() => page.locator('.dh:not(.c)').first().click(), () => page.locator('#agClose').click(), () => page.evaluate(() => openRhythmAgenda(state.S.rhythms[0])), () => page.locator('#agClose').click(), () => page.evaluate(() => openDlg(state.S.events[0])), () => page.locator('#fCancel').click(), () => page.evaluate(() => openCopy(state.S.events[0])), () => dialogButton(page, 'Cancel').click(), () => page.evaluate(() => printSchedule()), () => page.locator('.wsbtn').click(), () => page.keyboard.press('Escape')]) { await open(); await page.waitForTimeout(40); }
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => ({ pwned: window.__pwned, scripts: document.scripts.length, handlers: document.querySelectorAll('[onerror],[onload],[onmouseover],[onclick]').length, jsLinks: document.querySelectorAll('a[href^="javascript"]').length, badImgs: document.querySelectorAll('img[src="x"]').length, text: document.querySelector('#agBody') ? document.body.textContent.includes('onerror') : false }));
-    expect(r).toMatchObject({ pwned: undefined, scripts: SCRIPTS.length, handlers: 0, jsLinks: 0, badImgs: 0 }); expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
+    expect(r).toMatchObject({ pwned: undefined, scripts: 1, handlers: 0, jsLinks: 0, badImgs: 0 }); expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
     expect(await page.evaluate(t => [...document.querySelectorAll('#sbin input[type=text]')].some(i => i.value === t), payload)).toBe(true);   // …and the text really is there, as plain text
   });
 });

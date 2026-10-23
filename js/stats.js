@@ -1,4 +1,12 @@
-// Statistics, agendas and printing. Classic script: shares the global scope with the other files in js/, loaded in the order of index.html (docs/architecture.md).
+// Statistics, agendas and printing. ES module (docs/architecture.md).
+import {state} from './state.js';
+import {DAYS,L} from './i18n.js';
+import {$,ICON_CD,el,esc,pIcon,pTag,sTag,tIcon,tyOf,tyTag} from './basics.js';
+import {cw,hist,wkChip,wkDesc,wkI,wkLabel,wkNote,wkNoteH,wkShortL,wkTip,wksHTML} from './data.js';
+import {NOTY,awayLine,awayOf,awayPpl,colOf,coreIn,covers,cyc,cycSl,edgeNote,fileDay,fmt,fmtEnd,inWk,ink,invOf,isAway,nestOfDay,nkey,ourPeople,overlapSet,phVis,piecesOf,slotVisible,sqLine,sqOf,toast,visible,wksOf,xdlg} from './model.js';
+import {wkH1,wkSuf} from './sidebar.js';
+import {render,withPrintScale} from './grid.js';
+import {fillSel} from './dialog.js';
 /* ---------- statistics: how a person's week is spent, by activity type (R-STAT-01..04) ---------- */
 function personStats(pid,inv,w=1){   // w: the week of the cycle (R-CYC-11)
   // occurrences of the visible schedules the person leads (or is involved in); events without any people count for nobody.
@@ -42,12 +50,12 @@ function stOf(pid,inv,w){
 const stWeeks=(pid,inv)=>[...Array(cyc()).keys()].map(k=>personStats(pid,inv,k+1));
 // rota turns (R-CYC-18): the occurrences over the cycle each person is responsible for, per week; null unless two or more people take turns
 // mode = the event's turns mark: true counts always, false never, absent (automatic) when two or more people take turns
-function turnsOf(e,slots=e.slots,mode=e.turns){
+export function turnsOf(e,slots=e.slots,mode=e.turns){
   if(mode===false)return null;const n=cyc(),m=new Map();
   slots.forEach(s=>{if(!s.person)return;if(!m.has(s.person))m.set(s.person,Array(n).fill(0));(wksOf(e,s)||[...Array(n).keys()].map(k=>k+1)).forEach(w=>{if(w<=n)m.get(s.person)[w-1]++})});
   return m.size>1||mode===true?new Map(state.S.people.filter(q=>m.has(q.id)).map(q=>[q.id,m.get(q.id)])):null;   // in the order of the People list
 }
-const tuSum=a=>a.reduce((x,y)=>x+y,0);
+export const tuSum=a=>a.reduce((x,y)=>x+y,0);
 const stRotas=()=>state.S.events.filter(e=>visible(e)&&!isAway(e)).map(e=>[e,turnsOf(e)]).filter(([,t])=>t);   // the rotas of the visible schedules
 function statsTurnsHTML(pid){   // a table of the rotas: one person's turns, or (Everyone) each person's (R-CYC-18); each can be left out, others added
   if(!state.S.events.some(e=>visible(e)&&!isAway(e)))return '';
@@ -194,7 +202,7 @@ function tyPop(b,changed){   // R-STAT-07: the activity types shown in the stati
   setTimeout(()=>document.addEventListener('pointerdown',out,true));m.querySelector('.oi').focus();
 }
 let stP=null,stInv=true,stW='avg';   // last statistics view (person id, or '*' for everyone), the involved toggle and the week (R-CYC-11), kept while the page is open
-function openStats(pid){
+export function openStats(pid){
   const ppl=ourPeople();if(!ppl.length){toast(L('stNoPpl'));return}
   if(pid)stP=pid;if(!stP||(stP!=='*'&&!ppl.some(q=>q.id===stP)))stP=(ppl.find(q=>q.visible)||ppl[0]).id;
   const body=el('div','stats'),bar=el('div','stbar',body);
@@ -224,7 +232,7 @@ function openStats(pid){
   xdlg({title:L('stTitle'),body,wide:true,full:true,buttons:[{label:L('stCopy'),fn:()=>{copy();return false}},{label:L('stCsv'),fn:()=>{csv();return false}},{label:L('stPrint'),fn:()=>{print();return false}},{label:L('closeB'),cls:'p'}]});
 }
 /* agenda / print */
-function metaLine(){
+export function metaLine(){
   const sch=state.S.schedules.filter(s=>s.visible).map(sTag),ppl=state.S.people.filter(q=>q.visible).map(q=>pIcon(q)+esc(q.name));
   return `<div class="pm"><b>${esc(L('wsShown'))}</b> ${state.S.color?`<i class="wkchip" style="background:${esc(state.S.color)}"></i>`:''}${esc(cw().name)}<br><b>${esc(L('schShown'))}</b> ${sch.join(' &nbsp; ')||esc(L('none2'))}<br><b>${esc(L('pplShown'))}</b> ${state.S.people.length?(ppl.join(' &nbsp; ')||esc(L('none2'))):esc(L('noPpl'))}</div>`;
 }
@@ -256,13 +264,13 @@ function agendaHTML(di){
     h+=`<div class="apg">${b.its.length?b.its.map(one).join(''):`<p class="ae">${esc(L('agNone'))}</p>`}</div>`});
   return h;
 }
-let agDay=0;
-let agFn=null;
+export let agDay=0;
+export let agFn=null;
 function showAgenda(fn,day){agFn=fn;agDay=day;$('agBody').innerHTML=fn();$('agPrint2').style.display=day==null?'none':'';$('agPrint2').textContent=L('agPrintDay');$('agDlg').showModal()}
-let agWk=1;
-const withWk=(w,fn)=>{const c=state.curWk,a=state.allWk;state.curWk=w;state.allWk=false;try{return fn()}finally{state.curWk=c;state.allWk=a}};   // fn as if week w alone were shown (no redraw)
-function openAgenda(di,w=state.curWk){agWk=w;showAgenda(()=>withWk(w,()=>agendaHTML(di)),di)}   // the day of the header's week (R-CYC-19)
-function openRhythmAgenda(rh){showAgenda(()=>rhythmAgendaHTML(rh),null)}
+export let agWk=1;
+export const withWk=(w,fn)=>{const c=state.curWk,a=state.allWk;state.curWk=w;state.allWk=false;try{return fn()}finally{state.curWk=c;state.allWk=a}};   // fn as if week w alone were shown (no redraw)
+export function openAgenda(di,w=state.curWk){agWk=w;showAgenda(()=>withWk(w,()=>agendaHTML(di)),di)}   // the day of the header's week (R-CYC-19)
+export function openRhythmAgenda(rh){showAgenda(()=>rhythmAgendaHTML(rh),null)}
 function rhythmAgendaHTML(rh){
   const lst=state.S.phases.filter(p=>p.rhythms.includes(rh.id)).map(p=>({p,sl:cycSl(p.slots).filter(s=>!p.weeks||wksOf(p).length)})).filter(x=>x.sl.length).map(({p,sl})=>({p,sl,min:Math.min(...sl.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
   let h=`<h1>${esc(L('agTitle',{d:rh.name}))}</h1>`;
@@ -282,8 +290,8 @@ function rhythmAgendaHTML(rh){
   });
   return h;
 }
-function printDay(di){doPrint(dayPage(di),false)}
-function dayPage(di){
+export function printDay(di){doPrint(dayPage(di),false)}
+export function dayPage(di){
   const c=withPrintScale(()=>$('grid').cloneNode(true));c.removeAttribute('id');c.querySelectorAll('.now').forEach(n=>n.remove());
   [...c.children].forEach(ch=>{if(ch.classList.contains('times')||ch.classList.contains('c'))return;if(ch.dataset.d!==String(di)||(ch.dataset.w&&ch.dataset.w!==String(state.curWk)))ch.remove()});
   c.querySelectorAll('.lane .lbg').forEach(b=>{const l=document.createElement('div');l.className=('lip '+(b.dataset.fs||'')).trim();l.style.cssText=`top:${b.style.top};height:${b.style.height};background:${b.dataset.col};color:${ink(b.dataset.col)}`;const s=document.createElement('span');s.textContent=b.dataset.title;l.append(s);b.replaceWith(l)});
@@ -291,7 +299,7 @@ function dayPage(di){
   c.style.gridTemplateColumns='52px 1fr';c.style.minWidth='0';c.classList.add('one');
   const w=el('div');w.innerHTML=wkH1(DAYS[di]+wkSuf())+metaLine();w.append(c);return w;
 }
-function doPrint(node,landscape){
+export function doPrint(node,landscape){
   $('pr').replaceChildren(node);
   $('pgStyle').textContent='@page{size:A4 '+(landscape?'landscape':'portrait')+';margin:10mm}';
   window.print();
