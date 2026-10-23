@@ -68,6 +68,6 @@ function openIcs(){
   }},{label:L('cancel'),dismiss:true}]});
 }
 function saveIcs(text){   // never a backup: the workspace stays unsaved
-  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/calendar'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+'.ics';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/calendar'}));a.download='weekly-schedules-'+fileDay()+'.ics';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   toast(L('icsDone'));
 }

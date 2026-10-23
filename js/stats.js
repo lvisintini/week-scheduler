@@ -219,7 +219,7 @@ function openStats(pid){
   const who=()=>(stP==='*'?L('stAll'):S.people.find(x=>x.id===stP).name)+(cyc()>1?' — '+(stW==='avg'?L('stAvgW'):wkLabel(+stW)):'');
   const copy=()=>{const txt=toTsv(statsRows(stP,stInv)),ok=()=>msg('stCopied'),fb=()=>{const t=el('textarea','',body);t.value=txt;t.select();let r=false;try{r=document.execCommand('copy')}catch(e){}t.remove();msg(r?'stCopied':'stCopyFail')};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,fb);else fb()};
-  const csv=()=>{const a=el('a');a.href=URL.createObjectURL(new Blob(['﻿'+toCsv(statsRows(stP,stInv))],{type:'text/csv'}));a.download='weekly-schedules-stats-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('stCsvDone')};
+  const csv=()=>{const a=el('a');a.href=URL.createObjectURL(new Blob(['﻿'+toCsv(statsRows(stP,stInv))],{type:'text/csv'}));a.download='weekly-schedules-stats-'+fileDay()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('stCsvDone')};
   const print=()=>{const w=el('div','stats');w.innerHTML=`<h1>${esc(L('stTitle')+' — '+who())}</h1>`+metaLine()+out.innerHTML+`<p class="note">${esc(L('stNote'))}</p>`;doPrint(w,false)};
   xdlg({title:L('stTitle'),body,wide:true,full:true,buttons:[{label:L('stCopy'),fn:()=>{copy();return false}},{label:L('stCsv'),fn:()=>{csv();return false}},{label:L('stPrint'),fn:()=>{print();return false}},{label:L('closeB'),cls:'p'}]});
 }

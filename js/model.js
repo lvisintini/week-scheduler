@@ -21,6 +21,7 @@ function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('ac
 /* ---------- helpers ---------- */
 const qa=s=>[...document.querySelectorAll(s)];
 const pad=n=>String(n).padStart(2,'0');
+const fileDay=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};   // today's local date, in the names of downloaded files
 const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!prefs.clock12)return pad(Math.floor(m/60))+':'+pad(m%60);const h=Math.floor(m/60);return (h%12||12)+':'+pad(m%60)+' '+(h<12?'AM':'PM')};
 const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
 const endLabel=m=>fmtEnd(m);   // the End list says what boxes, agendas and tooltips say: midnight closes its day, later ends carry (Next day) (R-REP-04)

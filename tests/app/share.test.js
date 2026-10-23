@@ -307,3 +307,15 @@ describe('R-SHARE-08 A file or link can hold only part of a workspace: chosen sc
     expect(a.qa('#xDlg .partsel button').map(b => b.textContent)).toEqual(['Todo', 'Elegir…']);
   });
 });
+
+describe('R-SHARE-06 Downloaded files are named after today\'s local date, not the UTC date', () => {
+  // UTC+14: at 09:00 on 23 October local time it is still 22 October in UTC
+  const atKiritimati = fn => async () => { const tz = process.env.TZ; process.env.TZ = 'Pacific/Kiritimati'; try { await fn(); } finally { if (tz === undefined) delete process.env.TZ; else process.env.TZ = tz; } };
+  const early = () => { const a = openApp({ now: [2026, 9, 23, 9, 0] }); setData(a, rich()); return a; };
+  it('the unencrypted JSON file, the calendar file and the statistics CSV all carry the local date', atKiritimati(async () => {
+    const a = early(); expect(a.ev('new Date().toISOString().slice(0,10)')).toBe('2026-10-22');
+    a.ev('saveFile(null,false,null)'); await a.sleep(10); expect(a.w.__download).toBe('weekly-schedules-2026-10-23.json');
+    a.ev('saveIcs("x")'); expect(a.w.__download).toBe('weekly-schedules-2026-10-23.ics');
+    a.ev('openStats()'); a.click('Download CSV'); expect(a.w.__download).toBe('weekly-schedules-stats-2026-10-23.csv');
+  }));
+});

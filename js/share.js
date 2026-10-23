@@ -153,7 +153,7 @@ async function handleShareLink(){
 }
 async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file, chosen explicitly by the user; inc: only part of it (R-SHARE-08)
   let text;try{const f=shareOf(inc,anon);text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}
-  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+new Date().toISOString().slice(0,10)+(pw==null?'':'-encrypted')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  const a=el('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download='weekly-schedules-'+fileDay()+(pw==null?'':'-encrypted')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   if(!anon&&!inc)cw().lf=keyOf(S);   // an anonymised or partial copy is not a backup of this workspace
   toast(L('savedFile'));renderSide();
 }
