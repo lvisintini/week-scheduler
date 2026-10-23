@@ -10,7 +10,6 @@ import {render} from './grid.js';
 /* ---------- event dialog ---------- */
 let cur=null;
 export function fillSel(sel,vals){sel.innerHTML='';vals.forEach(([v,t])=>{const o=el('option','',sel);o.value=v;o.textContent=t})}
-const pOpts=()=>[['',L('none')],...state.S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
 const setFC=c=>{$('fC').dataset.v=c;$('fC').style.background=c;updCols()};
 let curStl=[],curEtl=[],dkind='event';
 /* the day table (R-UI-07, R-REP-02): one row per day; a day's first time sits in its row, further times on lines below it (+ adds, ✕ removes).

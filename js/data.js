@@ -17,7 +17,6 @@ export const absD=s=>((s.wk||1)-1)*7+s.day;
 export function shiftDay(s,dD){if(!s.wk){s.day=((s.day+dD)%7+7)%7;return}const n=cyc()*7,x=((absD(s)+dD)%n+n)%n;s.wk=Math.floor(x/7)+1;s.day=x%7}
 export const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
 export const keyOf=d=>JSON.stringify({wsc:d.color||'',wsd:d.desc||'',cycle:d.cycle||1,pool:poolOf(d),weekInfo:wiNorm(d.weekInfo,poolOf(d)),schedules:d.schedules.map(({visible,opacity,...r})=>r),people:d.people.map(({visible,...r})=>r),types:d.types.map(({visible,...r})=>r),events:d.events,rhythms:d.rhythms.map(({visible,...r})=>r),phases:d.phases});
-const dataKey=()=>keyOf(state.S);
 export const cw=()=>state.WS.find(w=>w.id===state.curId);
 const wsData=w=>w.id===state.curId?state.S:w.data;
 const wsDirty=w=>{const k=keyOf(wsData(w));return k!==w.lb&&k!==w.lf};

@@ -10,8 +10,6 @@ import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
 /* ---------- sidebar ---------- */
 function eyeBtn(parent,vis,toggle){const b=el('button','eye'+(vis?'':' off'),parent);b.innerHTML=vis?ICON_EYE:ICON_EYE_OFF;b.title=L('eyeTip');b.onclick=toggle;return b}
-function sbtn(parent,label,tip,fn,cls,icon){const b=el('button',cls||'',parent);if(icon)b.innerHTML=icon;b.append(label);b.title=tip;b.onclick=fn;return b}
-function h2(parent,text,tip){const h=el('h2','',parent);h.append(text+' ');if(tip){const t=el('span','tip',h);t.textContent='ⓘ';t.title=tip}return h}
 // a dialog row's grip (drag it, or focus it and use the arrow keys): rows() = the rows that can be reordered, move(from,to) reorders and redraws
 export function rowGrip(r,k,rows,move,tip,lbl){
   const g=el('button','grip',r);g.type='button';g.innerHTML=ICON_GRIP;g.title=g.__t=tip;g.setAttribute('aria-label',lbl);
