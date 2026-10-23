@@ -21,12 +21,20 @@ test.describe('R-SEC-04 A full tour of the app talks to nobody', () => {
     const w = await watch(page); await allowClipboard(context, browserName, BASE); await openApp(page); await seed(page, rich()); await page.evaluate(() => { window.print = () => {}; });
     await toolbar(page, 'add').click(); await page.fill('#fT', 'Created in tour'); await page.click('#fOk');
     await page.locator('.dh:not(.c)').first().click(); await page.locator('#agPrint').click(); await page.locator('#agClose').click();
-    await toolbar(page, 'print').click(); await page.locator('.sbtop .gear').click(); await dialogButton(page, 'Close').click(); await page.locator('.sbtop .help').click(); await dialogButton(page, 'Close').click();
+    await toolbar(page, 'print').click(); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: 'About' }).click(); await dialogButton(page, 'Close').click(); await page.locator('.sbtop .help').click(); await dialogButton(page, 'Close').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'Shareable link').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await dialogButton(page, 'Create link').click(); await expect(page.locator('#xDlg textarea')).toBeVisible({ timeout: 15000 }); await dialogButton(page, 'Copy link').click(); await dialogButton(page, 'Close').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'JSON file').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await Promise.all([page.waitForEvent('download'), dialogButton(page, 'Save file').click()]);
     const outside = w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:') && !u.startsWith('blob:')); expect(outside).toEqual([]); expect([...new Set(w.requests.filter(u => u.startsWith(BASE + '/')))].sort()).toEqual(OWN);
     expect(w.consoleErrors).toEqual([]); expect(await violations(page)).toEqual([]);
+  });
+  test('the About tab\'s GitHub link opens only when clicked, in a new tab that gets no opener and no referrer', async ({ page }) => {
+    const w = await watch(page); await openApp(page); await page.context().route('https://github.com/**', r => r.fulfill({ contentType: 'text/html', body: '<p>repo</p>' }));
+    await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: 'About' }).click();
+    expect(w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:'))).toEqual([]);
+    const [pop] = await Promise.all([page.waitForEvent('popup'), page.locator('#xDlg a').click()]); await pop.waitForLoadState();
+    expect(pop.url()).toBe('https://github.com/lvisintini/week-scheduler'); expect(await pop.evaluate(() => ({ opener: window.opener, referrer: document.referrer }))).toEqual({ opener: null, referrer: '' });
+    expect(page.url()).toMatch(/^http:\/\/localhost:4173\//); expect(w.consoleErrors).toEqual([]); expect(await violations(page)).toEqual([]);
   });
   test('only the two documented browser-storage keys are written; no cookies, databases, caches or service workers exist', async ({ page }) => {
     await openApp(page, { defaults: true }); await seed(page, rich()); await page.evaluate(() => { saveMem('all'); prefs.theme = 'dark'; savePrefs(); });

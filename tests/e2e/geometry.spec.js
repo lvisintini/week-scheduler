@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, slots, pt, boxOf, person } from './helpers.js';
+import { openApp, seed, blank, ev, slot, slots, pt, boxOf, person, toolbar } from './helpers.js';
 
 const rhythmData = (extra = {}) => blank({
   events: [ev({ id: 'a', title: 'Morning', slots: [slot(0, 600, 720)] })],
@@ -598,4 +598,20 @@ test.describe('R-UI-07 R-CYC-08 Lines and the Week column of the day table on a 
     const b0 = await boxOf(page.locator('#fDays .dr').nth(0).locator('.wcell .wkc')), b1 = await boxOf(page.locator('#fDays .dr').nth(1).locator('.wcell .wkc')), cb = await boxOf(page.locator('#fDays .dr').nth(0).locator('.dcell input'));
     expect(Math.abs(h.x - b0.x)).toBeLessThan(4); expect(Math.abs(b0.x - b1.x)).toBeLessThan(1); expect(b0.x).toBeGreaterThan(cb.x + cb.width);   // after the day, never before its checkbox
   });
+});
+
+test.describe('R-UI-16 The Save and Load dialogs show one button per line, as drawn by a real browser', () => {
+  for (const [w, h] of [[1280, 800], [390, 844]]) {
+    test(`at ${w} px wide each Save and Load button sits on its own line, all equally wide`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h }); await openApp(page);
+      if (w < 600) await page.locator('.sbtop .xpand').click();   // a phone starts with the drawer closed (R-UI-13)
+      for (const [tb, n] of [['save', 5], ['load', 3]]) {
+        await toolbar(page, tb).click();
+        const bs = await page.locator('#xDlg .btns button').evaluateAll(es => es.map(e => e.getBoundingClientRect()).map(r => ({ y: r.y, h: r.height, x: r.x, w: r.width })));
+        expect(bs).toHaveLength(n); for (let i = 1; i < n; i++) expect(bs[i].y).toBeGreaterThanOrEqual(bs[i - 1].y + bs[i - 1].h);
+        expect(Math.max(...bs.map(b => b.w)) - Math.min(...bs.map(b => b.w))).toBeLessThan(1); expect(Math.max(...bs.map(b => b.x)) - Math.min(...bs.map(b => b.x))).toBeLessThan(1);
+        await page.locator('#xDlg .btns button', { hasText: 'Cancel' }).click();
+      }
+    });
+  }
 });

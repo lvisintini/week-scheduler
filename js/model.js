@@ -367,7 +367,7 @@ function xdlg(o){
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
   d.classList.toggle('wide',!!o.wide);d.classList.toggle('full',!!o.full);   // full: fills the screen on a phone (R-UI-14)
-  const bt=el('div','btns',d);
+  const bt=el('div','btns'+(o.stack?' stack':''),d);   // stack: one button per line (Save, Load; R-UI-16)
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
     x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
   d.onclose=()=>{if(!done&&o.onDismiss)o.onDismiss()};d.oncancel=o.keep?e=>e.preventDefault():null;   // keep: Escape does not close it
@@ -405,6 +405,10 @@ function openSettings(){
    const ls=el('select','',lw);
    [['en','English'],['es','Español']].forEach(([c,n])=>{const o=el('option','',ls);o.value=c;o.textContent=n});
    ls.value=lang;ls.onchange=()=>{setLang(ls.value);openSettings()};ls.setAttribute('aria-label',L('lang'))}
+  // About (R-UI-15): the disclaimer, credits, licence and the one link out of the app (R-SEC-04)
+  const ab=sec('aboutH'),abo=(k,tip)=>{const w=el('div','sopt col',ab),t=el('span','',w);el('b','',t).textContent=L(k);if(tip)el('small','',t).textContent=tip;return w};
+  [['abApp','abAppTip'],['abWarr','abWarrTip'],['abData','abDataTip'],['abPpl','abPplTip'],['abCred','abCredTip'],['abLic','abLicTip',{v:FMT}]].forEach(([k,t,v])=>abo(k,L(t,v)));
+  {const lk=el('a','',abo('abSrc',''));lk.href='https://github.com/lvisintini/week-scheduler';lk.target='_blank';lk.rel='noopener noreferrer';lk.textContent='github.com/lvisintini/week-scheduler';lk.title=lk.__t=L('abSrcTip')}
   show(panes[setTab]?setTab:'viewH');
   xdlg({title:L('settings'),full:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }

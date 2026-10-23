@@ -47,7 +47,7 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await page.evaluate(() => openDlg(S.events[0])); await expect(page.locator('.dtabs')).toBeVisible();
     for (const tab of ['Event', 'When', 'More']) { await page.locator('.dtabs button', { hasText: tab }).click(); ratchet(await scan(page), {}); }
   });
-  for (const tab of ['View', 'Data', 'UI']) {
+  for (const tab of ['View', 'Data', 'UI', 'About']) {
     test(`the ${tab} tab of the settings dialog has no serious accessibility violation`, async ({ page }) => {
       await openApp(page); await page.locator('.sbtop .gear').click(); await page.locator('#xDlg .stabs button', { hasText: tab }).click();
       ratchet(await scan(page), {});

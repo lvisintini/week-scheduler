@@ -48,9 +48,9 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
 describe('R-UI-03 Settings dialog', () => {
   const tabs = a => a.qa('#xDlg .stabs button');
   const shown = a => a.qa('#xDlg .ssec').filter(p => !p.classList.contains('off'));
-  it('has three tabs, View, Data and UI, and opens on View', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'UI']);
-    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Show early hours');
+  it('has four tabs, View, Data, UI and About, and opens on View', () => {
+    const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'UI', 'About']);
+    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Show early hours');
   });
   it('the UI tab holds the theme and the language (both start from the browser), and View no longer has the theme', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); expect(shown(a)[0].textContent).toContain('Theme'); expect(shown(a)[0].querySelector('select')).not.toBeNull();
@@ -62,18 +62,18 @@ describe('R-UI-03 Settings dialog', () => {
     a.click('Close'); a.q('.sbtop .gear').click(); expect(tabs(a)[1].getAttribute('aria-selected')).toBe('true'); expect(shown(a)[0].textContent).toContain('Restart');
   });
   it('the dialog keeps one size: every tab stays in the layout (hidden tabs are invisible and inert, not removed), stacked in one grid cell', () => {
-    const a = fresh(); a.q('.sbtop .gear').click(); const ps = a.qa('#xDlg .ssec'); expect(ps).toHaveLength(3); expect(ps.every(p => !p.hidden)).toBe(true);
-    expect(ps.filter(p => p.hasAttribute('inert'))).toHaveLength(2); expect(a.q('#xDlg .spanes').contains(ps[0])).toBe(true);
+    const a = fresh(); a.q('.sbtop .gear').click(); const ps = a.qa('#xDlg .ssec'); expect(ps).toHaveLength(4); expect(ps.every(p => !p.hidden)).toBe(true);
+    expect(ps.filter(p => p.hasAttribute('inert'))).toHaveLength(3); expect(a.q('#xDlg .spanes').contains(ps[0])).toBe(true);
     const css = [...a.d.styleSheets[0].cssRules].map(r => r.cssText).join('\n'); expect(css).toMatch(/\.spanes ?> ?\.ssec ?\{[^}]*grid-area: ?1 ?\/ ?1/); expect(css).toMatch(/\.spanes ?> ?\.ssec\.off ?\{[^}]*visibility: ?hidden/);
   });
   it('tabs look like tabs (underlined, not a boxed button group) and can be switched with the arrow keys', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.q('#xDlg .stabs').classList.contains('seg')).toBe(false);
     a.q('#xDlg .stabs').onkeydown({ key: 'ArrowRight' }); expect(tabs(a)[1].getAttribute('aria-selected')).toBe('true'); a.q('#xDlg .stabs').onkeydown({ key: 'ArrowLeft' }); a.q('#xDlg .stabs').onkeydown({ key: 'ArrowLeft' });
-    expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true');
+    expect(tabs(a)[3].getAttribute('aria-selected')).toBe('true');
   });
   it('switching the language from the UI tab keeps that tab open, now in the new language', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[2].click(); const sel = a.q('#xDlg select'); sel.value = 'es'; sel.onchange();
-    expect(tabs(a).map(b => b.textContent)).toEqual(['Vista', 'Datos', 'Interfaz']); expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true'); expect(sel.getAttribute('aria-label')).toBeTruthy();
+    expect(tabs(a).map(b => b.textContent)).toEqual(['Vista', 'Datos', 'Interfaz', 'Acerca de']); expect(tabs(a)[2].getAttribute('aria-selected')).toBe('true'); expect(sel.getAttribute('aria-label')).toBeTruthy();
   });
   it('the Data section has Restart and Clear memory, each with an explanation', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgButtons()).toEqual(expect.arrayContaining(['Restart', 'Clear memory'])); expect(a.dlgText()).toContain('Discard all unsaved changes and reload what is in browser memory.');
@@ -88,6 +88,42 @@ describe('R-UI-03 Settings dialog', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.qa('#xDlg .sopt small').length).toBeGreaterThanOrEqual(5);
   });
   it('the Close button of the Settings dialog closes it', () => { const a = fresh(); a.q('.sbtop .gear').click(); a.click('Close'); expect(a.dlgOpen()).toBe(false); });
+});
+
+describe('R-UI-15 Settings → About: disclaimer, credits, licence and the link to the source code', () => {
+  const about = a => { a.q('.sbtop .gear').click(); const t = a.qa('#xDlg .stabs button'); t[t.length - 1].click(); return a.qa('#xDlg .ssec').find(p => !p.classList.contains('off')); };
+  it('the About tab is the last tab and says the app has no warranty, that the data stays on this device and that backups are the user\'s', () => {
+    const a = fresh(); const p = about(a); expect(a.q('#xDlg .stabs button.on').textContent).toBe('About');
+    expect(p.textContent).toContain('No warranty'); expect(p.textContent).toContain('without any warranty'); expect(p.textContent).toContain('Nothing is sent anywhere');
+    expect(p.textContent).toContain('erases browser memory, so keep a JSON file as a backup'); expect(p.textContent).not.toContain('Backups are yours'); expect(p.textContent).toContain('personal details you enter about others');
+  });
+  it('credits Luis Visintini and Claude, and names the MIT licence and the current data format', () => {
+    const a = fresh(); const p = about(a); expect(p.textContent).toContain('Made by Luis Visintini, written together with Claude, Anthropic\'s AI assistant.');
+    expect(p.textContent).toContain('MIT licence'); expect(p.textContent).toContain('Data format ' + a.ev('FMT') + '.');
+  });
+  it('has exactly one link, to the GitHub repository, opening in a new tab without opener or referrer', () => {
+    const a = fresh(); const p = about(a); const ls = p.querySelectorAll('a'); expect(ls).toHaveLength(1); expect(a.qa('#xDlg a')).toHaveLength(1);
+    expect(ls[0].getAttribute('href')).toBe('https://github.com/lvisintini/week-scheduler'); expect(ls[0].target).toBe('_blank');
+    expect(ls[0].rel.split(' ').sort()).toEqual(['noopener', 'noreferrer']); expect(ls[0].title).toContain('Nothing from this app is sent');
+  });
+  it('is translated into Spanish, including the link\'s tooltip, which keeps its translation after the language changes', () => {
+    const a = fresh(null, { languages: ['es-ES'] }); const p = about(a); expect(a.q('#xDlg .stabs button.on').textContent).toBe('Acerca de');
+    expect(p.textContent).toContain('Sin garantía'); expect(p.textContent).toContain('Hecho por Luis Visintini, escrito junto con Claude'); expect(p.textContent).toContain('licencia MIT');
+    const lk = p.querySelector('a'); expect(lk.title).toBe('Abre el código fuente en GitHub en una pestaña nueva. No se envía nada de esta aplicación.'); expect(lk.__t).toBe(lk.title);
+    a.ev('applyStatic()'); expect(lk.title).toBe('Abre el código fuente en GitHub en una pestaña nueva. No se envía nada de esta aplicación.');
+  });
+});
+
+describe('R-UI-16 The Save and Load dialogs list their choices one per line', () => {
+  it('Save… stacks its buttons in a column, from browser memory to Cancel', () => {
+    const a = fresh(); a.toolbar('save').click(); expect(a.q('#xDlg .btns').classList.contains('stack')).toBe(true);
+    expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Shareable link', 'Calendar file (export only)', 'Cancel']);
+    const css = [...a.d.styleSheets[0].cssRules].map(r => r.cssText).join('\n'); expect(css).toMatch(/\.btns\.stack ?\{[^}]*flex-direction: ?column/);
+  });
+  it('Load… stacks its buttons in a column too, while other dialogs keep a row of buttons', () => {
+    const a = fresh(); a.toolbar('load').click(); expect(a.q('#xDlg .btns').classList.contains('stack')).toBe(true); expect(a.dlgButtons()).toEqual(['Browser memory', 'JSON file', 'Cancel']);
+    a.click('Cancel'); a.q('.sbtop .gear').click(); expect(a.q('#xDlg .btns').classList.contains('stack')).toBe(false);
+  });
 });
 
 describe('R-UI-04 Colour picker', () => {

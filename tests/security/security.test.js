@@ -31,8 +31,8 @@ describe('R-SEC-01 Content-Security-Policy confines the page to itself', () => {
   it('the page loads nothing from outside: no external scripts, stylesheets, images, frames or links to other sites', () => {
     expect(rawHtml).not.toMatch(/(src|href)=["']?(https?:)?\/\//i); expect(markup).not.toMatch(/(src|href)=["']https?:/i); expect(markup).not.toMatch(/<(iframe|object|embed|frame)\b/i);
   });
-  it('web addresses inside the script are only XML namespaces of inline icons, never something that is fetched', () => {
-    const urls = [...script.matchAll(/https?:\/\/[^\s'"`)]+/g)].map(m => m[0]); expect(urls.every(u => u.startsWith('http://www.w3.org/'))).toBe(true);
+  it('web addresses inside the script are XML namespaces of inline icons and the one GitHub link of About, never something that is fetched', () => {
+    const urls = [...script.matchAll(/https?:\/\/[^\s'"`)]+/g)].map(m => m[0]); expect(urls.filter(u => !u.startsWith('http://www.w3.org/'))).toEqual(['https://github.com/lvisintini/week-scheduler']);
   });
 });
 
