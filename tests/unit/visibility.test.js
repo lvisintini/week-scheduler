@@ -101,10 +101,10 @@ describe('R-PHS-02 Only one rhythm can be shown at a time', () => {
   });
 });
 
-describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by early hours or the hidden weekend', () => {
+describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by the hours not shown or the hidden weekend', () => {
   const hidden = (events, prefs = '') => {
     setData(app, blank({ events }));
-    ev(`state.prefs.showEarly=false;state.prefs.hideWeekend=false;${prefs};render()`);
+    ev(`state.prefs.hours={};state.prefs.hideWeekend=false;${prefs};render()`);
     return ev('hiddenInfo()');
   };
   const at = (day, start, end, extra = {}) => ev1({ id: `e-${day}-${start}`, slots: [{ day, start, end, person: '' }], ...extra });
@@ -128,18 +128,28 @@ describe('R-GRID-09 The "N hidden" pill counts only what is hidden purely by ear
     ev('state.S.people[1].visible=false;render()');
     expect(ev('hiddenInfo().n')).toBe(0);
   });
-  it('nothing is counted once the early hours and the weekend are shown again', () => {
-    expect(hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.showEarly=true').n).toBe(0);
+  it('an event entirely after the end of the hours shown is counted, one only partly after it is not', () => {
+    expect(hidden([at(0, 1080, 1140)], 'state.prefs.hours[state.curId]=[8,17]').er).toBe(1);
+    expect(hidden([at(0, 960, 1080)], 'state.prefs.hours[state.curId]=[8,17]').n).toBe(0);
+  });
+  it('nothing is counted once every hour and the weekend are shown again', () => {
+    expect(hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.hours[state.curId]=[0,24]').n).toBe(0);
   });
   it('phases are never counted as hidden events, even on the hidden weekend', () => {
     setData(app, blank({ rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Sleep', desc: '', color: '#3b6df0', rhythms: ['r'], slots: [{ day: 0, start: 0, end: 120 }] }] }));
     expect(ev('hiddenInfo().n')).toBe(0);
   });
-  it('the pill is visible with the number and its tooltip lists the weekend and early-hours counts', () => {
+  it('the pill is visible with the number and its tooltip lists the weekend and the hours-not-shown counts', () => {
     hidden([at(0, 120, 240), at(5, 600, 660)], 'state.prefs.hideWeekend=true');
     const pill = app.q('#hid');
     expect(pill.style.display).not.toBe('none'); expect(pill.textContent).toBe('2 hidden');
-    expect(pill.title).toMatch(/1 on the hidden weekend/); expect(pill.title).toMatch(/1 in the hidden early hours/);
+    expect(pill.title).toMatch(/1 on the hidden weekend/); expect(pill.title).toMatch(/1 outside the hours shown/); expect(pill.title).toMatch(/change the hours shown/);
+  });
+  it('clicking the pill with hours hiding something opens Zoom on the start knob; with only the weekend hiding something it opens Settings', () => {
+    hidden([at(0, 120, 240)], 'state.prefs.secZoom=true;state.prefs.collapsed=true;applyPrefs();renderSide()'); app.q('#hid').click();
+    expect(ev('[state.prefs.collapsed,state.prefs.secZoom]')).toEqual([false, false]); expect(app.d.activeElement).toBe(app.qa('#sbin .hrs2 input')[0]); expect(app.dlgOpen()).toBeFalsy();
+    hidden([at(5, 600, 660)], 'state.prefs.hideWeekend=true'); expect(app.q('#hid').title).toMatch(/open the settings/); app.q('#hid').click(); expect(app.dlgTitle()).toBe('Settings');
+    app.click('Close');
   });
   it('the pill disappears when nothing is hidden', () => {
     hidden([at(0, 600, 660)]); expect(app.q('#hid').style.display).toBe('none');

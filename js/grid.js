@@ -3,7 +3,7 @@ import {state} from './state.js';
 import {DAY2,DAYS,L} from './i18n.js';
 import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
 import {absD,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
-import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,vs,weekDays} from './model.js';
+import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
 import {openAgenda,withWk} from './stats.js';
 import {renderSide} from './sidebar.js';
 import {openCopy,openDlg} from './dialog.js';
@@ -15,7 +15,7 @@ export function render(){
   hidePeek();
   const fitW=!state.printMode&&state.prefs[FWK()],fitH=!state.printMode&&state.prefs[FH()],ts=state.printMode?1:state.prefs.txt/100;
   const colMin=state.printMode?110:fitW?40:state.prefs[WK()];
-  const g=$('grid'),a=vs(),hrs=24-a,days=state.focusD!=null?[state.focusD]:weekDays(),lvOn=state.live&&!state.printMode,w0=state.curWk;
+  const g=$('grid'),a=hrA(),b=hrB(),Z=b*60,hrs=b-a,days=state.focusD!=null?[state.focusD]:weekDays(),lvOn=state.live&&!state.printMode,w0=state.curWk;
   // the columns: the days of the shown week, or with every week side by side the days of each week in turn (R-CYC-19)
   const cols=state.allWk?[...Array(cyc()).keys()].flatMap(k=>days.map(d=>({w:k+1,d}))):days.map(d=>({w:state.curWk,d}));
   document.documentElement.style.setProperty('--ts',ts);g.style.setProperty('--ts',ts);g.classList.toggle('lv',lvOn);g.classList.toggle('fo',state.focusD!=null);
@@ -46,7 +46,7 @@ export function render(){
     if(state.focusD==null)hb('foc',ICON_FOCUS,L('focusTip',{d:DAYS[di]}),()=>setFocus(di));
     else{hb('nxt',ICON_CR,L('focusNext'),()=>stepFocus(1));hb('wk',ICON_WEEK,L('focusWeekTip'),()=>setFocus(null)).append(L('focusWeek'))}});
   const tm=el('div','times',g);tm.style.height=hrs*state.HH+'px';
-  for(let h=a;h<24;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*state.HH+'px';if(h===a)s.style.transform='translateY(2px)'}
+  for(let h=a;h<b;h++){const s=el('span','',tm);s.textContent=hourLabel(h);s.style.top=(h-a)*state.HH+'px';if(h===a)s.style.transform='translateY(2px)'}
   const ovCache=new Map(),ovOf=e=>{if(!ovCache.has(e))ovCache.set(e,overlapSet(e));return ovCache.get(e)};
   const vsel=vrhythm(),fitList=[];newMaps();const sqc=new Map();
   const lanePos=(x,v)=>{if(v.n<2)return;const l1=v.l1??v.l;x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + (100% - 6px - var(--gut,0px)) * ${v.l/v.n})`;x.style.right='auto';x.style.width=`calc((100% - 6px - var(--gut,0px)) * ${(l1-v.l+1)/v.n} - ${l1<v.n-1?2:0}px)`};
@@ -60,16 +60,16 @@ export function render(){
     const ln=el('div','lane',dw);ln.style.height=hrs*state.HH+'px';
     const col=el('div','day',dw);col.style.height=hrs*state.HH+'px';col.dataset.d=di;if(state.allWk)col.dataset.w=w;
     phByCol[k].forEach(x=>{
-      const {p,s,i}=x;if(s.end<=a*60)return;
-      const st=Math.max(s.start,a*60),top=(st-a*60)/60*state.HH,h=(s.end-st)/60*state.HH,wn=wkNote(p,s),range=fmt(s.start)+'–'+fmtEnd(s.end)+(wn?' · '+wn:'');
+      const {p,s,i}=x;if(s.end<=a*60||s.start>=Z)return;
+      const st=Math.max(s.start,a*60),top=(st-a*60)/60*state.HH,h=(Math.min(s.end,Z)-st)/60*state.HH,wn=wkNote(p,s),range=fmt(s.start)+'–'+fmtEnd(s.end)+(wn?' · '+wn:'');
       const bx=el('div','phx',col);bx.style.top=top+'px';bx.style.height=h+'px';
       const bg=el('div','phbg',bx);bg.style.background=p.color;bg.style.opacity=state.S.phaseOpacity;
       if(state.editMode==='phases'){
         bx.style.outline='2px dashed '+p.color;bx.style.outlineOffset='-2px';
         if(state.selK&&state.selK.id===p.id&&state.selK.i===i)bx.classList.add('sel');
         el('span','pl',bx).textContent=p.title+' · '+range;
-        const rz=el('div','rz ph',col);rz.style.top=top+h+'px';bx._rz=rz;bx.title=p.title+'\n'+range+(p.desc?'\n'+p.desc:'');rz.title=bx.title;
-        bx.onpointerdown=rz.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=ev.target===rz?'resize':'move';press(ev,e2=>grab(e2,{e:p,s,i,piece:0},md),p2=>tapOpen(p2,p))};
+        const rz=s.end<=Z?el('div','rz ph',col):null;bx.title=p.title+'\n'+range+(p.desc?'\n'+p.desc:'');if(rz){rz.style.top=top+h+'px';bx._rz=rz;rz.title=bx.title}   // an end past the hours shown has no handle
+        bx.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=ev.target===rz?'resize':'move';press(ev,e2=>grab(e2,{e:p,s,i,piece:0},md),p2=>tapOpen(p2,p))};if(rz)rz.onpointerdown=bx.onpointerdown;
       }
       if(!(k>0&&phByCol[k-1].some(y=>y.key===x.key))){
         let n=1;while(k+n<cols.length&&phByCol[k+n].some(y=>y.key===x.key))n++;
@@ -87,20 +87,20 @@ export function render(){
       if(its.length)overlapMenu(ev.clientX,ev.clientY,its,openCopy,L('ctxCopy'))};
     col.onpointermove=ev=>{atCol(col);peekMove(ev,di,col)};col.onpointerleave=hidePeek;
     // cs/ce = the visible core of the piece (R-EVT-15): lanes and stripes only look at cores; a piece that is all margin has an empty core
-    const bgs=[],evs=state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q),cs=Math.max(c0,a*60);
-      return {e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,c0,c1,cs,ce:c1>cs?c1:cs,color:colOf(e,s),op:evOp(e)}}))).filter(it=>!isBg(it.e,it.s)||!bgs.push(it));
+    const bgs=[],evs=state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&q.a<Z&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q),cs=Math.min(Math.max(c0,a*60),Z),ce=Math.min(c1,Z);
+      return {e,s,piece:q.p,cont:s.end>1440,start:q.a,end:q.b,c0,c1,cs,ce:ce>cs?ce:cs,color:colOf(e,s),op:evOp(e)}}))).filter(it=>!isBg(it.e,it.s)||!bgs.push(it));
     // strips (R-EVT-17): packed into sub-lanes by their whole window; the gutter is reserved only when the column has any
     const sl=[],SW=14;bgs.forEach(it=>{let k=sl.findIndex(ln=>ln.every(x=>x.end<=Math.max(it.start,a*60)||Math.max(x.start,a*60)>=it.end));if(k<0){k=sl.length;sl.push([])}sl[k].push(it);it.k=k});
     const gut=sl.length*(SW+2);gutMap[gk(di)]=gut;if(gut)col.style.setProperty('--gut',gut+'px');
     // nested pieces (R-NST-01) are drawn inside their host and take no part in lanes or stripes
     const nst=nestPick(evs),flat=evs.filter(it=>!nst.has(it));nst.forEach((h,x)=>nestMap.set(gk(nkey(x.e,x.s,x.piece)),{x,h}));
     // "around these times" with no minute left counts as a core over its whole window (R-EVT-12)
-    flat.forEach(it=>{const ts=sqOf(it.e,it.s,it.piece,state.curWk,sqc);if(!ts)return;it.sq=ts;it.c0=it.start;it.c1=it.end;it.cs=Math.max(it.start,a*60);it.ce=it.end;sqMap.add(gk(nkey(it.e,it.s,it.piece)))});
+    flat.forEach(it=>{const ts=sqOf(it.e,it.s,it.piece,state.curWk,sqc);if(!ts)return;it.sq=ts;it.c0=it.start;it.c1=it.end;it.cs=Math.max(it.start,a*60);it.ce=Math.min(it.end,Z);sqMap.add(gk(nkey(it.e,it.s,it.piece)))});
     const aws=bgs.filter(it=>isAway(it.e)),awc=new Map();if(aws.length)evs.forEach(it=>{const h=awayHits(it,aws);if(h.length)awc.set(it,h)});   // Away clashes (R-EVT-24)
     // lanes look at whole windows, margins included (R-EVT-15): another person's occurrence goes beside a margin, never over it; occurrences that
     // clash share a lane, where a core covers the margins and stripes only mark core on core
     const lay=(state.prefs.lanesFix?fixedLayout:laneLayout)(flat.map(it=>({...it,start:Math.max(it.start,a*60),src:it}))),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
-    const px=m=>(m-a*60)/60*state.HH,mgEls=[];   // margins are inserted below every core box once the column is drawn (later-starting on top)
+    const px=m=>(Math.min(m,Z)-a*60)/60*state.HH,mgEls=[];   // cut at the last hour shown like the first (R-GRID-02); margins are inserted below every core box once the column is drawn (later-starting on top)
     [...flat,...nst.keys()].forEach(it=>{   // nested boxes last, so they lie above their host
       const hst=nst.get(it),v0=lv.get(hst||it),sg=v0.segs;
       // fixed lanes (R-EVT-23): a box for each run of neighbouring lanes; a nested box sits in the host's box that holds its person's lane
@@ -111,7 +111,7 @@ export function render(){
     function drawBox(it,hst,v){
       const e=it.e,s=it.s,pos=hst?insetPos:lanePos,core=it.ce>it.cs,vs0=Math.max(it.start,a*60),lk=isLocked(e),aw=awc.get(it)||[],warn=ovOf(e).has(s)||aw.length>0||!!it.sq,ty=tyOf(e);
       const d=el('div','ev'+(hst?' nest':''),col);pos(d,v);d._it=it;fitList.push(d);
-      const mgs=core?[['t',vs0,it.cs],['b',it.ce,it.end]].filter(([,x,y])=>y>x).map(([k,x,y])=>{const m=el('div','mg '+k+(hst?' nest':''),col);pos(m,v);m.style.top=px(x)+'px';m.style.height=px(y)-px(x)+'px';
+      const mgs=core?[['t',vs0,it.cs],['b',it.ce,Math.min(it.end,Z)]].filter(([,x,y])=>y>x).map(([k,x,y])=>{const m=el('div','mg '+k+(hst?' nest':''),col);pos(m,v);m.style.top=px(x)+'px';m.style.height=px(y)-px(x)+'px';
         m.style.setProperty('--c',it.color);m.style.opacity=it.op;if(ty&&ty.soft)m.classList.add('soft');if(lk)m.classList.add('locked');mgEls.push([x,m]);return [k,m]}):[];
       const mt=mgs.find(x=>x[0]==='t'),mb=mgs.find(x=>x[0]==='b');
       if(core){d.style.top=px(it.cs)+'px';d.style.height=Math.max(14,px(it.ce)-px(it.cs)-(mb?0:1))+'px'}
@@ -137,7 +137,7 @@ export function render(){
       aw.forEach(x=>{const p=Math.max(it.cs,x.c0,a*60),q=Math.min(it.ce,x.c1);if(q<=p)return;const o=el('div','ov awov',col);pos(o,v);o.style.top=px(p)+'px';o.style.height=px(q)-px(p)-1+'px';
         let c2=normHex(x.color)||x.color;if(c2===(normHex(it.color)||it.color))c2=shiftColor(c2,[c2]);o.style.background=`repeating-linear-gradient(45deg,${it.color} 0 7px,${c2} 7px 14px)`;o.style.opacity=.85*Math.max(it.op,x.op)});
       d.setAttribute('aria-label',info.join(', '));
-      const rz=(!it.cont||it.piece)&&!lk&&state.editMode==='events'?el('div','rz',col):null;
+      const rz=(!it.cont||it.piece)&&it.end<=Z&&!lk&&state.editMode==='events'?el('div','rz',col):null;
       if(rz){rz.style.top=(mb||!core?px(it.end):parseFloat(d.style.top)+parseFloat(d.style.height))+'px';pos(rz,v);d._rz=rz}
       // the core's own edges, where a margin is beside them: dragging one changes that margin (R-EVT-15); each at most half the core, so both fit
       const eh=[];if(core&&!lk&&state.editMode==='events')[['fs',it.cs,it.cs===it.c0],['fe',it.ce,it.ce===it.c1]].forEach(([k,y,whole])=>{if(!whole||coreEdge(s,{p:it.piece,a:it.start,b:it.end},k)!==y)return;
@@ -152,13 +152,13 @@ export function render(){
       d.style.cssText=`top:${px(top)}px;height:${Math.max(6,px(it.end)-px(top)-1)}px;right:${r0}px;opacity:${it.op}`;d.style.setProperty('--c',it.color);
       const lb=el('span','',d);lb.textContent=e.title;d.style.color=ink(it.color);   // the title reads top-to-bottom
       const awy=isAway(e);if(awy){const k=ink(it.color);d.classList.add('aw');d.style.background=`repeating-linear-gradient(45deg,${it.color} 0 5px,color-mix(in srgb,${it.color} 70%,${k==='#000'?'#fff':'#000'}) 5px 9px)`}   // Away: hatched (R-EVT-24)
-      if(awy){/* Away keeps its hatch: no flexible or core shading */}else if(s.flex){d.classList.add('flex');d.style.color='var(--fg)'}else if(it.ce>it.cs&&(it.cs>top||it.ce<it.end)){const t=`color-mix(in srgb,${it.color} 40%,transparent)`,c0=px(it.cs)-px(top),c1=px(it.ce)-px(top);d.style.background=`linear-gradient(${t} 0 ${c0}px,${it.color} ${c0}px ${c1}px,${t} ${c1}px)`;
+      if(awy){/* Away keeps its hatch: no flexible or core shading */}else if(s.flex){d.classList.add('flex');d.style.color='var(--fg)'}else if(it.ce>it.cs&&(it.cs>top||it.ce<Math.min(it.end,Z))){const t=`color-mix(in srgb,${it.color} 40%,transparent)`,c0=px(it.cs)-px(top),c1=px(it.ce)-px(top);d.style.background=`linear-gradient(${t} 0 ${c0}px,${it.color} ${c0}px ${c1}px,${t} ${c1}px)`;
         if(c0>0)lb.style.paddingTop=c0+3+'px'}   // the text starts where the solid core starts
       else if(it.ce<=it.cs){d.style.background=`color-mix(in srgb,${it.color} 40%,transparent)`;d.style.color='var(--fg)'}
       if(it.cont)d.style.borderRadius=it.piece?'0 0 6px 0':'0 6px 0 0';
       // the band: the strip's colour fading leftwards across the column, under the hour lines and every box; purely visual (only the lip takes the pointer)
       const bb=el('div','bgb');bb.style.cssText=`top:${d.style.top};height:${d.style.height};right:${r0+SW}px;opacity:${it.op*(s.flex?.5:it.ce<=it.cs?.45:1)}`;bb.style.setProperty('--c',it.color);
-      if(!s.flex&&it.ce>it.cs&&(it.cs>top||it.ce<it.end)){const c0=px(it.cs)-px(top),c1=px(it.ce)-px(top),mk=`linear-gradient(#00000073 0 ${c0}px,#000 ${c0}px ${c1}px,#00000073 ${c1}px)`;bb.style.maskImage=mk;bb.style.webkitMaskImage=mk}
+      if(!s.flex&&it.ce>it.cs&&(it.cs>top||it.ce<Math.min(it.end,Z))){const c0=px(it.cs)-px(top),c1=px(it.ce)-px(top),mk=`linear-gradient(#00000073 0 ${c0}px,#000 ${c0}px ${c1}px,#00000073 ${c1}px)`;bb.style.maskImage=mk;bb.style.webkitMaskImage=mk}
       if(!awy){col.insertBefore(bb,col.querySelector('.gl'));d._bb=bb}   // no band for Away: it would say the whole household is away
       if(awy&&state.prefs.lanesFix){const ids=fixIds(),n=Math.max(1,ids.length);awayPpl(e,s).forEach(p=>{const k=ids.indexOf(p);if(k<0)return;const h=el('div','awl');lanePos(h,{l:k,l1:k,n});if(n<2){h.style.left='3px';h.style.right='calc(3px + var(--gut,0px))'}
         h.style.top=d.style.top;h.style.height=d.style.height;h.style.setProperty('--c',it.color);col.insertBefore(h,col.querySelector('.gl'))})}   // fixed lanes: the away person's lane is hatched
@@ -166,7 +166,7 @@ export function render(){
       const info=[e.title,it.piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end),...(s.person?[L('byl')+' '+pname(s.person)+(isExt(s.person)?' ('+L('extSuf')+')':'')]:[])];
       const invNames=invOf(e,s).map(pname).filter(Boolean);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));if(e.owner)info.push(L('ownl')+' '+pname(e.owner));if(e.bg)info.push(L('bgNote'));if(awy)info.push(L('awNote'));if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));if(wkNote(e,s))info.push(wkNote(e,s));
       d.setAttribute('aria-label',info.join(', '));
-      const rz=(!it.cont||it.piece)&&!lk&&state.editMode==='events'?el('div','rz',col):null;
+      const rz=(!it.cont||it.piece)&&it.end<=Z&&!lk&&state.editMode==='events'?el('div','rz',col):null;
       if(rz){rz.style.cssText=`top:${px(it.end)}px;left:auto;right:${r0}px;width:${SW}px`;d._rz=rz}
       if(!lk&&state.editMode==='events')d.onpointerdown=ev=>{if(ev.button)return;ev.stopPropagation();const md=rz&&rz===ev.target?'resize':'move';press(ev,e2=>grab(e2,it,md),p2=>tapOpen(p2,e))};
       if(rz)rz.onpointerdown=d.onpointerdown;
@@ -192,15 +192,15 @@ export function render(){
   })}finally{state.curWk=w0}
   fitAll(fitList);fitLips(g);
   drawNow();
-  const hi=state.allWk?[...Array(cyc()).keys()].map(k=>withWk(k+1,hiddenInfo)).reduce((x,y)=>({n:x.n+y.n}),{n:0}):hiddenInfo(),hb=$('hid');hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
-  hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L('hidClick')].filter(Boolean).join('\n');
+  const hi=state.allWk?[...Array(cyc()).keys()].map(k=>withWk(k+1,hiddenInfo)).reduce((x,y)=>({wk:x.wk+y.wk,er:x.er+y.er,n:x.n+y.n}),{wk:0,er:0,n:0}):hiddenInfo(),hb=$('hid');hb._hrs=hi.er>0;hb.style.display=hi.n&&!lvOn?'':'none';hb.textContent=L('hidN',{n:hi.n});   // never in live view
+  hb.title=[hi.wk&&L('hidWk',{n:hi.wk}),hi.er&&L('hidEr',{n:hi.er}),L(hi.er?'hidClickH':'hidClick')].filter(Boolean).join('\n');
   updLive();if(lvOn){lvRects.length=0;lvOpen.slice().forEach(o=>lvDraw(o,false));if(!state.livePaused&&!liveBusy())liveScroll()}
   if(!state.printMode)updZoomUI();
 }
 /* ---------- pointer interactions ---------- */
 function colAt(x){const cs=[...document.querySelectorAll('.day')];let c=cs.find(c=>x<c.getBoundingClientRect().right)||cs[cs.length-1];atCol(c);return c}
 const atCol=c=>{if(state.allWk&&c&&c.dataset.w)state.curWk=+c.dataset.w};   // with every week side by side the column under the pointer is the week (R-CYC-19)
-export const minAt=(c,y)=>vs()*60+(y-c.getBoundingClientRect().top)/state.HH*60;
+export const minAt=(c,y)=>hrA()*60+(y-c.getBoundingClientRect().top)/state.HH*60;
 const snapM=m=>Math.round(m/SNAP)*SNAP;
 const rzMin=()=>((window.matchMedia&&matchMedia('(pointer:coarse)').matches)?16:7)/state.HH*60+1;
 /* touch: scroll natively; long-press (0.4 s) starts create / move / resize; tap opens */
@@ -412,7 +412,7 @@ function startCreate(ev,di,col){
   const a=Math.max(0,Math.min(1440-SNAP,Math.floor(minAt(col,ev.clientY)/SNAP)*SNAP));
   let b=a+SNAP,moved=false;
   const gh=el('div','ghost',col);
-  const draw=()=>{const lo=Math.min(a,b),hi=Math.max(a,b);gh.style.top=(lo-vs()*60)/60*state.HH+'px';gh.style.height=(hi-lo)/60*state.HH+'px'};
+  const draw=()=>{const lo=Math.min(a,b),hi=Math.max(a,b);gh.style.top=(lo-hrA()*60)/60*state.HH+'px';gh.style.height=(hi-lo)/60*state.HH+'px'};
   draw();
   const mv=p=>{if(!moved&&Math.hypot(p.clientX-ev.clientX,p.clientY-ev.clientY)<4)return;moved=true;b=snapM(minAt(col,p.clientY));if(b===a)b=a+SNAP;b=Math.max(0,Math.min(1440,b));draw()};
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);gh.remove();

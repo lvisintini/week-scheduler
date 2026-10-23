@@ -75,6 +75,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-EVT-22: `.cbtn`, `cSet`, `updCols`, `dlgTy`
 - R-EVT-23: `laneLayout`, `fixedLayout`, `segs`, `fixIds`
 - R-EVT-24: `isAway`, `awayHits`, `.bgs.aw`, `.awov`, `.awl`, `#fAw`
+- R-GRID-02: `hrA`/`hrB` (the current workspace's hours shown; `Z` = the minute where the column ends in `render`), `hrsOf`, `HRS0`, `prefs.hours`, `hoursRow` (`.hrs2`, `.fill`, `.lo`), `shownSpan` (Fit to what's shown, `.zfit`), `goHours` (the pill's way to Zoom)
 - R-GRID-03: `wj`, `--weh`
 - R-GRID-06: `DAY2`, `nr`
 - R-GRID-07: `.zsub`, `fitted`, `RH`/`FH` (the row-height prefs keys in use: `rowHP`/`fitHP` on a phone)

@@ -180,11 +180,38 @@ test.describe('R-GRID-10 Layer order in a real browser', () => {
   });
 });
 
-test.describe('R-GRID-02 Hidden early hours in a real browser', () => {
-  test('showing the early hours makes the day taller by exactly five rows', async ({ page }) => {
+test.describe('R-GRID-02 Hours shown in a real browser', () => {
+  const knob = (page, i) => page.locator('#sbin .hrs2 input').nth(i);
+  const hours = page => page.evaluate(() => [hrA(), hrB()]);
+  const track = async page => { await page.evaluate(() => { state.prefs.secZoom = false; renderSide(); }); await knob(page, 1).scrollIntoViewIfNeeded(); const t = await boxOf(page.locator('#sbin .hrs2')); return h => ({ x: t.x + t.height / 2 + (t.width - t.height) * h / 24, y: t.y + t.height / 2 }); };
+  const slide = async (page, p, q) => { await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(q.x, q.y, { steps: 8 }); await page.mouse.up(); };
+  test('starting the hours at 00:00 makes the day taller by exactly five rows', async ({ page }) => {
     await openApp(page); const h0 = await boxOf(page.locator('.day').first());
-    await page.evaluate(() => { state.prefs.showEarly = true; render(); }); const h1 = await boxOf(page.locator('.day').first());
+    await page.evaluate(() => { state.prefs.hours[state.curId] = [0, 24]; render(); }); const h1 = await boxOf(page.locator('.day').first());
     expect(h1.height - h0.height).toBeCloseTo(5 * 48, 0);
+  });
+  test('both knobs can be dragged with the mouse, and each moves on its own with the arrow keys', async ({ page }) => {
+    await openApp(page); const at = await track(page);
+    await slide(page, at(24), at(17)); expect(await hours(page)).toEqual([5, 17]);
+    await slide(page, at(5), at(8)); expect(await hours(page)).toEqual([8, 17]); expect(await page.locator('.times span').first().textContent()).toBe('08:00');
+    await knob(page, 0).focus(); await page.keyboard.press('ArrowRight'); expect(await hours(page)).toEqual([9, 17]);
+    await knob(page, 1).focus(); await page.keyboard.press('ArrowLeft'); expect(await hours(page)).toEqual([9, 16]);
+  });
+  test('two knobs an hour apart at the right end can still be parted: the start knob lies on top there', async ({ page }) => {
+    await openApp(page); await page.evaluate(() => { state.prefs.hours[state.curId] = [23, 24]; render(); }); const at = await track(page);
+    await slide(page, at(23.5), at(20)); expect(await hours(page)).toEqual([20, 24]);   // between the two knobs, where they overlap
+  });
+  test('a box running past the end is cut at the bottom of the grid, which scrolls no further than the last hour', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(0, 960, 1380)] })] }));
+    const g0 = await page.evaluate(() => { state.prefs.hours[state.curId] = [0, 17]; render(); const w = document.getElementById('wrap'); return w.scrollHeight; });
+    const col = await boxOf(page.locator('.day').first()), b = await boxOf(page.locator('.day[data-d="0"] .ev'));
+    expect(col.height).toBeCloseTo(17 * 48, 0); expect(b.y + b.height).toBeLessThanOrEqual(col.y + col.height + 0.5);
+    const g1 = await page.evaluate(() => { state.S.events = []; render(); return document.getElementById('wrap').scrollHeight; }); expect(g0).toBe(g1);
+  });
+  test('after the hours shown, Live View rests at the bottom of the grid and draws no now line', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 20, 0) }); await page.evaluate(() => { state.prefs.hours[state.curId] = [0, 17]; state.prefs.rowH = 60; state.prefs.collapsed = true; applyPrefs(); setLive(true); });
+    const s = await page.evaluate(() => { const w = document.getElementById('wrap'); return [w.scrollTop, w.scrollHeight - w.clientHeight]; }); expect(s[1]).toBeGreaterThan(0); expect(Math.abs(s[0] - s[1])).toBeLessThanOrEqual(1);
+    await expect(page.locator('.now')).toHaveCount(0);
   });
 });
 
@@ -232,7 +259,7 @@ test.describe('R-EVT-15 Flexible start/end as drawn by a real browser', () => {
       ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] }), ev({ id: 'p', title: 'Pickup', color: '#2fa66a', slots: [slot(0, 1005, 1050, '')] })] }));
   });
   test('the other event\'s core covers the margin, and the uncovered margin shows a 2 px dashed border', async ({ page }) => {
-    const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * state.HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
+    const at = async m => { await page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - hrA() * 60) / 60 * state.HH - 150; }, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y).closest('.ev,.mg'); return e && (e.classList.contains('mg') ? 'margin:' + e._ev?.textContent.slice(0, 4) : 'core:' + e.textContent.slice(0, 4)); }, [p.x, p.y]); };
     expect(await at(1008)).toBe('core:Pick');   // (Work's resize handle covers its last ~9 minutes, as for every box)
     expect(await at(550)).toBe('margin:Work'); expect(await at(700)).toBe('core:Work');
     const st = await page.locator('.mg.t').evaluate(m => { const c = getComputedStyle(m); return [c.borderTopStyle, c.borderTopWidth, c.borderBottomStyle]; });
@@ -252,7 +279,7 @@ test.describe('R-EVT-15 The edges of a flexible event\'s core can be dragged wit
   test.beforeEach(async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person({ id: 'A', name: 'Ann' })], events: [ev({ id: 'w', title: 'Work', slots: [{ ...slot(0, 540, 1020, 'A'), fs: 30, fe: 15 }] })] }));
   });
-  const scrollTo = (page, m) => page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - vs() * 60) / 60 * state.HH - 150; }, m);
+  const scrollTo = (page, m) => page.evaluate(n => { document.getElementById('wrap').scrollTop = (n - hrA() * 60) / 60 * state.HH - 150; }, m);
   const drag = async (page, from, to) => { await scrollTo(page, from); const a = await pt(page, 0, from), b = await pt(page, 0, to); await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(a.x, (a.y + b.y) / 2, { steps: 4 }); await page.mouse.move(b.x, b.y, { steps: 4 }); await page.mouse.up(); };
   const hitAt = async (page, m) => { await scrollTo(page, m); const p = await pt(page, 0, m); return page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e.classList.contains('rz') ? [...e.classList].join(' ') : e.closest('.ev') ? 'box' : e.className; }, [p.x, p.y]); };
   test('the handles lie on the core\'s own edges, inside the solid box, with a resize cursor', async ({ page }) => {
@@ -461,7 +488,7 @@ test.describe('R-UI-10 Dragging the event dialog aside, in a real browser', () =
   const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   test('dragging the grip bar moves the dialog off a box it was hiding; menus inside it still open at their button', async ({ page }) => {
     await page.setViewportSize({ width: 1700, height: 800 }); await openApp(page, { prefs: { fitW: true } }); await seed(page, box());   // room beside the 900 px dialog
-    await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - vs()) * state.HH - 100; openDlg(state.S.events[0]); });
+    await page.evaluate(() => { document.getElementById('wrap').scrollTop = (10 - hrA()) * state.HH - 100; openDlg(state.S.events[0]); });
     const ev0 = await boxOf(page.locator('.day[data-d="2"] .ev')), d0 = await boxOf(page.locator('#dlg'));
     expect(overlaps(ev0, d0)).toBe(true);
     const g = await boxOf(page.locator('#dGrip')), dx = ev0.x + ev0.width + 10 - d0.x;
@@ -503,7 +530,7 @@ test.describe('R-UI-12 The day table scrolls to the clicked repetition, in a rea
   });
   const clickTime = async (page, i) => { const b = page.locator('.day[data-d="0"] .ev').nth(i); await b.scrollIntoViewIfNeeded(); const r = await b.boundingBox(); await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2); };
   test('a time far down the list is scrolled to the middle of the table and pulses; one already in view does not scroll', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { showEarly: true } }); await seed(page, many());
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page); await seed(page, many()); await page.evaluate(() => { state.prefs.hours[state.curId] = [0, 24]; render(); });
     await clickTime(page, 12); await expect(page.locator('#dlg')).toHaveAttribute('open', ''); let g = await geo(page);
     expect(g.scroll).toBeGreaterThan(0); expect(Math.abs(g.mid - (g.v0 + g.v1) / 2)).toBeLessThan(4);
     await page.keyboard.press('Escape'); await page.evaluate(() => { document.getElementById('wrap').scrollTop = 0; }); await clickTime(page, 1); g = await geo(page); expect(g.scroll).toBe(0); expect(g.mid).toBeGreaterThan(g.v0); expect(g.mid).toBeLessThan(g.v1);

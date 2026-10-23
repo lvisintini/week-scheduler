@@ -88,7 +88,7 @@ export function openApp(opts = {}) {
     /** keyboard shortcut on the document */
     key(key, o = {}) { d.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...o })); },
     /** y coordinate (px) of a minute-of-day inside a day column */
-    y: min => w.eval(`(${min}-vs()*60)/60*state.HH`),
+    y: min => w.eval(`(${min}-hrA()*60)/60*state.HH`),
     /** x coordinate of the middle of the n-th displayed day column */
     x: n => n * 100 + 50,
     /** open the Save dialog and choose a target by its label */

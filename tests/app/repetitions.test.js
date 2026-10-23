@@ -160,7 +160,7 @@ describe('R-REP-03 The end-time list reaches the end of the next day', () => {
   it('R-REP-04 the end picked in the list reads the same on the saved box: 22:00–00:00 and 22:00–00:00 (Next day)', () => {
     for (const end of ['1440', '2880']) {
       const a = fresh(blank()); a.toolbar('add').click(); fillDialog(a, { title: 'Late', start: '1320', end }); const label = [...a.qa('#fDays .dr')[0].querySelectorAll('select')[1].options].find(o => o.value === end).textContent; save(a);
-      a.ev('state.prefs.showEarly=true;render()'); expect(a.q('.ev').textContent).toContain('22:00–' + label);
+      a.ev('state.prefs.hours[state.curId]=[0,24];render()'); expect(a.q('.ev').textContent).toContain('22:00–' + label);
     }
   });
   it('an end of "01:30 (Next day)" saves an event that ends at minute 1530', () => {

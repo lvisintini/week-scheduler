@@ -27,6 +27,11 @@ test.describe('R-PRN-02 Print schedule in print media', () => {
     const normal = await measure(); await page.evaluate(() => { state.prefs.rowH = 110; state.prefs.colW = 250; render(); }); const zoomed = await measure();
     expect(zoomed.gap).toBeCloseTo(normal.gap, 1); expect(zoomed.w).toBeCloseTo(normal.w, 0);
   });
+  test('the printed grid shows the hours shown, cut at the end like the screen', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ slots: [slot(0, 960, 1200)] })] })); await page.evaluate(() => { state.prefs.hours[state.curId] = [8, 17]; render(); printSchedule(); }); await page.emulateMedia({ media: 'print' });
+    const r = await page.evaluate(() => { const c = document.querySelector('#pr .day').getBoundingClientRect(), b = document.querySelector('#pr .day[data-d="0"] .ev').getBoundingClientRect(); return { labels: [...document.querySelectorAll('#pr .times span')].map(x => x.textContent), h: c.height, cut: b.bottom - c.bottom }; });
+    expect(r.labels[0]).toBe('08:00'); expect(r.labels.at(-1)).toBe('16:00'); expect(r.cut).toBeLessThanOrEqual(0.5);
+  });
   test('the screen is left exactly as it was: zoom restored and the print area emptied afterwards', async ({ page }) => {
     await page.evaluate(() => { state.prefs.rowH = 110; render(); }); await page.evaluate(() => { printSchedule(); window.onafterprint(); });
     expect(await page.evaluate(() => state.HH)).toBe(110); await expect(page.locator('#pr > *')).toHaveCount(0);

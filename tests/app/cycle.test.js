@@ -92,7 +92,7 @@ describe('R-CYC-16 Phases have weeks like events: a rhythm can differ per week o
   });
   it('a phase with different times per week draws each time in its own week, and lips group only within the week', () => {
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(1, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
-    expect(a.qa('.day[data-d="0"] .phx').map(x => x.style.top)).toEqual([a.ev('(360-vs()*60)/60*state.HH+"px"')]); expect(lipT(a)).toEqual(['Shift']);
+    expect(a.qa('.day[data-d="0"] .phx').map(x => x.style.top)).toEqual([a.ev('(360-hrA()*60)/60*state.HH+"px"')]); expect(lipT(a)).toEqual(['Shift']);
     week(a, 2); expect(phx(a, 0)).toBe(1); expect(phx(a, 1)).toBe(0); expect(a.q('.lane .lip').title).toContain('21:00');
   });
   it('the phase dialog has the Weeks row and Different per week, with its own tooltip, and saves weeks like an event', () => {

@@ -207,11 +207,11 @@ function openWorkspaces(){
     state.WS=rows.map(x=>x.w);state.prefs.wsOrder=state.WS.map(w=>w.id);savePrefs();state.S=cw().data;render()}},{label:L('cancel'),dismiss:true}]});
 }
 function renameWorkspace(){const n=prompt(L('pWs'),cw().name);if(!n)return;cw().name=n.trim().slice(0,200);render()}
-function duplicateWorkspace(){syncWs();const w=newWs(uniqueName(cw().name+L('wsCopySuffix'),state.WS.map(x=>x.name)),JSON.parse(JSON.stringify(state.S)),false),t=state.prefs.lvAnchor[state.curId];if(t){state.prefs.lvAnchor[w.id]=t;savePrefs()}state.WS.push(w);switchWs(w.id)}   // the copy keeps today's week
+function duplicateWorkspace(){syncWs();const w=newWs(uniqueName(cw().name+L('wsCopySuffix'),state.WS.map(x=>x.name)),JSON.parse(JSON.stringify(state.S)),false),t=state.prefs.lvAnchor[state.curId],hr=state.prefs.hours[state.curId];if(t)state.prefs.lvAnchor[w.id]=t;if(hr)state.prefs.hours[w.id]=[...hr];if(t||hr)savePrefs();state.WS.push(w);switchWs(w.id)}   // the copy keeps today's week and the hours shown
 function deleteWorkspace(){
   if(state.WS.length<2){toast(L('wsLast'));return}
   if(!confirm(L('confWs',{n:cw().name})))return;
-  delete state.prefs.lvAnchor[state.curId];delete state.prefs.icsLast[state.curId];savePrefs();const i=state.WS.indexOf(cw());state.WS.splice(i,1);const nx=state.WS[Math.min(i,state.WS.length-1)];state.curId=nx.id;state.S=nx.data;state.undoSt=nx.undo||[];state.redoSt=nx.redo||[];state.selK=null;render();
+  delete state.prefs.lvAnchor[state.curId];delete state.prefs.icsLast[state.curId];delete state.prefs.hours[state.curId];savePrefs();const i=state.WS.indexOf(cw());state.WS.splice(i,1);const nx=state.WS[Math.min(i,state.WS.length-1)];state.curId=nx.id;state.S=nx.data;state.undoSt=nx.undo||[];state.redoSt=nx.redo||[];state.selK=null;render();
 }
 /* the cycle of weeks (R-CYC-01/10): its length is data. Lengthening keeps every-week events every week; going to a multiple can repeat the
    events of chosen weeks in the new weeks, so their rhythm stays (week 1 of 2 → weeks 1 and 3 of 4). Shrinking asks first (shrinkCycle). */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, PREFS_KEY, createDrag, fillDialog } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, PREFS_KEY, createDrag, fillDialog } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const headers = a => a.qa('.dh:not(.c)').map(h => h.textContent);
@@ -22,7 +22,14 @@ describe('R-GRID-01 The week runs Monday to Sunday from left to right', () => {
   });
 });
 
-describe('R-GRID-02 Hourly rows from 05:00 to midnight, early hours can be shown', () => {
+describe('R-GRID-02 Hours shown: hourly rows from 05:00 to midnight by default, two knobs in Zoom for each workspace, Fit to what\'s shown', () => {
+  const knobs = a => a.qa('#sbin .hrs2 input');
+  const move = (a, i, v) => { const k = knobs(a)[i]; k.value = String(v); k.dispatchEvent(new a.w.Event('input')); };
+  const labels = a => a.qa('.times span').map(s => s.textContent);
+  const shown = a => a.q('#sbin .hrs2').parentElement.querySelector('.zv').textContent;
+  const hrs = (a, x, y) => a.ev(`state.prefs.hours[state.curId]=[${x},${y}];render();renderSide()`);
+  const fit = a => a.q('#sbin .zfit').click();
+  const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY) || '{}');
   it('by default the time column labels run from 05:00 to 23:00', () => {
     const labels = fresh().qa('.times span').map(s => s.textContent);
     expect(labels[0]).toBe('05:00'); expect(labels.at(-1)).toBe('23:00'); expect(labels).toHaveLength(19);
@@ -30,15 +37,91 @@ describe('R-GRID-02 Hourly rows from 05:00 to midnight, early hours can be shown
   it('the column is exactly as tall as the visible hours', () => {
     expect(fresh().q('.day').style.height).toBe(`${19 * 48}px`);
   });
-  it('showing the early hours adds the rows from 00:00 to 04:00', () => {
-    const a = fresh(); a.ev('state.prefs.showEarly=true;render()');
-    const labels = a.qa('.times span').map(s => s.textContent);
-    expect(labels[0]).toBe('00:00'); expect(labels).toHaveLength(24);
+  it('moving the start knob to 00:00 adds the rows from 00:00 to 04:00, and the value reads 00:00–00:00', () => {
+    const a = fresh(); expect(shown(a)).toBe('05:00–00:00'); move(a, 0, 0);
+    expect(labels(a)[0]).toBe('00:00'); expect(labels(a)).toHaveLength(24); expect(shown(a)).toBe('00:00–00:00');
   });
-  it('an event inside the hidden early hours is kept but not drawn until the hours are shown', () => {
+  it('an event outside the hours shown is kept but not drawn until the hours include it', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 120, end: 240, person: '' }] })] }));
     expect(a.qa('.ev')).toHaveLength(0); expect(a.ev('state.S.events.length')).toBe(1);
-    a.ev('state.prefs.showEarly=true;render()'); expect(a.qa('.ev')).toHaveLength(1);
+    move(a, 0, 2); expect(a.qa('.ev')).toHaveLength(1);
+  });
+  it('the end knob ends the grid: 08:00 to 17:00 shows the rows 08:00 to 16:00 and a column nine hours tall', () => {
+    const a = fresh(); move(a, 1, 17); move(a, 0, 8); expect(labels(a)).toEqual(['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']);
+    expect(a.q('.day').style.height).toBe(`${9 * 48}px`); expect(a.q('.times').style.height).toBe(`${9 * 48}px`); expect(shown(a)).toBe('08:00–17:00');
+  });
+  it('an event running past the end is cut at the bottom and has no resize handle there; one ending inside keeps its handle', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'x', slots: [{ day: 0, start: 960, end: 1080, person: '' }] }), ev1({ id: 'y', slots: [{ day: 1, start: 900, end: 960, person: '' }] })] })); hrs(a, 8, 17);
+    const b = a.q('.day[data-d="0"] .ev'); expect(parseFloat(b.style.top)).toBeCloseTo(8 * 48, 0); expect(parseFloat(b.style.height)).toBeCloseTo(48 - 1, 0);
+    expect(a.qa('.day[data-d="0"] .rz')).toHaveLength(0); expect(a.qa('.day[data-d="1"] .rz')).toHaveLength(1);
+  });
+  it('a flexible event whose core runs past the end shows no end margin and no end handle, only the cut core', () => {
+    const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 540, end: 1020, person: '', fs: 30, fe: 15 }] })] })); hrs(a, 8, 16);
+    const b = a.q('.day[data-d="0"] .ev'); expect(parseFloat(b.style.top) + parseFloat(b.style.height)).toBeCloseTo(8 * 48 - 1, 0);
+    expect(b._cs).toBeDefined(); expect(b._ce).toBeUndefined(); expect(a.qa('.day[data-d="0"] .mg.b')).toHaveLength(0); expect(a.qa('.day[data-d="0"] .mg.t')).toHaveLength(1);
+  });
+  it('an event that starts at the end or later is not drawn, and a strip running past the end is cut like a box', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'x', slots: [{ day: 0, start: 1020, end: 1080, person: '' }] }), ev1({ id: 's', bg: true, slots: [{ day: 1, start: 900, end: 1200, person: '' }] })] })); hrs(a, 8, 17);
+    expect(a.qa('.day[data-d="0"] .ev')).toHaveLength(0); const st = a.q('.day[data-d="1"] .bgs');
+    expect(parseFloat(st.style.top) + parseFloat(st.style.height)).toBeLessThanOrEqual(9 * 48); expect(st._rz).toBeUndefined();
+  });
+  it('a phase running past the end is cut at the bottom, its lip too, and has no resize handle in Phases mode', () => {
+    const a = fresh({ ...blank(), rhythms: [{ id: 'r', name: 'R', visible: true }], phases: [{ id: 'p', title: 'Work', desc: '', color: '#2fa66a', rhythms: ['r'], slots: [{ day: 0, start: 900, end: 1200 }] }] });
+    a.ev('state.editMode="phases"'); hrs(a, 8, 17); const p = a.q('.day[data-d="0"] .phx');
+    expect(parseFloat(p.style.top) + parseFloat(p.style.height)).toBeCloseTo(9 * 48, 0); expect(p._rz).toBeUndefined(); expect(a.qa('.day[data-d="0"] .rz')).toHaveLength(0);
+    expect(parseFloat(a.q('.lip').style.height)).toBeCloseTo(2 * 48, 0);
+  });
+  it('the knobs cannot cross: the start stops an hour before the end, and the end an hour after the start', () => {
+    const a = fresh(); move(a, 1, 10); move(a, 0, 12); expect(a.ev('[hrA(),hrB()]')).toEqual([9, 10]); expect(knobs(a)[0].value).toBe('9');
+    move(a, 1, 3); expect(a.ev('[hrA(),hrB()]')).toEqual([9, 10]); expect(knobs(a)[1].value).toBe('10');
+  });
+  it('the knobs have their own accessible names and read their values as times, in AM/PM too', () => {
+    const a = fresh(); expect(knobs(a).map(k => k.getAttribute('aria-label'))).toEqual(['Start of the hours shown', 'End of the hours shown']);
+    expect(knobs(a).map(k => k.getAttribute('aria-valuetext'))).toEqual(['05:00', '00:00']); expect(a.q('#sbin .hrs2').parentElement.title).toMatch(/school day/);
+    a.ev('state.prefs.clock12=true;renderSide()'); move(a, 0, 8); expect(knobs(a)[0].getAttribute('aria-valuetext')).toBe('8 AM'); expect(shown(a)).toBe('8 AM–12 AM');
+  });
+  it('each workspace keeps its own hours, this browser remembers them after a reload, and they are neither data nor undoable', () => {
+    const a = fresh(); a.ev('addWorkspace();switchWs(state.WS[0].id)'); a.ev("saveMem('all')"); const depth = a.ev('state.undoSt.length');
+    move(a, 0, 8); move(a, 1, 17); expect(a.ev('state.undoSt.length')).toBe(depth); expect(a.ev('anyDirty()')).toBe(false); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/hours/);
+    a.ev('switchWs(state.WS[1].id)'); expect(labels(a)[0]).toBe('05:00'); expect(shown(a)).toBe('05:00–00:00');
+    a.ev('switchWs(state.WS[0].id)'); expect(labels(a)[0]).toBe('08:00'); const id = a.ev('state.curId'); expect(stored(a).hours).toEqual({ [id]: [8, 17] });
+    const b = openApp({ storage: a.storage() }); b.ev(`switchWs('${id}')`); expect(b.qa('.times span')[0].textContent).toBe('08:00');
+  });
+  it('putting the knobs back on 05:00 and 00:00 forgets the workspace\'s entry', () => {
+    const a = fresh(); move(a, 0, 7); expect(Object.keys(stored(a).hours)).toHaveLength(1); move(a, 0, 5); expect(stored(a).hours).toEqual({});
+  });
+  it('duplicating a workspace copies its hours, deleting one forgets them, and Clear memory forgets them all', () => {
+    const a = fresh(); a.ev('addWorkspace()'); move(a, 0, 8); const first = a.ev('state.curId');
+    a.ev('duplicateWorkspace()'); const copy = a.ev('state.curId'); expect(stored(a).hours).toEqual({ [first]: [8, 24], [copy]: [8, 24] }); expect(labels(a)[0]).toBe('08:00');
+    a.w.confirm = () => true; a.ev('deleteWorkspace()'); expect(stored(a).hours).toEqual({ [first]: [8, 24] }); a.ev('clearMem()'); expect(stored(a).hours).toEqual({});
+  });
+  it('Fit to what\'s shown sets whole hours around the visible events only: hidden people, the hidden weekend and the shown week are left out', () => {
+    const a = fresh(blank({ cycle: 2, people: [person({ id: 'A' }), person({ id: 'B', name: 'Bob' })], events: [
+      ev1({ id: 'm', slots: [{ day: 0, start: 510, end: 600, person: 'A' }] }), ev1({ id: 't', slots: [{ day: 1, start: 1080, end: 1155, person: 'B' }] }),
+      ev1({ id: 'w', slots: [{ day: 5, start: 360, end: 420, person: 'A' }] }), ev1({ id: 'two', weeks: [2], slots: [{ day: 2, start: 120, end: 180, person: 'A' }] })] }));
+    fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([6, 20]); expect(shown(a)).toBe('06:00–20:00');
+    a.ev('state.prefs.hideWeekend=true;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([8, 20]);
+    a.ev('state.S.people[1].visible=false;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([8, 10]);
+    a.ev('state.curWk=2;render()'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([2, 10]);   // week 2 adds its own time to the every-week one
+  });
+  it('Fit to what\'s shown in a focused day fits that day only', () => {
+    const a = fresh(blank({ events: [ev1({ id: 'm', slots: [{ day: 0, start: 510, end: 600, person: '' }] }), ev1({ id: 't', slots: [{ day: 1, start: 1080, end: 1155, person: '' }] })] }));
+    a.ev('setFocus(1)'); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([18, 20]);
+  });
+  it('Fit to what\'s shown with nothing on the grid leaves the hours alone and says why', () => {
+    const a = fresh(blank()); move(a, 0, 7); fit(a); expect(a.ev('[hrA(),hrB()]')).toEqual([7, 24]); expect(a.toast()).toContain('no events on the grid');
+  });
+  it('Reset zoom puts this workspace back to 05:00–00:00, and its tooltip says so', () => {
+    const a = fresh(); move(a, 0, 8); move(a, 1, 17); expect(a.q('#sbin .zreset').title).toContain('05:00 to 00:00');
+    a.q('#sbin .zreset').click(); expect(a.ev('[hrA(),hrB()]')).toEqual([5, 24]); expect(shown(a)).toBe('05:00–00:00'); expect(stored(a).hours).toEqual({});
+  });
+  it('with Fit height on, the hours shown fill the window', () => {
+    const a = fresh(); Object.defineProperty(a.q('#wrap'), 'clientHeight', { configurable: true, get: () => 938 }); a.ev('render()'); expect(a.ev('state.HH')).toBe(47);
+    move(a, 0, 8); move(a, 1, 17); expect(a.ev('state.HH')).toBe(100);
+  });
+  it('a stored range that makes no sense is dropped, and the retired showEarly is never read', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ showEarly: true, hours: { a: [9, 5], b: [0, 30], c: 'x', d: [1.5, 9] } }) } });
+    expect(a.ev('JSON.stringify(state.prefs.hours)')).toBe('{}'); expect(labels(a)[0]).toBe('05:00');
   });
   it('an event that starts before 05:00 but ends later is drawn from the top of the visible area', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 0, start: 240, end: 360, person: '' }] })] }));
@@ -94,22 +177,24 @@ describe('R-GRID-04 View settings: weekend columns, AM/PM clock, now line (a Too
     const b = openApp({ storage: a.storage() }); freezeClock(b, 2026, 9, 14, 10, 30); b.ev('drawNow()'); expect(b.ev('state.prefs.nowLine')).toBe(false); expect(b.qa('.now')).toHaveLength(0);
     a.ev('state.prefs.nowLine=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
   });
-  it('before 05:00 there is no now line while the early hours are hidden, and there is one when they are shown', () => {
+  it('outside the hours shown there is no now line: before the first hour, and from the end on', () => {
     const a = fresh(); freezeClock(a, 2026, 9, 14, 3, 0); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(0);
-    a.ev('state.prefs.showEarly=true;render()'); expect(a.qa('.now')).toHaveLength(1);
+    a.ev('state.prefs.hours[state.curId]=[0,24];render()'); expect(a.qa('.now')).toHaveLength(1);
+    freezeClock(a, 2026, 9, 14, 17, 0); a.ev('state.prefs.hours[state.curId]=[8,17];render()'); expect(a.qa('.now')).toHaveLength(0);
+    freezeClock(a, 2026, 9, 14, 16, 59); a.ev('drawNow()'); expect(a.qa('.now')).toHaveLength(1);
   });
   it('on a hidden weekend day there is no now line', () => {
     const a = fresh(); freezeClock(a, 2026, 9, 17, 10, 30); a.ev('state.prefs.hideWeekend=true;render()'); expect(a.qa('.now')).toHaveLength(0);   // Saturday
   });
   it('the Settings dialog offers exactly these view options with explanations', () => {
     const a = fresh(); a.ev('openSettings()');
-    const text = a.dlgText(); ['Show early hours', 'Use AM/PM clock', 'Hide Saturday and Sunday', 'Theme'].forEach(t => expect(text).toContain(t)); expect(text).not.toContain('"now" line');
+    const text = a.dlgText(); ['Use AM/PM clock', 'Hide Saturday and Sunday', 'Theme'].forEach(t => expect(text).toContain(t)); expect(text).not.toContain('"now" line'); expect(text).not.toMatch(/early hours|05:00/);
   });
   it('view settings are remembered in the browser (not in the workspace data)', () => {
     const a = fresh(); a.ev('openSettings()');
     const boxes = a.qa('#xDlg .sopt input[type=checkbox]'); boxes[0].checked = true; boxes[0].onchange();
-    expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).showEarly).toBe(true);
-    expect(a.ev('Object.keys(state.S)')).not.toContain('showEarly');
+    expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).clock12).toBe(true);
+    expect(a.ev('Object.keys(state.S)')).not.toContain('clock12');
   });
 });
 
@@ -173,11 +258,11 @@ describe('R-GRID-07 Zoom: Fit width / Fit height with their sliders, and the gri
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
     expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);
   });
-  it('the Zoom section lists Fit width + Column width, Fit height + Row height, then Text size and Reset, each slider under its box', () => {
+  it('the Zoom section lists Fit width + Column width, Hours shown + Fit to what\'s shown, Fit height + Row height, then Text size and Reset, each slider under its box', () => {
     const a = fresh(); const s = sec(a); expect(s.querySelector('.shbtn span').textContent).toBe('Zoom');
-    expect([...s.querySelectorAll('.zck, .zrow > span:first-child, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
-      .toEqual(['Fit width', 'Column width', 'Fit height', 'Row height', '—', 'Text size', 'Reset zoom']);
-    expect([...s.querySelectorAll('.zrow')].map(r => r.classList.contains('zsub'))).toEqual([true, true, false]);
+    expect([...s.querySelectorAll('.zck, .zrow > span:first-child, .zfit, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
+      .toEqual(['Fit width', 'Column width', 'Hours shown', 'Fit to what\'s shown', 'Fit height', 'Row height', '—', 'Text size', 'Reset zoom']);
+    expect([...s.querySelectorAll('.zrow')].map(r => r.classList.contains('zsub'))).toEqual([true, false, true, false]);
     expect(box(a, 'Fit width').parentElement.title).toMatch(/sideways/); expect(box(a, 'Fit height').parentElement.title).toMatch(/height of the window/);
     s.querySelector('.shbtn').click(); expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(stored(a).secZoom).toBe(true);
   });
@@ -497,7 +582,7 @@ describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes
     expect(a.q('#hid').textContent).toBe('3 hidden'); focus(a, 2); expect(a.q('#hid').textContent).toBe('2 hidden'); btn(a, 'nxt').click(); btn(a, 'nxt').click(); expect(a.q('#hid').style.display).toBe('none');
   });
   it('an event running past midnight shows its continuation on the focused next day', () => {
-    const a = fresh(blank({ events: [ev1({ id: 'n', title: 'Night', slots: [{ day: 0, start: 1320, end: 1740, person: '' }] })] })); a.ev('state.prefs.showEarly=true;render()'); focus(a, 1);
+    const a = fresh(blank({ events: [ev1({ id: 'n', title: 'Night', slots: [{ day: 0, start: 1320, end: 1740, person: '' }] })] })); a.ev('state.prefs.hours[state.curId]=[0,24];render()'); focus(a, 1);
     expect(a.qa('.day .ev')).toHaveLength(1); expect(a.q('.day .ev').textContent).toContain('from Mon 22:00');
   });
   it('a new event dragged out on the focused day lands on that day', async () => {

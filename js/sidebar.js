@@ -4,7 +4,7 @@ import {L} from './i18n.js';
 import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
 import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
 import {loadMem} from './share.js';
-import {FH,FWK,RH,WK,applyPrefs,cyc,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
+import {FH,FWK,HRS0,RH,WK,applyPrefs,cyc,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,shownSpan,toast,updLive,vrhythm,xdlg} from './model.js';
 import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
 import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
@@ -201,13 +201,33 @@ export function renderSide(){
     const ck=(label,tip,key,size)=>{const l=el('label','zck',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=state.prefs[key];el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{if(!c.checked)state.prefs[size]=fitted(size);state.prefs[key]=c.checked;savePrefs();zoomRender();renderSide()}};   // unticking keeps the fitted size, so nothing jumps
     ck('zoomFitW','zoomFitWTip',FWK(),WK());zsl('zoomCol',WK(),70,1000,10,' px',FWK(),'zsub');
+    hoursRow(s4);
     ck('zoomFitH','zoomFitHTip',FH(),RH());zsl('zoomRow',RH(),24,120,4,' px/h',FH(),'zsub');
     el('div','zsep',s4);zsl('zoomTxt','txt',80,160,10,' %');
     const rb=el('button','zreset',s4);rb.type='button';rb.textContent=L('zoomReset');rb.title=L(phone()?'zoomResetTipP':'zoomResetTip');
-    rb.onclick=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;savePrefs();zoomRender();renderSide()};
+    rb.onclick=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;delete state.prefs.hours[state.curId];savePrefs();zoomRender();renderSide()};
     updZoomUI();
   }
   sb.scrollTop=st;
+}
+// Hours shown (R-GRID-02): two knobs on one track for this workspace's first hour and the hour the grid ends, at least an hour apart,
+// and Fit to what's shown; per-browser view state, never undoable
+function hoursRow(parent){
+  const r=el('div','zrow',parent);el('span','',r).textContent=L('zoomHrs');r.title=L('zoomHrsTip');
+  const t=el('div','hrs2',r),fill=el('div','fill',t),v=el('span','zv',r),ins=['hrsFrom','hrsTo'].map((k,j)=>{const i=el('input','',t);i.type='range';i.min=0;i.max=24;i.step=1;i.setAttribute('aria-label',L(k));i.title=L('zoomHrsTip');return i});
+  const show=()=>{const [a,b]=hrsOf(state.curId);ins[0].value=a;ins[1].value=b;ins.forEach(i=>i.setAttribute('aria-valuetext',hourLabel(+i.value%24)));v.textContent=hourLabel(a)+'–'+hourLabel(b%24);
+    t.style.setProperty('--a',a/24);t.style.setProperty('--b',b/24);t.classList.toggle('lo',a>12)};   // the start knob lies on top in the right half, so two close knobs can still be parted
+  const set=(a,b)=>{if(a===HRS0[0]&&b===HRS0[1])delete state.prefs.hours[state.curId];else state.prefs.hours[state.curId]=[a,b];savePrefs();show();zoomRender()};
+  ins[0].oninput=()=>{const b=hrsOf(state.curId)[1];set(Math.min(+ins[0].value,b-1),b)};
+  ins[1].oninput=()=>{const a=hrsOf(state.curId)[0];set(a,Math.max(+ins[1].value,a+1))};
+  show();fill.setAttribute('aria-hidden','true');
+  const fb=el('button','zfit',parent);fb.type='button';fb.textContent=L('hrsFit');fb.title=L('hrsFitTip');
+  fb.onclick=()=>{const sp=shownSpan();if(sp)set(sp[0],sp[1]);else toast(L('hrsNone'))};
+}
+// the "N hidden" pill with hours not shown (R-GRID-09): opens the sidebar on Zoom and focuses the start knob
+export function goHours(){
+  state.prefs.collapsed=false;state.prefs.secZoom=false;savePrefs();applyPrefs();renderSide();
+  const i=document.querySelector('#sbin .hrs2 input');if(i){if(i.scrollIntoView)i.scrollIntoView({block:'nearest'});i.focus()}
 }
 function delRhythm(rh){
   const lost=state.S.phases.filter(p=>p.rhythms.length===1&&p.rhythms[0]===rh.id).length;

@@ -130,7 +130,7 @@ describe('R-EVT-03 What an event box shows', () => {
     const a = full(); expect(cssRule(a, '.ev .ic svg').style.getPropertyValue('width')).toBe('calc(10px * var(--ts,1))');
   });
   it('an event that continues overnight labels its second piece "from Fri 22:00 · until 02:00"', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [{ day: 4, start: 1320, end: 1560, person: '' }] })] })); a.ev('state.prefs.showEarly=true;render()');
+    const a = fresh(blank({ events: [ev1({ slots: [{ day: 4, start: 1320, end: 1560, person: '' }] })] })); a.ev('state.prefs.hours[state.curId]=[0,24];render()');
     expect(a.q('.day[data-d="4"] .ev .tm').textContent).toBe('22:00–02:00 (Next day)'); expect(a.q('.day[data-d="5"] .ev .tm').textContent).toBe('from Fri 22:00 · until 02:00');
   });
 });
@@ -762,7 +762,7 @@ describe('R-EVT-15 Flexible start/end: a solid core box with dashed margins; onl
   });
   it('a piece past midnight that is all margin is drawn as a dashed box with the title, beside a parallel event in its own lane', () => {
     const a = fresh(blank({ people, events: [ev1({ slots: [{ day: 0, start: 1320, end: 1470, person: 'A', fe: 30 }] }), ev1({ id: 'o', slots: [{ day: 1, start: 0, end: 60, person: 'B' }] })] }));
-    a.ev('state.prefs.showEarly=true;render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
+    a.ev('state.prefs.hours[state.curId]=[0,24];render()'); const tue = a.q('.day[data-d="1"] .ev.mgo');
     expect(tue).not.toBeNull(); expect(tue.dataset.lane).toBe('0/2'); expect(a.q('.day[data-d="1"] .ev:not(.mgo)').dataset.lane).toBe('1/2'); expect(tue.querySelector('.t').textContent).toBe('Event'); expect(tue._rz).toBeTruthy();
     expect(cssRule(a, '.ev.mgo').style.getPropertyValue('border')).toMatch(/2px dashed var\(--c\)/);
   });
@@ -955,7 +955,7 @@ describe('R-EVT-15 Dragging the edges of a flexible event\'s solid core changes 
   });
   it('a core that starts at midnight after a start margin has its top handle on the next day', () => {
     const a = fresh(blank({ people, events: [work({ day: 0, start: 1380, end: 1860, fs: 60, fe: 0 })] }));
-    a.ev('state.prefs.showEarly=true;render()'); const b = a.q('.day[data-d="1"] .ev'); expect(b._cs).toBeDefined(); expect(parseFloat(b._cs.style.top)).toBe(0);
+    a.ev('state.prefs.hours[state.curId]=[0,24];render()'); const b = a.q('.day[data-d="1"] .ev'); expect(b._cs).toBeDefined(); expect(parseFloat(b._cs.style.top)).toBe(0);
   });
   it('an edge drag is one undo step, and a click on a handle without moving opens the event', async () => {
     const a = fresh(blank({ people, events: [work()] })); let b = box(a); await dragFrom(a, b, { col: 0, min: 570 }, { col: 0, min: 630 }, { target: b._cs }); expect(slot0(a).fs).toBe(90);

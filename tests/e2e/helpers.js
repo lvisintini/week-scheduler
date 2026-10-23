@@ -48,7 +48,7 @@ export const slots = async (page, i = 0) => { await bridged(page); return page.e
 export async function pt(page, col, min) {
   return page.evaluate(([c, m]) => {
     const day = document.querySelectorAll('.day')[c], r = day.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + (m - vs() * 60) / 60 * state.HH };
+    return { x: r.left + r.width / 2, y: r.top + (m - hrA() * 60) / 60 * state.HH };
   }, [col, min]);
 }
 

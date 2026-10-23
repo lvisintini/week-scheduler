@@ -50,7 +50,7 @@ describe('R-UI-03 Settings dialog', () => {
   const shown = a => a.qa('#xDlg .ssec').filter(p => !p.classList.contains('off'));
   it('has four tabs, View, Data, UI and About, and opens on View', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(tabs(a).map(b => b.textContent)).toEqual(['View', 'Data', 'UI', 'About']);
-    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Show early hours');
+    expect(tabs(a).map(b => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false', 'false']); expect(shown(a)).toHaveLength(1); expect(shown(a)[0].textContent).toContain('Use AM/PM clock');
   });
   it('View no longer holds the now line: that switch is in Tools', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(shown(a)[0].textContent).not.toContain('"now" line'); expect(a.q('.tsec').textContent).toContain('Show the "now" line');

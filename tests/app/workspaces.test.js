@@ -167,16 +167,16 @@ describe('R-DATA-05 Clear memory, Restart and the unsaved-changes warning', () =
 
 describe('R-DATA-06 View settings belong to the browser, not to the workspace data', () => {
   it('prefs are stored under their own key and are not part of the saved workspaces', () => {
-    const a = fresh(); a.ev('state.prefs.showEarly=true;state.prefs.clock12=true;state.prefs.theme="dark";savePrefs();saveMem("all")');
-    const p = JSON.parse(a.w.localStorage.getItem(PREFS_KEY)); expect(p).toMatchObject({ showEarly: true, clock12: true, theme: 'dark' });
-    expect(a.w.localStorage.getItem(WS_KEY)).not.toMatch(/showEarly|clock12|theme|hideWeekend|rowH/);
+    const a = fresh(); a.ev('state.prefs.nowLine=false;state.prefs.clock12=true;state.prefs.theme="dark";savePrefs();saveMem("all")');
+    const p = JSON.parse(a.w.localStorage.getItem(PREFS_KEY)); expect(p).toMatchObject({ nowLine: false, clock12: true, theme: 'dark' });
+    expect(a.w.localStorage.getItem(WS_KEY)).not.toMatch(/nowLine|clock12|theme|hideWeekend|rowH/);
   });
   it('the preferences come back after a reload', () => {
-    const a = fresh(); a.ev('state.prefs.showEarly=true;state.prefs.hideWeekend=true;state.prefs.clock12=true;savePrefs()'); const b = openApp({ storage: a.storage() });
-    expect([b.ev('state.prefs.showEarly'), b.ev('state.prefs.hideWeekend'), b.ev('state.prefs.clock12')]).toEqual([true, true, true]);
+    const a = fresh(); a.ev('state.prefs.nowLine=false;state.prefs.hideWeekend=true;state.prefs.clock12=true;savePrefs()'); const b = openApp({ storage: a.storage() });
+    expect([b.ev('state.prefs.nowLine'), b.ev('state.prefs.hideWeekend'), b.ev('state.prefs.clock12')]).toEqual([false, true, true]);
   });
   it('exported files never contain view preferences', async () => {
-    const a = fresh(); a.ev('state.prefs.showEarly=true;state.prefs.theme="dark"'); const f = a.ev('buildFile()'); expect(Object.keys(f)).not.toContain('prefs'); expect(JSON.stringify(f)).not.toMatch(/showEarly|theme|clock12|hideWeekend/);
+    const a = fresh(); a.ev('state.prefs.nowLine=false;state.prefs.theme="dark"'); const f = a.ev('buildFile()'); expect(Object.keys(f)).not.toContain('prefs'); expect(JSON.stringify(f)).not.toMatch(/nowLine|theme|clock12|hideWeekend|hours/);
   });
   it('a corrupt preferences entry is ignored and defaults are used', () => {
     const a = openApp({ storage: { [PREFS_KEY]: '{not json' } }); expect(a.ev('state.prefs.theme')).toBe('auto'); expect(a.ev('state.prefs.rowH')).toBe(48);

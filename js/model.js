@@ -13,6 +13,7 @@ export function loadPrefs(){
   state.prefs.rowH=Math.min(120,Math.max(24,+state.prefs.rowH||48));state.prefs.colW=Math.min(1000,Math.max(70,+state.prefs.colW||110));state.prefs.fitW=state.prefs.fitW!==false;state.prefs.fitH=state.prefs.fitH!==false;state.prefs.colWP=Math.min(1000,Math.max(70,+state.prefs.colWP||110));state.prefs.fitWP=state.prefs.fitWP!==false;state.prefs.rowHP=Math.min(120,Math.max(24,+state.prefs.rowHP||100));state.prefs.fitHP=state.prefs.fitHP===true;state.prefs.txt=Math.min(160,Math.max(80,Math.round((+state.prefs.txt||100)/10)*10));   // fillW and fit are retired keys: no longer read (R-GRID-07)
   {const o=state.prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});state.prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
   {const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
+  {const o=state.prefs.hours,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&Array.isArray(v)&&Number.isInteger(v[0])&&Number.isInteger(v[1])&&v[0]>=0&&v[0]<v[1]&&v[1]<=24)m[k]=[v[0],v[1]]});state.prefs.hours=m}   // the hours shown per workspace (R-GRID-02), like lvAnchor; showEarly is retired
   state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
   state.prefs.nowLine=state.prefs.nowLine!==false;state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
 }
@@ -36,7 +37,8 @@ export const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;if(!state.prefs.clock12)
 export const fmtEnd=m=>fmt(m)+(m>1440?' '+L('nextDay'):'');
 export const endLabel=m=>fmtEnd(m);   // the End list says what boxes, agendas and tooltips say: midnight closes its day, later ends carry (Next day) (R-REP-04)
 export const hourLabel=h=>state.prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fmt(h*60);
-export const vs=()=>state.prefs.showEarly?0:5;
+// the hours shown (R-GRID-02): the current workspace's [first hour, the hour after the last], 05:00–00:00 unless set in Zoom
+export const HRS0=[5,24],hrsOf=id=>state.prefs.hours[id]||HRS0,hrA=()=>hrsOf(state.curId)[0],hrB=()=>hrsOf(state.curId)[1];
 const pvis=id=>{const p=state.S.people.find(x=>x.id===id);return !!p&&p.visible};
 export const pname=id=>(state.S.people.find(p=>p.id===id)||{}).name||'';
 // no responsible person -> always shown; otherwise shown if the responsible person or any involved person is visible
@@ -265,21 +267,29 @@ export const itemsAt=(di,m,fx)=>piecesAt(di,m,false,fx);
 export const weekDays=()=>state.prefs.hideWeekend?[0,1,2,3,4]:[0,1,2,3,4,5,6];
 export function setFocus(di){if(state.live){clearTimeout(lvRet);lvCloseAll(true);state.live=false;state.livePaused=false;state.prefs.live=false;savePrefs()}state.focusD=di;phoneFit();render()}   // leaving ends live view (R-GRID-12)
 export function stepFocus(d){const ds=weekDays();let x=state.focusD;do{const nx=(x+d+7)%7;if(d>0&&nx<x)state.curWk=state.curWk%cyc()+1;else if(d<0&&nx>x)state.curWk=prevWk(state.curWk);x=nx}while(!ds.includes(x));setFocus(x)}   // wraps around the week (into the next or previous week of a cycle, R-CYC-04), skipping a hidden weekend
+// Fit to what's shown (R-GRID-02): whole hours around the events on the grid now (visible schedules, people and types, the shown week or
+// every week side by side, the shown days); null when nothing is there
+export function shownSpan(){
+  let lo=1440,hi=0;const days=state.focusD!=null?[state.focusD]:weekDays(),wks=state.allWk?[...Array(cyc()).keys()].map(k=>k+1):[state.curWk];
+  state.S.events.filter(visible).forEach(e=>e.slots.forEach(s=>{if(!slotVisible(e,s))return;
+    piecesOf(s).forEach(q=>{if(days.includes(q.day)&&wks.some(w=>inWk(e,s,q,w))){lo=Math.min(lo,q.a);hi=Math.max(hi,q.b)}})}));
+  return hi>lo?[Math.floor(lo/60),Math.ceil(hi/60)]:null;
+}
 export function hiddenInfo(){
-  // counts only occurrences that are not shown purely because of the hidden weekend / hidden early hours (never partially visible ones)
+  // counts only occurrences that are not shown purely because of the hidden weekend / the hours not shown (never partially visible ones)
   let wk=0,er=0;
   state.S.events.filter(visible).forEach(e=>e.slots.forEach(s=>{
     if(!slotVisible(e,s))return;
-    if(state.focusD!=null){const fs=piecesOf(s).filter(q=>q.day===state.focusD&&inWk(e,s,q));if(fs.length&&fs.every(q=>q.b<=vs()*60))er++;return}   // focus: only the focused day's early hours
+    if(state.focusD!=null){const fs=piecesOf(s).filter(q=>q.day===state.focusD&&inWk(e,s,q));if(fs.length&&fs.every(q=>q.b<=hrA()*60||q.a>=hrB()*60))er++;return}   // focus: only the focused day's early hours
     const ps=piecesOf(s).filter(q=>inWk(e,s,q));if(!ps.length)return;   // only the shown week of a cycle (R-CYC-12)
-    if(ps.some(q=>!(state.prefs.hideWeekend&&q.day>4)&&q.b>vs()*60))return;
+    if(ps.some(q=>!(state.prefs.hideWeekend&&q.day>4)&&q.b>hrA()*60&&q.a<hrB()*60))return;
     if(ps.some(q=>state.prefs.hideWeekend&&q.day>4))wk++;else er++;
   }));
   return {wk,er,n:wk+er};
 }
 export function drawNow(){
   document.querySelectorAll('.now').forEach(n=>n.remove());if(!state.prefs.nowLine&&!state.live)return;   // live view always shows the line (R-GRID-12)
-  const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60;if(m<a)return;
+  const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=hrA()*60;if(m<a||m>=hrB()*60)return;
   const tw=todayWk();if(tw&&!state.allWk&&tw!==state.curWk)return;   // with today's week known, only in that week (R-CYC-05); all weeks side by side: in its column (R-CYC-19)
   document.querySelectorAll('.day[data-d="'+((d.getDay()+6)%7)+'"]').forEach(col=>{if(state.allWk&&tw&&+col.dataset.w!==tw)return;
     const n=el('div','now',col);n.style.top=(m-a)/60*state.HH+'px';n.title=fmt(m)});
@@ -309,7 +319,7 @@ export function askLiveWeek(onYes,onNo,o={}){   // which week of the cycle is to
 }
 export const liveBusy=()=>ptrHeld||!!document.querySelector('dialog[open],.omenu');   // never move under a dialog, a menu or a held pointer (drag)
 export function liveScroll(){
-  const w=$('wrap'),d=new Date(),m=d.getHours()*60+d.getMinutes(),a=vs()*60,hd=document.querySelector('#grid .dh'),hh=hd?hd.offsetHeight:0;
+  const w=$('wrap'),d=new Date(),m=d.getHours()*60+d.getMinutes(),a=hrA()*60,hd=document.querySelector('#grid .dh'),hh=hd?hd.offsetHeight:0;
   liveWant=m<a?0:Math.max(0,Math.round((m-a)/60*state.HH-(w.clientHeight-hh)/3));w.scrollTop=liveWant;liveTop=w.scrollTop;
 }
 export function setLive(on){
@@ -339,7 +349,7 @@ export function lvDraw(o,fresh){
   const its=o.keys.map(k=>{const [id,i,p]=k.split('|'),e=state.S.events.find(x=>x.id===id),s=e&&e.slots[+i];return s&&{e,s,piece:+p}}).filter(Boolean).sort((x,y)=>x.s.start-y.s.start);
   if(!its.length){lvClose(o,true);return}
   const L0=col.querySelector('.lvl')||el('div','lvl',col);L0.setAttribute('aria-live','polite');L0.setAttribute('aria-label',L('lvCards'));
-  const cr=col.getBoundingClientRect(),W=cr.width,H=col.offsetHeight||parseFloat(col.style.height)||0,ax=o.fx*W,y=(o.m-vs()*60)/60*state.HH,bw=Math.max(120,Math.min(300,W-8));
+  const cr=col.getBoundingClientRect(),W=cr.width,H=col.offsetHeight||parseFloat(col.style.height)||0,ax=o.fx*W,y=(o.m-hrA()*60)/60*state.HH,bw=Math.max(120,Math.min(300,W-8));
   const b=el('div','lvb'+(fresh?' in':''),L0),inn=el('div','lvin',b);b.style.width=bw+'px';b._o=o;o.el=b;
   its.forEach(it=>{const sc=el('div','lvs',inn);sc.style.setProperty('--c',colOf(it.e,it.s));sc.innerHTML=peekRows(it,true)});
   // the text of the boxes is what a bubble should not cover (half as bad over its own boxes, whose text it repeats)
@@ -402,7 +412,6 @@ export function openSettings(){
   const opt=(p,label,desc,get,set,cls)=>{const l=el('label','sopt'+(cls?' '+cls:''),p),i=el('input','',l);i.type='checkbox';i.checked=get();
     const s=el('span','',l);s.innerHTML=`<b>${esc(L(label))}</b><small>${esc(L(desc))}</small>`;i.onchange=()=>{set(i.checked);savePrefs();render()};return i};
   const v=sec('viewH');el('small','note',v).textContent=L('viewNote');
-  opt(v,'setEarly','earlyTip',()=>state.prefs.showEarly,x=>{state.prefs.showEarly=x;if(!x)$('wrap').scrollTop=0});
   opt(v,'setClock','clockTip',()=>state.prefs.clock12,x=>{state.prefs.clock12=x});
   opt(v,'setWE','weTip',()=>state.prefs.hideWeekend,x=>{state.prefs.hideWeekend=x});
   const dt=sec('dataH');

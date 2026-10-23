@@ -225,3 +225,13 @@ test.describe('R-GRID-12 Live View controls on a phone', () => {
     await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.sbtop .help')).toBeVisible(); await expect(page.locator('.sbtop .xpand')).toBeVisible();
   });
 });
+
+test.describe('R-GRID-02 The hours shown on a phone', () => {
+  test('in the drawer both knobs of Hours shown can be dragged with a finger, and the knobs are big enough to hold', async ({ page }) => {
+    await page.locator('.sbtop .xpand').tap(); await page.evaluate(() => { state.prefs.secZoom = false; renderSide(); });
+    const k = page.locator('#sbin .hrs2 input').nth(1); await k.scrollIntoViewIfNeeded(); const t = await page.locator('#sbin .hrs2').boundingBox(); expect(t.height).toBeGreaterThanOrEqual(24);
+    const at = h => ({ x: t.x + t.height / 2 + (t.width - t.height) * h / 24, y: t.y + t.height / 2 }), path = (a, b) => [...Array(13).keys()].map(i => ({ x: at(a).x + (at(b).x - at(a).x) * i / 12, y: at(a).y }));
+    await touch(page, path(24, 18)); expect(await page.evaluate(() => [hrA(), hrB()])).toEqual([5, 18]);
+    await touch(page, path(5, 7)); expect(await page.evaluate(() => [hrA(), hrB()])).toEqual([7, 18]);
+  });
+});
