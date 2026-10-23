@@ -50,7 +50,14 @@ const piecesOf=s=>{const p=[{p:0,day:s.day,a:s.start,b:Math.min(s.end,1440)}];if
    pattern (event.weeks, absent = every week) or each repetition in its own week (slot.wk); phases are weekly (R-CYC-16). */
 let curWk=1,allWk=false;   // allWk: every week of the cycle side by side (R-CYC-19), view state like curWk
 const cyc=()=>S.cycle||1;
-const wksOf=(e,s)=>s&&s.wk?[s.wk]:e.weeks||null;   // null = every week (events and phases alike, R-CYC-16)
+/* staged weeks (R-CYC-21): a workspace keeps pool weeks; 1..cycle are the cycle, the rest are staged after it, kept but never shown, counted
+   or changed by edits in the cycle (R-CYC-22). An event's pattern and a time's week may name staged weeks; wksOf gives only the cycle's. */
+const poolOf=d=>Math.max(d.cycle||1,d.pool||1),kept=()=>poolOf(S);
+const inCyc=k=>k<=cyc(),stgSl=s=>s.wk>cyc();   // stgSl: a time of a staged week
+const cycSl=sl=>sl.filter(s=>!stgSl(s));
+const wksOf=(e,s)=>{const w=s&&s.wk?[s.wk]:e.weeks||null;return w&&kept()>cyc()?w.filter(inCyc):w};   // null = every week (events and phases alike, R-CYC-16)
+const stgWks=e=>{const n=cyc(),w=e.slots.some(x=>x.wk)?e.slots.map(x=>x.wk):e.weeks||[...Array(kept()).keys()].map(k=>k+1);return [...new Set(w.filter(k=>k>n))].sort((a,b)=>a-b)};   // the staged weeks it happens in (R-CYC-23)
+const onCyc=(e,s)=>{const w=wksOf(e,s);return !w||w.length>0};   // happens in some week of the cycle
 const prevWk=w=>(w+cyc()-2)%cyc()+1;
 // does piece q of repetition s appear in week w? The part after midnight of a Sunday lies in the next week (R-CYC-06)
 const inWk=(e,s,q,w=curWk)=>{const ws=wksOf(e,s);return !ws||ws.includes(q.p&&s.day===6?prevWk(w):w)};
@@ -214,7 +221,7 @@ function laneLayout(its){
 // one without a responsible person concerns everyone and takes every lane. Overlapping in a lane then always means sharing a person,
 // so stripes stay where clashes are.
 // our visible people always have a lane; an external one only when they have an activity on the grid that is not in the background (a strip)
-function fixIds(){const busy=new Set(S.events.filter(e=>visible(e)&&!e.bg&&!e.away).flatMap(e=>e.slots.filter(s=>slotVisible(e,s)).flatMap(s=>pplOf({e,s}))));
+function fixIds(){const busy=new Set(S.events.filter(e=>visible(e)&&!e.bg&&!e.away).flatMap(e=>e.slots.filter(s=>slotVisible(e,s)&&onCyc(e,s)).flatMap(s=>pplOf({e,s}))));
   return [...ourPeople(),...S.people.filter(q=>q.external&&busy.has(q.id))].filter(q=>q.visible).map(q=>q.id)}
 function fixedLayout(its){
   const ids=fixIds(),n=Math.max(1,ids.length),all=[...Array(n).keys()],out=new Map();
@@ -414,6 +421,6 @@ function openSettings(){
 }
 function openHelp(){
   const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=22;i++)el('li','',ul).textContent=L('help'+i);
+  for(let i=1;i<=23;i++)el('li','',ul).textContent=L('help'+i);
   xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
 }

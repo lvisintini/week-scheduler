@@ -47,7 +47,7 @@ This file holds only what applies to every task. The full specification is in `d
 - Static dialog HTML: English in the HTML plus an `['English prefix', 'Spanish']` entry in `ES` (keys under 12 characters match exactly, longer ones by prefix; `applyStatic()` handles `<dialog>` only).
 - A `title` set from `L()` at runtime must also set `el.__t` to the translated text, or `applyStatic` re-translates it from a shorter prefix key.
 - Descriptions, tooltips and help are household/workplace agnostic: say *household/workplace* (*hogar o lugar de trabajo*) where the place must be named, and mix examples from both (R-I18N-02).
-- Terms: phases = *franjas*, rhythms = *ritmos*, background strips = *tiras* (never *franjas*); schedule = *horario*; a time's Timing list = *Horas* (not *Horario*); cycle = *ciclo*, week 2 = *semana 2*, Away = *Ausente*.
+- Terms: phases = *franjas*, rhythms = *ritmos*, background strips = *tiras* (never *franjas*); schedule = *horario*; a time's Timing list = *Horas* (not *Horario*); cycle = *ciclo*, week 2 = *semana 2*, staged weeks = *semanas en reserva*, Away = *Ausente*.
 
 ### Security and escaping (details: `docs/requirements/security.md`)
 - Every piece of user-controlled text put into `innerHTML`/`insertAdjacentHTML` goes through `esc()`; prefer `textContent`/DOM properties.

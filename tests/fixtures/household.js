@@ -42,7 +42,7 @@ export const household = {
     { id: 'e-swim', title: 'Swimming', desc: '', color: '#3b6df0', weeks: [1], turns: true, schedules: ['s-home'], involved: [],
       slots: [{ day: 6, start: 1260, end: 1500, person: 'p-lucia' }] },
     { id: 'e-cook', title: 'Cooking', desc: 'Swap turns in the family chat', color: '#e5484d', owner: 'p-ann', turns: false, schedules: ['s-home'], involved: [],
-      slots: [{ day: 0, start: 1080, end: 1140, person: 'p-ann', wk: 1, fo: true }, { day: 0, start: 1080, end: 1140, person: 'p-luis', wk: 2 }, { day: 3, start: 1080, end: 1140, person: 'p-luis', wk: 1 }] },
+      slots: [{ day: 0, start: 1080, end: 1140, person: 'p-ann', wk: 1, fo: true }, { day: 0, start: 1080, end: 1140, person: 'p-luis', wk: 2 }, { day: 3, start: 1080, end: 1140, person: 'p-luis', wk: 1 }, { day: 2, start: 1080, end: 1140, person: 'p-ann', wk: 3 }] },
     { id: 'e-dad', title: "At Dad's", desc: '', color: '#8e4ec6', away: true, weeks: [2], schedules: ['s-home'], involved: ['p-lucia'],
       slots: [{ day: 4, start: 1020, end: 2880, person: '' }, { day: 6, start: 0, end: 1080, person: '' }] },
   ],
@@ -51,13 +51,13 @@ export const household = {
     { id: 'ph-lunch', title: 'Lunch', desc: 'Kitchen closed after', color: '#e8912d', rhythms: ['r-normal', 'r-holiday'],
       slots: [0, 1, 2, 3, 4].map(day => ({ day, start: 720, end: 780 })) },
     { id: 'ph-sleep', title: 'Sleep', desc: '', color: '#3f51b5', rhythms: ['r-normal'], slots: [{ day: 6, start: 0, end: 420 }, { day: 6, start: 1320, end: 1440 }] },
-    { id: 'ph-quiet', title: 'Quiet hours', desc: 'Dad sleeps after night shifts', color: '#607d8b', weeks: [2], rhythms: ['r-normal'], slots: [{ day: 5, start: 480, end: 720 }] },
+    { id: 'ph-quiet', title: 'Quiet hours', desc: 'Dad sleeps after night shifts', color: '#607d8b', weeks: [2, 3], rhythms: ['r-normal'], slots: [{ day: 5, start: 480, end: 720 }] },
     { id: 'ph-shift', title: 'Shift', desc: '', color: '#a1662f', rhythms: ['r-normal'], slots: [{ day: 0, start: 360, end: 840, wk: 1 }, { day: 0, start: 1320, end: 1440, wk: 2 }] },
   ],
   phaseOpacity: 0.45,
-  cycle: 2,
+  cycle: 2, pool: 3,
   color: '#2fa66a', desc: 'Our home routine',
-  weekInfo: [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday school pickup to Sunday evening', color: '#8e4ec6' }],
+  weekInfo: [{ name: 'At home', color: '#2fa66a' }, { name: "At Dad's", desc: 'From Friday school pickup to Sunday evening', color: '#8e4ec6' }, { name: 'Exams', color: '#e8912d' }],
 };
 
 /** The second workspace of the browser-memory sample: almost empty. */
@@ -82,6 +82,8 @@ const ADDED = {
   12: h => ({ ...h, events: h.events.map(({ turns, ...e }) => e) }),   // whether an event counts turns (R-CYC-18)
   13: ({ color, desc, ...h }) => h,   // the workspace's colour and description (R-DATA-10)
   14: h => h,   // browser memory protected with a passphrase (R-DATA-11); a workspace is unchanged
+  15: ({ pool, ...h }) => ({ ...h, ...(h.weekInfo ? { weekInfo: h.weekInfo.slice(0, 2) } : {}), events: h.events.map(e => ({ ...e, slots: e.slots.filter(s => s.wk !== 3) })),
+    phases: h.phases.map(p => p.weeks ? { ...p, weeks: p.weeks.filter(k => k !== 3) } : p) }),   // a staged week kept after the cycle (R-CYC-21)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

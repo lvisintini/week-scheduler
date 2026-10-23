@@ -345,7 +345,7 @@ function carryMove(cs,hs,ho,only){   // hs/ho: the host's slots now / before the
 function startDrag(ev,it,mode){
   const e=it.s,owner=it.e,pc=it.piece||0,edge=mode==='fs'||mode==='fe';ev.preventDefault();MAXEND=owner.rhythms?1440:2880;
   const col=colAt(ev.clientX),cDay=+col.dataset.d,cW=curWk,cMin=minAt(col,ev.clientY),cFx=fxAt(col,ev.clientX),off=cMin+1440*pc-e.start,dur=e.end-e.start;
-  const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},multi=orig.length>1,adv=isAdv(orig);
+  const before=JSON.stringify(S),orig=owner.slots.map(x=>({...x})),idx=owner.slots.indexOf(e),o0={...e},nC=cycSl(orig).length,multi=nC>1,adv=isAdv(orig);   // nC: the times in the cycle's weeks; staged ones never move (R-CYC-22)
   const ovB=overlapSet(owner,orig).size,carry=mode==='move'&&!owner.rhythms?nestCarry(owner):[];
   let moved=false,single=false,final=null;const x0=ev.clientX,y0=ev.clientY;
   const mv=p=>{
@@ -358,13 +358,13 @@ function startDrag(ev,it,mode){
     else{let rel=(cd-o0.day+7)%7;rel=rel>1?(rel===6?0:1):rel;const x=snapM(m+1440*rel);if(edge)t.mg=setMg({...o0},mode,mode==='fs'?x-o0.start:o0.end-x)[mode]||0;else t.end=Math.max(o0.start+SNAP,Math.min(MAXEND,x))}
     owner.slots.forEach((s,i)=>Object.assign(s,orig[i]));
     // a core edge: the margin on that side; with all repetitions, each one that has that margin changes by the same minutes (R-EVT-15, R-REP-06)
-    if(edge){if(!multi||single)setMg(e,mode,t.mg);else{const dM=t.mg-(o0[mode]||0);owner.slots.forEach((s,i)=>{if(orig[i][mode])setMg(s,mode,orig[i][mode]+dM)})}}
+    if(edge){if(!multi||single)setMg(e,mode,t.mg);else{const dM=t.mg-(o0[mode]||0);owner.slots.forEach((s,i)=>{if(orig[i][mode]&&!stgSl(s))setMg(s,mode,orig[i][mode]+dM)})}}
     else if(!multi||single){
       if(mode==='move'&&!adv&&owner.slots.some(x=>x!==e&&sameDay(x,{...e,...t})))Object.assign(t,{day:o0.day,...(o0.wk?{wk:o0.wk}:{})});
       Object.assign(e,t);if(!owner.rhythms)fitMg(e);
     }else{
       const dD=aD!=null?aD:t.day-o0.day,dS=t.start-o0.start,dE=t.end-o0.end;
-      owner.slots.forEach(s=>{
+      owner.slots.forEach(s=>{if(stgSl(s))return;
         if(mode==='move'){const du=s.end-s.start;shiftDay(s,dD);s.start=Math.max(0,Math.min(1425,MAXEND-du,s.start+dS));s.end=s.start+du}
         else{s.end=Math.max(s.start+SNAP,Math.min(MAXEND,s.end+dE));if(!owner.rhythms)fitMg(s)}
       });
@@ -379,7 +379,7 @@ function startDrag(ev,it,mode){
     const warn=overlapSet(owner).size>ovB,mark=undoSt.length,fin={...final};
     const undoBtn={label:L('undo'),fn:()=>{if(undoSt.length===mark)undo()}};
     if(multi&&!single){
-      toast(L('rpApplied',{n:orig.length})+(warn?' · ⚠ '+L('rpWarn'):''),[
+      toast(L('rpApplied',{n:nC})+(warn?' · ⚠ '+L('rpWarn'):''),[
         {label:L('rpOnly'),fn:()=>{
           if(undoSt.length!==mark||!act().includes(owner))return;
           owner.slots=orig.map(x=>({...x}));const s=owner.slots[idx];

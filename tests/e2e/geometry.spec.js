@@ -615,3 +615,20 @@ test.describe('R-UI-16 The Save and Load dialogs show one button per line, as dr
     });
   }
 });
+
+test.describe('R-CYC-21 Swapping a staged week into the cycle with a real mouse, on a computer and a phone', () => {
+  for (const [w, h] of [[1280, 800], [390, 844]]) {
+    test(`at ${w} px wide the staged week's row keeps its delete button on its first line, and dragging its grip above the line swaps it in`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h }); await openApp(page);
+      await seed(page, blank({ cycle: 2, pool: 3, weekInfo: [{ name: 'Home' }, { name: 'Away' }, { name: 'Exams' }], events: [ev({ weeks: [1, 3] })] }));
+      await page.evaluate(() => openCycle()); const rows = page.locator('#xDlg .cywr'); await expect(rows).toHaveCount(3);
+      const del = await boxOf(rows.nth(2).locator('.cydel')), nm = await boxOf(rows.nth(2).locator('.cyname'));
+      expect(Math.abs((del.y + del.height / 2) - (nm.y + nm.height / 2))).toBeLessThan(8);   // beside the name, not on a line of its own
+      const g = await boxOf(rows.nth(2).locator('.grip')), t = await boxOf(rows.nth(1));
+      await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.mouse.down(); await page.mouse.move(g.x + g.width / 2, t.y + 2, { steps: 8 }); await page.mouse.up();
+      await expect(rows.nth(1).locator('.cyname')).toHaveValue('Exams'); await page.locator('#xDlg button', { hasText: 'Apply' }).click();
+      expect(await page.evaluate(() => [S.events[0].weeks, S.weekInfo.map(x => x.name)])).toEqual([[1, 2], ['Home', 'Exams', 'Away']]);
+    });
+  }
+});
+

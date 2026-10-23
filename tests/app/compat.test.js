@@ -91,6 +91,7 @@ describe('R-DATA-08 The current format is frozen: changing it needs a new versio
   SHAPES[12] = [...SHAPES[11], '.events[].turns'].sort();   // 12: whether an event counts turns (R-CYC-18)
   SHAPES[13] = [...SHAPES[12], '.color', '.desc'].sort();   // 13: the workspace's colour and description (R-DATA-10)
   SHAPES[14] = SHAPES[13];   // 14: same keys; browser memory may be protected with a passphrase (R-DATA-11)
+  SHAPES[15] = [...SHAPES[14], '.pool'].sort();   // 15: the staged weeks kept after the cycle (R-CYC-21)
   const record = () => { const a = openApp(); a.ev(`(()=>{const d=parseData(${JSON.stringify(household)});S=d;const w=cw();w.data=d;w.id='ws-family';curId=w.id;w.name='Family week'})()`); return JSON.parse(a.ev('JSON.stringify(buildFile())')); };
   it('there is a folder of sample files for the current format version and for every earlier one', () => {
     expect(versions).toEqual(Array.from({ length: FMT }, (_, i) => i + 1));

@@ -153,3 +153,12 @@ describe('R-SHARE-09 Ids stay the same within a period and change with another F
     const u = uids(t); expect(u).toEqual(['e1-w0-600-660-20261019@weekly-schedules', 'e1-w0-600-660-20261019-2@weekly-schedules', 'e2-w0-600-660-20261019@weekly-schedules']); expect(new Set(u).size).toBe(u.length);
   });
 });
+
+describe('R-CYC-22 The calendar file leaves out the staged weeks', () => {
+  it('times and patterns of staged weeks are never exported, also beside a cycle of one week', () => {
+    const f = blank({ cycle: 2, pool: 3, people: ppl, events: [ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 3 })] }), ev1({ id: 'only3', weeks: [3], slots: [sl(2, 600, 660)] })] });
+    expect(events(ics(f)).map(e => e.RRULE)).toEqual(['FREQ=WEEKLY;WKST=MO;INTERVAL=2;BYDAY=MO']);
+    const g = blank({ cycle: 1, pool: 2, people: ppl, events: [ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 1 }), sl(1, 600, 660, { wk: 2 })] }), ev1({ id: 'only2', weeks: [2], slots: [sl(2, 600, 660)] })] });
+    expect(events(ics(g)).map(e => e.RRULE)).toEqual(['FREQ=WEEKLY;WKST=MO;BYDAY=MO']);
+  });
+});

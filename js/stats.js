@@ -264,16 +264,16 @@ const withWk=(w,fn)=>{const c=curWk,a=allWk;curWk=w;allWk=false;try{return fn()}
 function openAgenda(di,w=curWk){agWk=w;showAgenda(()=>withWk(w,()=>agendaHTML(di)),di)}   // the day of the header's week (R-CYC-19)
 function openRhythmAgenda(rh){showAgenda(()=>rhythmAgendaHTML(rh),null)}
 function rhythmAgendaHTML(rh){
-  const lst=S.phases.filter(p=>p.rhythms.includes(rh.id)&&p.slots.length).map(p=>({p,min:Math.min(...p.slots.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
+  const lst=S.phases.filter(p=>p.rhythms.includes(rh.id)).map(p=>({p,sl:cycSl(p.slots).filter(s=>!p.weeks||wksOf(p).length)})).filter(x=>x.sl.length).map(({p,sl})=>({p,sl,min:Math.min(...sl.map(s=>s.start))})).sort((x,y)=>x.min-y.min||x.p.title.localeCompare(y.p.title));
   let h=`<h1>${esc(L('agTitle',{d:rh.name}))}</h1>`;
   if(!lst.length)h+=`<p>${esc(L('nothing'))}</p>`;
-  lst.forEach(({p})=>{
+  lst.forEach(({p,sl})=>{   // sl: its times in the cycle's weeks (staged weeks are left out, R-CYC-22)
     h+=`<div class="ai" style="border-left-color:${esc(p.color)}"><div class="ab"><div class="atl">${esc(p.title)}</div>${p.desc?`<div class="ad">${esc(p.desc)}</div>`:''}`;
-    if(cyc()>1&&p.weeks)h+=`<div class="am">${wksHTML(p.weeks)}</div>`;   // a week pattern (R-CYC-16)
-    const per=cyc()>1&&p.slots.some(s=>s.wk);
-    (per?[...new Set(p.slots.map(s=>s.wk))].sort((a,b)=>a-b):[0]).forEach(w=>{   // different times per week: a section per week
+    if(cyc()>1&&wksOf(p))h+=`<div class="am">${wksHTML(wksOf(p))}</div>`;   // a week pattern (R-CYC-16)
+    const per=cyc()>1&&sl.some(s=>s.wk);
+    (per?[...new Set(sl.map(s=>s.wk))].sort((a,b)=>a-b):[0]).forEach(w=>{   // different times per week: a section per week
       if(w)h+=`<div class="pwk">${wksHTML([w])}</div>`;
-      const sig=d=>p.slots.filter(s=>s.day===d&&(!w||s.wk===w)).sort((a,b)=>a.start-b.start).map(s=>fmt(s.start)+'–'+fmtEnd(s.end)).join('|');
+      const sig=d=>sl.filter(s=>s.day===d&&(!w||s.wk===w)).sort((a,b)=>a.start-b.start).map(s=>fmt(s.start)+'–'+fmtEnd(s.end)).join('|');
       const groups=[];
       for(let d=0;d<7;d++){const g=sig(d);if(!g)continue;const last=groups[groups.length-1];if(last&&last.sig===g&&last.to===d-1)last.to=d;else groups.push({sig:g,from:d,to:d})}
       groups.forEach(g=>{const days=g.from===g.to?DAYS[g.from]:L('dayTo',{a:DAYS[g.from],b:DAYS[g.to]});

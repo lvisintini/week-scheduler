@@ -161,8 +161,16 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
   test('R-CYC-10 R-CYC-05 the cycle dialog, the shrinking question and Live View\'s week question add no accessibility violation', async ({ page }) => {
     await openApp(page); await seed(page, blank({ cycle: 3, events: [ev({ weeks: [3] })] }));
     const dlg = async () => { const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); };
-    await page.evaluate(() => openCycle()); await dlg(); await page.locator('#xDlg select').selectOption('1'); await page.locator('#xDlg button', { hasText: 'Apply' }).click(); await expect(page.locator('#xDlg li')).toHaveCount(1); await dlg();
+    await page.evaluate(() => openCycle()); await dlg(); await page.locator('#xDlg .cyrow select').selectOption('1'); await page.locator('#xDlg button', { hasText: 'Apply' }).click(); await expect(page.locator('#xDlg li')).toHaveCount(1); await dlg();
     await page.locator('#xDlg button', { hasText: 'Cancel' }).click(); await page.locator('#lvB').click(); await expect(page.locator('#xDlg h3')).toHaveText('Which week is it?'); await dlg();
+  });
+  test('R-CYC-21 R-CYC-23 the cycle dialog with staged weeks, the delete-week question and the delete-event question add no accessibility violation', async ({ page }) => {
+    await openApp(page); await seed(page, blank({ cycle: 2, pool: 3, weekInfo: [{}, {}, { name: 'Exams', color: '#e8912d' }], events: [ev({ weeks: [1, 3] })] }));
+    const dlg = async () => { const r = await new AxeBuilder({ page }).include('#xDlg').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]); };
+    await page.evaluate(() => openCycle()); await expect(page.locator('#xDlg .cystg')).toBeVisible(); await dlg();
+    await page.locator('#xDlg .cydel').click(); await page.locator('#xDlg button', { hasText: 'Apply' }).click(); await expect(page.locator('#xDlg li')).toHaveCount(1); await dlg();
+    await page.locator('#xDlg button', { hasText: 'Cancel' }).click(); await page.evaluate(() => openDlg(S.events[0])); ratchet(await scan(page), {});
+    await page.locator('#fDel').click(); await expect(page.locator('#xDlg .btns.stack')).toBeVisible(); await dlg();
   });
   test('the page has a language, a title and landmark structure that screen readers can use', async ({ page }) => {
     await openApp(page); const r = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, main: document.querySelectorAll('main').length }));

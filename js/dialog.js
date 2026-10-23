@@ -17,8 +17,13 @@ const ownLbl=()=>ownName()?L('perfOwn',{n:ownName()}):L('perfOwn0');
 const perfOpts=()=>[[OWN,ownLbl()],['',L('perfNobody')],...S.people.map(q=>[q.id,q.name+(q.external?' ('+L('extSuf')+')':'')])];
 const defInv=()=>[...$('fInv').querySelectorAll('input:checked')].map(i=>i.value);
 /* weeks in the event dialog (R-CYC-08): a Weeks row with week chips (all = every week) and "Different per week", which gives every time
-   its own week (a button in the day cell). dWk: pw = different per week; weeks = the pattern's weeks while not pw. */
-let dWk={pw:false,weeks:new Set([1])};
+   its own week (a button in the day cell). dWk: pw = different per week; weeks = the pattern's weeks of the cycle while not pw.
+   Staged weeks (R-CYC-21/22) are not shown here and keep what they have: stgW = the staged weeks of the pattern, stgL = the times of staged
+   weeks (set aside, saved back unchanged), base = a pattern's times as opened (its staged weeks keep them when it becomes different per week),
+   nw = a new event (all its weeks ticked = every week, staged ones too). */
+let dWk={pw:false,weeks:new Set([1]),stgW:[],stgL:[],base:[],nw:true};
+const patW=()=>{if(dWk.nw&&dWk.weeks.size>=cyc())return {};const w=[...new Set([...dWk.weeks,...dWk.stgW])].sort((a,b)=>a-b);return w.length>=kept()?{}:{weeks:w}};   // a pattern as saved: absent = every kept week
+const stgLines=()=>dWk.pw?(dWk.stgL.length?dWk.stgL:dWk.stgW.flatMap(w=>dWk.base.map(x=>({...x,wk:w})))).map(x=>({...x})):[];   // the staged weeks' own times, saved back
 function wkCtl(o,c,day){o.wkb=el('button','wkc',c);o.wkb.type='button';o.wkb.onclick=()=>wkPop(o,day);wkSet(o,o.wk||1)}
 function wkSet(o,w){o.wk=w||1;if(!o.wkb)return;o.wkb.textContent=o.wk;const t=L('rowWk',{d:o.wbl||'',n:o.wk})+(wkI(o.wk).name?' · '+wkI(o.wk).name:'');o.wkb.title=o.wkb.__t=t;o.wkb.setAttribute('aria-label',t);
   const c=wkCol(o.wk);o.wkb.style.background=c||'';o.wkb.style.color=c?ink(c):'';o.wkb.style.borderColor=c||''}   // the week's colour (R-CYC-17)
@@ -48,10 +53,11 @@ function setPW(on){   // switch between a week pattern and different times per w
     const on=rows.filter(o=>o.cb.checked),ws=[...new Set(on.flatMap(o=>[o,...o.more].map(x=>x.wk)))].sort((a,b)=>a-b);
     const key=(o,w)=>JSON.stringify([o,...o.more].filter(x=>x.wk===w).map(x=>{const {wk,src,...r}=snapRow(x);return r}));
     const same=on.every(o=>ws.every(w=>key(o,w)===key(o,ws[0])));
-    if(!same&&!confirm(L('pwBack',{n:ws[0]}))){$('fPw').checked=true;return}
+    const sg=[...new Set(dWk.stgL.map(x=>x.wk))].sort((a,b)=>a-b);   // staged weeks with times of their own take the pattern's times (R-CYC-22)
+    if((!same||sg.length)&&!confirm([!same&&L('pwBack',{n:ws[0]}),sg.length&&L('pwBackStg',{w:wksText(sg)})].filter(Boolean).join(' '))){$('fPw').checked=true;return}
     on.forEach(o=>{const v=[o,...o.more].filter(x=>x.wk===ws[0]).map(snapRow);o.more.forEach(x=>x.r.remove());o.more=[];
       if(!v.length){o.cb.checked=false;o.upd();return}loadRow(o,v[0]);v.slice(1).forEach(x=>{addTime(o,x).src=x.src})});
-    dWk={pw:false,weeks:new Set(ws.length?ws:[1])};
+    dWk={...dWk,pw:false,weeks:new Set(ws.length?ws:[1]),stgW:[...new Set([...dWk.stgW,...sg])].sort((a,b)=>a-b)};
   }
   drawWk();rows.forEach(o=>o.upd());updWarn();
 }
@@ -63,6 +69,8 @@ function drawWk(){   // the Weeks row (only while the cycle is longer than one w
       const c=wkCol(w);if(c){l.classList.add('wcol');l.style.setProperty('--wc',c)}if(wkDesc(w))l.title=l.__t=wkTip(w);   // the week's colour and description (R-CYC-17)
       i.onchange=()=>{if(!i.checked&&dWk.weeks.size<2){i.checked=true;return}i.checked?dWk.weeks.add(w):dWk.weeks.delete(w);updWarn()}}}   // at least one week
   const sw=el('label','pwsw',c),x=el('input','',sw);x.type='checkbox';x.id='fPw';x.checked=dWk.pw;sw.append(L('wkPer'));sw.title=sw.__t=L('wkPerTip');x.onchange=()=>setPW(x.checked);
+  const sg=dWk.pw?[...new Set(stgLines().map(x=>x.wk))].sort((a,b)=>a-b):dWk.stgW;   // what the staged weeks keep (R-CYC-22)
+  if(sg.length)el('small','wkstg note',c).textContent=L(dWk.pw?'wkStgPer':'wkStgPat',{w:wksText(sg)});
 }
 function rowCtl(o,r,day){   // the cells of one time: start, end, performer, With, colour, timing, then ⧉ and + (a day's first time) or ✕ (a further time), ⚠
   // field labels of the phone cards (R-UI-07); on a desktop the header row names the columns
@@ -287,8 +295,10 @@ function openDlg(e,def,src){   // src: the repetition that was clicked, to jump 
   if(kind==='phase'&&!e&&!S.rhythms.length){toast(L('noRh'));return}
   dkind=kind;MAXEND=kind==='phase'?1440:2880;$('dlg').classList.toggle('ph',kind==='phase');
   cur=e;const d=e||(kind==='phase'?{title:'',desc:'',color:PAL[S.phases.length%PAL.length],involved:[],rhythms:[(vrhythm()||S.rhythms[0]).id]}:{title:'',desc:'',color:PAL[S.events.length%PAL.length],involved:[],schedules:S.schedules.filter(s=>s.visible).slice(0,1).map(s=>s.id)});
-  const slots=e?e.slots:[{day:0,start:540,end:600,person:'',fo:true,...def}];
-  dWk={pw:!!(e&&e.slots.some(x=>x.wk)),weeks:new Set(e&&e.weeks||(def&&def.wk?[def.wk]:[...Array(cyc()).keys()].map(k=>k+1)))};   // R-CYC-08; created in a week's column, that week (R-CYC-19)
+  const slots=e?cycSl(e.slots):[{day:0,start:540,end:600,person:'',fo:true,...def}];   // the times of the cycle's weeks; staged weeks' own times wait aside (R-CYC-22)
+  {const n=cyc(),pw=!!(e&&e.slots.some(x=>x.wk)),cw=e&&e.weeks&&e.weeks.filter(inCyc);
+   dWk={pw,weeks:new Set(cw&&cw.length?cw:def&&def.wk?[def.wk]:[...Array(n).keys()].map(k=>k+1)),   // R-CYC-08; created in a week's column, that week (R-CYC-19)
+     stgW:e&&!pw?(e.weeks||[...Array(kept()).keys()].map(k=>k+1)).filter(k=>k>n):[],stgL:pw?e.slots.filter(stgSl).map(x=>({...x})):[],base:e&&!pw?e.slots.map(x=>({...x})):[],nw:!e}}
   curStl=[];curEtl=[];for(let m=0;m<=1425;m+=SNAP)curStl.push([m,fmt(m)]);for(let m=SNAP;m<=MAXEND;m+=SNAP)curEtl.push([m,endLabel(m)]);
   $('fT').value=d.title;$('fD').value=d.desc||'';setFC(d.color);
   // the owner: our people, plus a current owner who has since become external (kept, marked)
@@ -322,18 +332,23 @@ $('fOk').onclick=()=>{
   const thin=dkind==='event'&&slots.find(s=>(s.fs||0)+(s.fe||0)>s.end-s.start-SNAP);
   if(thin)return dErr('wh',L('errCore',{d:DAYS[thin.day]}));
   if(!sch.length)return dErr('mo',L(dkind==='phase'?'errRh':'errSch'));
-  const wks=!dWk.pw&&dWk.weeks.size<cyc()?{weeks:[...dWk.weeks].sort((a,b)=>a-b)}:{};   // R-CYC-02/03
-  const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...wks,rhythms:sch,slots:slots.map(({day,start,end,wk})=>({day,start,end,...(wk?{wk}:{})}))}
-    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fTuM').value?{turns:$('fTuM').value==='y'}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:$('fAw').checked?{away:true}:{}),...wks,schedules:sch,slots,involved:defInv()};
+  const wks=dWk.pw?{}:patW(),all=[...slots,...stgLines()];   // R-CYC-02/03; staged weeks keep theirs (R-CYC-22)
+  const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...wks,rhythms:sch,slots:all.map(({day,start,end,wk})=>({day,start,end,...(wk?{wk}:{})}))}
+    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fTuM').value?{turns:$('fTuM').value==='y'}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:$('fAw').checked?{away:true}:{}),...wks,schedules:sch,slots:all,involved:defInv()};
   if(d.away&&!slots.some(x=>x.person||(x.inv||defInv()).length))return dErr('wh',L('errAway'));   // somebody must be away (R-EVT-24)
   hist();
   if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.bg;delete cur.away;delete cur.turns}if(cur)delete cur.weeks;
   if(cur)Object.assign(cur,d);else (dkind==='phase'?S.phases:S.events).push({id:uid(),...d});
-  normWk(cur||(dkind==='phase'?S.phases:S.events).at(-1),cyc());
+  normWk(cur||(dkind==='phase'?S.phases:S.events).at(-1),kept());
   $('dlg').close();render();
 };
 $('fCancel').onclick=()=>$('dlg').close();
-$('fDel').onclick=()=>{hist();if(dkind==='phase')S.phases=S.phases.filter(x=>x!==cur);else S.events=S.events.filter(x=>x!==cur);$('dlg').close();render()};
+// R-CYC-23: an event or phase that also happens in staged weeks asks whether those go too, or stay as they are
+$('fDel').onclick=()=>{const e=cur,ph=dkind==='phase',del=()=>{hist();if(ph)S.phases=S.phases.filter(x=>x!==e);else S.events=S.events.filter(x=>x!==e);render()};$('dlg').close();
+  const sg=stgWks(e);if(!sg.length){del();return}
+  const keep=()=>{hist();if(e.slots.some(x=>x.wk))e.slots=e.slots.filter(stgSl);else e.weeks=sg;normWk(e,kept());render()};
+  setTimeout(()=>xdlg({title:L(ph?'delPhT':'delEvT'),body:`<p>${esc(L('delStgBody',{t:e.title,w:wksText(sg)}))}</p>`,stack:true,
+    buttons:[{label:L('delCyc',{w:wksText(sg)}),cls:'p',fn:keep},{label:L('delAll'),fn:del},{label:L('cancel'),dismiss:true}]}),0)};
 $('fCopy').onclick=()=>{const e=cur;$('dlg').close();openCopy(e)};
 /* ---------- copy dialog ---------- */
 function openCopy(src){

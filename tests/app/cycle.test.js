@@ -114,7 +114,7 @@ describe('R-CYC-16 Phases have weeks like events: a rhythm can differ per week o
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] }), ph({ id: 'q', title: 'Shift', slots: [sl(0, 360, 840, { wk: 1 }), sl(0, 1260, 1440, { wk: 2 })] })] }));
     a.ev('setCycle(4,true)'); expect(a.ev('S.phases[0].weeks')).toEqual([2, 4]); expect(a.ev('S.phases[1].slots.map(s=>s.wk)')).toEqual([1, 3, 2, 4]);
     a.ev('shrinkCycle(1)'); expect(a.dlgText()).toContain('Night shift'); expect(a.dlgText()).toContain('events and phases');
-    a.qa('#xDlg input[type=radio]')[1].click(); a.click('Apply');
+    a.qa('#xDlg input[type=radio]').find(r => r.value === 'mv').click(); a.click('Apply');
     expect(a.ev('S.rhythms.map(r=>r.name)')).toEqual(['R', 'Week 2', 'Week 3', 'Week 4']); expect(a.ev('S.rhythms.slice(1).every(r=>!r.visible)')).toBe(true);
     expect(a.ev('S.phases.filter(p=>p.rhythms[0]==="r").map(p=>p.title)')).toEqual(['Shift']); expect(a.ev('S.phases.every(p=>!p.weeks&&p.slots.every(s=>!s.wk))')).toBe(true);
   });
@@ -126,7 +126,7 @@ describe('R-CYC-16 Phases have weeks like events: a rhythm can differ per week o
   });
   it('transferring a rhythm into a workspace with a shorter cycle asks first, like a schedule', () => {
     const a = fresh(blank({ cycle: 2, rhythms: rh, phases: [ph({ weeks: [2] })] })); a.ev("addWorkspace&&0;WS.push(newWs('Other',parseData({schedules:[{id:'s',name:'S'}],events:[]}),false))");
-    a.ev("doTransfer('rhythm',S.rhythms[0],WS.at(-1),false)"); return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.qa('#xDlg input[type=radio]')[1].click(); a.click('Apply'); return sleep(5); })
+    a.ev("doTransfer('rhythm',S.rhythms[0],WS.at(-1),false)"); return sleep(5).then(() => { expect(a.dlgText()).toContain('events or phases arriving (1)'); a.qa('#xDlg input[type=radio]').find(r => r.value === 'rm').click(); a.click('Apply'); return sleep(5); })
       .then(() => { expect(a.ev('WS.at(-1).data.phases.length')).toBe(0); expect(a.ev('WS.at(-1).data.rhythms.map(r=>r.name)')).toEqual(['R']); });
   });
 });
@@ -138,7 +138,7 @@ const evs = a => JSON.parse(a.ev('JSON.stringify(S.events.map(e=>({id:e.id,weeks
 describe('R-CYC-01 The cycle length is set from the workspace menu and is data', () => {
   it('Weeks in the cycle… sets 1 to 4 weeks for the workspace, as an undoable unsaved change', () => {
     const a = fresh(blank()); a.ev('cw().lb=keyOf(S)'); openCycleDlg(a); expect(a.dlgTitle()).toBe('Weeks in the cycle');
-    expect(a.qa('#xDlg select option').map(o => o.textContent)).toEqual(['1 week', '2 weeks', '3 weeks', '4 weeks']);
+    expect(a.qa('#xDlg .cyrow select option').map(o => o.textContent)).toEqual(['1 week', '2 weeks', '3 weeks', '4 weeks']);
     chooseLen(a, 3); a.click('Apply'); expect(a.ev('S.cycle')).toBe(3); expect(a.toast()).toBe('The cycle now has 3 weeks'); expect(a.ev('anyDirty()')).toBe(true);
     a.key('z', { ctrlKey: true }); expect(a.ev('S.cycle')).toBe(1);
   });
@@ -221,17 +221,17 @@ describe('R-CYC-10 Changing the cycle length keeps meaning where it can and neve
     const a = fresh(blank({ cycle: 3, events: [ev1({ id: 'odd', weeks: [1, 3] }), ev1({ id: 'gone', weeks: [3] }), ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 3 }), sl(1, 600, 660, { wk: 2 })] })] }));
     openCycleDlg(a); chooseLen(a, 2); a.click('Apply'); await a.sleep(5);
     expect(a.qa('#xDlg li').map(l => l.textContent)).toEqual(['Event · Weeks 1 and 3', 'Event · Week 3 · nothing left in the other weeks', 'Event · Weeks 2 and 3']);
-    a.click('Apply'); expect(evs(a)).toEqual([{ id: 'odd', weeks: [1], wk: [0], sch: ['s1'] }, { id: 'per', wk: [2], sch: ['s1'] }]);
+    a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply'); expect(evs(a)).toEqual([{ id: 'odd', weeks: [1], wk: [0], sch: ['s1'] }, { id: 'per', wk: [2], sch: ['s1'] }]);
     a.key('z', { ctrlKey: true }); expect(a.ev('S.cycle')).toBe(3); expect(evs(a).map(e => e.id)).toEqual(['odd', 'gone', 'per']);
   });
   it('shrinking with Move keeps those occurrences in a new schedule per removed week, as week 1', async () => {
     const a = fresh(blank({ cycle: 3, events: [ev1({ id: 'odd', weeks: [1, 3] }), ev1({ id: 'per', slots: [sl(0, 600, 660, { wk: 3 }), sl(1, 600, 660, { wk: 2 })] })] }));
-    openCycleDlg(a); chooseLen(a, 2); a.click('Apply'); await a.sleep(5); a.qa('#xDlg input[name=cym]')[1].checked = true; a.click('Apply');
+    openCycleDlg(a); chooseLen(a, 2); a.click('Apply'); await a.sleep(5); a.qa('#xDlg input[name=cym]').find(r => r.value === 'mv').checked = true; a.click('Apply');
     expect(a.ev('S.schedules.map(s=>s.name)')).toEqual(['S1', 'Week 3']); const sid = a.ev('S.schedules[1].id'), e = evs(a);
     expect(e.slice(0, 2).map(x => x.id)).toEqual(['odd', 'per']); expect(e.slice(2)).toMatchObject([{ weeks: [1], sch: [sid] }, { wk: [1], sch: [sid] }]);
   });
-  it('shrinking to one week leaves no week marks at all', async () => {
-    const a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await a.sleep(5); a.click('Apply');
+  it('shrinking to one week with Remove leaves no week marks at all', async () => {
+    const a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await a.sleep(5); a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply');
     expect(a.ev('S.cycle')).toBe(1); expect(evs(a)).toEqual([{ id: 'every', wk: [0], sch: ['s1'] }, { id: 'odd', wk: [0], sch: ['s1'] }, { id: 'per', wk: [0], sch: ['s1'] }]);
     expect(a.toast()).toBe('Every week is the same again (a cycle of one week)');
   });
@@ -491,10 +491,10 @@ describe('R-CYC-13 Inserting or transferring events whose weeks lie beyond the c
   it('an insert whose weeks fit the current cycle asks nothing', async () => {
     const a = fresh(blank({ cycle: 4 })); await importFile(a, file()); await insert(a); expect(a.dlgOpen()).toBe(false); expect(a.ev('S.events.length')).toBe(3);
   });
-  it('otherwise it offers to lengthen the cycle (the default), remove those occurrences, or keep them in a schedule per week', async () => {
+  it('otherwise it offers to lengthen the cycle (the default), keep those weeks as staged weeks, remove those occurrences, or keep them in a schedule per week', async () => {
     const a = fresh(mine()); await importFile(a, file()); await insert(a);
     expect(a.dlgText()).toContain('Some of the events or phases arriving (2) happen in weeks beyond this workspace\'s cycle (2 weeks)');
-    expect(a.qa('#xDlg .radios label').map(l => l.textContent.trim())).toEqual(["Make this workspace's cycle 4 weeks long", 'Remove what happens in those weeks', 'Move it into a schedule (for phases, a rhythm) of its own for each of those weeks (as week 1), to keep it']);
+    expect(a.qa('#xDlg .radios label').map(l => l.textContent.trim())).toEqual(["Make this workspace's cycle 4 weeks long", 'Keep those weeks as staged weeks of this workspace (outside its cycle, ready to swap in)', 'Remove what happens in those weeks', 'Move it into a schedule (for phases, a rhythm) of its own for each of those weeks (as week 1), to keep it']);
     expect(a.q('#xDlg input[name=icm]:checked').value).toBe('len');
   });
   it('lengthening to a multiple keeps the workspace\'s own rhythm and the arriving weeks as they are, in one undo step', async () => {
@@ -638,20 +638,22 @@ describe('R-CYC-17 Each week of a cycle can have a name, a description and a col
     const r = rows(a)[1]; expect(r.querySelector('.cywn').textContent).toBe('Week 2'); expect(r.querySelector('.cyname').value).toBe("At Dad's"); expect(r.querySelector('.cydesc').value).toBe('From Friday pickup');
     expect(r.querySelector('.cysw').getAttribute('aria-label')).toBe('Week 2: colour (#8e4ec6). Click to choose it'); expect(r.querySelector('.cyname').getAttribute('aria-label')).toBe('Week 2: name');
     r.querySelector('.cyclr').click(); expect(r.querySelector('.cysw').classList.contains('none')).toBe(true); a.click('Apply'); expect(wi(a)[1]).toEqual({ name: "At Dad's", desc: 'From Friday pickup' });
-    const b = fresh(data()); openCycleDlg(b); chooseLen(b, 1); expect(rows(b)).toHaveLength(0);
+    const b = fresh(data()); openCycleDlg(b); chooseLen(b, 1); expect(rows(b).map(r => r.classList.contains('stg'))).toEqual([false, true]);   // week 2 would be staged (R-CYC-21)
   });
   it('Cancel changes nothing; editing the weeks without changing the length is one undo step', () => {
     const a = fresh(data()); openCycleDlg(a); typeIn(a, 0, 'name', 'Home'); a.click('Cancel'); expect(wi(a)[0].name).toBe('At home');
     openCycleDlg(a); typeIn(a, 0, 'desc', 'School week'); a.click('Apply'); expect(wi(a)[0]).toEqual({ name: 'At home', desc: 'School week', color: '#2fa66a' }); a.ev('undo()'); expect(wi(a)[0].desc).toBeUndefined();
   });
-  it('doubling the cycle in step repeats the names and colours (week 3 = week 1); unticking leaves the new weeks blank; shrinking drops the weeks that go', async () => {
+  it('doubling the cycle in step repeats the names and colours (week 3 = week 1); unticking leaves the new weeks blank; shrinking keeps the weeks that go as staged, or drops them', async () => {
     let a = fresh(data()); openCycleDlg(a); chooseLen(a, 4); expect(rows(a)[2].querySelector('.cyname').value).toBe('At home'); a.click('Apply');
     expect(wi(a).map(w => w.name)).toEqual(['At home', "At Dad's", 'At home', "At Dad's"]);
     a = fresh(data()); openCycleDlg(a); chooseLen(a, 4); const cb = a.q('#xDlg .cyext input'); cb.checked = false; cb.dispatchEvent(new a.w.Event('change'));
     expect(rows(a)[2].querySelector('.cyname').value).toBe(''); typeIn(a, 3, 'name', 'Exams'); a.click('Apply'); expect(wi(a).map(w => w.name)).toEqual(['At home', "At Dad's", undefined, 'Exams']);
     a = fresh(data()); openCycleDlg(a); chooseLen(a, 3); a.click('Apply'); expect(wi(a)).toEqual(info);
-    a = fresh(data({ events: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); expect(wi(a)).toEqual([]);
-    a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.click('Apply'); expect(a.ev('S.cycle')).toBe(1); expect(wi(a)).toEqual([]);
+    a = fresh(data({ events: [], weekInfo: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); expect(a.ev('[S.cycle,kept()]')).toEqual([1, 1]);   // an empty week that leaves is dropped
+    a = fresh(data({ events: [] })); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.click('Apply'); expect(a.ev('[S.cycle,kept()]')).toEqual([1, 2]); expect(wi(a)).toEqual(info);   // a named week is kept as staged by default
+    a = fresh(data()); openCycleDlg(a); chooseLen(a, 1); a.click('Apply'); await sleep(0); a.qa('#xDlg input[name=cym]').find(r => r.value === 'rm').checked = true; a.click('Apply');
+    expect(a.ev('[S.cycle,kept()]')).toEqual([1, 1]); expect(wi(a)).toEqual([]);
   });
   it('the week switcher is filled with the week colour, its tooltip names the week, and the menu shows chips, names and descriptions', () => {
     const a = fresh(data()); week(a, 2); const b = a.q('.dh.c .wkb');
@@ -777,8 +779,8 @@ describe('R-CYC-20 The weeks of a cycle can be reordered; everything in a week m
   it('without a known today\'s week nothing is remembered; a plain change of names is still a single step', () => {
     const a = fresh(data()); openCycleDlg(a); key(grips(a)[2], 'ArrowUp'); a.click('Apply'); expect(a.ev('prefs.lvAnchor[curId]')).toBeUndefined(); expect(a.ev('undoSt.length')).toBe(1);
   });
-  it('the grips are hidden while the length changes; an order made before is applied first, then the new length', () => {
-    const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown'); chooseLen(a, 4); expect(grips(a)).toHaveLength(0);
+  it('the grips stay while the length changes (a new week has none); an order made before is applied first, then the new length', () => {
+    const a = fresh(data()); openCycleDlg(a); key(grips(a)[0], 'ArrowDown'); chooseLen(a, 4); expect(grips(a).length).toBe(3); expect(rows(a).length).toBe(4);
     a.click('Apply'); expect(a.ev('S.cycle')).toBe(4); expect(a.ev('S.events[0].weeks')).toEqual([2, 3]); expect(a.ev('undoSt.length')).toBe(2);
   });
   it('in Spanish the grips and the note are translated', () => {

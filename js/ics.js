@@ -22,8 +22,8 @@ function icsText(f,o){
   f.events.forEach(e=>{
     if(e.bg)return;   // In the background: never part of anyone's calendar
     const groups=new Map();   // one series per week (0 = every week) and per times, performer, With list and timing
-    e.slots.forEach(s=>{const ws=n>1&&(s.wk?[s.wk]:e.weeks)||[0];
-      ws.forEach(k=>{const key=[k,s.start,s.end,s.person||'',invOf(e,s).join(','),s.flex?1:0,s.fs||0,s.fe||0].join('|');
+    e.slots.forEach(s=>{const w0=s.wk?[s.wk]:e.weeks,wc=w0&&w0.filter(k=>k<=n);if(wc&&!wc.length)return;   // staged weeks are never exported (R-CYC-22)
+      (n>1&&wc||[0]).forEach(k=>{const key=[k,s.start,s.end,s.person||'',invOf(e,s).join(','),s.flex?1:0,s.fs||0,s.fe||0].join('|');
         if(!groups.has(key))groups.set(key,{k,s,days:new Set()});groups.get(key).days.add(s.day)})});
     groups.forEach(({k,s,days})=>{
       let d0=null;for(let d=o.from;d<o.from+7*n&&d0==null;d++)if(days.has((d+3)%7)&&(!k||o.wk(d)===k))d0=d;   // the first occurrence on or after From
