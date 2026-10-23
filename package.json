@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "description": "Dev-only tooling: the app itself is static files (index.html, app.css, js/) served as they are, with no build or dependencies.",
+  "engines": { "node": ">=22" },
   "scripts": {
     "serve": "node tests/e2e/serve.js",
     "test": "vitest run",

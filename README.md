@@ -37,10 +37,10 @@ A saved file or link holds one workspace (`version` — the data format, `FMT` i
 Your data is kept in memory while the page is open — use **Save…** (browser memory, JSON file or shareable link) to keep your work.
 
 ## Tests
-The app is static files (`index.html`, `app.css`, `js/`) and needs no build; the tests are dev-only.
+The app is static files (`index.html`, `app.css`, `js/`) and needs no build; the tests are dev-only. They are known to work with Node 22 (`.nvmrc`); see `docs/architecture.md` → *Maintenance and handover*.
 
 ```
-npm install
+npm ci
 npm test                    # about 1,800 fast tests (jsdom), about two minutes
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need

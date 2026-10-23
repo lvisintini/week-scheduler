@@ -8,6 +8,7 @@ This file holds only what applies to every task. The full specification is in `d
 - Large or ambiguous features: discuss the design first ("let's discuss this first"). Give suggestions with trade-offs and a recommendation, then wait for "do it".
 - Decisions tagged **[U]** (asked for by the user) and **[C✓]** (proposed by Claude and accepted, explicitly or by not objecting) are deliberate: never undo them silently.
 - Every user-facing string exists in English and Spanish (see *Bilingual strings*).
+- No new tools, frameworks or build steps, and no readability rewrites: these are left to a future maintainer **[U]** (`docs/architecture.md` → *Maintenance and handover*).
 - Tooltips carry the long explanations and explain workarounds (e.g. a rota = an owner who set it + the people in it as involved); labels stay short.
 - **When finishing a task:** re-read the conversation's decisions and update the matching entry in the requirement file for that area (table below), editing it in place. Parked ideas go to `docs/parked.md`, known bugs and limits to `docs/known-issues.md`, code-map changes to `docs/architecture.md`. The user reviews these files and expects them to capture *every* requirement and accepted decision.
 
@@ -79,7 +80,7 @@ This file holds only what applies to every task. The full specification is in `d
 - jsdom rewrites the `calc()` positions, so tests read lanes from `data-lane` (`l/n` or `l0-l1/n`) and strips from `data-strip`.
 
 ## Testing (details: `docs/testing.md`)
-- `npm install`; `npm test` (Vitest + jsdom); `npx playwright install` once (on WSL or a fresh Linux machine also `sudo npx playwright install-deps` once, or every e2e test fails with `error while loading shared libraries`); `npm run test:e2e` (Playwright; `ALL_BROWSERS=1` adds Firefox and WebKit); `npm run lint` (ESLint over `js/` and `tests/`: a name used without its import is an error). CI: `.github/workflows/tests.yml`.
+- Node 22 (`.nvmrc`); `npm ci`; `npm test` (Vitest + jsdom); `npx playwright install` once (on WSL or a fresh Linux machine also `sudo npx playwright install-deps` once, or every e2e test fails with `error while loading shared libraries`); `npm run test:e2e` (Playwright; `ALL_BROWSERS=1` adds Firefox and WebKit); `npm run lint` (ESLint over `js/` and `tests/`: a name used without its import is an error). CI: `.github/workflows/tests.yml`.
 - Re-run both suites after every change that touches HTML building, import or links.
 - Folders: `tests/unit` (pure logic), `tests/app` (the screens in jsdom), `tests/security`, `tests/e2e` (real browser: geometry, real input, touch, downloads, print, CSP, performance, accessibility), `tests/fixtures` (frozen data formats), `tests/manual/touch.md` (the real-phone checklist). The jsdom harness is `tests/helpers/app.js`.
 - Every test group is named `R-AREA-nn <what is checked>`; test names say what is expected (at least 25 characters, no duplicates, no `skip`/`only`/`todo`). The console output is the documentation.
