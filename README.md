@@ -45,7 +45,7 @@ npm test                    # about 1,800 fast tests (jsdom), about two minutes
 npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
 npm run test:e2e            # about 280 real-browser tests (Chromium + a phone profile), about a minute
-npm run lint                # ESLint on the tests
+npm run lint                # ESLint on js/ and the tests
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```
 
