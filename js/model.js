@@ -398,7 +398,7 @@ function openSettings(){
     el('small','',r).textContent=L(tp)});
   // a passphrase for browser memory (R-DATA-11); each opens its own dialog once Settings has closed
   if(state.memKey)el('small','note',dt).textContent=L('protState');
-  (state.memKey?[['chPass','chPassTip',()=>openPassphrase('change'),''],['lockNow','lockTip',lockNow,''],['unprot','unprotTip',()=>openPassphrase('off'),'d']]:[['protB','protTip',()=>openPassphrase('on'),'']]).forEach(([lb,tp,fn,cls])=>{
+  (state.memKey?[['chPass','chPassTip',()=>openPassphrase('change'),''],['lockNow','lockNowTip',lockNow,''],['unprot','unprotTip',()=>openPassphrase('off'),'d']]:[['protB','protTip',()=>openPassphrase('on'),'']]).forEach(([lb,tp,fn,cls])=>{
     const r=el('div','sopt',dt),b=el('button',cls,r);b.textContent=L(lb);b.style.cssText='flex:0 0 140px';b.onclick=()=>{$('xDlg').close();setTimeout(fn,0)};
     el('small','',r).textContent=L(tp)});
   const ui=sec('uiH');el('small','note',ui).textContent=L('viewNote');

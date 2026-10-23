@@ -144,7 +144,7 @@ function render(){
       d.style.cssText=`top:${px(top)}px;height:${Math.max(6,px(it.end)-px(top)-1)}px;right:${r0}px;opacity:${it.op}`;d.style.setProperty('--c',it.color);
       const lb=el('span','',d);lb.textContent=e.title;d.style.color=ink(it.color);   // the title reads top-to-bottom
       const awy=isAway(e);if(awy){const k=ink(it.color);d.classList.add('aw');d.style.background=`repeating-linear-gradient(45deg,${it.color} 0 5px,color-mix(in srgb,${it.color} 70%,${k==='#000'?'#fff':'#000'}) 5px 9px)`}   // Away: hatched (R-EVT-24)
-      if(awy){}else if(s.flex){d.classList.add('flex');d.style.color='var(--fg)'}else if(it.ce>it.cs&&(it.cs>top||it.ce<it.end)){const t=`color-mix(in srgb,${it.color} 40%,transparent)`,c0=px(it.cs)-px(top),c1=px(it.ce)-px(top);d.style.background=`linear-gradient(${t} 0 ${c0}px,${it.color} ${c0}px ${c1}px,${t} ${c1}px)`;
+      if(awy){/* Away keeps its hatch: no flexible or core shading */}else if(s.flex){d.classList.add('flex');d.style.color='var(--fg)'}else if(it.ce>it.cs&&(it.cs>top||it.ce<it.end)){const t=`color-mix(in srgb,${it.color} 40%,transparent)`,c0=px(it.cs)-px(top),c1=px(it.ce)-px(top);d.style.background=`linear-gradient(${t} 0 ${c0}px,${it.color} ${c0}px ${c1}px,${t} ${c1}px)`;
         if(c0>0)lb.style.paddingTop=c0+3+'px'}   // the text starts where the solid core starts
       else if(it.ce<=it.cs){d.style.background=`color-mix(in srgb,${it.color} 40%,transparent)`;d.style.color='var(--fg)'}
       if(it.cont)d.style.borderRadius=it.piece?'0 0 6px 0':'0 6px 0 0';

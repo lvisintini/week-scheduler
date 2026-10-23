@@ -86,6 +86,12 @@ describe('R-SCH-02 Locking a schedule (menu and badge)', () => {
     const a = two(); moreBtn(schedRows(a)[0]).click(); menuClick(a, 'Lock'); expect(a.ev('state.S.schedules[0].locked')).toBe(true);
     expect(schedRows(a)[0].querySelectorAll('.ic[title]').length).toBeGreaterThan(0); moreBtn(schedRows(a)[0]).click(); expect(menu(a)).toContain('Unlock');
   });
+  it('the lock badge explains the schedule lock, in English and Spanish, not the passphrase Lock now', () => {
+    for (const [languages, text] of [[['en'], /^Lock this schedule: its events can't be selected/], [['es'], /^Bloquear este horario: sus eventos no se pueden seleccionar/]]) {
+      const a = fresh(blank({ schedules: [sched({ locked: true })] }), { languages }); const tips = [...schedRows(a)[0].querySelectorAll('.ic[title]')].map(x => x.title);
+      expect(tips.filter(x => text.test(x))).toHaveLength(1); expect(tips.join(' ')).not.toMatch(/passphrase|frase de contraseña/);
+    }
+  });
   it('locking is an undoable change (unlike visibility)', () => {
     const a = two(); moreBtn(schedRows(a)[0]).click(); menuClick(a, 'Lock'); a.toolbar('undo').click(); expect(a.ev('state.S.schedules[0].locked')).toBe(false);
   });
