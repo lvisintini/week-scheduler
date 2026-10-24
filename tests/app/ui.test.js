@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY } from '../helpers/app.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY, ROOT } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const sections = a => a.qa('#sbin .sec');
@@ -558,6 +560,21 @@ describe('R-UI-17 How to use: every tip in titled sections, a list of topics, an
   it('in Spanish the dialog reads Cómo se usa, with Spanish sections and button', () => {
     const a = help({ languages: ['es-ES'] }); expect(a.q('#xDlg h3').textContent).toBe('Cómo se usa'); expect(heads(a)[0]).toBe('Crear y editar');
     expect(a.q('#xDlg .hintro button').textContent).toBe('Abrir los ejemplos'); expect(a.qa('#xDlg .hsec li')[0].textContent).toMatch(/^Arrastra/);
+  });
+  it('ten sections show a picture of the examples in the interface language, with its own alt text and size, loaded lazily', () => {
+    const imgs = a => a.qa('#xDlg .hsec img'); const a = help(); expect(imgs(a)).toHaveLength(10);
+    expect(imgs(a).map(i => i.getAttribute('src'))).toEqual(['edit', 'rep', 'ov', 'ppl', 'flex', 'ty', 'bg', 'look', 'rh', 'save'].map(n => `img/help/en/${n}.png`));
+    imgs(a).forEach(i => { expect(i.alt.length).toBeGreaterThan(30); expect(+i.getAttribute('width')).toBeGreaterThan(0); expect(+i.getAttribute('height')).toBeGreaterThan(0); expect(i.getAttribute('loading')).toBe('lazy'); });
+    expect(a.q('#hs-hsCyc').parentElement.querySelector('img')).toBeNull();
+    const es = help({ languages: ['es-ES'] }); expect(imgs(es)[0].getAttribute('src')).toBe('img/help/es/edit.png'); expect(imgs(es)[0].alt).toMatch(/^El lunes/);
+  });
+  it('every picture exists in English and Spanish, as a PNG of the same proportions as the size the dialog gives it', () => {
+    const a = help(); const rows = a.ev('HELP.filter(h=>h[2]).map(h=>h[2])'); expect(rows).toHaveLength(10);
+    for (const lang of ['en', 'es']) for (const [n, , w, h] of rows) {
+      const f = path.join(ROOT, 'img', 'help', lang, n + '.png'); expect(fs.existsSync(f), f).toBe(true);
+      const b = fs.readFileSync(f); expect(b.subarray(1, 4).toString()).toBe('PNG'); const W = b.readUInt32BE(16), H = b.readUInt32BE(20);
+      expect(Math.abs(W / H - w / h), `${lang}/${n}: ${W}×${H} against ${w}×${h}`).toBeLessThan(0.01); expect(W).toBeGreaterThanOrEqual(w); expect(b.length).toBeLessThan(200 * 1024);
+    }
   });
   it('another dialog opened from the same window afterwards does not keep How to use\'s size', () => {
     const a = help(); a.click('Close'); a.ev('openSettings()'); expect(a.q('#xDlg').classList.contains('howto')).toBe(false);

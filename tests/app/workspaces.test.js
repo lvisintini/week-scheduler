@@ -271,7 +271,7 @@ describe('R-DATA-12 The Examples workspace: a sample week that shows what the ap
   });
   it('flexible times: Homework is Around these times, the delivery has a flexible start and the laundry a flexible end', () => {
     const a = opened(); expect(evt(a, 'Hw').slots.every(s => s.flex)).toBe(true); expect(box(a, 0, 'Homework').getAttribute('aria-label')).toContain('Flexible time (around these times)');
-    expect(box(a, 1, 'Delivery').getAttribute('aria-label')).toContain('Start between 10:00 and 10:30'); expect(box(a, 6, 'Laundry').getAttribute('aria-label')).toContain('Finish between 11:00 and 12:00');
+    expect(box(a, 1, 'Delivery').getAttribute('aria-label')).toContain('Start between 10:00 and 10:30'); expect(box(a, 0, 'Laundry').getAttribute('aria-label')).toContain('Finish between 16:00 and 17:00');
   });
   it('background strips, Away and its clash: Screen-free time and the cleaner are strips; Swimming, planned while Olivia is away, is striped with ⚠', () => {
     const a = opened(); expect(a.qa('.day[data-d="3"] .bgs').map(b => b.textContent)).toEqual(['Screen-free time', 'Cleaner at work']);

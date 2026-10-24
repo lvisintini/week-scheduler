@@ -25,7 +25,8 @@ test.describe('R-SEC-04 A full tour of the app talks to nobody', () => {
     await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'Shareable link').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await dialogButton(page, 'Create link').click(); await expect(page.locator('#xDlg textarea')).toBeVisible({ timeout: 15000 }); await dialogButton(page, 'Copy link').click(); await dialogButton(page, 'Close').click();
     await toolbar(page, 'save').click(); await dialogButton(page, 'JSON file').click(); await page.locator('#xDlg input[type=text]').fill(PASSWORD); await Promise.all([page.waitForEvent('download'), dialogButton(page, 'Save file').click()]);
-    const outside = w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:') && !u.startsWith('blob:')); expect(outside).toEqual([]); expect([...new Set(w.requests.filter(u => u.startsWith(BASE + '/')))].sort()).toEqual(OWN);
+    const outside = w.requests.filter(u => !u.startsWith(BASE + '/') && !u.startsWith('data:') && !u.startsWith('blob:')); expect(outside).toEqual([]); const own = w.requests.filter(u => u.startsWith(BASE + '/')), pics = own.filter(u => u.startsWith(BASE + '/img/'));
+    expect([...new Set(own.filter(u => !pics.includes(u)))].sort()).toEqual(OWN); expect(pics.every(u => /^http:\/\/localhost:4173\/img\/help\/en\/[a-z]+\.png$/.test(u))).toBe(true);   // How to use's pictures (R-UI-17)
     expect(w.consoleErrors).toEqual([]); expect(await violations(page)).toEqual([]);
   });
   test('the About tab\'s GitHub link opens only when clicked, in a new tab that gets no opener and no referrer', async ({ page }) => {
@@ -100,4 +101,17 @@ test.describe('R-SEC-02 Hostile text in every field never runs in a real browser
     expect(r).toMatchObject({ pwned: undefined, scripts: 1, handlers: 0, jsLinks: 0, badImgs: 0 }); expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
     expect(await page.evaluate(t => [...document.querySelectorAll('#sbin input[type=text]')].some(i => i.value === t), payload)).toBe(true);   // …and the text really is there, as plain text
   });
+});
+
+test.describe('R-SEC-01 R-UI-17 The pictures of How to use come from the site itself, as the policy now allows', () => {
+  for (const [lang, locale] of [['en', 'en-US'], ['es', 'es-ES']]) {
+    test(`in ${lang === 'en' ? 'English' : 'Spanish'} all ten pictures load from img/help/${lang}/, without a policy violation or any other request`, async ({ browser }) => {
+      const ctx = await browser.newContext({ locale, viewport: { width: 1400, height: 900 } }); const page = await ctx.newPage(); const w = await watch(page); await openApp(page);
+      await page.locator('#sb .sbtop .help').click(); const imgs = page.locator('#xDlg .hsec img'); await expect(imgs).toHaveCount(10);
+      for (const im of await imgs.all()) { await im.scrollIntoViewIfNeeded(); await expect.poll(() => im.evaluate(i => i.complete && i.naturalWidth)).toBeGreaterThan(100); }
+      expect(await violations(page)).toEqual([]); expect(w.consoleErrors).toEqual([]);
+      const pics = w.requests.filter(u => /\/img\//.test(u)); expect(pics.every(u => u.startsWith(`${BASE}/img/help/${lang}/`))).toBe(true); expect(new Set(pics).size).toBe(10);
+      expect(w.requests.filter(u => !u.startsWith(BASE + '/'))).toEqual([]); await ctx.close();
+    });
+  }
 });

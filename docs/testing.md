@@ -13,6 +13,7 @@ Node 22 (`.nvmrc`; if the tools fail to start years from now, install it before 
 - `tests/fixtures/` frozen sample files of every published data format (`v<N>/`), the sample household (`household.js`) and the generator (`make.mjs`), see R-DATA-08; read by `tests/app/compat.test.js`.
 - `tests/manual/touch.md`: the checklist for real phones (Android Chrome, iOS Safari), 34 steps with the expected result, for what the touch emulation can't prove. The app is on GitHub Pages at https://lvisintini.github.io/week-scheduler/ (serves `main`).
 - `tests/requirements.test.js` traceability + description quality.
+- `tests/shots/` not a test suite: `npm run shots` takes the pictures of How to use (R-UI-17) from the Examples workspace (R-DATA-12) into `img/help/<en|es>/` (its own Playwright configuration; the e2e configuration only looks in `tests/e2e/`). Run it after a change that alters what a picture shows (the boxes, the event dialog's Who and When, the Save dialog, the day view on a phone, the Examples' content), look at the pictures, and update the sizes in `HELP` (`js/model.js`) if a crop changed; `tests/app/ui.test.js` (R-UI-17) checks that every picture exists in both languages with those proportions.
 
 ## Rules
 - Every test group is named `R-AREA-nn <what is checked>` after a requirement in `docs/requirements/`; individual test names must say what is expected (≥ 25 characters, no duplicates, no skip/only/todo). The console output is the documentation. New requirement → new ID in its requirement file → tests.

@@ -46,6 +46,7 @@ npx playwright install      # once: downloads the test browsers
 sudo npx playwright install-deps  # once, on WSL or a fresh Linux machine: system libraries the browsers need
 npm run test:e2e            # about 280 real-browser tests (Chromium + a phone profile), about a minute
 npm run lint                # ESLint on js/ and the tests
+npm run shots               # take the pictures of How to use again (img/help/), after a change they show
 ALL_BROWSERS=1 npm run test:e2e   # also Firefox and WebKit (the nightly CI job does this)
 ```
 

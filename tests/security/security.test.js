@@ -8,7 +8,7 @@ describe('R-SEC-01 Content-Security-Policy confines the page to itself', () => {
   const csp = (html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || '';
   const directive = name => (csp.split(';').map(s => s.trim()).find(s => s.startsWith(name + ' ')) || '');
   it('a policy is present in the page itself (a <meta>, since GitHub Pages sets no headers)', () => { expect(csp).not.toBe(''); });
-  it.each([['default-src', "'none'"], ['connect-src', "'none'"], ['base-uri', "'none'"], ['form-action', "'none'"], ['img-src', 'data:']])('the policy directive %s allows only %s', (name, value) => {
+  it.each([['default-src', "'none'"], ['connect-src', "'none'"], ['base-uri', "'none'"], ['form-action', "'none'"], ['img-src', "'self' data:"]])('the policy directive %s allows only %s', (name, value) => {
     expect(directive(name)).toBe(`${name} ${value}`);
   });
   it('scripts may only be the app\'s own files (no inline code at all); styles its own stylesheet and style attributes', () => {

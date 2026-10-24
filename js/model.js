@@ -435,17 +435,20 @@ export function openSettings(){
   show(panes[setTab]?setTab:'uiH');
   xdlg({title:L('settings'),full:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }
-// How to use (R-UI-17): every tip, in titled sections; the way into the Examples (R-DATA-12) at the top; a list of the sections to jump to
-const HELP=[['hsEdit',[1,2,9,7]],['hsRep',[3,10,11]],['hsOv',[6,4]],['hsPpl',[24,15]],['hsFlex',[25]],['hsTy',[13,14]],['hsBg',[18,20,17]],
-  ['hsLook',[16,5,19]],['hsRh',[12]],['hsCyc',[8,23]],['hsSave',[21,22]]];
+// How to use (R-UI-17): every tip, in titled sections, most with a picture of the Examples (img/help/<language>/<name>.png, taken by
+// `npm run shots`: [name, alt text, width, height] as shown); the way into the Examples (R-DATA-12) at the top; a list of the sections to jump to
+export const HELP=[['hsEdit',[1,2,9,7],['edit','hiEdit',666,410]],['hsRep',[3,10,11],['rep','hiRep',900,306]],['hsOv',[6,4],['ov','hiOv',940,298]],['hsPpl',[24,15],['ppl','hiPpl',900,446]],
+  ['hsFlex',[25],['flex','hiFlex',666,191]],['hsTy',[13,14],['ty','hiTy',1022,788]],['hsBg',[18,20,17],['bg','hiBg',666,144]],['hsLook',[16,5,19],['look','hiLook',260,467]],
+  ['hsRh',[12],['rh','hiRh',778,396]],['hsCyc',[8,23]],['hsSave',[21,22],['save','hiSave',460,284]]];
 export function openHelp(){
   const body=el('div','howto'),top=el('div','hintro',body);el('p','',top).textContent=L('helpIntro');
   const ex=el('button','p',top);ex.type='button';ex.textContent=L('exOpen');ex.title=ex.__t=L('exOpenTip');ex.onclick=()=>{$('xDlg').close();setTimeout(openExamples,0)};
   const nav=el('nav','htoc',body),secs=el('div','hsecs',body);nav.setAttribute('aria-label',L('helpToc'));
-  HELP.forEach(([k,tips])=>{
+  HELP.forEach(([k,tips,img])=>{
     const s=el('section','hsec',secs),h=el('h4','',s);h.id='hs-'+k;h.textContent=L(k);s.setAttribute('aria-labelledby',h.id);
     const b=el('button','',nav);b.type='button';b.textContent=L(k);b.onclick=()=>h.scrollIntoView?.({block:'start'});
     const r=el('div','hrow',s),ul=el('ul','',r);tips.forEach(i=>{el('li','',ul).textContent=L('help'+i)});
+    if(img){const [n,alt,w,h]=img,im=el('img','',el('figure','',r));im.src=`img/help/${state.lang}/${n}.png`;im.alt=L(alt);im.width=w;im.height=h;im.setAttribute('loading','lazy');im.setAttribute('decoding','async')}
   });
   xdlg({title:L('helpTitle'),full:true,howto:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }

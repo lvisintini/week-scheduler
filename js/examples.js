@@ -19,19 +19,19 @@ export function exampleData(){
     E('exShift','exShiftD','#2fa66a','work',[0,1,2,3,4,5].map(x=>S(x,h(9),h(17),x%2?Sm:A,{col:'p'})),{schedules:['exW']}),   // a rota (R-CYC-18), coloured by performer (R-EVT-22)
     E('exDeliv','exDelivD','#607d8b','work',[S(1,h(10),h(11),Dn,{fs:30})],{schedules:['exW'],involved:[Sm],oncall:true}),
     E('exDent','exDentD','#d6409f','care',[S(2,h(16),h(17),Sm)],{involved:[O]}),
-    E('exFoot','exFootD','#e5484d','free',[S(2,h(16,30),h(17,30),O)]),
+    E('exFoot','exFootD','#e5484d','free',[S(2,h(16,15),h(17),O)]),
     E('exGym','exGymD','#e8912d','care',[S(0,h(18),h(19),Sm)]),
     E('exCook','exCookD','#a1662f','chore',ALL.map(x=>S(x,h(18,45),h(19,30),A,x===6?{inv:[O]}:{}))),   // Sunday's own With (R-EVT-21)
     E('exDin','exDinD','#e8912d','meal',on(ALL,h(19,30),h(20,15),'')),   // nobody responsible: concerns everyone (R-EVT-10)
     E('exStock','exStockD','#2fa66a','work',[S(1,h(19,45),h(20,45),A)],{schedules:['exW']}),
     E('exHw','exHwD','#8e4ec6','focus',on([0,1,2,3],h(17),h(18),O,{flex:true})),
-    E('exLaun','exLaunD','#12a5b5','chore',[S(6,h(10),h(12),Sm,{fe:60})]),
+    E('exLaun','exLaunD','#12a5b5','chore',[S(0,h(15),h(17),Sm,{fe:60})]),
     E('exScr','exScrD','#d6409f','free',on(WD,h(18),h(20),O),{bg:true}),
     E('exClean','exCleanD','#12a5b5','chore',[S(3,h(10),h(13),R)],{bg:true}),
     E('exGran','exGranD','#d6409f','social',[S(5,h(10),h(17),O)],{away:true}),
     E('exSwim','exSwimD','#12a5b5','free',[S(5,h(11),h(12),O)]),
-    E('exDog','exDogD','#a1662f','chore',[S(5,h(10),h(11),A),S(6,h(10),h(11),A)]),
-    E('exBread','exBreadD','#e8912d','chore',[S(5,h(10,30),h(10,45),A),S(2,h(8,45),h(9),A)],{nest:true}),
+    E('exDog','exDogD','#a1662f','chore',[S(5,h(10),h(11,30),A),S(6,h(10),h(11),A)]),
+    E('exBread','exBreadD','#e8912d','chore',[S(5,h(10,30),h(11),A),S(2,h(8,45),h(9),A)],{nest:true}),
     E('exPlant','exPlantD','#2fa66a',null,[S(6,h(9),h(9,30),Sm)]),
     E('exLie','exLieD','#3f51b5','sleep',[S(6,h(7),h(9),A)],{involved:[Sm]}),
   ];

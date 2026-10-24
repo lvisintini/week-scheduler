@@ -19,6 +19,8 @@ The app is static files served as they are (no build): `index.html` (markup, the
 | `js/dialog.js` | the event/phase dialog (`openDlg`, the day table `rows`/`dayRow`, the controls' wiring `initDialog` with the handlers `saveDlg`, `delDlg`, `dragDlg`, `gripKey`, `tabKey`) and the copy dialog |
 | `js/main.js` | the entry: wiring and startup (runs last; calls `loadPrefs`, `initLive`, `initDialog` first): a protected browser memory asks `askUnlock` first, then `afterStore` (today's week, Live View, a shared link) |
 
+The pictures of How to use (R-UI-17) are PNG files in `img/help/en/` and `img/help/es/`, one per name in `HELP` (`js/model.js`, which also holds each one's alt text key and display size); `npm run shots` (`tests/shots/`, Playwright, outside the test suites) takes them again from the Examples workspace. `tests/e2e/serve.js` serves them like GitHub Pages does.
+
 The jsdom harness (`tests/helpers/app.js`) gives jsdom, which can't run modules, one document with `app.css` and each module inlined as a classic script (imports and `export` removed, strict) in the order a browser runs them, so the tests reach every name with `a.ev('…')`; the Playwright tests reach them through a test-only bridge (`bridge` in `tests/e2e/helpers.js`); `tests/e2e/serve.js` serves exactly these files, like GitHub Pages.
 
 ## Map
