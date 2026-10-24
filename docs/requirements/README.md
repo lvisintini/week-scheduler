@@ -18,7 +18,7 @@ Discuss design first for large or ambiguous features ("let's discuss this first"
 | `product.md` | what the app is (no IDs) |
 | `grid.md` | R-GRID-01…11 |
 | `live-view.md` | R-GRID-12 |
-| `events.md` | R-EVT-01…08, 11, 12, 15, 16, 17, 19, 20, 21, 22, 24 |
+| `events.md` | R-EVT-01…08, 11, 12, 15, 16, 17, 19, 20, 21, 22, 24, 25 |
 | `lanes.md` | R-EVT-09, 10, 13, 18, 23 |
 | `repetitions.md` | R-REP-01…07 |
 | `nesting.md` | R-NST-01…05 |

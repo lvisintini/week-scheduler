@@ -297,10 +297,10 @@ describe('R-GRID-07 View: Fit width / Fit height with their sliders, the days an
     const a = fresh(); expect([box(a, 'Fit width').checked, box(a, 'Fit height').checked]).toEqual([true, true]);
     expect([slider(a, 'Column width').disabled, slider(a, 'Row height').disabled, slider(a, 'Text size').disabled]).toEqual([true, true, false]);
   });
-  it('the View section lists the sizes, a line, the days and hours shown, a line, the text size, a line and Reset view; each Fit switch sits on its slider\'s label line', () => {
+  it('the View section lists the sizes, a line, the days and hours shown, a line, Show descriptions, a line, the text size, a line and Reset view; each Fit switch sits on its slider\'s label line', () => {
     const a = fresh(); const s = sec(a); expect(s.querySelector('.shbtn span').textContent).toBe('View');
-    expect([...s.querySelectorAll('.zrow > span:first-child, .zsep, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
-      .toEqual(['Column width', 'Row height', '—', 'Days shown', 'Hours shown', '—', 'Text size', '—', 'Reset view']);
+    expect([...s.querySelectorAll('.zrow > span:first-child, .zsep, .dsw, .zreset')].map(e => e.className === 'zsep' ? '—' : e.textContent))
+      .toEqual(['Column width', 'Row height', '—', 'Days shown', 'Hours shown', '—', 'Show descriptions', '—', 'Text size', '—', 'Reset view']);
     expect([...s.querySelectorAll('.zrow')].map(r => [...r.children].map(c => c.tagName === 'LABEL' ? c.textContent : c.tagName === 'INPUT' ? 'slider' : c.className || 'label')))
       .toEqual([['label', 'Fit', 'slider', 'zv'], ['label', 'Fit', 'slider', 'zv'], ['label', 'hrs2', 'zv'], ['label', 'hrs2', 'zv'], ['label', 'slider', 'zv']]);
     expect(box(a, 'Fit width').parentElement.title).toMatch(/sideways/); expect(box(a, 'Fit height').parentElement.title).toMatch(/height of the window/);
@@ -425,7 +425,7 @@ describe('R-GRID-10 Layer order inside a day column', () => {
     const kids = [...a.q('.day[data-d="0"]').children].map(c => c.className.split(' ')[0]);
     const idx = n => kids.indexOf(n);
     expect(idx('phx')).toBeLessThan(idx('gl')); expect(idx('gl')).toBeLessThan(idx('ev')); expect(idx('ev')).toBeLessThan(idx('ov'));
-    const z = sel => +[...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || "").replace(/\s*,\s*/g, ',') === sel).style.getPropertyValue('z-index'); expect(z('.ov')).toBeLessThan(z('.ev .r1,.ev .r2'));
+    const z = sel => +[...a.d.styleSheets[0].cssRules].find(r => (r.selectorText || "").replace(/\s*,\s*/g, ',') === sel).style.getPropertyValue('z-index'); expect(z('.ov')).toBeLessThan(z('.ev .r1,.ev .r2,.ev .ds'));
   });
 });
 

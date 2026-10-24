@@ -4,7 +4,7 @@ import {DAY2,DAYS,L} from './i18n.js';
 import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
 import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
 import {loadMem} from './share.js';
-import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
+import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,descOn,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
 import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
 import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
@@ -208,6 +208,9 @@ export function renderSide(){
       set:(a,b)=>{if(a===DAYS0[0]&&b===DAYS0[1])delete state.prefs.days[state.curId];else state.prefs.days[state.curId]=[a,b]},vt:d=>DAYS[d],txt:(a,b)=>a===b?ab(a):ab(a)+'–'+ab(b)});
     rangeRow(s4,{cls:'zhrs',label:'zoomHrs',tip:'zoomHrsTip',knobs:['hrsFrom','hrsTo'],min:0,max:24,gap:1,get:()=>hrsOf(state.curId),
       set:(a,b)=>{if(a===HRS0[0]&&b===HRS0[1])delete state.prefs.hours[state.curId];else state.prefs.hours[state.curId]=[a,b]},vt:h=>hourLabel(h%24),txt:(a,b)=>hourLabel(a)+'–'+hourLabel(b%24)});
+    el('div','zsep',s4);
+    {const l=el('label','zck dsw',s4),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=descOn(state.curId);el('span','',l).textContent=L('descSw');l.title=L('descSwTip');   // R-EVT-25
+     c.onchange=()=>{if(c.checked)state.prefs.desc[state.curId]=true;else delete state.prefs.desc[state.curId];savePrefs();render()}}
     el('div','zsep',s4);zsl('zoomTxt','txt',80,160,10,' %');
     el('div','zsep',s4);
     const rb=el('button','zreset',s4);rb.type='button';rb.textContent=L('zoomReset');rb.title=L(phone()?'zoomResetTipP':'zoomResetTip');

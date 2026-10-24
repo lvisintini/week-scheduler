@@ -3,7 +3,7 @@ import {state} from './state.js';
 import {DAY2,DAYS,L} from './i18n.js';
 import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
 import {absD,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
-import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
+import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,descOn,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
 import {openAgenda,withWk} from './stats.js';
 import {renderSide} from './sidebar.js';
 import {openCopy,openDlg} from './dialog.js';
@@ -130,6 +130,7 @@ export function render(){
       el('span','tm',r1).textContent=timeTxt;
       const by=s.person?pname(s.person):'',invTags=invOf(e,s).map(pTag).filter(Boolean),invNames=invOf(e,s).map(pname).filter(Boolean);
       if(by||invTags.length){const r2=el('div','r2',d);if(by)el('span','by',r2).textContent=L('byl')+' '+by;if(invTags.length){const wi=el('span','wi',r2);wi.innerHTML=esc(L(e.oncall?'oncl':'withl'))+' '+invTags.join(', ')}}
+      if(e.desc&&descOn(state.curId))el('div','ds',d).textContent=e.desc;   // Show descriptions (R-EVT-25): the last row, dropped first
       const info=[e.title,timeTxt];if(by)info.push(L('byl')+' '+by);if(invNames.length)info.push(L(e.oncall?'oncl':'withl')+' '+invNames.join(', '));if(e.owner)info.push(L('ownl')+' '+pname(e.owner));
       if(ty)info.push(ty.name);if(s.flex)info.push(L('flexNote'));if(s.fs||s.fe)info.push(edgeNote(s));
       if(hst)info.push(L('nestDur',{t:hst.e.title}));if(wkNote(e,s))info.push(wkNote(e,s));aw.forEach(x=>info.push(awayLine(x)));if(it.sq)info.push(sqLine(it.sq));if(e.desc)info.push(e.desc);if(ovOf(e).has(s))info.push('⚠ '+L('ovTip'));
@@ -241,8 +242,10 @@ function tapOpen(p,owner){
 // (R-EVT-03); the boxes that moved one are measured again, all together.
 function fitMeasure(d){
   const H=d.clientHeight;if(!H)return null;
-  const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t'),title=!!t&&t.scrollWidth>t.clientWidth+1;
-  return {drop:!!r2&&r2.offsetTop+r2.offsetHeight>H-4,title,mv:title&&!!d.querySelector('.r1 .tm')};
+  const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t'),title=!!t&&t.scrollWidth>t.clientWidth+1,drop=!!r2&&r2.offsetTop+r2.offsetHeight>H-4;
+  // the description gets the whole lines that fit under the rows above it, or is dropped (R-EVT-25)
+  const ds=d.querySelector('.ds');let dl=null;if(ds){const cs=getComputedStyle(ds),lh=(/px$/.test(cs.lineHeight)?parseFloat(cs.lineHeight):parseFloat(cs.fontSize)*(parseFloat(cs.lineHeight)||1.25))||15,n=drop?0:Math.floor((H-4-ds.offsetTop)/lh);dl=n<1?0:ds.scrollHeight>n*lh+1?n*lh:-1}
+  return {drop,title,mv:title&&!!d.querySelector('.r1 .tm'),dl};
 }
 function fitMove(d,m){
   if(!m||!m.mv)return;
@@ -252,7 +255,8 @@ function fitMove(d,m){
 function fitApply(d,m){
   if(!m)return;
   if(m.drop)d.querySelector('.r2').remove();
-  if(m.drop||m.title){d.classList.add('clipped');el('span','clipm',d).textContent='⋯'}
+  const ds=m.dl!=null&&d.querySelector('.ds');if(ds){if(!m.dl)ds.remove();else if(m.dl>0)ds.style.maxHeight=m.dl+'px'}   // -1: it fits whole
+  if(m.drop||m.title||(ds&&m.dl>=0)){d.classList.add('clipped');el('span','clipm',d).textContent='⋯'}
 }
 function fitAll(list){
   const m1=list.map(fitMeasure);list.forEach((d,i)=>fitMove(d,m1[i]));

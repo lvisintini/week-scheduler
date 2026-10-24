@@ -86,17 +86,18 @@ aside.collapsed .help{display:none}
 .ev.locked{pointer-events:none;cursor:default}
 /* activity types with the soft look (e.g. Free time): soft tint of the event colour with a solid colour edge */
 .ev.soft{background:color-mix(in srgb,var(--c) 28%,var(--card))!important;color:var(--fg);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-left:4px solid var(--c)}
-.ev.soft .r1,.ev.soft .r2,.ev.soft .clipm{text-shadow:none}.ev.soft .flags{color:var(--fg)}.ev.soft .flags svg{filter:none}.ev.soft.clipped::after{background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.12))}
+.ev.soft .r1,.ev.soft .r2,.ev.soft .ds,.ev.soft .clipm{text-shadow:none}.ev.soft .flags{color:var(--fg)}.ev.soft .flags svg{filter:none}.ev.soft.clipped::after{background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.12))}
 
 /* flexible start/end (R-EVT-15): margins continue the core box (a box "around these times", R-EVT-12, is all margin: .mgo) with a dashed border and a translucent tint; they are inserted before every core box, so cores always cover them */
 .mg{position:absolute;left:3px;right:calc(3px + var(--gut,0px));border:2px dashed var(--c);background:color-mix(in srgb,var(--c) 30%,transparent);cursor:grab}.mg.t{border-bottom:0}.mg.b{border-top:0}.mg.locked{pointer-events:none;cursor:default}
 .mg.soft,.ev.mgo.soft{background:color-mix(in srgb,var(--c) 14%,transparent)!important}
-.ev.mgo{background:color-mix(in srgb,var(--c) 30%,transparent)!important;color:var(--fg);border:2px dashed var(--c);box-shadow:none}.ev.mgo .r1,.ev.mgo .r2,.ev.mgo .clipm{text-shadow:none}.ev.mgo .flags{color:var(--fg)}.ev.mgo .flags svg{filter:none}
+.ev.mgo{background:color-mix(in srgb,var(--c) 30%,transparent)!important;color:var(--fg);border:2px dashed var(--c);box-shadow:none}.ev.mgo .r1,.ev.mgo .r2,.ev.mgo .ds,.ev.mgo .clipm{text-shadow:none}.ev.mgo .flags{color:var(--fg)}.ev.mgo .flags svg{filter:none}
 .phmode .mg{pointer-events:none!important;opacity:.35!important;filter:saturate(.4)}
 .fflags label{font-weight:400}.fflags .ic{margin:0 4px 0 2px;vertical-align:-2px}.fflags .ic svg{width:14px;height:14px}
 .igrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:2px}.igrid button{padding:5px;display:flex;justify-content:center;color:var(--fg)}.igrid button.on{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.igrid svg{width:18px;height:18px}
 #fTyIc svg{width:16px;height:16px}
-.ev .r1,.ev .r2{position:relative;z-index:3;text-shadow:0 1px 2px #0008;line-height:1.25}
+.ev .r1,.ev .r2,.ev .ds{position:relative;z-index:3;text-shadow:0 1px 2px #0008;line-height:1.25}
+.ev .ds{overflow:hidden;white-space:pre-line;overflow-wrap:anywhere;opacity:.9;margin-top:2px}   /* Show descriptions (R-EVT-25) */
 .ev .r1{display:flex;gap:8px;align-items:baseline}
 .ev .r1 .t{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev .r1 .tm{flex:0 0 auto;white-space:nowrap;opacity:.95}
@@ -251,7 +252,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 #grid .noty{outline:2px solid #ff2d55;outline-offset:1px;animation:noty 1.4s ease-in-out infinite}@keyframes noty{50%{outline-color:#ff2d5500;outline-offset:4px}}@media (prefers-reduced-motion:reduce){#grid .noty{animation:none}}#pr .noty{outline:0;animation:none}
 @keyframes lvp{0%,100%{opacity:1;box-shadow:0 0 0 0 #e5342d88}50%{opacity:.45;box-shadow:0 0 0 7px #e5342d00}}@media (prefers-reduced-motion:reduce){#lvPill i{animation:none}}
 .lvrow{display:flex;gap:6px;margin:2px 0 6px}.lvrow button{display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px}.lvrow #lvB{flex:1}.lvrow svg{width:17px;height:17px}.lvrow #lvB.on{background:#e5342d;color:#fff;border-color:#e5342d}
-#grid.lv .dh,#grid.lv .lane{pointer-events:none}#grid.lv .wkb{pointer-events:auto}#grid.lv .ev,#grid.lv .bgs,#grid.lv .mg{cursor:pointer}#grid.lv .rz{display:none}#grid.lv .dh{font-size:calc(16px * var(--ts,1))}#grid.lv .times span{font-size:calc(13px * var(--ts,1))}#grid.lv .ev{font-size:calc(15px * var(--ts,1))}#grid.lv .ev .r2{font-size:calc(13px * var(--ts,1))}#grid.lv .bgs span{font-size:12px}
+#grid.lv .dh,#grid.lv .lane{pointer-events:none}#grid.lv .wkb{pointer-events:auto}#grid.lv .ev,#grid.lv .bgs,#grid.lv .mg{cursor:pointer}#grid.lv .rz{display:none}#grid.lv .dh{font-size:calc(16px * var(--ts,1))}#grid.lv .times span{font-size:calc(13px * var(--ts,1))}#grid.lv .ev{font-size:calc(15px * var(--ts,1))}#grid.lv .ev .r2,#grid.lv .ev .ds{font-size:calc(13px * var(--ts,1))}#grid.lv .bgs span{font-size:12px}
 .lvl{position:absolute;inset:0;pointer-events:none;z-index:7}.lvb.in{animation:lvin .18s ease-out}.lvb.out{opacity:0;transition:opacity .3s}@keyframes lvin{from{opacity:0;transform:translateY(var(--dy,4px))}}@media (prefers-reduced-motion:reduce){.lvb.in{animation:none}}
 .lvb{pointer-events:auto;cursor:pointer;position:absolute;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px #0004;font-size:calc(14px * var(--ts,1));line-height:1.4}
 .lvb .lvin{overflow:hidden;border-radius:9px}.lvb .lvs{padding:9px 12px;border-left:5px solid var(--c)}.lvb .lvs+.lvs{border-top:1px solid var(--line)}.lvb .pt1{font-size:calc(16px * var(--ts,1))}

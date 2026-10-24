@@ -354,8 +354,8 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
 });
 
 describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring the week by type or by person', () => {
-  it('the Zoom and Tools switches are real checkboxes announced as switches and drawn as sliding toggles', () => {
-    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(7);
+  it('the View and Tools switches are real checkboxes announced as switches and drawn as sliding toggles', () => {
+    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(8);
     expect(sw.every(c => c.type === 'checkbox' && c.getAttribute('role') === 'switch')).toBe(true);
     const css = a.q('style').textContent; expect(css).toContain('.zck input{appearance:none;'); expect(css).toContain('.zck input:checked::before{transform:translateX(12px)}');
     expect(css).toContain('.zck input:focus-visible{outline:'); expect(css).toContain('@media(prefers-reduced-motion:reduce){.zck input,.zck input::before{transition:none}}');

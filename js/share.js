@@ -176,7 +176,7 @@ export function restart(){
   if(anyDirty()&&!confirm(L('confRestart')))return;
   return withStore(st=>{loadStore(st);state.selK=null;state.editMode='events';render();toast(L('restarted'))});
 }
-const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}state.memKey=null;state.prefs.lvAnchor=Object.create(null);state.prefs.icsLast=Object.create(null);state.prefs.hours=Object.create(null);state.prefs.days=Object.create(null);savePrefs()};
+const eraseMem=()=>{try{localStorage.removeItem(WKEY)}catch(e){}state.memKey=null;state.prefs.lvAnchor=Object.create(null);state.prefs.icsLast=Object.create(null);state.prefs.hours=Object.create(null);state.prefs.days=Object.create(null);state.prefs.desc=Object.create(null);savePrefs()};
 export function clearMem(){
   if(!confirm(L('confClear')))return;
   eraseMem();initDefault();state.selK=null;state.editMode='events';render();toast(L('clearedMem'));

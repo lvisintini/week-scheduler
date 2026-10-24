@@ -15,6 +15,7 @@ export function loadPrefs(){
   {const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
   {const o=state.prefs.hours,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&Array.isArray(v)&&Number.isInteger(v[0])&&Number.isInteger(v[1])&&v[0]>=0&&v[0]<v[1]&&v[1]<=24)m[k]=[v[0],v[1]]});state.prefs.hours=m}   // the hours shown per workspace (R-GRID-02), like lvAnchor; showEarly is retired
   {const o=state.prefs.days,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&Array.isArray(v)&&Number.isInteger(v[0])&&Number.isInteger(v[1])&&v[0]>=0&&v[0]<=v[1]&&v[1]<=6)m[k]=[v[0],v[1]]});state.prefs.days=m}   // the days shown per workspace (R-GRID-13), like hours; hideWeekend is retired
+  {const o=state.prefs.desc,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&o[k]===true)m[k]=true});state.prefs.desc=m}   // Show descriptions, per workspace (R-EVT-25)
   state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
   state.prefs.nowLine=state.prefs.nowLine!==false;state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
 }
@@ -42,6 +43,7 @@ export const hourLabel=h=>state.prefs.clock12?(h%12||12)+' '+(h<12?'AM':'PM'):fm
 export const HRS0=[5,24],hrsOf=id=>state.prefs.hours[id]||HRS0,hrA=()=>hrsOf(state.curId)[0],hrB=()=>hrsOf(state.curId)[1];
 // the days shown (R-GRID-13): the current workspace's [first day, last day], Monday 0 to Sunday 6, the whole week unless set in View
 export const DAYS0=[0,6],daysOf=id=>state.prefs.days[id]||DAYS0;
+export const descOn=id=>!!state.prefs.desc[id];   // Show descriptions in the boxes, for this workspace (R-EVT-25)
 const pvis=id=>{const p=state.S.people.find(x=>x.id===id);return !!p&&p.visible};
 export const pname=id=>(state.S.people.find(p=>p.id===id)||{}).name||'';
 // no responsible person -> always shown; otherwise shown if the responsible person or any involved person is visible

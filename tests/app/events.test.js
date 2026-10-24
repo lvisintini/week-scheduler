@@ -117,8 +117,8 @@ describe('R-EVT-03 What an event box shows', () => {
     const r2 = full().q('.ev .r2'); expect(r2.querySelector('.by').textContent).toBe('By: Ann'); expect(r2.querySelector('.by .ic')).toBeNull();
     expect(r2.querySelector('.wi').textContent.trim()).toBe('With: Bob, Cy'); expect(r2.querySelectorAll('.wi .ic')).toHaveLength(2);
   });
-  it('the description is never shown in the box', () => {
-    const a = full(); expect(a.q('.ev').textContent).not.toContain('Secret'); expect(a.q('.ev .r3')).toBeNull();
+  it('the description is not shown in the box unless Show descriptions is on (R-EVT-25)', () => {
+    const a = full(); expect(a.q('.ev').textContent).not.toContain('Secret'); expect(a.q('.ev .ds')).toBeNull();
   });
   it('without a responsible person there is no icon before the title and no "By:"', () => {
     const a = fresh(blank({ people, events: [ev1({ involved: ['B'] })] })); expect(a.q('.ev .t .ic')).toBeNull(); expect(a.q('.ev .by')).toBeNull(); expect(a.q('.ev .wi').textContent).toContain('With: Bob');
@@ -220,6 +220,61 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
   });
   it('a title that fits leaves the time on row 1', () => {
     const d = timedBox(60, { titleCut: false }); expect(d.querySelector('.r1 .tm')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(false);
+  });
+});
+
+describe('R-EVT-25 Show descriptions: a switch in View puts each event\'s description in its box, for each workspace', () => {
+  const sw = a => a.q('#sbin .zsec .zck.dsw input');
+  const flip = (a, on) => { const c = sw(a); c.checked = on; c.onchange(); };
+  const stored = a => JSON.parse(a.w.localStorage.getItem(PREFS_KEY) || '{}');
+  const data = () => blank({ people, events: [ev1({ title: 'Packing', desc: 'Swimsuit\nTowel', slots: [{ day: 0, start: 600, end: 720, person: 'A' }] }), ev1({ id: 'n', title: 'Plain', slots: [{ day: 1, start: 600, end: 720, person: '' }] })] });
+  it('the switch is off by default and sits in the View section, with its explanation in the tooltip', () => {
+    const a = fresh(data()); expect(sw(a).checked).toBe(false); expect(sw(a).getAttribute('role')).toBe('switch');
+    expect(a.q('#sbin .zsec .dsw').textContent).toBe('Show descriptions'); expect(a.q('#sbin .zsec .dsw').title).toMatch(/cut short/); expect(a.qa('.ev .ds')).toHaveLength(0);
+  });
+  it('switched on, a box with a description shows it as its last row, line breaks kept; a box without one gets no row', () => {
+    const a = fresh(data()); flip(a, true); const b = a.q('.day[data-d="0"] .ev');
+    expect([...b.children].filter(c => /^(r1|r2|ds)$/.test(c.className)).map(c => c.className)).toEqual(['r1', 'r2', 'ds']); expect(b.querySelector('.ds').textContent).toBe('Swimsuit\nTowel');
+    expect(a.q('.day[data-d="1"] .ev .ds')).toBeNull(); expect(cssRule(a, '.ev .ds').style.getPropertyValue('white-space')).toBe('pre-line');
+  });
+  it('background strips never show a description', () => {
+    const a = fresh(blank({ events: [ev1({ bg: true, desc: 'Quiet', slots: [{ day: 0, start: 600, end: 720, person: '' }] })] })); flip(a, true); expect(a.q('.bgs').textContent).toBe('Event'); expect(a.q('.bgs .ds')).toBeNull();
+  });
+  it('each workspace keeps its own switch, this browser remembers it, and it is neither data nor undoable nor an unsaved change', () => {
+    const a = fresh(data()); a.ev("saveMem('all')"); const depth = a.ev('state.undoSt.length'); flip(a, true);
+    expect(a.ev('state.undoSt.length')).toBe(depth); expect(a.ev('anyDirty()')).toBe(false); expect(JSON.stringify(a.ev('buildFile()'))).not.toMatch(/"desc":true/);
+    const id = a.ev('state.curId'); expect(stored(a).desc).toEqual({ [id]: true });
+    a.ev('addWorkspace()'); expect(sw(a).checked).toBe(false); a.ev(`switchWs('${id}')`); expect(sw(a).checked).toBe(true);
+    const b = openApp({ storage: a.storage() }); b.ev(`switchWs('${id}')`); expect(b.qa('.ev .ds')).toHaveLength(1);
+  });
+  it('switched off again it forgets the entry; duplicating copies it, deleting a workspace forgets it, Clear memory forgets them all, Reset view leaves it', () => {
+    const a = fresh(data()); a.ev('addWorkspace()'); flip(a, true); a.q('#sbin .zreset').click(); expect(sw(a).checked).toBe(true);
+    flip(a, false); expect(stored(a).desc).toEqual({}); flip(a, true); const first = a.ev('state.curId'); a.ev('duplicateWorkspace()'); const copy = a.ev('state.curId');
+    expect(stored(a).desc).toEqual({ [first]: true, [copy]: true }); a.w.confirm = () => true; a.ev('deleteWorkspace()'); expect(stored(a).desc).toEqual({ [first]: true });
+    a.ev('clearMem()'); expect(stored(a).desc).toEqual({});
+  });
+  it('a stored entry that is not exactly true is dropped', () => {
+    const a = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ desc: { a: 1, b: 'yes', c: true } }) } }); expect(a.ev('JSON.stringify(state.prefs.desc)')).toBe('{"c":true}');
+  });
+  it('in Spanish the switch reads Mostrar descripciones', () => {
+    const a = fresh(data()); a.ev("setLang('es');renderSide()"); expect(a.q('#sbin .zsec .dsw').textContent).toBe('Mostrar descripciones');
+  });
+  const descBox = (H, dsTop, dsH, r2Fits = true) => {   // a box whose description starts at dsTop and is dsH tall (15 px lines)
+    const a = fresh(blank({ events: [] })); const d = a.d.createElement('div'); d.className = 'ev';
+    d.innerHTML = '<div class="r1"><span class="t"></span></div><div class="r2"><span class="by">By: Ann</span></div><div class="ds">x</div>';
+    const [r2, ds] = [d.querySelector('.r2'), d.querySelector('.ds')], def = (o, p, v) => Object.defineProperty(o, p, { get: () => v, configurable: true });
+    def(d, 'clientHeight', H); def(r2, 'offsetTop', 19); def(r2, 'offsetHeight', r2Fits ? 15 : H); def(ds, 'offsetTop', dsTop); def(ds, 'scrollHeight', dsH);
+    a.w.getComputedStyle = () => ({ lineHeight: '15px', fontSize: '12px' }); a.w.fitBox(d); return d;
+  };
+  it('a description that fits is shown whole, with no marker', () => {
+    const d = descBox(100, 36, 30); expect(d.querySelector('.ds').style.maxHeight).toBe(''); expect(d.classList.contains('clipped')).toBe(false);
+  });
+  it('a longer description keeps the whole lines that fit and the box shows ⋯', () => {
+    const d = descBox(70, 36, 90); expect(d.querySelector('.ds').style.maxHeight).toBe('30px'); expect(d.classList.contains('clipped')).toBe(true);
+  });
+  it('the description is dropped first: without room for one line it goes and By/With stays; when By/With goes, it goes too', () => {
+    const d = descBox(50, 36, 30); expect(d.querySelector('.ds')).toBeNull(); expect(d.querySelector('.r2')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(true);
+    const e = descBox(30, 36, 30, false); expect(e.querySelector('.ds')).toBeNull(); expect(e.querySelector('.r2')).toBeNull();
   });
 });
 
