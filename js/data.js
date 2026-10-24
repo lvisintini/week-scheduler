@@ -1,9 +1,10 @@
 // Data: state and history, the data format and its upgrades (MIG, parseData), workspaces, the cycle of weeks, import and transfers. ES module (docs/architecture.md).
 import {state} from './state.js';
 import {L} from './i18n.js';
-import {$,ICON_CHECK,ICON_PLUS,ICON_WEEK,ICON_WS,PAL,SNAP,TICONS,el,esc,normHex,pIcon,pickColor,uid} from './basics.js';
+import {$,ICON_CHECK,ICON_HELP,ICON_PLUS,ICON_WEEK,ICON_WS,PAL,SNAP,TICONS,el,esc,normHex,pIcon,pickColor,uid} from './basics.js';
 import {b64u,openProtect,seal,unb64u,unseal} from './share.js';
 import {openIcs} from './ics.js';
+import {openExamples} from './examples.js';
 import {cyc,fitMg,kept,liveTick,lvCloseAll,lvRet,poolOf,savePrefs,setAnchor,toast,today,todayWk,updLive,wksOf,xdlg} from './model.js';
 import {renderSide,rowGrip,rowMenu} from './sidebar.js';
 import {render} from './grid.js';
@@ -24,9 +25,9 @@ export const isDirty=()=>{const w=cw();return !!w&&wsDirty(w)};
 export const anyDirty=()=>state.WS.some(wsDirty);
 function syncWs(){const w=cw();if(w){w.data=state.S;w.undo=state.undoSt;w.redo=state.redoSt}}
 export function newWs(name,data,saved){return {id:uid(),name,data,lb:null,lf:saved?keyOf(data):null,undo:[],redo:[]}}
-function switchWs(id){if(id===state.curId||!state.WS.some(w=>w.id===id))return;syncWs();state.curId=id;const w=cw();state.S=w.data;state.undoSt=w.undo||[];state.redoSt=w.redo||[];state.selK=null;state.curWk=todayWk()||state.curWk;render();if(state.live)setTimeout(liveTick,0)}   // on today's week of that workspace, when known (R-CYC-05)
+export function switchWs(id){if(id===state.curId||!state.WS.some(w=>w.id===id))return;syncWs();state.curId=id;const w=cw();state.S=w.data;state.undoSt=w.undo||[];state.redoSt=w.redo||[];state.selK=null;state.curWk=todayWk()||state.curWk;render();if(state.live)setTimeout(liveTick,0)}   // on today's week of that workspace, when known (R-CYC-05)
 export function pushUndoWs(w){if(w.id===state.curId){hist();return}w.undo=w.undo||[];w.undo.push(JSON.stringify(w.data));if(w.undo.length>100)w.undo.shift();w.redo=[]}
-const uniqueName=(base,names)=>{let n=base,i=2;while(names.includes(n))n=base+' ('+(i++)+')';return n};
+export const uniqueName=(base,names)=>{let n=base,i=2;while(names.includes(n))n=base+' ('+(i++)+')';return n};
 export function updUR(){const u=$('undoB'),r=$('redoB');if(u)u.disabled=!state.undoSt.length;if(r)r.disabled=!state.redoSt.length}
 export function pushUndo(str){state.undoSt.push(str);if(state.undoSt.length>100)state.undoSt.shift();state.redoSt=[];updUR()}
 export const hist=()=>pushUndo(JSON.stringify(state.S));
@@ -394,7 +395,7 @@ export function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
   state.WS.forEach(w=>{const d=wsData(w);mi((w.id===state.curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+(d.color?`<i class="wkchip" style="background:${esc(d.color)}"></i>`:''),w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id));
     if(d.desc){const b=m.lastElementChild;b.title=d.desc;el('small','wkd',b).textContent=d.desc}});   // its colour and description (R-DATA-10)
   el('hr','',m);mi(ICON_WS,L('wsMg'),()=>setTimeout(openWorkspaces,0));
-  mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_WS,L('wsRename'),renameWorkspace);mi(ICON_WS,L('wsDup'),duplicateWorkspace);mi(ICON_WEEK,L('cyMenu'),openCycle);mi(ICON_WS,L('wsDel'),deleteWorkspace,'d');
+  mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_HELP,L('exOpen'),openExamples);m.lastElementChild.title=L('exOpenTip');mi(ICON_WS,L('wsRename'),renameWorkspace);mi(ICON_WS,L('wsDup'),duplicateWorkspace);mi(ICON_WEEK,L('cyMenu'),openCycle);mi(ICON_WS,L('wsDel'),deleteWorkspace,'d');
 })}
 /* import: files and links share one dialog (new workspace / insert / replace matching); nothing is ever merged */
 const matchesOf=w=>{const out=[],byId=w.id&&state.WS.find(x=>x.id===w.id);if(byId)out.push(byId);state.WS.forEach(x=>{if(x.name.toLowerCase()===w.name.toLowerCase()&&!out.includes(x))out.push(x)});return out};

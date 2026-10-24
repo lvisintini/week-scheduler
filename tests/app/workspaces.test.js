@@ -14,7 +14,7 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
     const a = fresh(); expect(names(a)).toEqual(['Workspace']); expect(a.q('.wsbtn .wsn').textContent).toBe('Workspace');
   });
   it('the switcher menu lists the workspaces and offers New, Rename, Duplicate, the cycle of weeks and Delete (R-CYC-01)', () => {
-    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'Workspaces…', 'New workspace…', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
+    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'Workspaces…', 'New workspace…', 'Open the examples', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
   });
   it('the current workspace is marked with a tick in the menu', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
@@ -220,5 +220,75 @@ describe('R-DATA-10 Workspaces have a colour and a description, and this browser
   });
   it('the Workspaces dialog and its menu item are translated into Spanish', async () => {
     const a = threeWs(); a.ev("state.lang='es'"); openMenu(a); menuClick(a, 'Espacios de trabajo…'); await a.sleep(5); expect(a.dlgTitle()).toBe('Espacios de trabajo');
+  });
+});
+
+describe('R-DATA-12 The Examples workspace: a sample week that shows what the app can do, opened on demand', () => {
+  const opened = () => { const a = fresh(); openMenu(a); menuClick(a, 'Open the examples'); return a; };
+  const evt = (a, k) => a.ev(`JSON.parse(JSON.stringify(state.S.events.find(e=>e.id==='ex${k}')))`);
+  const box = (a, d, title) => a.qa(`.day[data-d="${d}"] .ev`).find(b => b.getAttribute('aria-label').startsWith(title + ','));
+  it('the workspace menu opens it: a workspace named Examples with its colour and description, shown at once and not an unsaved change', () => {
+    const a = opened(); expect(names(a)).toEqual(['Workspace', 'Examples']); expect(a.ev('state.curId')).toBe('examples');
+    expect(a.ev('state.S.desc')).toMatch(/^A sample week/); expect(a.ev('state.S.color')).toMatch(/^#[0-9a-f]{6}$/); expect(a.ev('anyDirty()')).toBe(false);
+    expect(a.qa('.omenu .oi').length).toBe(0); expect(a.w.localStorage.getItem(WS_KEY) || '').not.toContain('examples');   // not written to browser memory until saved
+  });
+  it('the menu entry explains itself in its tooltip', () => {
+    const a = fresh(); openMenu(a); expect(a.qa('.omenu .oi').find(b => b.textContent.includes('Open the examples')).title).toMatch(/not saved unless you save it/);
+  });
+  it('it starts with Show descriptions on and the hours 07:00 to 22:00, and every event has a description', () => {
+    const a = opened(); expect(a.ev("descOn('examples')")).toBe(true); expect(a.ev("hrsOf('examples')")).toEqual([7, 22]); expect(a.qa('.ev .ds').length).toBeGreaterThan(10);
+    expect(a.ev('state.S.events.every(e=>e.desc.length>40)')).toBe(true);
+  });
+  it('opening it again switches to it instead of making a second one; deleted, it can be opened again afresh', () => {
+    const a = opened(); a.ev('switchWs(state.WS[0].id);state.S.events.length=0'); a.ev('switchWs("examples");state.S.events.length=0;switchWs(state.WS[0].id)');
+    a.ev('openExamples()'); expect(names(a)).toEqual(['Workspace', 'Examples']); expect(a.ev('state.curId')).toBe('examples'); expect(a.ev('state.S.events.length')).toBe(0);
+    a.w.confirm = () => true; a.ev('deleteWorkspace()'); a.ev('openExamples()'); expect(a.ev('state.S.events.length')).toBe(20);
+  });
+  it('a workspace of the user already named Examples is kept: the sample gets a name of its own', () => {
+    const a = fresh({ promptAnswer: 'Examples' }); a.ev('addWorkspace()'); a.ev('openExamples()'); expect(names(a)).toEqual(['Workspace', 'Examples', 'Examples (2)']);
+  });
+  it('the data passes parseData unchanged: nothing it shows is clamped away', () => {
+    const a = fresh(); expect(a.ev('(()=>{const x=exampleData();return JSON.stringify(parseData(x))===JSON.stringify(x)})()')).toBe(true);
+    expect(a.ev('exampleData().events.filter(e=>e.slots.some(s=>s.fs||s.fe)).map(e=>e.slots.map(s=>[s.fs||0,s.fe||0]))')).toEqual([[[30, 0]], [[0, 60]]]);
+  });
+  it('owner and who does it: Alex owns the school drop-off and does it, except on Thursday, when Sam stands in', () => {
+    const a = opened(); const e = evt(a, 'Run'); expect(e.owner).toBe('exA');
+    expect(e.slots.map(s => [s.day, s.person, !!s.fo])).toEqual([[0, 'exA', true], [1, 'exA', true], [2, 'exA', true], [3, 'exS', false], [4, 'exA', true]]);
+    expect(box(a, 3, 'School drop-off').getAttribute('aria-label')).toContain('By: Sam');
+  });
+  it('a rota: the shop shift alternates Alex and Sam, three turns each, each day in the colour of whoever does it', () => {
+    const a = opened(); expect(a.ev("[...turnsOf(state.S.events.find(e=>e.id==='exShift')).entries()]")).toEqual([['exA', [3]], ['exS', [3]]]);
+    expect(evt(a, 'Shift').slots.every(s => s.col === 'p')).toBe(true);
+  });
+  it('clashes: Dentist and Football share Olivia on Wednesday, Stock-taking meets the dinner nobody is responsible for on Tuesday; both are striped', () => {
+    const a = opened(); expect(a.qa('.day[data-d="2"] .ov:not(.awov)')).toHaveLength(1); expect(a.qa('.day[data-d="1"] .ov:not(.awov)')).toHaveLength(1);
+    expect(box(a, 2, 'Dentist').dataset.lane).toBe(box(a, 2, 'Football').dataset.lane); expect(box(a, 1, 'Family dinner').dataset.lane).toBeUndefined();
+  });
+  it('no clash: Gym and Cooking share nobody and sit side by side on Monday; the delivery, with Sam only on call, sits beside Sam\'s shift', () => {
+    const a = opened(); expect([box(a, 0, 'Gym').dataset.lane, box(a, 0, 'Cooking').dataset.lane].sort()).toEqual(['0/2', '1/2']);
+    expect(a.qa('.day[data-d="0"] .ov')).toHaveLength(0); expect(evt(a, 'Deliv')).toMatchObject({ oncall: true, involved: ['exS'] });
+    expect(box(a, 1, 'Delivery').dataset.lane).not.toBe(box(a, 1, 'Shop shift').dataset.lane); expect(a.ev("state.S.people.filter(p=>p.external).map(p=>p.name)")).toEqual(['Rosa', 'Dan']);
+  });
+  it('flexible times: Homework is Around these times, the delivery has a flexible start and the laundry a flexible end', () => {
+    const a = opened(); expect(evt(a, 'Hw').slots.every(s => s.flex)).toBe(true); expect(box(a, 0, 'Homework').getAttribute('aria-label')).toContain('Flexible time (around these times)');
+    expect(box(a, 1, 'Delivery').getAttribute('aria-label')).toContain('Start between 10:00 and 10:30'); expect(box(a, 6, 'Laundry').getAttribute('aria-label')).toContain('Finish between 11:00 and 12:00');
+  });
+  it('background strips, Away and its clash: Screen-free time and the cleaner are strips; Swimming, planned while Olivia is away, is striped with ⚠', () => {
+    const a = opened(); expect(a.qa('.day[data-d="3"] .bgs').map(b => b.textContent)).toEqual(['Screen-free time', 'Cleaner at work']);
+    expect(a.q('.day[data-d="5"] .bgs.aw').textContent).toBe("At grandma's"); expect(a.qa('.day[data-d="5"] .awov')).toHaveLength(1);
+    expect(box(a, 5, 'Swimming').getAttribute('aria-label')).toContain("Olivia is away (At grandma's)"); expect(box(a, 5, 'Swimming').querySelector('.flags b')).not.toBeNull();
+  });
+  it('a small task done along the way: Buy bread is drawn inside the dog walk on Saturday and stands alone on Wednesday', () => {
+    const a = opened(); expect(box(a, 5, 'Buy bread').classList.contains('nest')).toBe(true); expect(box(a, 2, 'Buy bread').classList.contains('nest')).toBe(false);
+  });
+  it('a day of its own With: on Sunday Olivia helps with the cooking', () => {
+    const a = opened(); expect(box(a, 6, 'Cooking').getAttribute('aria-label')).toContain('With: Olivia'); expect(box(a, 5, 'Cooking').getAttribute('aria-label')).not.toContain('With:');
+  });
+  it('activity types: every default type is used, and Water the plants has none, for the highlight and the No type line', () => {
+    const a = opened(); expect(a.ev('state.S.types.every(t=>state.S.events.some(e=>e.type===t.id))')).toBe(true); expect(evt(a, 'Plant').type).toBeUndefined();
+  });
+  it('built in Spanish, the workspace, its schedules and events are in Spanish', () => {
+    const a = fresh({ languages: ['es-ES'] }); a.ev('openExamples()'); expect(names(a)).toEqual(['Espacio de trabajo', 'Ejemplos']);
+    expect(a.ev('state.S.schedules.map(s=>s.name)')).toEqual(['Casa', 'Tienda']); expect(evt(a, 'Run').title).toBe('Llevar al colegio'); expect(evt(a, 'Run').desc).toMatch(/^Titular y quién lo hace/);
   });
 });
