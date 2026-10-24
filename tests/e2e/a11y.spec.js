@@ -27,6 +27,10 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
     await expect(page.locator('#toast')).toHaveText('Browser memory is now protected'); await data(); ratchet(await scan(page), {});
     await page.reload(); await expect(page.locator('#xDlg h3')).toHaveText('Browser memory is protected'); ratchet(await scan(page), {});
   });
+  test('R-UI-17 How to use, with its topics, sections and the examples button, has no serious accessibility violation', async ({ page }) => {
+    await openApp(page); await page.locator('#sb .sbtop .help').click(); await expect(page.locator('#xDlg .hsec')).toHaveCount(11);
+    ratchet(await scan(page), {});
+  });
   test('the event dialog has no serious accessibility violation (every field, day-row select and the colour button has a name)', async ({ page }) => {
     await openApp(page); await seed(page, blank({ people: [person()] })); await toolbar(page, 'add').click();
     ratchet(await scan(page), {});

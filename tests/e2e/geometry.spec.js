@@ -720,3 +720,30 @@ test.describe('R-EVT-25 Descriptions in the boxes, as laid out by a real browser
     await page.evaluate(() => { state.prefs.desc[state.curId] = true; render(); printSchedule(); }); expect(await page.locator('#pr .ev .ds').count()).toBeGreaterThan(0);
   });
 });
+
+test.describe('R-UI-17 How to use in a real browser', () => {
+  const geo = page => page.evaluate(() => {
+    const d = document.getElementById('xDlg').getBoundingClientRect(), xb = document.querySelector('#xDlg .xb'), nav = document.querySelector('#xDlg .htoc'), sec = document.querySelector('#xDlg .hsecs').getBoundingClientRect(),
+      close = [...document.querySelectorAll('#xDlg .btns button')].pop().getBoundingClientRect();
+    return { w: d.width, h: d.height, vw: innerWidth, vh: innerHeight, scrolls: xb.scrollHeight > xb.clientHeight + 20, sideways: xb.scrollWidth > xb.clientWidth + 1,
+      nav: getComputedStyle(nav).display === 'none' ? null : nav.getBoundingClientRect().right <= sec.left, closeIn: close.bottom <= innerHeight && close.top >= 0 };
+  });
+  test('on a computer the dialog is large, the topics sit on the left of the sections, only the middle scrolls and Close stays in view', async ({ page }) => {
+    await openApp(page); await page.locator('#sb .sbtop .help').click(); const g = await geo(page);
+    expect(g.w).toBeGreaterThanOrEqual(1000); expect(g.h).toBeGreaterThan(g.vh * 0.8); expect(g.nav).toBe(true); expect(g.scrolls).toBe(true); expect(g.sideways).toBe(false); expect(g.closeIn).toBe(true);
+  });
+  test('a topic on the left brings its section to the top of the scrolling middle, and the topics stay in view', async ({ page }) => {
+    await openApp(page); await page.locator('#sb .sbtop .help').click(); await page.locator('#xDlg .htoc button', { hasText: 'Flexible time' }).click();
+    const r = await page.evaluate(() => { const xb = document.querySelector('#xDlg .xb').getBoundingClientRect(), h = document.getElementById('hs-hsFlex').getBoundingClientRect(), n = document.querySelector('#xDlg .htoc').getBoundingClientRect();
+      return { top: h.top - xb.top, navTop: n.top - xb.top }; });
+    expect(r.top).toBeLessThan(200); expect(r.navTop).toBeGreaterThanOrEqual(-1);
+  });
+  test('in a window 700 px wide the topics wrap above the sections and nothing scrolls sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 800 }); await openApp(page); await page.locator('#sb .sbtop .help').click(); const g = await geo(page);
+    expect(g.nav).toBe(false); expect(g.sideways).toBe(false); expect(g.w).toBeLessThanOrEqual(700);
+  });
+  test('on a phone it fills the screen without the topics, nothing scrolls sideways and Close stays in reach', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page, { prefs: { collapsed: true } }); await page.locator('#lvR .help, .help:visible').first().click();
+    const g = await geo(page); expect(g.w).toBe(390); expect(Math.round(g.h)).toBe(844); expect(g.nav).toBeNull(); expect(g.sideways).toBe(false); expect(g.closeIn).toBe(true);
+  });
+});

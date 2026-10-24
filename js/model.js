@@ -7,6 +7,7 @@ import {FMT,PKEY,wkLabel} from './data.js';
 import {clearMem,lockNow,openPassphrase,restart} from './share.js';
 import {minAt,peekRows,render} from './grid.js';
 import {fillSel} from './dialog.js';
+import {openExamples} from './examples.js';
 import {setLang} from './main.js';
 export function loadPrefs(){
   try{Object.assign(state.prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
@@ -392,7 +393,7 @@ export function xdlg(o){
   const d=$('xDlg');d.innerHTML='';let done=false;const tok=++xTok;
   el('h3','',d).textContent=o.title;
   if(o.body){const b=el('div','xb',d);if(typeof o.body==='string')b.innerHTML=o.body;else b.append(o.body)}
-  d.classList.toggle('wide',!!o.wide);d.classList.toggle('full',!!o.full);   // full: fills the screen on a phone (R-UI-14)
+  d.classList.toggle('wide',!!o.wide);d.classList.toggle('full',!!o.full);d.classList.toggle('howto',!!o.howto);   // full: fills the screen on a phone (R-UI-14); howto: How to use's size (R-UI-17)
   const bt=el('div','btns'+(o.stack?' stack':''),d);   // stack: one button per line (Save, Load; R-UI-16)
   o.buttons.forEach(b=>{const x=el('button',b.cls||'',bt);x.textContent=b.label;
     x.onclick=()=>{if(b.dismiss){d.close();return}if(b.fn&&b.fn()===false)return;if(tok!==xTok)return;done=true;d.close()}});
@@ -434,8 +435,17 @@ export function openSettings(){
   show(panes[setTab]?setTab:'uiH');
   xdlg({title:L('settings'),full:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }
+// How to use (R-UI-17): every tip, in titled sections; the way into the Examples (R-DATA-12) at the top; a list of the sections to jump to
+const HELP=[['hsEdit',[1,2,9,7]],['hsRep',[3,10,11]],['hsOv',[6,4]],['hsPpl',[24,15]],['hsFlex',[25]],['hsTy',[13,14]],['hsBg',[18,20,17]],
+  ['hsLook',[16,5,19]],['hsRh',[12]],['hsCyc',[8,23]],['hsSave',[21,22]]];
 export function openHelp(){
-  const ul=el('ul');ul.style.cssText='margin:0;padding-left:18px;line-height:1.55';
-  for(let i=1;i<=23;i++)el('li','',ul).textContent=L('help'+i);
-  xdlg({title:L('helpTitle'),full:true,body:ul,buttons:[{label:L('closeB'),cls:'p'}]});
+  const body=el('div','howto'),top=el('div','hintro',body);el('p','',top).textContent=L('helpIntro');
+  const ex=el('button','p',top);ex.type='button';ex.textContent=L('exOpen');ex.title=ex.__t=L('exOpenTip');ex.onclick=()=>{$('xDlg').close();setTimeout(openExamples,0)};
+  const nav=el('nav','htoc',body),secs=el('div','hsecs',body);nav.setAttribute('aria-label',L('helpToc'));
+  HELP.forEach(([k,tips])=>{
+    const s=el('section','hsec',secs),h=el('h4','',s);h.id='hs-'+k;h.textContent=L(k);s.setAttribute('aria-labelledby',h.id);
+    const b=el('button','',nav);b.type='button';b.textContent=L(k);b.onclick=()=>h.scrollIntoView?.({block:'start'});
+    const r=el('div','hrow',s),ul=el('ul','',r);tips.forEach(i=>{el('li','',ul).textContent=L('help'+i)});
+  });
+  xdlg({title:L('helpTitle'),full:true,howto:true,body,buttons:[{label:L('closeB'),cls:'p'}]});
 }

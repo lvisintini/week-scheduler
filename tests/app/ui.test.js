@@ -40,8 +40,9 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with twenty-three tips, among them focusing on a day, nested activities, background events, live view, Away (R-EVT-24), the passphrase (R-DATA-11) and staged weeks (R-CYC-21)', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); expect(a.qa('#xDlg li').length).toBe(23); expect(a.qa('#xDlg li')[22].textContent).toMatch(/^Staged weeks: in Weeks in the cycle…/); expect(a.qa('#xDlg li')[21].textContent).toMatch(/Save… → Calendar file \(export only\)/); expect(a.qa('#xDlg li')[20].textContent).toMatch(/Passphrase… protects what this browser saves/); expect(a.qa('#xDlg li')[19].textContent).toMatch(/Drawn as: Away/); expect(a.qa('#xDlg li')[15].textContent).toMatch(/focus icon/); expect(a.qa('#xDlg li')[16].textContent).toMatch(/Small tasks done along the way/); expect(a.qa('#xDlg li')[17].textContent).toMatch(/In the background/); expect(a.qa('#xDlg li')[18].textContent).toMatch(/Live View/);
+  it('the Help button opens a "How to use" dialog with twenty-five tips, among them focusing on a day, nested activities, background events, live view, Away (R-EVT-24), the passphrase (R-DATA-11) and staged weeks (R-CYC-21)', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); const tips = a.qa('#xDlg li').map(l => l.textContent); expect(tips).toHaveLength(25);
+    [/^Staged weeks: in Weeks in the cycle…/, /Save… → Calendar file \(export only\)/, /Passphrase… protects what this browser saves/, /Drawn as: Away/, /focus icon/, /Small tasks done along the way/, /In the background/, /Live View/].forEach(re => expect(tips.some(t => re.test(t)), String(re)).toBe(true));
   });
 });
 
@@ -525,5 +526,40 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
     a.ev('askLiveWeek(()=>{})'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
     const ph = [...a.d.styleSheets[0].cssRules].filter(r => r.media).flatMap(r => [...r.cssRules]).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');
     expect(ph.style.width).toBe('100vw'); expect(ph.style.height).toBe('100dvh');
+  });
+});
+
+describe('R-UI-17 How to use: every tip in titled sections, a list of topics, and a way into the examples', () => {
+  const help = (o = {}) => { const a = fresh(null, o); a.q('#sb .sbtop .help').click(); return a; };
+  const heads = a => a.qa('#xDlg .hsec h4').map(h => h.textContent);
+  it('the ? button opens How to use with eleven titled sections, and the topic list names the same sections', () => {
+    const a = help(); expect(a.q('#xDlg h3').textContent).toBe('How to use'); expect(a.q('#xDlg').classList.contains('howto')).toBe(true);
+    expect(heads(a)).toEqual(['Creating and editing', 'Repetitions and midnight', 'Overlaps and clashes', 'People and owners', 'Flexible time', 'Activity types and statistics',
+      'In the background, away and along the way', 'Looking at the week', 'Rhythms', 'Cycles of weeks', 'Saving and sharing']);
+    expect(a.qa('#xDlg .htoc button').map(b => b.textContent)).toEqual(heads(a)); expect(a.q('#xDlg .htoc').getAttribute('aria-label')).toBe('Topics');
+    a.qa('#xDlg .hsec').forEach(s => expect(s.getAttribute('aria-labelledby')).toBe(s.querySelector('h4').id));
+  });
+  it('every tip, help1 to help25, appears exactly once', () => {
+    const a = help(); const tips = a.qa('#xDlg .hsec li').map(l => l.textContent); expect(tips).toHaveLength(25);
+    for (let i = 1; i <= 25; i++) expect(tips.filter(t => t === a.ev(`L('help${i}')`)), `help${i}`).toHaveLength(1);
+  });
+  it('the new tips explain owners and stand-ins, a day\'s own With, and the three kinds of timing', () => {
+    const a = help(); expect(a.ev("L('help24')")).toMatch(/owner.*standing in.*With/s); expect(a.ev("L('help25')")).toMatch(/Around these times.*Flexible start\/end.*solid parts/s);
+  });
+  it('a topic scrolls its section into view', () => {
+    const a = help(); const h = a.qa('#xDlg .hsec h4')[4]; let hit = null; h.scrollIntoView = o => { hit = o; };
+    a.qa('#xDlg .htoc button')[4].click(); expect(hit).toEqual({ block: 'start' });
+  });
+  it('Open the examples, at the top with its tooltip, closes How to use and shows the Examples workspace', async () => {
+    const a = help(); const b = a.q('#xDlg .hintro button'); expect(b.textContent).toBe('Open the examples'); expect(b.title).toMatch(/not saved unless you save it/);
+    expect(a.q('#xDlg .hintro p').textContent).toMatch(/open the examples/); b.click(); expect(a.q('#xDlg').open).toBe(false);
+    await a.sleep(5); expect(a.ev('state.curId')).toBe('examples'); expect(a.ev('cw().name')).toBe('Examples');
+  });
+  it('in Spanish the dialog reads Cómo se usa, with Spanish sections and button', () => {
+    const a = help({ languages: ['es-ES'] }); expect(a.q('#xDlg h3').textContent).toBe('Cómo se usa'); expect(heads(a)[0]).toBe('Crear y editar');
+    expect(a.q('#xDlg .hintro button').textContent).toBe('Abrir los ejemplos'); expect(a.qa('#xDlg .hsec li')[0].textContent).toMatch(/^Arrastra/);
+  });
+  it('another dialog opened from the same window afterwards does not keep How to use\'s size', () => {
+    const a = help(); a.click('Close'); a.ev('openSettings()'); expect(a.q('#xDlg').classList.contains('howto')).toBe(false);
   });
 });
