@@ -259,11 +259,11 @@ describe('R-EVT-25 Show descriptions: a switch in View puts each event\'s descri
   it('in Spanish the switch reads Mostrar descripciones', () => {
     const a = fresh(data()); a.ev("setLang('es');renderSide()"); expect(a.q('#sbin .zsec .dsw').textContent).toBe('Mostrar descripciones');
   });
-  const descBox = (H, dsTop, dsH, r2Fits = true) => {   // a box whose description starts at dsTop and is dsH tall (15 px lines)
+  const descBox = (H, dsTop, dsH, r2Fits = true, W = 200) => {   // a box whose description starts at dsTop and is dsH tall (15 px lines)
     const a = fresh(blank({ events: [] })); const d = a.d.createElement('div'); d.className = 'ev';
     d.innerHTML = '<div class="r1"><span class="t"></span></div><div class="r2"><span class="by">By: Ann</span></div><div class="ds">x</div>';
     const [r2, ds] = [d.querySelector('.r2'), d.querySelector('.ds')], def = (o, p, v) => Object.defineProperty(o, p, { get: () => v, configurable: true });
-    def(d, 'clientHeight', H); def(r2, 'offsetTop', 19); def(r2, 'offsetHeight', r2Fits ? 15 : H); def(ds, 'offsetTop', dsTop); def(ds, 'scrollHeight', dsH);
+    def(d, 'clientHeight', H); def(d, 'clientWidth', W); def(r2, 'offsetTop', 19); def(r2, 'offsetHeight', r2Fits ? 15 : H); def(ds, 'offsetTop', dsTop); def(ds, 'scrollHeight', dsH);
     a.w.getComputedStyle = () => ({ lineHeight: '15px', fontSize: '12px' }); a.w.fitBox(d); return d;
   };
   it('a description that fits is shown whole, with no marker', () => {
@@ -275,6 +275,10 @@ describe('R-EVT-25 Show descriptions: a switch in View puts each event\'s descri
   it('the description is dropped first: without room for one line it goes and By/With stays; when By/With goes, it goes too', () => {
     const d = descBox(50, 36, 30); expect(d.querySelector('.ds')).toBeNull(); expect(d.querySelector('.r2')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(true);
     const e = descBox(30, 36, 30, false); expect(e.querySelector('.ds')).toBeNull(); expect(e.querySelector('.r2')).toBeNull();
+  });
+  it('a box too narrow to read a description (under about 8 characters) drops it, however tall it is', () => {
+    const d = descBox(300, 36, 30, true, 90); expect(d.querySelector('.ds')).toBeNull(); expect(d.querySelector('.r2')).not.toBeNull(); expect(d.classList.contains('clipped')).toBe(true);
+    expect(descBox(300, 36, 30, true, 100).querySelector('.ds')).not.toBeNull();
   });
 });
 

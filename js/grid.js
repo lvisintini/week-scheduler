@@ -243,8 +243,8 @@ function tapOpen(p,owner){
 function fitMeasure(d){
   const H=d.clientHeight;if(!H)return null;
   const r2=d.querySelector('.r2'),t=d.querySelector('.r1 .t'),title=!!t&&t.scrollWidth>t.clientWidth+1,drop=!!r2&&r2.offsetTop+r2.offsetHeight>H-4;
-  // the description gets the whole lines that fit under the rows above it, or is dropped (R-EVT-25)
-  const ds=d.querySelector('.ds');let dl=null;if(ds){const cs=getComputedStyle(ds),lh=(/px$/.test(cs.lineHeight)?parseFloat(cs.lineHeight):parseFloat(cs.fontSize)*(parseFloat(cs.lineHeight)||1.25))||15,n=drop?0:Math.floor((H-4-ds.offsetTop)/lh);dl=n<1?0:ds.scrollHeight>n*lh+1?n*lh:-1}
+  // the description gets the whole lines that fit under the rows above it, or is dropped, as it is in a box too narrow to read it (about 8 characters wide; R-EVT-25)
+  const ds=d.querySelector('.ds');let dl=null;if(ds){const cs=getComputedStyle(ds),fs=parseFloat(cs.fontSize)||12,lh=(/px$/.test(cs.lineHeight)?parseFloat(cs.lineHeight):fs*(parseFloat(cs.lineHeight)||1.25))||15,n=drop||d.clientWidth<8*fs?0:Math.floor((H-4-ds.offsetTop)/lh);dl=n<1?0:ds.scrollHeight>n*lh+1?n*lh:-1}
   return {drop,title,mv:title&&!!d.querySelector('.r1 .tm'),dl};
 }
 function fitMove(d,m){

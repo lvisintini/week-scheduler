@@ -703,16 +703,20 @@ test.describe('R-CYC-21 Swapping a staged week into the cycle with a real mouse,
 test.describe('R-EVT-25 Descriptions in the boxes, as laid out by a real browser', () => {
   const long = 'Bring the swimsuit, the towel and the goggles; leave the bag by the door so nobody forgets it on the way out.';
   const data = () => blank({ people: [person({ id: 'A', name: 'Ann' })], events: [
-    ev({ id: 't', title: 'T', desc: long, slots: [slot(0, 480, 780, 'A')] }), ev({ id: 's', title: 'S', desc: long, slots: [slot(1, 600, 660, 'A')] }), ev({ id: 'm', title: 'M', desc: long, slots: [slot(2, 600, 690, 'A')] })] });
+    ev({ id: 't', title: 'T', desc: long, slots: [slot(0, 480, 780, 'A')] }), ev({ id: 's', title: 'S', desc: long, slots: [slot(1, 600, 645, 'A')] }), ev({ id: 'm', title: 'M', desc: long, slots: [slot(2, 600, 690, 'A')] })] });
   const look = page => page.evaluate(() => Object.fromEntries([0, 1, 2].map(d => { const b = document.querySelector(`.day[data-d="${d}"] .ev`), ds = b.querySelector('.ds'), r = b.getBoundingClientRect();
     return [d, { ds: !!ds, r2: !!b.querySelector('.r2'), clipped: b.classList.contains('clipped'), inside: ds ? ds.getBoundingClientRect().bottom <= r.bottom - 2 : null,
       whole: ds ? Math.abs(ds.getBoundingClientRect().height / parseFloat(getComputedStyle(ds).lineHeight) - Math.round(ds.getBoundingClientRect().height / parseFloat(getComputedStyle(ds).lineHeight))) < 0.05 : null }]; })));
   test('a tall box shows its description under By/With, in whole lines inside the box; a short one drops it before By/With', async ({ page }) => {
-    await openApp(page); await seed(page, data()); await page.evaluate(() => { state.prefs.fitH = false; state.prefs.rowH = 60; state.prefs.desc[state.curId] = true; render(); });
+    await openApp(page); await seed(page, data()); await page.evaluate(() => { state.prefs.fitH = false; state.prefs.rowH = 60; state.prefs.colW = 160; state.prefs.desc[state.curId] = true; render(); });
     const r = await look(page);
     expect(r[0]).toMatchObject({ ds: true, r2: true, inside: true, whole: true });
     expect(r[1]).toMatchObject({ ds: false, r2: true, clipped: true });
     expect(r[2]).toMatchObject({ ds: true, r2: true, inside: true, whole: true, clipped: true });
+  });
+  test('in columns too narrow to read them (70 px) no box shows its description', async ({ page }) => {
+    await openApp(page); await seed(page, data()); await page.evaluate(() => { state.prefs.fitH = false; state.prefs.rowH = 60; state.prefs.colW = 70; state.prefs.desc[state.curId] = true; render(); });
+    expect(await page.locator('.ev .ds').count()).toBe(0); expect(await page.locator('.ev.clipped').count()).toBe(3);
   });
   test('the printed schedule shows the descriptions too, and without the switch neither screen nor print does', async ({ page }) => {
     await openApp(page); await seed(page, data()); await page.evaluate(() => { window.print = () => {}; });

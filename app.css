@@ -97,7 +97,7 @@ aside.collapsed .help{display:none}
 .igrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:2px}.igrid button{padding:5px;display:flex;justify-content:center;color:var(--fg)}.igrid button.on{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.igrid svg{width:18px;height:18px}
 #fTyIc svg{width:16px;height:16px}
 .ev .r1,.ev .r2,.ev .ds{position:relative;z-index:3;text-shadow:0 1px 2px #0008;line-height:1.25}
-.ev .ds{overflow:hidden;white-space:pre-line;overflow-wrap:anywhere;opacity:.9;margin-top:2px}   /* Show descriptions (R-EVT-25) */
+.ev .ds{overflow:hidden;white-space:pre-line;overflow-wrap:break-word;opacity:.9;margin-top:2px}   /* Show descriptions (R-EVT-25) */
 .ev .r1{display:flex;gap:8px;align-items:baseline}
 .ev .r1 .t{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev .r1 .tm{flex:0 0 auto;white-space:nowrap;opacity:.95}
