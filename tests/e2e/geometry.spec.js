@@ -90,7 +90,7 @@ test.describe('R-GRID-08 Sticky headers and always-visible scrollbars', () => {
     await page.keyboard.press('PageDown'); await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(top0);
     const left0 = await page.evaluate(() => document.getElementById('wrap').scrollLeft);
     await page.keyboard.press('ArrowRight'); await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollLeft)).toBeGreaterThan(left0);
-    await page.locator('#sbin .zreset').focus(); await page.keyboard.press('Tab');   // the sidebar's last control, then Tab
+    await page.locator('#sbin .zsec .dsw input').focus(); await page.keyboard.press('Tab');   // the sidebar's last control (Show descriptions), then Tab
     await expect(page.locator('#wrap')).toBeFocused();
     expect(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle)).toBe('solid');
   });
@@ -207,17 +207,23 @@ test.describe('R-GRID-13 Days shown in a real browser', () => {
 test.describe('R-GRID-07 The View section\'s layout in a real browser', () => {
   for (const w of [290, 230]) {
     test(`at a ${w} px sidebar every row starts at one left edge, the Fit switches line up and nothing sticks out`, async ({ page }) => {
-      await openApp(page, { prefs: { collapsed: false, w } }); await page.locator('#sbin .zreset').scrollIntoViewIfNeeded();
+      await openApp(page, { prefs: { collapsed: false, w } }); await page.locator('#sbin .zsec .dsw').scrollIntoViewIfNeeded();
       const r = await page.evaluate(() => { const s = document.querySelector('#sbin .zsec'), b = s.getBoundingClientRect(), x = e => e.getBoundingClientRect();
-        const lefts = [...s.querySelectorAll('.zrow > span:first-child, .zrow > input, .hrs2, .zreset')].map(e => Math.round(x(e).left));
+        const lefts = [...s.querySelectorAll('.zrow > span:first-child, .zrow > input, .hrs2, .dsw')].map(e => Math.round(x(e).left));
         const fits = [...s.querySelectorAll('.zrow > .zck')].map(e => Math.round(x(e).left));
-        const right = Math.max(...[...s.querySelectorAll('.zrow *, .zreset')].map(e => x(e).right));
+        const right = Math.max(...[...s.querySelectorAll('.zrow *, .dsw, .sech .zreset')].map(e => x(e).right));
         const sliders = [...s.querySelectorAll('.zrow > input, .hrs2')].map(e => x(e).width);
         return { lefts, fits, over: right - b.right, sliders, sb: s.scrollWidth - s.clientWidth }; });
       expect(new Set(r.lefts).size).toBe(1); expect(r.fits).toHaveLength(2); expect(Math.abs(r.fits[0] - r.fits[1])).toBeLessThanOrEqual(1);
       expect(r.over).toBeLessThanOrEqual(1); expect(r.sb).toBeLessThanOrEqual(0); r.sliders.forEach(v => expect(v).toBeGreaterThan(w - 90));
     });
   }
+  test('Reset view sits at the right end of the View header line, after the ⓘ, like the + of the other sections', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } }); await page.locator('#sbin .zsec .sech').scrollIntoViewIfNeeded();
+    const r = await page.evaluate(() => { const x = e => e.getBoundingClientRect(), h = document.querySelector('#sbin .zsec .sech'), b = h.querySelector('.zreset'), t = h.querySelector('.tip'), p = document.querySelector('#sbin .sec .sech .eye');
+      return { right: x(h).right - x(b).right, afterTip: x(b).left >= x(t).right, mid: Math.abs((x(b).top + x(b).bottom) / 2 - (x(h).top + x(h).bottom) / 2), size: [x(b).width, x(p).width] }; });
+    expect(r.right).toBeLessThanOrEqual(1); expect(r.afterTip).toBe(true); expect(r.mid).toBeLessThanOrEqual(1); expect(Math.abs(r.size[0] - r.size[1])).toBeLessThanOrEqual(1);
+  });
 });
 
 test.describe('R-GRID-02 Hours shown in a real browser', () => {
