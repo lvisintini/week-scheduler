@@ -284,7 +284,7 @@ describe('R-PPL-04 External people are kept in a collapsible sub-group at the en
 });
 
 describe('R-SCH-05 Schedules can be reordered in the sidebar like people and activity types', () => {
-  const three = () => fresh(blank({ schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', color: '#e5484d' }), sched({ id: 's3', name: 'School', color: '#2fa66a' })], events: [ev1({ schedules: ['s1'] })] }));
+  const three = () => fresh(blank({ schedules: [sched({ id: 's1', name: 'Home' }), sched({ id: 's2', name: 'Work', color: '#e5484d' }), sched({ id: 's3', name: 'School', color: '#2fa66a' })], events: [ev1({ schedules: ['s1'] })] }), { now: [2026, 9, 14, 10, 0] });   // a frozen clock: the grid's now line must not move between two snapshots
   const names = a => a.ev('state.S.schedules.map(s=>s.name)'), grips = a => [...schedRows(a)].map(r => r.querySelector('.grip'));
   const key = (g, k) => g.onkeydown({ key: k, preventDefault() {} });
   it('each schedule row starts with a grip that names the schedule and explains what the order does', () => {
