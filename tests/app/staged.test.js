@@ -71,6 +71,11 @@ describe('R-CYC-21 Staged weeks: kept after the cycle, ready to swap in', () => 
     a.click('Apply'); expect(get(a, '[state.S.cycle,kept(),state.S.events[0].weeks||null,state.S.events[1].weeks]')).toEqual([2, 3, null, [1]]);
     const b = fresh(blank({ cycle: 4, pool: 7 })); openCycleDlg(b); b.q('#xDlg .cyadd').click(); expect(b.q('#xDlg .cyadd')).toBeNull(); expect(rows(b)).toHaveLength(8);
   });
+  it('the list keeps its choice after a week is added: an empty week stays an empty week, a copy stays that copy', () => {
+    const a = fresh(data()); openCycleDlg(a); const pick = v => { a.q('#xDlg .cyfrom').value = v; a.q('#xDlg .cyfrom').onchange(); };
+    pick('2'); pick(''); a.q('#xDlg .cyadd').click(); const fs = a.q('#xDlg .cyfrom'); expect(fs.value).toBe(''); expect(fs.options[fs.selectedIndex].textContent).toBe('an empty week');
+    pick('3'); a.q('#xDlg .cyadd').click(); expect(a.q('#xDlg .cyfrom').value).toBe('3');
+  });
   it('a new staged week can start as a copy of a week: its name and colour, its patterns and its own times, in one undo step', () => {
     const a = fresh(data()); openCycleDlg(a); const fs = a.q('#xDlg .cyfrom');
     expect(fs.getAttribute('aria-label')).toBe('Start the new week as'); expect([...fs.options].map(o => o.textContent)).toEqual(['an empty week', 'a copy of Week 1 · Home', 'a copy of Week 2 · Away', 'a copy of Week 3 · Exams']);

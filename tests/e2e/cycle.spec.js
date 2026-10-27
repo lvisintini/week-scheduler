@@ -70,3 +70,15 @@ test.describe('R-EVT-24 Away strips in a real browser', () => {
     expect(await page.locator('.bgs.aw').evaluate(e => getComputedStyle(e).backgroundImage)).toContain('repeating-linear-gradient');
   });
 });
+
+test.describe('R-CYC-21 Add a staged week and its list share one line in a real browser', () => {
+  for (const [w, h] of [[1400, 900], [390, 844]]) {
+    test(`in a ${w} px window the button and the Start the new week as list sit side by side, and nothing sticks out of the dialog`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h }); await openApp(page);
+      await page.evaluate(() => { state.S.cycle = 2; state.S.weekInfo = [{ name: 'School weeks' }, { name: 'Holidays' }]; openCycle(); });   // named weeks make the list's options long
+      const r = await page.evaluate(() => { const x = e => e.getBoundingClientRect(), b = x(document.querySelector('#xDlg .cyadd')), s = x(document.querySelector('#xDlg .cyfrom')), d = x(document.querySelector('#xDlg .cyaddr'));
+        return { mid: Math.abs((b.top + b.bottom) / 2 - (s.top + s.bottom) / 2), after: s.left >= b.right, inside: s.right <= d.right + 1, list: s.width }; });
+      expect(r.mid).toBeLessThanOrEqual(2); expect(r.after).toBe(true); expect(r.inside).toBe(true); expect(r.list).toBeGreaterThan(60);
+    });
+  }
+});

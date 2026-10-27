@@ -286,7 +286,7 @@ export function openCycle(){
     if(n<=R&&R<8){const ar=el('div','cyaddr',wb),ad=el('button','cyadd',ar),fs=el('select','cyfrom',ar);ad.type='button';ad.textContent=L('cyStgAdd');ad.title=ad.__t=L('cyStgAddTip');
       // a new staged week starts empty or as a copy of a kept week: its name, description and colour, and what was chosen for it
       fs.setAttribute('aria-label',L('cyFromLbl'));fs.title=fs.__t=L('cyFromLbl');fillSel(fs,[['',L('cyFrom0')],...rows.flatMap((x,k)=>x.o?[[String(x.o),L('cyFromK',{w:L('wkName',{n:k+1})+(x.w.name?' · '+x.w.name:'')})]]:[])]);
-      fs.value=rows.some(x=>x.o===fromO)?String(fromO):'';fs.onchange=()=>{fromO=+fs.value||0};   // the choice is the week itself, so it survives a redraw
+      fs.value=fromO&&rows.some(x=>x.o===fromO)?String(fromO):'';fs.onchange=()=>{fromO=+fs.value||0};   // the choice is the week itself, so it survives a redraw; 0 = an empty week (a new staged row's o is 0 too)
       ad.onclick=()=>{const src=rows.find(x=>x.o&&x.o===+fs.value);rows.push(src?{o:0,w:{...src.w},from:src.o}:{o:0,w:{}});upd()}}
   };
   // a week's grip: drag it, or focus it and use the arrow keys; the row's name, colour and description go with it
