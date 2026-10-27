@@ -1,7 +1,7 @@
 // Data: state and history, the data format and its upgrades (MIG, parseData), workspaces, the cycle of weeks, import and transfers. ES module (docs/architecture.md).
 import {state} from './state.js';
 import {L} from './i18n.js';
-import {$,ICON_CHECK,ICON_HELP,ICON_PLUS,ICON_WEEK,ICON_WS,PAL,SNAP,TICONS,el,esc,normHex,pIcon,pickColor,uid} from './basics.js';
+import {$,ICON_CHECK,ICON_DUP,ICON_EDIT,ICON_HELP,ICON_PLUS,ICON_TRASH,ICON_WEEK,ICON_WS,PAL,SNAP,TICONS,el,esc,normHex,pIcon,pickColor,uid} from './basics.js';
 import {b64u,openProtect,seal,unb64u,unseal} from './share.js';
 import {openIcs} from './ics.js';
 import {openExamples} from './examples.js';
@@ -394,8 +394,11 @@ function orderWs(){const o=state.prefs.wsOrder||[],at=w=>{const i=o.indexOf(w.id
 export function wsMenu(anchor){rowMenu(anchor,(m,mi)=>{
   state.WS.forEach(w=>{const d=wsData(w);mi((w.id===state.curId?ICON_CHECK:'<span class="ic" style="margin:0"></span>')+(d.color?`<i class="wkchip" style="background:${esc(d.color)}"></i>`:''),w.name+(wsDirty(w)?' •':''),()=>switchWs(w.id));
     if(d.desc){const b=m.lastElementChild;b.title=d.desc;el('small','wkd',b).textContent=d.desc}});   // its colour and description (R-DATA-10)
-  el('hr','',m);mi(ICON_WS,L('wsMg'),()=>setTimeout(openWorkspaces,0));
-  mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_HELP,L('exOpen'),openExamples);m.lastElementChild.title=L('exOpenTip');mi(ICON_WS,L('wsRename'),renameWorkspace);mi(ICON_WS,L('wsDup'),duplicateWorkspace);mi(ICON_WEEK,L('cyMenu'),openCycle);mi(ICON_WS,L('wsDel'),deleteWorkspace,'d');
+  // then two groups, each under a small heading: the current workspace (Delete last), and all of them
+  el('hr','',m);el('div','omh',m).textContent=cw().name;
+  mi(ICON_EDIT,L('wsRename'),renameWorkspace);mi(ICON_WEEK,L('cyMenu'),openCycle);mi(ICON_DUP,L('wsDup'),duplicateWorkspace);mi(ICON_TRASH,L('wsDel'),deleteWorkspace,'d');
+  el('hr','',m);el('div','omh',m).textContent=L('wsAllH');
+  mi(ICON_PLUS,L('wsNew'),addWorkspace);mi(ICON_HELP,L('exOpen'),openExamples);m.lastElementChild.title=L('exOpenTip');mi(ICON_WS,L('wsMg'),()=>setTimeout(openWorkspaces,0));m.lastElementChild.title=L('wsMgTip');
 })}
 /* import: files and links share one dialog (new workspace / insert / replace matching); nothing is ever merged */
 const matchesOf=w=>{const out=[],byId=w.id&&state.WS.find(x=>x.id===w.id);if(byId)out.push(byId);state.WS.forEach(x=>{if(x.name.toLowerCase()===w.name.toLowerCase()&&!out.includes(x))out.push(x)});return out};

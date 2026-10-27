@@ -13,8 +13,23 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
   it('a first start has a single workspace called "Workspace" shown in the switcher under the title', () => {
     const a = fresh(); expect(names(a)).toEqual(['Workspace']); expect(a.q('.wsbtn .wsn').textContent).toBe('Workspace');
   });
-  it('the switcher menu lists the workspaces and offers New, Rename, Duplicate, the cycle of weeks and Delete (R-CYC-01)', () => {
-    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'Workspaces…', 'New workspace…', 'Open the examples', 'Rename current…', 'Duplicate current', 'Weeks in the cycle…', 'Delete current…']);
+  it('the switcher menu lists the workspaces, then the current one\'s actions (Rename, the cycle of weeks, Duplicate, Delete; R-CYC-01), then those for all of them (New, the examples, Workspaces…)', () => {
+    const a = twoWs(); openMenu(a); expect(menu(a)).toEqual(['Workspace', 'Second', 'Rename…', 'Weeks in the cycle…', 'Duplicate', 'Delete…', 'New workspace…', 'Open the examples', 'Workspaces…']);
+    const parts = [...a.q('.omenu').children].map(c => c.tagName === 'HR' ? '—' : c.classList.contains('omh') ? '# ' + c.textContent : c.textContent.trim());
+    expect(parts).toEqual(['Workspace', 'Second', '—', '# Workspace', 'Rename…', 'Weeks in the cycle…', 'Duplicate', 'Delete…', '—', '# All workspaces', 'New workspace…', 'Open the examples', 'Workspaces…']);
+  });
+  it('the current workspace\'s group is headed by its name, as text; Delete is last there and red; every action has an icon of its own', () => {
+    const a = fresh(); a.ev('cw().name="<b>Home</b> & shop";render()'); openMenu(a); const h = a.qa('.omenu .omh');
+    expect(h[0].textContent).toBe('<b>Home</b> & shop'); expect(h[0].querySelector('b')).toBeNull();
+    const items = a.qa('.omenu .oi'), del = items.find(b => b.textContent.trim() === 'Delete…');
+    expect(del.classList.contains('d')).toBe(true); expect(del.nextElementSibling.tagName).toBe('HR');
+    const icons = items.slice(1).map(b => b.querySelector('svg').outerHTML); expect(new Set(icons).size).toBe(icons.length);
+    expect(items.find(b => b.textContent.trim() === 'Workspaces…').title).toMatch(/order.*colour.*description/);
+  });
+  it('in Spanish the menu reads Renombrar…, Duplicar, Eliminar… under the workspace\'s name and Todos los espacios de trabajo', () => {
+    const a = twoWs(); a.ev("setLang('es');renderSide()"); openMenu(a);
+    expect(menu(a).slice(2)).toEqual(['Renombrar…', 'Semanas del ciclo…', 'Duplicar', 'Eliminar…', 'Nuevo espacio de trabajo…', 'Abrir los ejemplos', 'Espacios de trabajo…']);
+    expect(a.qa('.omenu .omh').map(h => h.textContent)).toEqual(['Workspace', 'Todos los espacios de trabajo']);
   });
   it('the current workspace is marked with a tick in the menu', () => {
     const a = twoWs(); openMenu(a); expect(a.qa('.omenu .oi')[0].querySelector('svg')).not.toBeNull(); expect(a.qa('.omenu .oi')[1].querySelector('svg')).toBeNull();
@@ -38,15 +53,15 @@ describe('R-DATA-01 Workspaces: independent data sets in one browser', () => {
   it('switching clears the selection and redraws the grid with the other workspace\'s events', () => {
     const a = twoWs(); setData(a, blank({ events: [ev1()] })); expect(a.qa('.ev')).toHaveLength(1); a.ev('switchWs(state.WS[1].id)'); expect(a.qa('.ev')).toHaveLength(0);
   });
-  it('"Rename current…" renames the workspace', () => {
+  it('"Rename…" renames the current workspace', () => {
     const a = fresh({ promptAnswer: 'Granny care' }); a.ev('renameWorkspace()'); expect(a.ev('cw().name')).toBe('Granny care'); expect(a.q('.wsbtn .wsn').textContent).toContain('Granny care');
   });
-  it('"Duplicate current" copies all data into a new, unsaved workspace', () => {
+  it('"Duplicate" copies all the current workspace\'s data into a new, unsaved workspace', () => {
     const a = fresh(); a.ev('state.S.schedules[0].name="Original"'); a.ev('duplicateWorkspace()');
     expect(names(a)).toEqual(['Workspace', 'Workspace (copy)']); expect(a.ev('state.S.schedules[0].name')).toBe('Original'); expect(a.ev('isDirty()')).toBe(true);
     a.ev('state.S.schedules[0].name="Changed"'); a.ev('switchWs(state.WS[0].id)'); expect(a.ev('state.S.schedules[0].name')).toBe('Original');
   });
-  it('"Delete current…" asks for confirmation naming the workspace, deletes it and shows a neighbour', () => {
+  it('"Delete…" asks for confirmation naming the current workspace, deletes it and shows a neighbour', () => {
     const a = twoWs({ promptAnswer: 'Second' }); a.ev('deleteWorkspace()'); expect(a.log.confirms[0]).toContain('Delete workspace "Workspace"'); expect(names(a)).toEqual(['Second']); expect(a.ev('cw().name')).toBe('Second');
   });
   it('declining the confirmation keeps the workspace', () => {
