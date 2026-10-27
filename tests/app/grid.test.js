@@ -307,12 +307,12 @@ describe('R-GRID-07 View: Fit width / Fit height with their sliders, the days an
     expect(box(a, 'Fit width').parentElement.title).toMatch(/sideways/); expect(box(a, 'Fit height').parentElement.title).toMatch(/height of the window/);
     s.querySelector('.shbtn').click(); expect(a.qa('#sbin .zrow')).toHaveLength(0); expect(stored(a).secZoom).toBe(true);
   });
-  it('Reset view is the View header\'s own button (where the other sections have +): an icon named Reset view, with its tooltip, there even when the section is folded', () => {
+  it('Reset view is a small button on the View header line (where the other sections have +): its icon and its name, with its tooltip, there even when the section is folded', () => {
     const a = fresh(); const s = sec(a), b = s.querySelector('.sech .zreset');
-    expect(b).not.toBeNull(); expect(b.tagName).toBe('BUTTON'); expect(b.getAttribute('aria-label')).toBe('Reset view'); expect(b.textContent).toBe(''); expect(b.querySelector('svg')).not.toBeNull();
-    expect(b.title).toMatch(/^Back to fit width and fit height on/); expect(s.querySelectorAll('.zreset')).toHaveLength(1); expect(b.innerHTML).not.toBe(a.ev('ICON_UNDO'));
+    expect(b).not.toBeNull(); expect(b.tagName).toBe('BUTTON'); expect(b.textContent).toBe('Reset view'); expect(b.querySelector('svg')).not.toBeNull(); expect(b.classList.contains('eye')).toBe(false);
+    expect(b.title).toMatch(/^Back to fit width and fit height on/); expect(s.querySelectorAll('.zreset')).toHaveLength(1);
     s.querySelector('.shbtn').click(); a.ev('state.prefs.txt=140;render()'); sec(a).querySelector('.sech .zreset').click(); expect(stored(a).txt).toBe(100);
-    a.ev("setLang('es');renderSide()"); expect(sec(a).querySelector('.sech .zreset').getAttribute('aria-label')).toBe('Restablecer vista');
+    a.ev("setLang('es');renderSide()"); expect(sec(a).querySelector('.sech .zreset').textContent).toBe('Restablecer vista');
   });
   it('with "Fit width" on the columns share the window width with a 40 px minimum, whatever the slider says', () => {
     const a = fresh(blank()); a.ev('state.prefs.colW=600;render()'); expect(a.q('#grid').style.gridTemplateColumns).toBe('52px repeat(7,minmax(40px,1fr))');

@@ -218,11 +218,17 @@ test.describe('R-GRID-07 The View section\'s layout in a real browser', () => {
       expect(r.over).toBeLessThanOrEqual(1); expect(r.sb).toBeLessThanOrEqual(0); r.sliders.forEach(v => expect(v).toBeGreaterThan(w - 90));
     });
   }
-  test('Reset view sits at the right end of the View header line, after the ⓘ, like the + of the other sections', async ({ page }) => {
+  test('Reset view is a small button at the right end of the View header line, no taller than the title', async ({ page }) => {
     await openApp(page, { prefs: { collapsed: false } }); await page.locator('#sbin .zsec .sech').scrollIntoViewIfNeeded();
-    const r = await page.evaluate(() => { const x = e => e.getBoundingClientRect(), h = document.querySelector('#sbin .zsec .sech'), b = h.querySelector('.zreset'), t = h.querySelector('.tip'), p = document.querySelector('#sbin .sec .sech .eye');
-      return { right: x(h).right - x(b).right, afterTip: x(b).left >= x(t).right, mid: Math.abs((x(b).top + x(b).bottom) / 2 - (x(h).top + x(h).bottom) / 2), size: [x(b).width, x(p).width] }; });
-    expect(r.right).toBeLessThanOrEqual(1); expect(r.afterTip).toBe(true); expect(r.mid).toBeLessThanOrEqual(1); expect(Math.abs(r.size[0] - r.size[1])).toBeLessThanOrEqual(1);
+    const r = await page.evaluate(() => { const x = e => e.getBoundingClientRect(), h = document.querySelector('#sbin .zsec .sech'), b = h.querySelector('.zreset'), t = h.querySelector('.tip'), n = h.querySelector('.shbtn');
+      return { right: x(h).right - x(b).right, afterTip: x(b).left > x(t).right + 20, mid: Math.abs((x(b).top + x(b).bottom) / 2 - (x(h).top + x(h).bottom) / 2), h: x(b).height, title: x(n).height, w: x(b).width }; });
+    expect(r.right).toBeLessThanOrEqual(1); expect(r.afterTip).toBe(true); expect(r.mid).toBeLessThanOrEqual(1.5); expect(r.h).toBeLessThanOrEqual(Math.max(20, r.title)); expect(r.w).toBeLessThan(110);
+  });
+  test('in every section the ⓘ sits right after the title, and a section\'s own button (+, Reset view) at the right end of the line', async ({ page }) => {
+    await openApp(page, { prefs: { collapsed: false } });
+    const r = await page.evaluate(() => [...document.querySelectorAll('#sbin .sec > .sech')].map(h => { const x = e => e.getBoundingClientRect(), n = h.querySelector('.shbtn'), t = h.querySelector('.tip'), b = h.querySelector('.tip + button');
+      return { gap: x(t).left - x(n).right, end: b ? x(h).right - x(b).right : 0 }; }));
+    expect(r.length).toBeGreaterThanOrEqual(6); r.forEach(x => { expect(x.gap).toBeGreaterThanOrEqual(0); expect(x.gap).toBeLessThanOrEqual(10); expect(x.end).toBeLessThanOrEqual(1); });
   });
 });
 

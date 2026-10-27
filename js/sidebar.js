@@ -194,7 +194,7 @@ export function renderSide(){
   const s4=el('div','sec zsec',body);
   // Reset view acts on the whole section, so it is the section's header button, like the + of the others (R-GRID-07)
   const resetView=()=>{if(phone()){state.prefs.rowHP=100;state.prefs.fitHP=false;state.prefs.colWP=110;state.prefs.fitWP=true}else{state.prefs.rowH=48;state.prefs.fitH=true;state.prefs.colW=110;state.prefs.fitW=true}state.prefs.txt=100;delete state.prefs.hours[state.curId];delete state.prefs.days[state.curId];savePrefs();zoomRender();renderSide()};
-  {const rb=secHead(s4,'zoomH',null,'zoomNote','secZoom',resetView,phone()?'zoomResetTipP':'zoomResetTip',ICON_RESET);rb.classList.add('zreset');rb.type='button';rb.setAttribute('aria-label',L('zoomReset'))}
+  {const rb=secHead(s4,'zoomH',null,'zoomNote','secZoom',resetView,phone()?'zoomResetTipP':'zoomResetTip',ICON_RESET);rb.className='zreset';rb.type='button';el('span','',rb).textContent=L('zoomReset')}   // a small button with its name, not an icon alone
   if(!state.prefs.secZoom){
     // a slider under its label line; a size has its Fit switch on that line, and while it is on the slider is disabled and shows the fitted size (updZoomUI)
     const zsl=(label,key,min,max,step,unit,fit,fitL,fitTip)=>{const r=el('div','zrow',s4);el('span','',r).textContent=L(label);

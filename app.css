@@ -47,7 +47,8 @@ aside h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(
 .tbar{display:flex;gap:6px;margin-bottom:4px}.tbar button{flex:1;padding:7px 0;display:flex;justify-content:center;align-items:center}.tbar svg{width:17px;height:17px}
 .pbtn{width:100%;margin-bottom:8px;padding:8px}
 .sec{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
-.sech{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.sech{display:flex;align-items:center;gap:6px;margin-bottom:8px}.sech .shbtn{flex:0 1 auto;min-width:0}.sech>.tip+button{margin-left:auto}   /* the ⓘ right after the title; the section's own button at the right end */
+.zreset{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;font-size:11px;line-height:16px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--mut);white-space:nowrap;flex-shrink:0}.zreset svg{width:11px;height:11px}.zreset:hover{color:var(--fg)}   /* View's Reset view (R-GRID-07) */
 .shbtn{flex:1;display:flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
 .shbtn svg{width:14px;height:14px}.shbtn em{font-style:normal;font-weight:400;background:var(--bg);border-radius:10px;padding:0 7px}
 .sch{min-height:32px;margin-bottom:2px;flex-wrap:nowrap}.sch.off input[type=text]{color:var(--mut)}
