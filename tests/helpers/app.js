@@ -170,3 +170,4 @@ export function fillDialog(app, f = {}) {
   if (f.end !== undefined) tick().forEach(r => fire(r.querySelectorAll('select')[1], f.end));
 }
 export const dlgOpen = app => app.d.getElementById('dlg').open;
+export const addBtn = (app, day) => app.qa('#fDays .dad')[day].querySelector('.addt');   // a day's "+ Add another time on …", under its times (R-REP-02)

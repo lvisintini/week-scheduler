@@ -437,7 +437,7 @@ export function openSettings(){
 }
 // How to use (R-UI-17): every tip, in titled sections, most with a picture of the Examples (img/help/<language>/<name>.png, taken by
 // `npm run shots`: [name, alt text, width, height] as shown); the way into the Examples (R-DATA-12) at the top; a list of the sections to jump to
-export const HELP=[['hsEdit',[1,2,9,7],['edit','hiEdit',666,410]],['hsRep',[3,10,11],['rep','hiRep',900,306]],['hsOv',[6,4],['ov','hiOv',940,298]],['hsPpl',[24,15],['ppl','hiPpl',900,446]],
+export const HELP=[['hsEdit',[1,2,9,7],['edit','hiEdit',666,410]],['hsRep',[3,10,11],['rep','hiRep',900,401]],['hsOv',[6,4],['ov','hiOv',940,298]],['hsPpl',[24,15],['ppl','hiPpl',900,541]],
   ['hsFlex',[25],['flex','hiFlex',666,191]],['hsTy',[13,14],['ty','hiTy',1022,788]],['hsBg',[18,20,17],['bg','hiBg',666,144]],['hsLook',[16,5,19],['look','hiLook',260,467]],
   ['hsRh',[12],['rh','hiRh',778,396]],['hsCyc',[8,23]],['hsSave',[21,22],['save','hiSave',460,284]]];
 export function openHelp(){

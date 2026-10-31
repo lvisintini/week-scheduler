@@ -1,6 +1,6 @@
 // Cycles of several weeks on the screen (docs/requirements/cycle.md): what each week of the cycle draws and finds.
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, dragFrom, createDrag, workspace, sleep, pointer } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, dragFrom, createDrag, workspace, sleep, pointer, addBtn } from '../helpers/app.js';
 
 const fresh = data => { const a = openApp(); if (data) setData(a, data); return a; };
 const week = (a, w) => a.ev(`state.curWk=${w};render()`);
@@ -384,9 +384,9 @@ describe('R-CYC-08 The event dialog: a Weeks row, and a week for every time when
     expect(pw(a).checked).toBe(true); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '720'], ['2', '600']]);
   });
   it('+ on a day proposes the same times in the next week that has none on that day yet', () => {
-    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])'); dayRow(a, 0).querySelector('.addt').click();
-    expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600']]); dayRow(a, 0).querySelector('.addt').click(); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600'], ['3', '600']]);
-    dayRow(a, 0).querySelector('.addt').click(); expect(lines(a).map(lineOf).at(-1)).toEqual(['3', '660']);   // every week has a time: after the day's last time, as before
+    const a = fresh(blank({ cycle: 3, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])'); addBtn(a, 0).click();
+    expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600']]); addBtn(a, 0).click(); expect(lines(a).map(lineOf)).toEqual([['1', '600'], ['2', '600'], ['3', '600']]);
+    addBtn(a, 0).click(); expect(lines(a).map(lineOf).at(-1)).toEqual(['3', '660']);   // every week has a time: after the day's last time, as before
   });
   it('choosing another week for a time from its button keeps the day\'s times in week order', () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 660, { wk: 1 }), sl(0, 720, 780, { wk: 1 })] })] })); a.ev('openDlg(state.S.events[0])');

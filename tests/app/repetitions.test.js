@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, person, dragFrom, fillDialog, dlgOpen } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, dragFrom, fillDialog, dlgOpen, addBtn } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' })];
@@ -55,34 +55,52 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
     const a = dlg(); expect(rows(a).filter(r => !r.classList.contains('dx'))).toHaveLength(7); expect(a.q('#dlg .tabs')).toBeNull(); expect(a.q('#tabA')).toBeNull(); expect(a.q('#fBlocks')).toBeNull();
   });
   it('+ adds another time on that day, starting where its last time ends, for an hour, performed by the owner', () => {
-    const a = dlg(); days(a)[4].querySelector('.addt').click(); const x = lines(a)[5];
+    const a = dlg(); addBtn(a, 4).click(); const x = lines(a)[5];
     expect(x.classList.contains('dx')).toBe(true); expect(times(x)).toEqual(['660', '720']); expect(x.querySelectorAll('select')[2].value).toBe('@o'); expect(x.querySelector('.addt')).toBeNull();
-    expect(days(a)[4].querySelector('.addt').title).toBe('Add another time on Friday');
+    expect(x.nextElementSibling).toBe(a.qa('#fDays .dad')[4]);   // above Friday's add line
   });
   it('two times on a day are saved as two repetitions of that day, in time order', () => {
-    const a = dlg(); days(a)[0].querySelector('.addt').click(); const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '480'; x[0].onchange(); x[1].value = '540'; x[1].onchange();
+    const a = dlg(); addBtn(a, 0).click(); const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '480'; x[0].onchange(); x[1].value = '540'; x[1].onchange();
     save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 480, 540], [0, 600, 660], [2, 600, 660], [4, 600, 660]]);
   });
-  it('✕ removes a further time; a day\'s first time has no ✕ (untick the day instead)', () => {
-    const a = dlg(); days(a)[2].querySelector('.addt').click(); expect(days(a)[2].querySelector('.bx')).toBeNull();
+  it('✕ removes a further time; ✕ on a day\'s first time moves its next time up and the day stays ticked', () => {
+    const a = dlg(); addBtn(a, 2).click(); expect(days(a)[2].querySelector('.bx')).toBeNull();
     a.q('#fDays .dr.dx .bx').click(); expect(a.q('#fDays .dr.dx')).toBeNull(); save(a); expect(slots(a)).toHaveLength(3);
+    a.ev('openDlg(state.S.events[0])'); addBtn(a, 0).click(); const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '900'; x[0].onchange(); x[1].value = '960'; x[1].onchange();
+    const rx = days(a)[0].querySelector('.rx'); expect(rx.getAttribute('aria-label')).toBe('Remove this time'); rx.click();
+    expect(a.q('#fDays .dr.dx')).toBeNull(); expect(times(days(a)[0])).toEqual(['900', '960']); expect(days(a)[0].classList.contains('off')).toBe(false);
+    save(a); expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 900, 960], [2, 600, 660], [4, 600, 660]]);
+  });
+  it('the first time\'s ✕ is hidden while it is the day\'s only time (untick the day instead) and on an unticked day', () => {
+    const a = dlg(), css = a.d.querySelector('style').textContent, hid = d => days(a)[d].querySelector('.rx').matches('.dr:not(.dx):has(+ .dad)>.rx,.dr.off>.rx');
+    expect(css).toContain('.dr:not(.dx):has(+ .dad)>.rx,.dr.off>.rx{visibility:hidden}'); expect([0, 1, 2].map(hid)).toEqual([true, true, true]);
+    addBtn(a, 0).click(); expect(hid(0)).toBe(false); a.q('#fDays .dr.dx .bx').click(); expect(hid(0)).toBe(true);
+  });
+  it('"+ Add another time on Friday" closes each ticked day\'s band, under its last time; an unticked day has none; translated', () => {
+    const a = dlg(), ad = a.qa('#fDays .dad'), css = a.d.querySelector('style').textContent; expect(ad).toHaveLength(7); expect(days(a)[0].querySelector('.addt')).toBeNull();
+    expect(addBtn(a, 4).textContent).toBe('+ Add another time on Friday'); expect(addBtn(a, 4).title).toBe('');
+    expect(ad.map(x => x.classList.contains('off'))).toEqual([false, true, false, true, false, true, true]); expect(css).toContain('.dad.off{display:none}');
+    expect(ad.map(x => x.classList.contains('alt'))).toEqual(days(a).map(r => r.classList.contains('alt')));   // in the day's band
+    addBtn(a, 4).click(); addBtn(a, 4).click(); expect(ad[4].previousElementSibling).toBe(a.qa('#fDays .dr.dx').at(-1)); expect(days(a)[4].nextElementSibling.classList.contains('dx')).toBe(true);
+    const cb = days(a)[1].querySelector('input'); cb.checked = true; cb.onchange(); expect(ad[1].classList.contains('off')).toBe(false);
+    a.ev("setLang('es')"); expect(addBtn(a, 4).textContent).toBe('+ Añadir otra hora el Viernes');
   });
   it('an event with two times on one day opens with both lines, in time order', () => {
     const a = fresh(blank({ events: [ev1({ slots: [slot(0, 840, 900), slot(0, 540, 600)] })] })); a.ev('openDlg(state.S.events[0])');
     expect(times(days(a)[0])).toEqual(['540', '600']); expect(times(a.q('#fDays .dr.dx'))).toEqual(['840', '900']); expect(lines(a)[1].classList.contains('dx')).toBe(true);
   });
   it('a time added late at night starts with the day\'s last time instead of after it', () => {
-    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 1380, 1440)] })] })); a.ev('openDlg(state.S.events[0])'); days(a)[0].querySelector('.addt').click();
+    const a = fresh(blank({ events: [ev1({ slots: [slot(0, 1380, 1440)] })] })); a.ev('openDlg(state.S.events[0])'); addBtn(a, 0).click();
     expect(times(a.q('#fDays .dr.dx'))).toEqual(['1380', '1440']);
   });
   it('unticking a day greys out all its lines and drops them on save; ticking it again brings its further times back', () => {
-    const a = dlg(); days(a)[4].querySelector('.addt').click(); const cb = days(a)[4].querySelector('input'); cb.checked = false; cb.onchange();
+    const a = dlg(); addBtn(a, 4).click(); const cb = days(a)[4].querySelector('input'); cb.checked = false; cb.onchange();
     const x = a.q('#fDays .dr.dx'); expect(x.classList.contains('off')).toBe(true); expect(x.querySelector('select').disabled).toBe(true);
     cb.checked = true; cb.onchange(); expect(a.q('#fDays .dr.dx').classList.contains('off')).toBe(false); cb.checked = false; cb.onchange();
     save(a); expect(slots(a).map(s => s.day)).toEqual([0, 2]);
   });
   it('the copy button of a day makes every other ticked day like it, adding or removing their further times', () => {
-    const a = dlg(); days(a)[0].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click(); days(a)[2].querySelector('.addt').click();
+    const a = dlg(); addBtn(a, 0).click(); addBtn(a, 2).click(); addBtn(a, 2).click();
     const x = a.q('#fDays .dr.dx').querySelectorAll('select'); x[0].value = '900'; x[0].onchange(); x[1].value = '960'; x[1].onchange();   // Monday 10:00–11:00 and 15:00–16:00
     days(a)[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click(); expect(a.qa('#fDays .dr.dx')).toHaveLength(3); save(a);
     expect(slots(a).map(s => [s.day, s.start, s.end])).toEqual([[0, 600, 660], [0, 900, 960], [2, 600, 660], [2, 900, 960], [4, 600, 660], [4, 900, 960]]);
@@ -131,14 +149,14 @@ describe('R-REP-02 One day table: each day can hold several times, without modes
     sum(2).click(); expect(open(a)).toEqual([days(a)[2]]); expect(sum(2).getAttribute('aria-expanded')).toBe('true'); sum(4).click(); expect(open(a)).toEqual([days(a)[4]]); expect(sum(2).getAttribute('aria-expanded')).toBe('false');
     sum(4).click(); expect(open(a)).toHaveLength(0);
     const tsel = days(a)[0].querySelector('.tsel'); tsel.value = 'flex'; tsel.onchange(); expect(sum(0).querySelector('.sm').textContent).toBe('10:00–11:00 · Nobody (concerns everyone) · Around these times');
-    const css = a.d.querySelector('style').textContent; expect(css).toContain('.dr:not(.open)>:not(.dcell):not(.dl):not(.wcell)'); expect(css).toContain('.cl,.sum,.rx,.wkw,#fAddT,.wcell,.dhd>.wkh{display:none}');
+    const css = a.d.querySelector('style').textContent; expect(css).toContain('.dr:not(.open)>:not(.dcell):not(.dl):not(.wcell)'); expect(css).toContain('.cl,.sum,.wkw,#fAddT,.wcell,.dhd>.wkh{display:none}');
   });
   it('opening the dialog opens the clicked repetition\'s card, or the only card', () => {
     const a = dlg(); a.ev('document.getElementById("dlg").close();openDlg(state.S.events[0],null,state.S.events[0].slots[1])'); expect(open(a)).toEqual([days(a)[2]]);
     const b = fresh(blank({ events: [ev1()] })); b.ev('openDlg(state.S.events[0])'); expect(b.qa('#fDays .dr.open')).toHaveLength(1);
   });
   it('each line has the labels of its phone card, translated; days alternate in bands that their further times share', () => {
-    const a = dlg(); days(a)[2].querySelector('.addt').click();
+    const a = dlg(); addBtn(a, 2).click();
     expect([...days(a)[0].querySelectorAll('.cl')].map(x => x.textContent)).toEqual(['Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
     expect(a.q('#fDays .dr.dx .dn').textContent).toBe('Wednesday, time 2');
     expect(days(a).map(r => r.classList.contains('alt'))).toEqual([false, true, false, true, false, true, false]); expect(a.q('#fDays .dr.dx').classList.contains('alt')).toBe(false);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY, ROOT } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY, ROOT, addBtn } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const sections = a => a.qa('#sbin .sec');
@@ -230,12 +230,14 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('the day table has a header row: Days, (Week, shown only with different times per week), Start, End, Performed by, With, Colour, Timing', () => {
     const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Week', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);
-    expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*\+ adds another time/);
+    expect(a.q('#paneQ .dhd span').title).toMatch(/nearest ticked day.*⧉ next to a day.*\+ Add another time.*✕ removes one time/);
   });
-  it('a day row holds its day (with the week button of R-CYC-08), times, performer, With button, colour, timing, copy button and warning; flexible margins on a line below', () => {
-    const r = dialog().qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.querySelector('.wcell .wkc')).not.toBeNull();
-    expect([...r.children].filter(c => !c.classList.contains('cl') && !c.classList.contains('rx')).map(c => c.classList.contains('wcell') ? 'week' : c.classList.contains('dcell') ? 'day' : ['wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase()))
-      .toEqual(['day', 'week', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'cpy', 'addt', 'wn', 'dsub']);
+  it('a day row holds its day, the copy button beside it, (the week of R-CYC-08), times, performer, With button, colour, timing, ✕ and warning; flexible margins on a line below', () => {
+    const a = dialog(), r = a.qa('#fDays .dr')[0]; expect(r.children[0].querySelector('label input[type=checkbox]')).not.toBeNull(); expect(r.querySelector('.wcell .wkc')).not.toBeNull();
+    const cells = x => [...x.children].filter(c => !c.classList.contains('cl')).map(c => c.classList.contains('wcell') ? 'week' : c.classList.contains('dcell') ? 'day' : ['dl', 'cpy', 'cpx', 'wbtn', 'cbtn', 'tsel', 'rx', 'bx', 'wn', 'dsub'].find(k => c.classList.contains(k)) || c.tagName.toLowerCase());
+    expect(cells(r)).toEqual(['day', 'cpy', 'week', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'rx', 'wn', 'dsub']);
+    addBtn(a, 0).click();   // a further time: an empty cell under ⧉, its own ✕ in the ✕ column
+    expect(cells(r.nextElementSibling)).toEqual(['dl', 'cpx', 'week', 'select', 'select', 'select', 'wbtn', 'cbtn', 'tsel', 'bx', 'wn', 'dsub']);
   });
   it('the day rows and the further-time lines share one grid (each line a subgrid box), so their columns line up with the header', () => {
     const css = dialog().d.querySelector('style').textContent; expect(css).toContain('#paneQ{display:grid;grid-template-columns:var(--dc)'); expect(css).toContain('.dhd,#fDays{display:contents}');
@@ -246,7 +248,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
     const a = dialog(), r = a.qa('#fDays .dr')[0];
     expect([...r.querySelectorAll('select')].map(x => x.getAttribute('aria-label'))).toEqual(['Monday: start', 'Monday: end', 'Monday: performed by', 'Monday: timing', 'Flexible start', 'Flexible end']);
     expect(r.querySelector('.wbtn').getAttribute('aria-label')).toMatch(/^Monday: with: Default/); expect(r.querySelector('.cpy').getAttribute('aria-label')).toMatch(/^Copy this day to the other ticked days/);
-    r.querySelector('.addt').click(); const x = a.q('#fDays .dr.dx');
+    addBtn(a, 0).click(); const x = a.q('#fDays .dr.dx');
     expect([...x.querySelectorAll('select')].slice(0, 4).map(y => y.getAttribute('aria-label'))).toEqual(['Monday, time 2: start', 'Monday, time 2: end', 'Monday, time 2: performed by', 'Monday, time 2: timing']); expect(x.querySelector('.bx').getAttribute('aria-label')).toBe('Remove this time');
     a.ev("setLang('es')"); const wed = a.qa('#fDays .dr:not(.dx)')[2]; expect(wed.querySelector('select').getAttribute('aria-label')).toBe('Miércoles: inicio'); expect(wed.querySelectorAll('select')[2].getAttribute('aria-label')).toBe('Miércoles: lo hace');
     expect(a.q('#fDays .dr.dx select').getAttribute('aria-label')).toBe('Lunes, hora 2: inicio');
@@ -258,8 +260,8 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   it('R-CYC-08 with different times per week the week has a column and a header of its own; on a phone card it reads Week [1] – Monday', () => {
     const a = openApp(); setData(a, blank({ cycle: 2, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', wk: 2 }] })] })); a.ev('openDlg(state.S.events[0])');
     const css = a.d.querySelector('style').textContent; expect(a.q('#paneQ').classList.contains('pw')).toBe(true);
-    expect(css).toContain('#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}'); expect(css).toContain('#paneQ.pw{--dc:auto auto minmax(68px,1fr)');
-    const r = a.qa('#fDays .dr')[0]; expect(r.children[1].classList.contains('wcell')).toBe(true); expect(r.querySelector('.wcell .wkc').textContent).toBe('2'); expect(r.querySelector('.wcell .wkw').textContent).toBe('Week');
+    expect(css).toContain('#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}'); expect(css).toContain('#paneQ.pw{--dc:auto auto auto minmax(68px,1fr)');
+    const r = a.qa('#fDays .dr')[0]; expect(r.children[2].classList.contains('wcell')).toBe(true); expect(r.querySelector('.wcell .wkc').textContent).toBe('2'); expect(r.querySelector('.wcell .wkw').textContent).toBe('Week');
     expect(r.querySelector('.dcell .wkc')).toBeNull(); expect(css).toContain(".wcell::after{content:'–'}"); a.ev("setLang('es')"); expect(r.querySelector('.wcell .wkw').textContent).toBe('Semana');
   });
   it('a darker 2 px line separates the days and a thin line the times of one day', () => {

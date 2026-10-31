@@ -154,35 +154,39 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 /* each line is a box on the table's columns (subgrid), so a day and its further times share a band, alternating, with a rule between days (R-UI-07) */
 .dr{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center;row-gap:4px;padding:3px 0}.dr.alt{background:color-mix(in srgb,var(--fg) 5%,transparent)}
 .dr:not(.dx){border-top:2px solid color-mix(in srgb,var(--fg) 25%,transparent)}.dr.dx{border-top:1px solid var(--line)}.dr>*{min-width:0}   /* a darker line between days, a thin one between the times of a day */
-.cl,.sum,.rx,.wkw,#fAddT,.wcell,.dhd>.wkh{display:none}#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}   /* the Week column only with different times per week (R-CYC-08) */
-/* a long list of times scrolls inside the dialog under a header that stays put (the empty header cells and the shadows cover the ⧉/+/⚠ columns and the gaps) */
+.cl,.sum,.wkw,#fAddT,.wcell,.dhd>.wkh{display:none}#paneQ.pw .wcell,#paneQ.pw .dhd>.wkh{display:block}   /* the Week column only with different times per week (R-CYC-08) */
+/* ⧉ sits beside the day and + Add another time closes the day's band, so both read as the day's (R-REP-02); ✕ ends every time, the first one's hidden while it is the only one */
+.dad{display:grid;grid-template-columns:subgrid;grid-column:1/-1;padding:0 0 3px}.dad.alt{background:color-mix(in srgb,var(--fg) 5%,transparent)}.dad.off{display:none}
+.dad>.addt{grid-column:3/-1;justify-self:start;padding:1px 4px;border:0;background:none;font-size:12px;color:var(--mut)}#paneQ.pw .dad>.addt{grid-column:4/-1}.dad>.addt:hover{color:var(--acc);text-decoration:underline}
+.dr .rx{padding:0 8px;border:0;background:none;color:var(--red)}.dr:not(.dx):has(+ .dad)>.rx,.dr.off>.rx{visibility:hidden}
+/* a long list of times scrolls inside the dialog under a header that stays put (the empty header cells and the shadows cover the ✕/⚠ columns and the gaps) */
 #paneQ{max-height:min(420px,50vh);overflow-y:auto;overscroll-behavior:contain;padding-right:4px}.dhd>span{position:sticky;top:0;z-index:2;align-self:stretch;background:var(--card);box-shadow:-6px 0 0 var(--card),0 6px 0 var(--card),-6px 6px 0 var(--card)}
-#paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) 44px minmax(0,1.5fr) auto auto 18px}#paneQ.pw{--dc:auto auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) 44px minmax(0,1.5fr) auto auto 18px}
+#paneQ{--dc:auto auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) 44px minmax(0,1.5fr) auto 18px}#paneQ.pw{--dc:auto auto auto minmax(68px,1fr) minmax(68px,1.35fr) minmax(0,1.3fr) minmax(0,1fr) 44px minmax(0,1.5fr) auto 18px}
 .cbtn{width:28px;height:28px;padding:0;border-radius:7px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;justify-self:start;box-shadow:inset 0 0 0 2px var(--card)}.cbtn svg{width:14px;height:14px}.dr.off .cbtn{opacity:.4}
 .cmenu{position:fixed}.cmenu .oi i{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid var(--line)}.cmenu .oi.on::after{content:'✓';margin-left:auto;color:var(--acc);font-weight:700}
-#dlg.ph #paneQ{--dc:auto minmax(68px,1fr) minmax(68px,1.35fr) auto auto 18px}#dlg.ph #paneQ.pw{--dc:auto auto minmax(68px,1fr) minmax(68px,1.35fr) auto auto 18px}
+#dlg.ph #paneQ{--dc:auto auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px}#dlg.ph #paneQ.pw{--dc:auto auto auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px}
 .wbtn{font-size:12px;padding:5px 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.wbtn.def{color:var(--mut);font-style:italic}.cpy{padding:3px 7px;font-size:14px;line-height:1}.dr.off .wbtn,.dr.off .cpy{opacity:.4}
 .dsub{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mut);margin:-2px 0 4px}.dsub select{width:auto;font-size:12px;padding:4px 3px}
 .wpop{width:auto;min-width:220px;max-width:320px}.wpop .wdef{display:flex;gap:6px;align-items:center;margin:4px 2px 8px;font-size:13px;color:var(--fg)}.wpop .chips{margin:0}
-.dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child{grid-column-start:1}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
+.dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child{grid-column-start:1}.dhd>:first-child{grid-column-end:span 2}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
 .dr label{margin:0;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
 @media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}}
 /* a phone (R-UI-07, R-UI-14): day chips tick the days; each ticked day is a card with labelled fields, its further times continue the card,
    unticked days take no room and the header row is not needed */
-@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;width:100%;margin:12px 0 4px;padding:10px;font-weight:600}.dr.off{display:none}
+@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;width:100%;margin:12px 0 4px;padding:10px;font-weight:600}.dr.off,.dad{display:none}
  .dr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 22px 44px 44px;grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m";
   gap:2px 8px;padding:8px 10px;background:var(--card);border:1px solid var(--line);border-top:0;border-bottom:0}
  .dr.alt{background:var(--card)}.dr:not(.dx){border-top:1px solid var(--line);border-radius:10px 10px 0 0;margin-top:10px}.dr.dx{border-top:1px dashed var(--line)}
- .dr:has(+ .dr:not(.dx)),.dr:last-child{border-bottom:1px solid var(--line);border-bottom-left-radius:10px;border-bottom-right-radius:10px}
+ .dr:has(+ .dad){border-bottom:1px solid var(--line);border-bottom-left-radius:10px;border-bottom-right-radius:10px}
  #dlg.ph .dr{grid-template-areas:"d d n c x" "ls le le le le" "s e e e e"}#dlg.ph #paneQ.pw .dr.open{grid-template-areas:"y d d n c x" "ls ls le le le le" "s s e e e e"}#dlg.ph .cl.ev-only{display:none}
  .cl{display:block;font-size:11px;color:var(--mut)}.dcell>label{display:none}.dr .dl{min-height:0}
  .sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;width:100%;min-height:36px;padding:2px 0;border:0;background:none;text-align:left;color:var(--fg)}.dn{font-size:14px}.sm{font-size:13px;color:var(--mut)}
  .dr:not(.open){grid-template-areas:"d d n c x"}#paneQ.pw .dr:not(.open){grid-template-areas:"y d d n c x"}.sum,#fAddT{-webkit-tap-highlight-color:transparent}
  .dr.open .sm{display:none}.dr:not(.open)>:not(.dcell):not(.dl):not(.wcell):not(.wn):not(.cpy):not(.cpx):not(.rx):not(.bx){display:none}   /* folded: the header only */
- .dr>.rx{display:inline-flex;grid-area:x;padding:0 8px;border:0;background:none;color:var(--red)}.dr>.addt{display:none}
+ .dr>.rx{display:inline-flex;grid-area:x}#paneQ .dr>.rx{visibility:visible}
  #paneQ.pw .dr{grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) 22px 44px 44px;grid-template-areas:"y d d n c x" "ls ls le le le le" "s s e e e e" "lp lp lw lw lw lw" "p p w w w w" "lt lt lk lk lk lk" "t t k k k k" "m m m m m m"}
  #paneQ.pw .dr>.wcell{display:flex;grid-area:y;align-items:center;gap:4px;font-weight:700;font-size:14px}.wkw{display:inline}.wcell::after{content:'–'}
- .dr>.dcell,.dr>.dl{grid-area:d}.dr>.wn{grid-area:n}.dr>.cpy,.dr>.cpx{grid-area:c}.dr>.addt,.dr>.bx{grid-area:x}
+ .dr>.dcell,.dr>.dl{grid-area:d}.dr>.wn{grid-area:n}.dr>.cpy,.dr>.cpx{grid-area:c}.dr>.bx{grid-area:x}
  .dr>.ls{grid-area:ls}.dr>.le{grid-area:le}.dr>.lp{grid-area:lp}.dr>.lw{grid-area:lw}.dr>.lk{grid-area:lk}.dr>.lt{grid-area:lt}
  .dr>select:nth-of-type(1){grid-area:s}.dr>select:nth-of-type(2){grid-area:e}.dr>select:nth-of-type(3){grid-area:p}.dr>.wbtn{grid-area:w}.dr>.cbtn{grid-area:k}.dr>.tsel{grid-area:t}.dr>.dsub{grid-area:m;margin:4px 0 0}
  .dr select,.dr .wbtn{width:100%;font-size:14px;padding:7px 4px}.dr .tsel{width:100%}}
@@ -190,7 +194,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 
 .wkrow{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:4px 0 2px;font-size:13px}.wkrow>b{font-weight:600;font-size:13px}.wkrow .chips{margin:0}.wkrow .wkstg{flex-basis:100%;margin:0}.wkrow .pwsw{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg)}
 .dcell,.dr .dl{display:flex;gap:4px;align-items:center}.wkc{display:none;padding:2px 6px;font-size:12px;font-weight:600;line-height:1.2;border-radius:6px}#paneQ.pw .wkc{display:inline-block}.dr.off .wkc{opacity:.4}
-.addt{padding:3px 8px;font-size:14px;line-height:1}.dr .bx{padding:0 8px;border:0;background:none;color:var(--red)}.dr.dx .dl{min-height:1px}
+.dr .bx{padding:0 8px;border:0;background:none;color:var(--red)}.dr.dx .dl{min-height:1px}
 .phx{position:absolute;left:0;right:0;pointer-events:none;overflow:hidden}
 .phmode .phx{pointer-events:auto;cursor:grab}
 .phbg{position:absolute;inset:0}

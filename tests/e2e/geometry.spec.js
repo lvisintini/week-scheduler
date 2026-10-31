@@ -494,7 +494,7 @@ test.describe('R-UI-07 The sectioned event dialog as drawn by a real browser', (
     await expect(mon.locator('.dn')).toHaveText('Monday'); await expect(mon.locator('.cl.lp')).toHaveText('Performed by');
     expect(await page.locator('#dlg').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true); expect(await page.locator('#paneQ').evaluate(d => d.scrollWidth <= d.clientWidth + 1)).toBe(true);
   });
-  const many = async (page, n) => { const add = page.locator('#fDays .dr').first().locator('.addt'); for (let i = 0; i < n; i++) await add.click(); };
+  const many = async (page, n) => { const add = page.locator('#fDays .dad').first().locator('.addt'); for (let i = 0; i < n; i++) await add.click(); };
   const geo = page => page.evaluate(() => { const q = document.getElementById('paneQ'), r = q.getBoundingClientRect(), h = document.querySelector('#paneQ .dhd span').getBoundingClientRect();
     return { dlg: document.getElementById('dlg').getBoundingClientRect().height, pane: r.height, top: r.top, bottom: r.bottom, scroll: q.scrollHeight - q.clientHeight, head: h.top, vh: innerHeight }; });
   test('a long list of times scrolls inside the day table, so the dialog stops growing', async ({ page }) => {
@@ -642,6 +642,25 @@ test.describe('R-REP-02 The day copy menu in a real browser', () => {
     expect(r.y).toBeGreaterThanOrEqual(b.y + b.height - 1); expect(r.x + r.width).toBeLessThanOrEqual(v.width); expect(r.y + r.height).toBeLessThanOrEqual(v.height);
     await m.locator('.oi', { hasText: 'The days below' }).click(); await expect(m).toBeHidden(); await expect(page.locator('#toast')).toHaveText('Copied to Friday');
     await page.locator('#fOk').click(); expect((await slots(page)).map(s => [s.day, s.start])).toEqual([[0, 600], [2, 720], [4, 720]]);
+  });
+});
+
+test.describe('R-REP-02 The day table on a computer: ⧉ beside the day, + Add another time under it, ✕ on every time', () => {
+  test('⧉ sits between the day and its Start; the add line closes the day\'s band under its last time; ✕ lines up, the first one only with two times', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page); await seed(page, blank({ events: [ev({ slots: [slot(1, 600, 660), slot(1, 720, 780), slot(3, 600, 660)] })] }));
+    await page.evaluate(() => openDlg(state.S.events[0]));
+    const days = page.locator('#fDays .dr:not(.dx)'), tue = days.nth(1), tue2 = page.locator('#fDays .dr.dx').first(), thu = days.nth(3), ad = page.locator('#fDays .dad');
+    const cb = await boxOf(tue.locator('.dcell input')), cp = await boxOf(tue.locator('.cpy')), st = await boxOf(tue.locator('select').first());
+    expect(cp.x).toBeGreaterThan(cb.x + cb.width); expect(cp.x + cp.width).toBeLessThan(st.x); expect(Math.abs((cp.y + cp.height / 2) - (st.y + st.height / 2))).toBeLessThan(4);
+    await expect(ad.nth(1).locator('.addt')).toHaveText('+ Add another time on Tuesday'); await expect(ad.nth(0)).toBeHidden(); await expect(ad.nth(2)).toBeHidden();   // only under ticked days
+    const a1 = await boxOf(ad.nth(1)), t2 = await boxOf(tue2), wed = await boxOf(days.nth(2)), btn = await boxOf(ad.nth(1).locator('.addt')), st2 = await boxOf(tue2.locator('select').first());
+    expect(a1.y).toBeGreaterThanOrEqual(t2.y + t2.height - 1); expect(a1.y + a1.height).toBeLessThanOrEqual(wed.y + 1); expect(Math.abs(btn.x - st2.x)).toBeLessThan(6);   // under the Start column
+    const bg = l => l.evaluate(x => getComputedStyle(x).backgroundColor); expect(await bg(ad.nth(1))).toBe(await bg(tue)); expect(await bg(ad.nth(1))).not.toBe(await bg(days.nth(2)));   // in Tuesday's band
+    const rx = await boxOf(tue.locator('.rx')), bx = await boxOf(tue2.locator('.bx')); expect(Math.abs(rx.x - bx.x)).toBeLessThan(1);
+    await expect(tue.locator('.rx')).toBeVisible(); await expect(thu.locator('.rx')).toBeHidden();   // Thursday has one time: untick it instead
+    await tue.locator('.rx').click(); await expect(page.locator('#fDays .dr.dx')).toHaveCount(0); await expect(tue.locator('.rx')).toBeHidden(); expect(await tue.locator('select').first().inputValue()).toBe('720');
+    await ad.nth(3).locator('.addt').click(); await expect(thu.locator('.rx')).toBeVisible();
+    expect(await page.locator('#paneQ').evaluate(p => p.scrollWidth <= p.clientWidth + 1)).toBe(true);
   });
 });
 

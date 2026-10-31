@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, ev1, dragFrom, createDrag, fillDialog, dlgOpen } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, dragFrom, createDrag, fillDialog, dlgOpen, addBtn } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const rhythm = (o = {}) => ({ id: 'r1', name: 'Normal', visible: true, ...o });
@@ -68,7 +68,7 @@ describe('R-PHS-03 Phase fields and the phase dialog', () => {
     expect(phaseList(a).at(-1).rhythms).toEqual(['r1', 'r2']);
   });
   it('phases use the same day table, with several times per day', () => {
-    const a = open(); a.ev('openDlg(state.S.phases[0])'); a.qa('#fDays .dr')[4].querySelector('.addt').click(); expect(a.q('#fDays .dr.dx .wbtn').offsetParent).toBeFalsy(); a.q('#fOk').click();
+    const a = open(); a.ev('openDlg(state.S.phases[0])'); addBtn(a, 4).click(); expect(a.q('#fDays .dr.dx .wbtn').offsetParent).toBeFalsy(); a.q('#fOk').click();
     expect(phaseList(a)[0].slots.filter(s => s.day === 4)).toHaveLength(2);
   });
   it('a phase never runs past the end of its day', () => {

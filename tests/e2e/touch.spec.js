@@ -201,9 +201,10 @@ test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, th
     expect(await page.evaluate(() => { const w = document.getElementById('wrap'); return w.scrollWidth > w.clientWidth + 100; })).toBe(true);
     await page.locator('.dh .foc').nth(2).tap(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => state.prefs.fitWP)).toBe(true);
   });
-  test('in the When tab "+ Add a time" adds an open card for the day chosen, ✕ removes one, a tap opens another; nothing scrolls sideways', async ({ page }) => {
+  test('in the When tab "+ Add a time" adds an open card for the day chosen (no add line under the cards), ✕ removes one, a tap opens another; nothing scrolls sideways', async ({ page }) => {
     await seed(page, blank({ events: [ev({ slots: [slot(0, 600, 660), slot(2, 600, 660)] })] })); await page.evaluate(() => openDlg(state.S.events[0]));
     await page.locator('.dtabs button', { hasText: 'When' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(2); await expect(page.locator('#fDays .dr.open')).toHaveCount(0);
+    await expect(page.locator('#fDays .dad:visible')).toHaveCount(0);   // a computer's "+ Add another time on …" lines: on a phone "+ Add a time" does it
     await page.locator('#fAddT').tap(); const m = await page.locator('.addm').boundingBox(); expect(m.y).toBeGreaterThanOrEqual(0); expect(m.x + m.width).toBeLessThanOrEqual(page.viewportSize().width);
     await page.locator('.addm .addd .oi', { hasText: 'Friday' }).tap(); await expect(page.locator('#fDays .dr:visible')).toHaveCount(3);
     const fri = page.locator('#fDays .dr').nth(4); await expect(fri).toHaveClass(/open/); await expect(fri.locator('.dn')).toHaveText('Friday'); await expect(fri.locator('select').first()).toBeVisible();

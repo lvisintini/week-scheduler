@@ -77,7 +77,9 @@ function drawWk(){   // the Weeks row (only while the cycle is longer than one w
   const sg=dWk.pw?[...new Set(stgLines().map(x=>x.wk))].sort((a,b)=>a-b):dWk.stgW;   // what the staged weeks keep (R-CYC-22)
   if(sg.length)el('small','wkstg note',c).textContent=L(dWk.pw?'wkStgPer':'wkStgPat',{w:wksText(sg)});
 }
-function rowCtl(o,r,day){   // the cells of one time: start, end, performer, With, colour, timing, then ⧉ and + (a day's first time) or ✕ (a further time), ⚠
+function dayBtn(o,r,day){   // the column after the day: ⧉ on a day's first line (it copies the whole day, R-REP-02), empty on its further times
+  if(o===day){o.cp=el('button','cpy',r);o.cp.type='button';o.cp.textContent='⧉';o.cp.setAttribute('aria-haspopup','menu');o.cp.onclick=()=>cpyPop(o)}else el('span','cpx',r)}
+function rowCtl(o,r,day){   // the cells of one time: start, end, performer, With, colour, timing, ✕, ⚠ (the first time's ✕ moves the next one up; hidden while it is the only one)
   // field labels of the phone cards (R-UI-07); on a desktop the header row names the columns
   o.lb=[['ls',''],['le',''],['lp','ev-only'],['lw','ev-only'],['lk','ev-only'],['lt','ev-only']].map(([a,c])=>el('span','cl '+a+(c?' '+c:''),r));
   o.s=el('select','',r);o.en=el('select','',r);
@@ -85,8 +87,8 @@ function rowCtl(o,r,day){   // the cells of one time: start, end, performer, Wit
   o.ps=el('select','ev-only',r);o.ps.onchange=()=>{cSet(o,o.col);updWarn()};o.wb=el('button','wbtn ev-only',r);o.wb.type='button';o.wb.onclick=()=>wPop(o);
   o.cl=el('button','cbtn ev-only',r);o.cl.type='button';o.cl.onclick=()=>cPop(o);
   o.tsel=el('select','tsel ev-only',r);o.tsel.onchange=()=>{tmSet(o,o.tsel.value,15,15);updWarn()};
-  if(o===day){o.rx=el('button','rx',r);o.rx.type='button';o.rx.textContent='✕';o.rx.onclick=()=>rmFirst(o);o.cp=el('button','cpy',r);o.cp.type='button';o.cp.textContent='⧉';o.cp.setAttribute('aria-haspopup','menu');o.cp.onclick=()=>cpyPop(o);o.ad=el('button','addt',r);o.ad.type='button';o.ad.textContent='+';o.ad.onclick=()=>{addTime(o);updWarn()}}
-  else{el('span','cpx',r);o.x=el('button','bx',r);o.x.type='button';o.x.textContent='✕';o.x.onclick=()=>{o.r.remove();day.more=day.more.filter(z=>z!==o);day.more.forEach((z,k)=>rowTexts(z,day,k));updWarn();updOc()}}
+  if(o===day){o.rx=el('button','rx',r);o.rx.type='button';o.rx.textContent='✕';o.rx.onclick=()=>rmFirst(o)}
+  else{o.x=el('button','bx',r);o.x.type='button';o.x.textContent='✕';o.x.onclick=()=>{o.r.remove();day.more=day.more.filter(z=>z!==o);day.more.forEach((z,k)=>rowTexts(z,day,k));updWarn();updOc()}}
   o.wn=el('span','wn',r);o.wn.innerHTML=ICON_WARN;
 }
 function rowSub(o,r){   // the margins of flexible start/end, on a line of their own under the row
@@ -97,7 +99,7 @@ function rowSub(o,r){   // the margins of flexible start/end, on a line of their
 export function rowTexts(o,day,k){   // labels and tooltips (also after a language change); k = the index of a further time of that day
   fillSel(o.tsel,[['',L('tmFixed')],['edge',L('tmEdge')],['flex',L('tmAround')]]);o.tsel.value=o.tm||'';
   o.subA.textContent=L('tmLate');o.subB.textContent=L('tmLate2');o.subC.textContent=L('tmEarly');o.fsS.setAttribute('aria-label',L('tmFsA'));o.feS.setAttribute('aria-label',L('tmFeA'));
-  const t=(b,txt)=>{if(b){b.title=b.__t=txt;b.setAttribute('aria-label',txt)}};t(o.cp,L('cpyTip'));t(o.ad,L('addTime',{d:DAYS[day.i]}));t(o.x,L('rmTime'));t(o.rx,L('rmTime'));o.wn.title=L('ovRowTip');
+  const t=(b,txt)=>{if(b){b.title=b.__t=txt;b.setAttribute('aria-label',txt)}};t(o.cp,L('cpyTip'));if(o.ad)o.ad.textContent='+ '+L('addTime',{d:DAYS[day.i]});t(o.x,L('rmTime'));t(o.rx,L('rmTime'));o.wn.title=L('ovRowTip');
   const n=k==null?DAYS[day.i]:L('dayN',{d:DAYS[day.i],n:k+2});
   ['clS','clE','clP','clW','clC','clT'].forEach((key,j)=>{o.lb[j].textContent=L(key)});if(o.dn)o.dn.textContent=n;o.wkb.parentNode.firstChild.textContent=L('wkWord');[[o.s,'rowS'],[o.en,'rowE'],[o.ps,'rowP'],[o.tsel,'rowT']].forEach(([x,key])=>x.setAttribute('aria-label',L(key,{d:n})));o.wbl=n;wSet(o,o.inv);cSet(o,o.col);wkSet(o,o.wk);   // (the labels and title are those of the phone card)
 }
@@ -188,8 +190,9 @@ function wPop(o){   // a row's own With list: "Use the event's list" or chips
 export let rows=[];   // the seven days of the day table (dayRow), built by initDialog
 const dayRow=(n,i)=>{
   const r=el('div','dr'+(i%2?' alt':''),$('fDays')),dc=el('span','dcell',r),l=el('label','',dc),cb=el('input','',l);cb.type='checkbox';const lt=document.createTextNode(n.slice(0,3));l.append(lt);
-  const o={r,cb,lt,i,more:[],wk:1};cardHead(o,dc);wkCtl(o,wcell(r),o);rowCtl(o,r,o);rowSub(o,r);   // alt: the day band (R-UI-07)
-  o.upd=()=>{const on=cb.checked;[o,...o.more].forEach(x=>{x.r.classList.toggle('off',!on);[x.s,x.en,x.ps,x.wb,x.tsel,x.cp,x.ad,x.x,x.wkb].forEach(c=>{if(c)c.disabled=!on});x.sub.style.display=on&&x.tm==='edge'?'':'none'})};
+  const o={r,cb,lt,i,more:[],wk:1};cardHead(o,dc);dayBtn(o,r,o);wkCtl(o,wcell(r),o);rowCtl(o,r,o);rowSub(o,r);   // alt: the day band (R-UI-07)
+  o.al=el('div','dad'+(i%2?' alt':''),$('fDays'));el('span','',o.al);o.ad=el('button','addt',o.al);o.ad.type='button';o.ad.onclick=()=>{addTime(o);updWarn()};   // closes the day's band: + Add another time on Monday (R-REP-02)
+  o.upd=()=>{const on=cb.checked;o.al.classList.toggle('off',!on);[o,...o.more].forEach(x=>{x.r.classList.toggle('off',!on);[x.s,x.en,x.ps,x.wb,x.tsel,x.cp,x.ad,x.x,x.rx,x.wkb].forEach(c=>{if(c)c.disabled=!on});x.sub.style.display=on&&x.tm==='edge'?'':'none'})};
   cb.onchange=()=>{if(cb.checked)newDay(o);o.upd();updWarn();updOc()};
   return o};
 /* a phone (R-UI-07): each time is a card that folds to its header — a button with its title and, folded, a summary (10:00–11:00 · Ann);
@@ -217,14 +220,14 @@ function addPop(){   // "+ Add a time": the week (with different times per week)
   const rc=b.getBoundingClientRect();m.style.left=Math.max(6,Math.min(rc.left,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(rc.top-m.offsetHeight-4,innerHeight-m.offsetHeight-6))+'px';
   setTimeout(()=>document.addEventListener('pointerdown',out,true));m.querySelector('.addd .oi').focus();
 }
-function addTime(o,sl){   // a further time on day o, on a line of its own below the day's last line
-  const last=[o,...o.more].at(-1),x={wk:sl&&sl.wk||last.wk},r=document.createElement('div');r.className='dr dx'+(o.i%2?' alt':'');last.r.after(r);x.r=r;const dl=el('span','dl',r);cardHead(x,dl);wkCtl(x,wcell(r),o);
+function addTime(o,sl){   // a further time on day o, on a line of its own below the day's last line (above its add line)
+  const last=[o,...o.more].at(-1),x={wk:sl&&sl.wk||last.wk},r=document.createElement('div');r.className='dr dx'+(o.i%2?' alt':'');last.r.after(r);x.r=r;const dl=el('span','dl',r);cardHead(x,dl);dayBtn(x,r,o);wkCtl(x,wcell(r),o);
   rowCtl(x,r,o);rowSub(x,r);fillSel(x.s,curStl);fillSel(x.en,curEtl);fillSel(x.ps,perfOpts());o.more.push(x);rowTexts(x,o,o.more.length-1);
   // by default it starts where the day's last time ends (or with it, late at night), for an hour, performed by the owner; with different
   // times per week (R-CYC-08), the same times in the next week that has none on that day yet
   const used=new Set([o,...o.more].map(y=>y.wk)),nx=dWk.pw&&!sl?[...Array(cyc()).keys()].map(k=>(last.wk+k)%cyc()+1).find(w=>!used.has(w)):null;
   const st=sl?sl.start:nx?+last.s.value:+last.en.value<=1380?+last.en.value:+last.s.value;
-  if(nx)wkSet(x,nx);rowLoad(x,sl||{start:st,end:nx?+last.en.value:Math.min(state.MAXEND,st+60),fo:true});o.upd();if(!sl)x.s.scrollIntoView?.({block:'nearest'});return x;   // a time added with + is scrolled into view
+  if(nx)wkSet(x,nx);rowLoad(x,sl||{start:st,end:nx?+last.en.value:Math.min(state.MAXEND,st+60),fo:true});o.upd();if(!sl){x.s.scrollIntoView?.({block:'nearest'});o.al.scrollIntoView?.({block:'nearest'})}return x;   // a time added with + is scrolled into view, with the day's add line
 }
 function newDay(o){   // a newly ticked day: the times of the nearest ticked day above it (else below), the owner, the default With, fixed
   const t=[...rows.slice(0,o.i).reverse(),...rows.slice(o.i+1)].find(x=>x.cb.checked);

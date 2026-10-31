@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep, pointer, PREFS_KEY } from '../helpers/app.js';
+import { openApp, setData, blank, sched, ev1, person, dragFrom, createDrag, fillDialog, dlgOpen, sleep, pointer, PREFS_KEY, addBtn } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const people = [person({ id: 'A', name: 'Ann', color: '#e5484d' }), person({ id: 'B', name: 'Bob', color: '#2fa66a' }), person({ id: 'C', name: 'Cy', color: '#8e4ec6' })];
@@ -714,7 +714,7 @@ describe('R-EVT-12 Around these times: a repetition with approximate timing is d
     expect(tsel(a, 4).value).toBe(''); expect(rowT(a, 4)).toEqual(['600', '660']); save(a); expect(events(a)[0].slots.map(s => [s.day, !!s.flex])).toEqual([[0, true], [2, true], [4, false]]);
   });
   it('a further time on a day has its own Timing list', () => {
-    const a = fresh(blank({ events: [twoDays()] })); open(a); a.qa('#fDays .dr')[0].querySelector('.addt').click();
+    const a = fresh(blank({ events: [twoDays()] })); open(a); addBtn(a, 0).click();
     change(a, a.q('#fDays .dr.dx .tsel'), 'flex'); save(a); expect(events(a)[0].slots.map(s => [s.day, s.start, !!s.flex])).toEqual([[0, 600, false], [0, 660, true], [2, 600, false]]);
   });
   it('dragging a flexible event keeps the mark on every repetition', async () => {
@@ -922,7 +922,7 @@ describe('R-EVT-22 A colour per repetition: the event colour, the performer colo
   });
   it('⧉ copies the colour to the other days and + starts a new time in the event colour', () => {
     const a = twoDays({ col: '#ff8800' }); open(a); a.qa('#fDays .dr')[0].querySelector('.cpy').click(); a.q('.cmenu .oi').click();
-    a.qa('#fDays .dr')[0].querySelector('.addt').click(); save(a);
+    addBtn(a, 0).click(); save(a);
     expect(events(a)[0].slots.map(s => s.col)).toEqual(['#ff8800', undefined, '#ff8800']);
   });
   it('the saved data keeps only "p", "t" or a #rrggbb colour, and phases never get one', () => {
