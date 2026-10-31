@@ -89,26 +89,35 @@ describe('R-UI-13 Swiping sideways in the day view changes the day', () => {
   });
 });
 
-describe('R-TOUCH-02 Copy by touch: a long press released without moving offers the right-click Copy list', () => {
+describe('R-TOUCH-02 A long press released without moving opens the right-click menu: Copy…, the lock, + New event here', () => {
   const locked = () => blank({ schedules: [{ id: 's1', name: 'S1', color: '#3b6df0', opacity: 1, locked: true, visible: true }], events: [ev1()] });
-  it('a long press on an event, lifted without moving, opens the Copy list instead of moving anything', async () => {
+  it('a long press on an event, lifted without moving, opens the menu instead of moving anything', async () => {
     const a = fresh(blank({ events: [ev1()] })); const before = a.ev('JSON.stringify(state.S)');
     await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
-    expect(a.q('.omenu .oh').textContent).toBe('Copy event…'); expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['Event']);
+    expect(a.q('.omenu .oh').textContent).toBe('Monday 10:30'); expect(a.qa('.ctxm .cxr b').map(b => b.textContent)).toEqual(['Event']);
     expect(a.d.getElementById('dlg').open).toBe(false); expect(a.ev('JSON.stringify(state.S)')).toBe(before); expect(a.ev('state.undoSt.length')).toBe(0);
   });
-  it('choosing an event in the list opens its Copy dialog', async () => {
+  it('Copy… on an event in the menu opens its Copy dialog', async () => {
     const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
-    a.q('.omenu .oi').click(); expect(a.dlgTitle()).toBe('Copy event: Event');
+    a.q('.ctxm .cxc').click(); expect(a.dlgTitle()).toBe('Copy event: Event');
   });
-  it('where events overlap, the list names each of them', async () => {
+  it('where events overlap, the menu names each of them', async () => {
     const a = fresh(blank({ events: [ev1({ id: 'a', title: 'A' }), ev1({ id: 'b', title: 'B', slots: [{ day: 0, start: 630, end: 700, person: '' }] })] }));
     await dragFrom(a, a.qa('.ev')[0], { col: 0, min: 650 }, { col: 0, min: 650 }, { pointerType: 'touch', hold: 450, move: false });
-    expect(a.q('.omenu .oh').textContent).toBe('Copy event…'); expect(a.qa('.omenu .oi b').map(b => b.textContent).sort()).toEqual(['A', 'B']);
+    expect(a.q('.omenu .oh').textContent).toBe('Monday 10:45'); expect(a.qa('.ctxm .cxr b').map(b => b.textContent).sort()).toEqual(['A', 'B']);
   });
-  it('a locked event can be copied by touch too: the long press reaches the column under it, and nothing is created', async () => {
+  it('a locked event is reached by touch too: the long press reaches the column under it, opens the menu, and nothing is created', async () => {
     const a = fresh(locked()); await createDrag(a, { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
-    expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['Event']); expect(a.d.getElementById('dlg').open).toBe(false);
+    expect(a.qa('.ctxm .cxr b').map(b => b.textContent)).toEqual(['Event']); expect(a.d.getElementById('dlg').open).toBe(false);
+  });
+  it('R-EVT-26 a single locked event is unlocked by touch from the menu', async () => {
+    const a = fresh(blank({ events: [ev1({ locked: true })] })); await createDrag(a, { col: 0, min: 630 }, { col: 0, min: 630 }, { pointerType: 'touch', hold: 450, move: false });
+    const lk = a.q('.ctxm .cxk'); expect(lk.getAttribute('aria-pressed')).toBe('true'); lk.click(); expect(a.ev('state.S.events[0].locked')).toBeUndefined(); expect(a.q('.ev').classList.contains('locked')).toBe(false);
+  });
+  it('R-SEL-04 "+ New event here" in the long-press menu creates where an event is in the way, at the time under the finger', async () => {
+    const a = fresh(blank({ events: [ev1()] })); await dragFrom(a, a.q('.ev'), { col: 0, min: 640 }, { col: 0, min: 640 }, { pointerType: 'touch', hold: 450, move: false });
+    a.q('.ctxm .cxn').click(); expect(a.d.getElementById('dlg').open).toBe(true); expect(a.q('#fT').value).toBe('');
+    const mon = a.qa('#fDays .dr:not(.dx)')[0]; expect(mon.querySelector('input').checked).toBe(true); expect([...mon.querySelectorAll('select')].slice(0, 2).map(s => s.value)).toEqual(['630', '690']);
   });
   it('a long press on empty space, lifted without moving, still starts a new event', async () => {
     const a = fresh(blank({ events: [ev1()] })); await createDrag(a, { col: 2, min: 600 }, { col: 2, min: 600 }, { pointerType: 'touch', hold: 450, move: false });
@@ -119,9 +128,9 @@ describe('R-TOUCH-02 Copy by touch: a long press released without moving offers 
     expect(a.qa('.omenu')).toHaveLength(0); expect(a.ev('state.S.events[0].slots[0].day')).toBe(1);
     await dragFrom(a, a.q('.ev'), { col: 1, min: 630 }, { col: 1, min: 630 }, { move: false }); expect(a.d.getElementById('dlg').open).toBe(true);
   });
-  it('in Phases mode a phase is copied the same way', async () => {
+  it('in Phases mode a phase is copied the same way, and has no lock', async () => {
     const a = fresh(blank({ rhythms: [{ id: 'r1', name: 'Normal', visible: true }], phases: [{ id: 'p1', title: 'Lunch', desc: '', color: '#2fa66a', rhythms: ['r1'], slots: [{ day: 0, start: 720, end: 780 }] }] }));
     a.ev("state.editMode='phases';render()"); await dragFrom(a, a.q('.phx'), { col: 0, min: 750 }, { col: 0, min: 750 }, { pointerType: 'touch', hold: 450, move: false });
-    expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['Lunch']); a.q('.omenu .oi').click(); expect(a.dlgOpen()).toBe(true);
+    expect(a.qa('.ctxm .cxr b').map(b => b.textContent)).toEqual(['Lunch']); expect(a.q('.ctxm .cxk')).toBeNull(); a.q('.ctxm .cxc').click(); expect(a.dlgOpen()).toBe(true);
   });
 });

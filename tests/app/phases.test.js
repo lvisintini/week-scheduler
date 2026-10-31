@@ -171,9 +171,9 @@ describe('R-PHS-06 Events | Phases edit mode', () => {
     const a = phasesMode(); expect(lips(a, 0)[0].onpointerdown).toBeTruthy();
     const b = fresh(data()); expect(lips(b, 0)[0].onpointerdown).toBeTruthy();   // handler exists but only acts in phase mode
   });
-  it('right-clicking a phase in Phases mode offers to copy that phase', () => {
+  it('right-clicking a phase in Phases mode offers to copy that phase, with no lock, and + New phase here', () => {
     const a = phasesMode({ rhythms: [rhythm(), rhythm({ id: 'r2', name: 'Holiday', visible: false })] });
-    a.qa('.day')[0].oncontextmenu({ clientX: a.x(0), clientY: a.y(750), preventDefault() {} }); a.q('.omenu .oi').click(); expect(a.dlgTitle()).toContain('Copy event: Lunch'.replace('event', 'event')); 
+    a.qa('.day')[0].oncontextmenu({ clientX: a.x(0), clientY: a.y(750), preventDefault() {} }); expect(a.q('.ctxm .cxk')).toBeNull(); expect(a.q('.ctxm .cxn').textContent).toBe('+ New phase here (12:30)'); a.q('.ctxm .cxc').click(); expect(a.dlgTitle()).toContain('Copy event: Lunch'.replace('event', 'event')); 
   });
   it('editing phases never changes events and editing events never changes phases', async () => {
     const a = phasesMode(); const before = a.ev('JSON.stringify(state.S.events)'); await dragFrom(a, a.q('.dw[data-d="0"] .phx'), { col: 0, min: 750 }, { col: 0, min: 810 }); expect(a.ev('JSON.stringify(state.S.events)')).toBe(before);

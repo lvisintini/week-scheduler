@@ -317,7 +317,7 @@ export function openDlg(e,def,src){   // src: the repetition that was clicked, t
   (kind==='phase'?state.S.rhythms:state.S.schedules).forEach(s=>{const l=el('label','',c);const i=el('input','',l);i.type='checkbox';i.value=s.id;i.checked=(kind==='phase'?d.rhythms:d.schedules).includes(s.id);
     l.insertAdjacentHTML('beforeend',kind==='phase'?`<span class="ic">${ICON_RHYTHM}</span>${esc(s.name)}`:sTag(s))});
   fillSel($('fTuM'),[['',L('tuAuto')],['y',L('tuYes')],['n',L('tuNo')]]);$('fTuM').value=d.turns===true?'y':d.turns===false?'n':'';$('fTuM').setAttribute('aria-label',L('tuMode'));   // R-CYC-18
-  $('fOnCall').checked=!!d.oncall;$('fNest').checked=!!d.nest;$('fBg').checked=!!d.bg;$('fAw').checked=!d.bg&&!!d.away;$('fBox').checked=!d.bg&&!d.away;updBg();$('fC').setAttribute('aria-label',tr('Colour'));
+  $('fOnCall').checked=!!d.oncall;$('fNest').checked=!!d.nest;$('fLock').checked=d.locked===true;$('fBg').checked=!!d.bg;$('fAw').checked=!d.bg&&!!d.away;$('fBox').checked=!d.bg&&!d.away;updBg();$('fC').setAttribute('aria-label',tr('Colour'));
   $('fTy').setAttribute('aria-label',L('tyLbl'));fillSel($('fTy'),[['',L('tyNone')],...state.S.types.map(t=>[t.id,t.name])]);$('fTy').value=d.type&&state.S.types.some(t=>t.id===d.type)?d.type:'';updTyIc();updCols();
   $('fDel').style.display=e?'':'none';$('fCopy').style.display=e?'':'none';$('err').textContent='';
   refreshDlg();
@@ -337,10 +337,10 @@ function saveDlg(){
   if(!sch.length)return dErr('mo',L(dkind==='phase'?'errRh':'errSch'));
   const wks=dWk.pw?{}:patW(),all=[...slots,...stgLines()];   // R-CYC-02/03; staged weeks keep theirs (R-CYC-22)
   const d=dkind==='phase'?{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...wks,rhythms:sch,slots:all.map(({day,start,end,wk})=>({day,start,end,...(wk?{wk}:{})}))}
-    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fTuM').value?{turns:$('fTuM').value==='y'}:{}),...($('fNest').checked?{nest:true}:{}),...($('fBg').checked?{bg:true}:$('fAw').checked?{away:true}:{}),...wks,schedules:sch,slots:all,involved:defInv()};
+    :{title,desc:$('fD').value.trim(),color:$('fC').dataset.v,...($('fTy').value?{type:$('fTy').value}:{}),...($('fOw').value?{owner:$('fOw').value}:{}),...($('fOnCall').checked?{oncall:true}:{}),...($('fTuM').value?{turns:$('fTuM').value==='y'}:{}),...($('fNest').checked?{nest:true}:{}),...($('fLock').checked?{locked:true}:{}),...($('fBg').checked?{bg:true}:$('fAw').checked?{away:true}:{}),...wks,schedules:sch,slots:all,involved:defInv()};
   if(d.away&&!slots.some(x=>x.person||(x.inv||defInv()).length))return dErr('wh',L('errAway'));   // somebody must be away (R-EVT-24)
   hist();
-  if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.bg;delete cur.away;delete cur.turns}if(cur)delete cur.weeks;
+  if(cur&&dkind==='event'){delete cur.type;delete cur.owner;delete cur.oncall;delete cur.nest;delete cur.locked;delete cur.bg;delete cur.away;delete cur.turns}if(cur)delete cur.weeks;
   if(cur)Object.assign(cur,d);else (dkind==='phase'?state.S.phases:state.S.events).push({id:uid(),...d});
   normWk(cur||(dkind==='phase'?state.S.phases:state.S.events).at(-1),kept());
   $('dlg').close();render();
@@ -388,8 +388,9 @@ export function openCopy(src){
       const tid=sel.value,mode=Object.keys(rad).find(m=>rad[m].checked);
       const used=(isPh?state.S.phases:(tw?tw.data:state.S).events).filter(e=>(isPh?e.rhythms:e.schedules).includes(tid)).map(e=>normHex(e.color));
       const col=mode==='tweak'?shiftColor(src.color,used):mode==='random'?randomColor(used):mode==='pick'?pv:src.color;
-      if(tw){const t=tw;setTimeout(()=>carryEvents([{...src,color:col}],t,()=>tid,()=>{if(move){pushUndoWs(cw());state.S.events=state.S.events.filter(e=>e!==src)}render();toast(L(move?'trMoved':'trDone',{n:t.name}))}),0);return}   // to another workspace (R-DATA-04)
-      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?state.S.phases:state.S.events).push(c);render();toast(L('copied'))};
+      const {locked,...un}=src;   // a copy is made to be placed, so it is not locked; a move keeps the lock (R-EVT-26)
+      if(tw){const t=tw;setTimeout(()=>carryEvents([{...(move?src:un),color:col}],t,()=>tid,()=>{if(move){pushUndoWs(cw());state.S.events=state.S.events.filter(e=>e!==src)}render();toast(L(move?'trMoved':'trDone',{n:t.name}))}),0);return}   // to another workspace (R-DATA-04)
+      hist();const c=JSON.parse(JSON.stringify(src));c.id=uid();delete c.locked;if(isPh)c.rhythms=[tid];else c.schedules=[tid];c.color=col;(isPh?state.S.phases:state.S.events).push(c);render();toast(L('copied'))};
   xdlg({title:L('cpTitle')+': '+src.title,full:true,body,buttons:[
     {label:L('cpDo'),cls:'p',fn:()=>go(false)},
     ...(wsel?[{label:L('cpMove'),fn:()=>go(true)}]:[]),

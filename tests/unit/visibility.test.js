@@ -70,6 +70,20 @@ describe('R-SCH-02 Locked schedules', () => {
   });
 });
 
+describe('R-EVT-26 A single locked event', () => {
+  it('an event locked on its own is locked whatever its schedules say', () => {
+    setData(app, blank({ events: [ev1({ locked: true })] })); expect(ev('isLocked(state.S.events[0])')).toBe(true); expect(ev('schLocked(state.S.events[0])')).toBe(false);
+    setData(app, blank({ schedules: [sched({ locked: true })], events: [ev1({ locked: true })] })); expect(ev('isLocked(state.S.events[0])')).toBe(true);
+  });
+  it('the data keeps only a true mark; anything else is an unlocked event without the field', () => {
+    for (const v of ['yes', 1, false, null]) { setData(app, blank({ events: [ev1({ locked: v })] })); expect(ev('"locked" in state.S.events[0]')).toBe(false); expect(ev('isLocked(state.S.events[0])')).toBe(false); }
+  });
+  it('its box is click-through and shows the lock icon, as a schedule-locked one does', () => {
+    setData(app, blank({ events: [ev1({ locked: true })] })); const box = app.q('.day[data-d="0"] .ev');
+    expect(box.classList.contains('locked')).toBe(true); expect(box.onpointerdown).toBeFalsy(); expect(box.querySelector('.flags svg')).not.toBeNull();
+  });
+});
+
 describe('R-EVT-08 Event opacity is the highest opacity among its visible schedules', () => {
   const op = (aOp, aVis, bOp, bVis) => {
     setData(app, blank({ schedules: [sched({ id: 'a', opacity: aOp, visible: aVis }), sched({ id: 'b', opacity: bOp, visible: bVis })], events: [ev1({ schedules: ['a', 'b'] })] }));

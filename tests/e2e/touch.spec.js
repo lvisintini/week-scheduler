@@ -48,15 +48,20 @@ test.describe('R-TOUCH-01 Touch on a phone-sized screen', () => {
     await expect.poll(() => page.evaluate(() => document.getElementById('wrap').scrollTop)).toBeGreaterThan(20);
     expect((await slots(page))[0]).toMatchObject({ day: 0, start: 600, end: 660 }); await expect(page.locator('#dlg')).toBeHidden();
   });
-  test('R-TOUCH-02 a long press lifted without moving opens the app\'s Copy list (never the browser\'s menu), and no hover card appears', async ({ page }) => {
+  test('R-TOUCH-02 a long press lifted without moving opens the app\'s right-click menu (never the browser\'s), and no hover card appears', async ({ page }) => {
     await seed(page, blank({ events: [ev()] })); const a = await pt(page, 0, 630); await touch(page, [a, { x: a.x, y: a.y + 1 }], { hold: 700 });
-    await expect(page.locator('.omenu .oh')).toHaveText('Copy event…'); await expect(page.locator('#peek')).toBeHidden(); await expect(page.locator('#dlg')).toBeHidden();
-    await page.locator('.omenu .oi').tap(); await expect(page.locator('#xDlg h3')).toHaveText('Copy event: Event');
+    await expect(page.locator('.omenu .oh')).toHaveText('Monday 10:30'); await expect(page.locator('#peek')).toBeHidden(); await expect(page.locator('#dlg')).toBeHidden();
+    await page.locator('.ctxm .cxc').tap(); await expect(page.locator('#xDlg h3')).toHaveText('Copy event: Event');
   });
-  test('R-TOUCH-02 a locked event is copied by touch the same way, and nothing is created', async ({ page }) => {
+  test('R-TOUCH-02 a locked event is reached by touch the same way, and nothing is created', async ({ page }) => {
     await seed(page, blank({ schedules: [{ id: 's1', name: 'S1', color: '#3b6df0', opacity: 1, locked: true, visible: true }], events: [ev()] }));
     const a = await pt(page, 0, 630); await touch(page, [a, { x: a.x + 1, y: a.y }], { hold: 700 });
-    await expect(page.locator('.omenu .oi')).toHaveCount(1); await expect(page.locator('#dlg')).toBeHidden();
+    await expect(page.locator('.ctxm .cxr')).toHaveCount(1); await expect(page.locator('.ctxm .cxk')).toBeDisabled(); await expect(page.locator('#dlg')).toBeHidden();
+  });
+  test('R-SEL-04 R-EVT-26 by touch, the menu over an event unlocks it and creates a new event there', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ locked: true })] })); const a = await pt(page, 0, 630); await touch(page, [a, { x: a.x + 1, y: a.y }], { hold: 700 });
+    await page.locator('.ctxm .cxk').tap(); await expect(page.locator('.ev')).not.toHaveClass(/locked/);
+    await touch(page, [a, { x: a.x + 1, y: a.y }], { hold: 700 }); await page.locator('.ctxm .cxn').tap(); await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue('');
   });
   test('tapping where events overlap offers the list to choose from', async ({ page }) => {
     await seed(page, blank({ events: [ev({ id: 'a', title: 'A' }), ev({ id: 'b', title: 'B', slots: [slot(0, 630, 700)] })] })); const p = await pt(page, 0, 650); await page.touchscreen.tap(p.x, p.y);

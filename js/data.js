@@ -44,7 +44,7 @@ export function redo(){if(!state.redoSt.length)return;state.selK=null;const x=st
 /* Data format (R-DATA-08): FMT is the version of a workspace record (files, links, each workspace in browser memory; the store wrapper
    carries the same number). Raise it on ANY change to what is stored, even an added field (an older app would drop it and then save),
    add MIG[FMT-1] and a folder of sample files under tests/fixtures/. Data newer than FMT is refused, never half-read (R-DATA-09). */
-export const FMT=15;
+export const FMT=16;
 const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON before parseData. Never delete one.
   1:j=>j,   // 2 added event.nest (R-NST-01); version-1 data has none
   2:j=>j,   // 3 added event.bg (R-EVT-19); version-2 data has none
@@ -72,6 +72,7 @@ const MIG={   // MIG[n](record): raw version-n record -> version n+1, plain JSON
   12:j=>j,   // 13 added a workspace's color and desc (R-DATA-10); version-12 data has none
   13:j=>j,   // 14 added browser memory protected with a passphrase (R-DATA-11); a workspace record is unchanged
   14:j=>j,   // 15 added pool, the staged weeks kept after the cycle (R-CYC-21); version-14 data has none
+  15:j=>j,   // 16 added event.locked, a single locked event (R-EVT-26); version-15 data has none
 };
 export const verOf=x=>x&&x.version!=null?+x.version:1;   // no version (hand-written files) = version 1
 export function migrate(j,v,to=FMT,steps=MIG){   // raw record of version v -> current version (to/steps: for tests only)
@@ -114,7 +115,7 @@ export function parseData(j,strict){
     schedules:j.schedules.map(s=>({id:String(s.id),name:String(s.name).slice(0,200),color:normHex(s.color)||PAL[0],opacity:s.opacity==null?1:clamp(+s.opacity||1,.1,1),locked:!!s.locked,visible:s.visible!==false})),
     people:arr(j.people).map((q,i)=>({id:String(q.id),name:String(q.name).slice(0,200),color:normHex(q.color)||PAL[i%PAL.length],visible:q.visible!==false,...(q.external===true?{external:true}:{})})),
     types,
-    events:arr(j.events).map(v=>({...item(v),...(v.type!=null&&tids.has(String(v.type))?{type:String(v.type)}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),...(v.owner!=null&&pids.has(String(v.owner))?{owner:String(v.owner)}:{}),...(v.oncall===true?{oncall:true}:{}),...(v.nest===true?{nest:true}:{}),...(typeof v.turns==='boolean'?{turns:v.turns}:{}),...(v.bg===true?{bg:true}:v.away===true?{away:true}:{}),...(Array.isArray(v.weeks)?{weeks:v.weeks}:{}),slots:lim(v.slots,LIM.slots).map(x=>({...slot(x,state.MAXEND,true),...(x.wk!=null?{wk:x.wk}:{})}))})).map(own).map(e=>normWk(e,pl)).filter(e=>e&&e.slots.length),
+    events:arr(j.events).map(v=>({...item(v),...(v.type!=null&&tids.has(String(v.type))?{type:String(v.type)}:{}),schedules:arr(v.schedules).map(String),involved:arr(v.involved).map(String),...(v.owner!=null&&pids.has(String(v.owner))?{owner:String(v.owner)}:{}),...(v.oncall===true?{oncall:true}:{}),...(v.nest===true?{nest:true}:{}),...(v.locked===true?{locked:true}:{}),...(typeof v.turns==='boolean'?{turns:v.turns}:{}),...(v.bg===true?{bg:true}:v.away===true?{away:true}:{}),...(Array.isArray(v.weeks)?{weeks:v.weeks}:{}),slots:lim(v.slots,LIM.slots).map(x=>({...slot(x,state.MAXEND,true),...(x.wk!=null?{wk:x.wk}:{})}))})).map(own).map(e=>normWk(e,pl)).filter(e=>e&&e.slots.length),
     rhythms,
     phases:arr(j.phases).map(v=>({...item(v),rhythms:arr(v.rhythms).map(String),...(Array.isArray(v.weeks)?{weeks:v.weeks}:{}),slots:lim(v.slots,LIM.slots).map(x=>({...slot(x,1440,false),...(x.wk!=null?{wk:x.wk}:{})}))})).map(p=>normWk(p,pl)).filter(p=>p&&p.slots.length),   // phases have weeks like events (R-CYC-16)
     phaseOpacity:j.phaseOpacity==null?.3:clamp(+j.phaseOpacity||.3,.05,1),

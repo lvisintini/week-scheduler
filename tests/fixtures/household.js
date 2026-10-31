@@ -37,7 +37,7 @@ export const household = {
       slots: [{ day: 0, start: 495, end: 510, person: 'p-luis' }, { day: 5, start: 540, end: 555, person: 'p-luis' }] },
     { id: 'e-screen', title: 'Screen-free time', desc: '', color: '#607d8b', bg: true, schedules: ['s-home'], involved: [],
       slots: [{ day: 0, start: 1080, end: 1200, person: 'p-lucia' }] },
-    { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
+    { id: 'e-park', title: 'Cumpleaños 🎂 & <park>', desc: 'Línea 1\nLínea 2', color: '#12a5b5', type: 't-free', locked: true, schedules: ['s-home'], involved: ['p-ann', 'p-lucia'],
       slots: [{ day: 5, start: 600, end: 720, person: '' }, { day: 5, start: 900, end: 960, person: '' }] },
     { id: 'e-swim', title: 'Swimming', desc: '', color: '#3b6df0', weeks: [1], turns: true, schedules: ['s-home'], involved: [],
       slots: [{ day: 6, start: 1260, end: 1500, person: 'p-lucia' }] },
@@ -84,6 +84,7 @@ const ADDED = {
   14: h => h,   // browser memory protected with a passphrase (R-DATA-11); a workspace is unchanged
   15: ({ pool, ...h }) => ({ ...h, ...(h.weekInfo ? { weekInfo: h.weekInfo.slice(0, 2) } : {}), events: h.events.map(e => ({ ...e, slots: e.slots.filter(s => s.wk !== 3) })),
     phases: h.phases.map(p => p.weeks ? { ...p, weeks: p.weeks.filter(k => k !== 3) } : p) }),   // a staged week kept after the cycle (R-CYC-21)
+  16: h => ({ ...h, events: h.events.map(({ locked, ...e }) => e) }),   // a single locked event (R-EVT-26)
 };
 export const householdAt = v => Object.keys(ADDED).map(Number).filter(n => n > v).reduce((h, n) => ADDED[n](h), household);
 

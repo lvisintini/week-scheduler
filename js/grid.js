@@ -1,9 +1,9 @@
 // The grid: render(), pointer interactions, touch, the peek card, zoom and dragging. ES module (docs/architecture.md).
 import {state} from './state.js';
 import {DAY2,DAYS,L} from './i18n.js';
-import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
-import {absD,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
-import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,descOn,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
+import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_UNLOCK,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
+import {absD,hist,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
+import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,descOn,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,schLocked,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
 import {openAgenda,withWk} from './stats.js';
 import {renderSide} from './sidebar.js';
 import {openCopy,openDlg} from './dialog.js';
@@ -83,8 +83,7 @@ export function render(){
     });
     el('div','gl',col);
     col.onpointerdown=ev=>{if(ev.button===0&&ev.target===col){atCol(col);if(state.selK){state.selK=null;qa('.ev.sel').forEach(x=>x.classList.remove('sel'))}press(ev,e2=>startCreate(e2,di,col),null)}};
-    col.oncontextmenu=ev=>{ev.preventDefault();if(lastPtrType==='touch')return;atCol(col);const its=piecesAt(di,minAt(col,ev.clientY),true,fxAt(col,ev.clientX));
-      if(its.length)overlapMenu(ev.clientX,ev.clientY,its,openCopy,L('ctxCopy'))};
+    col.oncontextmenu=ev=>{ev.preventDefault();if(lastPtrType==='touch')return;atCol(col);const m=minAt(col,ev.clientY);ctxMenu(ev.clientX,ev.clientY,piecesAt(di,m,true,fxAt(col,ev.clientX)),di,m)};
     col.onpointermove=ev=>{atCol(col);peekMove(ev,di,col)};col.onpointerleave=hidePeek;
     // cs/ce = the visible core of the piece (R-EVT-15): lanes and stripes only look at cores; a piece that is all margin has an empty core
     const bgs=[],evs=state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&q.b>a*60&&q.a<Z&&inWk(e,s,q)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q),cs=Math.min(Math.max(c0,a*60),Z),ce=Math.min(c1,Z);
@@ -288,7 +287,7 @@ export function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a li
     if(lv)return rows.join('');
     rows.push(`<div class="mut" style="margin-top:4px">${esc(L('schl'))} ${e.schedules.map(id=>state.S.schedules.find(x=>x.id===id)).filter(Boolean).map(sTag).join(', ')}</div>`);
     if(overlapSet(e).has(s))rows.push(`<div>⚠ ${esc(L('ovTip'))}</div>`);
-    if(isLocked(e))rows.push(`<div><span class="ic">${ICON_LOCK}</span>${esc(L('lockedNote'))}</div>`);
+    if(isLocked(e))rows.push(`<div><span class="ic">${ICON_LOCK}</span>${esc(L(e.locked?'lockedNote':'lockedNoteS'))}</div>`);   // its own lock (R-EVT-26) or its schedules' (R-SCH-02)
     if(e.slots.length>1)rows.push(`<div class="how">${esc(L('repTip'))}</div>`);
     return rows.join('');
 }
@@ -324,10 +323,11 @@ const handlesAt=(di,m,fx)=>nestFirst(act().filter(e=>eVis(e)&&!eLock(e)).flatMap
 // the core edges under the pointer (R-EVT-15): k = 'fs' (the top of a core with a start margin) or 'fe' (the bottom of one with an end margin)
 const edgesAt=(di,m,fx,k)=>nestFirst(act().filter(e=>eVis(e)&&!eLock(e)&&!e.rhythms).flatMap(e=>e.slots.flatMap((s,i)=>piecesOf(s).filter(q=>{if(q.day!==di||isBg(e,s)||!inWk(e,s,q)||!sVis(e,s)||!inLane(e,i,q.p,fx,di))return false;
   const x=coreEdge(s,q,k);return x!=null&&(k==='fs'?x<=m&&m<x+rzMin():x-rzMin()<=m&&m<x)}).map(q=>({e,s,i,piece:q.p})))));
-// a long press released without moving (touch): the right-click list of what is under the finger, to copy it (R-TOUCH-02); false when nothing is there
-function touchCopy(ev,x,y,di,m,fx){if(ev.pointerType!=='touch')return false;const its=piecesAt(di,m,true,fx);if(!its.length)return false;overlapMenu(x,y,its,openCopy,L('ctxCopy'));return true}
+// a long press released without moving (touch): the right-click menu of what is under the finger (R-TOUCH-02); false when nothing is there
+function touchMenu(ev,x,y,di,m,fx){if(ev.pointerType!=='touch')return false;const its=piecesAt(di,m,true,fx);if(!its.length)return false;ctxMenu(x,y,its,di,m);return true}
 function grab(ev,it,mode){
   const col=colAt(ev.clientX),cDay=+col.dataset.d,m=minAt(col,ev.clientY),fx=fxAt(col,ev.clientX);
+  if(ev.altKey){startCreate(ev,cDay,col);return}   // Alt+drag creates over whatever is there (R-SEL-04)
   const cands=mode==='resize'?handlesAt(cDay,m,fx):mode==='fs'||mode==='fe'?edgesAt(cDay,m,fx,mode):piecesAt(cDay,m,false,fx);
   const sel=state.selK&&cands.find(c=>c.e.id===state.selK.id&&c.i===state.selK.i);
   if(sel){startDrag(ev,sel,mode);return}
@@ -336,7 +336,7 @@ function grab(ev,it,mode){
     const off=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)};
     const mv=p=>{if(Math.hypot(p.clientX-x0,p.clientY-y0)<4)return;off();
       overlapMenu(p.clientX,p.clientY,cands,(e,it)=>{state.selK={id:e.id,i:it.i};render();toast(L('selHint',{t:e.title+' · '+DAYS[it.s.day].slice(0,3)+' '+fmt(it.s.start)+'–'+fmtEnd(it.s.end)}))},L(mode==='resize'?'pickResize':mode==='move'?'pickMove':'pickEdge'),false)};
-    const up=p=>{off();if(touchCopy(ev,p.clientX,p.clientY,cDay,m,fx))return;const items=itemsAt(cDay,m,fx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e,null,items[0].s)};
+    const up=p=>{off();if(touchMenu(ev,p.clientX,p.clientY,cDay,m,fx))return;const items=itemsAt(cDay,m,fx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else if(items.length)openDlg(items[0].e,null,items[0].s)};
     document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);return;
   }
   startDrag(ev,it,mode);
@@ -385,7 +385,7 @@ function startDrag(ev,it,mode){
   };
   const up=p=>{
     document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);
-    if(!moved){if(touchCopy(ev,p.clientX,p.clientY,cDay,cMin,cFx))return;const items=itemsAt(cDay,cMin,cFx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,it.s);return}
+    if(!moved){if(touchMenu(ev,p.clientX,p.clientY,cDay,cMin,cFx))return;const items=itemsAt(cDay,cMin,cFx);if(new Set(items.map(i=>i.e)).size>1)overlapMenu(p.clientX,p.clientY,items);else openDlg(owner,null,it.s);return}
     const changed=JSON.stringify(state.S)!==before;if(changed)pushUndo(before);render();
     if(!changed)return;
     const warn=overlapSet(owner).size>ovB,mark=state.undoSt.length,fin={...final};
@@ -401,15 +401,36 @@ function startDrag(ev,it,mode){
   };
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
-function overlapMenu(x,y,items,onPick=(e,it)=>openDlg(e,null,it.s),title=L('ovTitle'),group=true){
-  if(group){const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
+function omenu(title,cls=''){   // a small menu at the pointer, closed by a pick, Esc or a click outside; show(x,y) places it once filled
   document.querySelectorAll('.omenu').forEach(m=>m.remove());
-  const m=el('div','omenu',document.body);el('div','oh',m).textContent=title;
+  const m=el('div','omenu'+(cls?' '+cls:''),document.body);el('div','oh',m).textContent=title;
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true)};
   const out=e=>{if(!m.contains(e.target))close()},key=e=>{if(e.key==='Escape')close()};
-  items.forEach(it=>{const {e,s}=it;const b=el('button','oi',m);b.innerHTML=`<i style="background:${esc(group?e.color:colOf(e,s))}"></i><b>${esc(e.title)}</b><small>${esc((group?'':DAYS[s.day].slice(0,3)+' ')+fmt(s.start)+'–'+fmtEnd(s.end))}</small>`;b.onclick=()=>{close();onPick(e,it)}});
-  m.style.left=Math.max(6,Math.min(x,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(y,innerHeight-m.offsetHeight-6))+'px';
-  setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)});
+  const show=(x,y)=>{m.style.left=Math.max(6,Math.min(x,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(6,Math.min(y,innerHeight-m.offsetHeight-6))+'px';
+    setTimeout(()=>{document.addEventListener('pointerdown',out,true);document.addEventListener('keydown',key,true)})};
+  return {m,close,show};
+}
+const itemLine=(e,s,group)=>`<i style="background:${esc(group?e.color:colOf(e,s))}"></i><b>${esc(e.title)}</b><small>${esc((group?'':DAYS[s.day].slice(0,3)+' ')+fmt(s.start)+'–'+fmtEnd(s.end))}</small>`;
+function overlapMenu(x,y,items,onPick=(e,it)=>openDlg(e,null,it.s),title=L('ovTitle'),group=true){
+  if(group){const seen=new Set();items=items.filter(i=>!seen.has(i.e)&&seen.add(i.e))}
+  const {m,close,show}=omenu(title);
+  items.forEach(it=>{const b=el('button','oi',m);b.innerHTML=itemLine(it.e,it.s,group);b.onclick=()=>{close();onPick(it.e,it)}});
+  show(x,y);
+}
+/* the right-click menu (R-SEL-03), also a long press lifted without moving (R-TOUCH-02): the place, each event (or phase) under the pointer
+   with Copy… and, for events, its lock (R-EVT-26), then "+ New event here", which creates where other events are in the way (R-SEL-04) */
+function ctxMenu(x,y,its,di,m){
+  const seen=new Set(),t=Math.max(0,Math.min(1440-SNAP,Math.floor(m/SNAP)*SNAP)),{m:mn,close,show}=omenu(L('ctxHere',{d:DAYS[di],t:fmt(t)}),'ctxm');
+  its.filter(i=>!seen.has(i.e)&&seen.add(i.e)).forEach(({e,s})=>{
+    const r=el('div','cxr',mn),lb=el('span','cxl',r);lb.innerHTML=itemLine(e,s,true);
+    const cp=el('button','cxb cxc',r);cp.type='button';cp.textContent=L('ctxCopy');cp.setAttribute('aria-label',L('ctxCopy')+' '+e.title);cp.onclick=()=>{close();openCopy(e)};
+    if(e.rhythms)return;   // phases have no lock
+    const lk=el('button','cxb cxk',r),on=isLocked(e),bySch=schLocked(e)&&!e.locked;lk.type='button';lk.innerHTML=on?ICON_LOCK:ICON_UNLOCK;lk.setAttribute('aria-pressed',String(on));
+    const tip=bySch?L('ctxLockSch'):L(on?'ctxUnlock':'ctxLock',{n:e.title});lk.title=tip;lk.setAttribute('aria-label',tip);lk.disabled=bySch;
+    lk.onclick=()=>{close();hist();if(e.locked)delete e.locked;else e.locked=true;render();toast(L(e.locked?'lockedT':schLocked(e)?'ctxLockSch':'unlockedT',{n:e.title}))}});
+  const nb=el('button','oi cxn',mn);nb.type='button';nb.textContent=L(state.editMode==='phases'?'ctxNewPh':'ctxNew',{t:fmt(t)});
+  nb.onclick=()=>{close();openDlg(null,{day:di,start:t,end:Math.min(1440,t+60),...(state.allWk?{wk:state.curWk}:{})})};   // as a click on empty space (R-CYC-19)
+  show(x,y);mn.querySelector('button').focus();
 }
 function startCreate(ev,di,col){
   ev.preventDefault();
@@ -420,7 +441,7 @@ function startCreate(ev,di,col){
   draw();
   const mv=p=>{if(!moved&&Math.hypot(p.clientX-ev.clientX,p.clientY-ev.clientY)<4)return;moved=true;b=snapM(minAt(col,p.clientY));if(b===a)b=a+SNAP;b=Math.max(0,Math.min(1440,b));draw()};
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);gh.remove();
-    if(!moved&&touchCopy(ev,ev.clientX,ev.clientY,di,minAt(col,ev.clientY),fxAt(col,ev.clientX)))return;   // a locked event lets the finger through to the column
+    if(!moved&&touchMenu(ev,ev.clientX,ev.clientY,di,minAt(col,ev.clientY),fxAt(col,ev.clientX)))return;   // a locked event lets the finger through to the column
     let lo=Math.min(a,b),hi=Math.max(a,b);if(!moved||hi-lo<SNAP)hi=Math.min(1440,lo+60);
     openDlg(null,{day:di,start:lo,end:hi,...(state.allWk?{wk:state.curWk}:{})})};   // with every week side by side: an event of that week (R-CYC-19)
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);

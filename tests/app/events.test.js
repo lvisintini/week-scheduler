@@ -177,7 +177,7 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
   });
   it('the card works over locked events too (they are click-through boxes)', async () => {
     const a = fresh(blank({ schedules: [sched({ locked: true })], events: [ev1({ title: 'Locked one' })] })); hover(a, 0, 630); await sleep(420);
-    expect(a.q('#peek').textContent).toContain('Locked one'); expect(a.q('#peek').textContent).toContain("Locked: can't be moved or edited.");
+    expect(a.q('#peek').textContent).toContain('Locked one'); expect(a.q('#peek').textContent).toContain("Locked by its schedule: can't be moved or edited.");
   });
   it('overlapping events are listed together, topmost first, up to three', async () => {
     const a = fresh(blank({ events: ['a', 'b', 'c', 'd'].map(id => ev1({ id, title: 'Event ' + id })) })); a.qa('.day')[0].onpointermove({ pointerType: 'mouse', buttons: 0, clientX: 95, clientY: a.y(630) }); await sleep(420);
@@ -335,7 +335,7 @@ describe('R-EVT-07 Copying an event', () => {
   it('right-clicking an event offers the same copy dialog, even for locked events', () => {
     const a = fresh(blank({ schedules: [sched({ locked: true }), sched({ id: 's2', name: 'Other' })], events: [ev1()] }));
     a.qa('.day')[0].oncontextmenu({ clientX: a.x(0), clientY: a.y(630), preventDefault() {} });
-    expect(a.qa('.omenu .oi')).toHaveLength(1); a.q('.omenu .oi').click(); expect(a.dlgTitle()).toContain('Copy event');
+    expect(a.qa('.ctxm .cxr')).toHaveLength(1); a.q('.ctxm .cxc').click(); expect(a.dlgTitle()).toContain('Copy event');
   });
   it('the copy is one undo step', () => {
     const a = two(); openCopyDialog(a); a.click('Copy'); a.toolbar('undo').click(); expect(events(a)).toHaveLength(1);
@@ -456,7 +456,7 @@ describe('R-EVT-10 Parallel events that share nobody are drawn side by side', ()
   it('right-click Copy lists only the event in the lane under the pointer', () => {
     const a = pair(); const col = a.q('.day[data-d="0"]');
     col.oncontextmenu({ clientX: 75, clientY: a.y(690), preventDefault() {} });
-    expect(a.qa('.omenu .oi b').map(b => b.textContent)).toEqual(['B']);
+    expect(a.qa('.ctxm .cxr b').map(b => b.textContent)).toEqual(['B']);
   });
 });
 
@@ -1281,5 +1281,34 @@ describe('R-EVT-23 Fixed lanes (Tools): a lane per visible person, in People ord
   });
   it('without any visible person everything shares one lane, as before', () => {
     const a = fixed([at('a', 'One', '', 600, 660), at('b', 'Two', '', 600, 660)], { people: [] }); expect([...lanesOf(a, 'One'), ...lanesOf(a, 'Two')]).toEqual([undefined, undefined]);
+  });
+});
+
+describe('R-EVT-26 A single event can be locked: in its dialog, and unlocked from the right-click menu', () => {
+  const lockSw = a => a.q('#fLock');
+  it('the Locked switch in How it fits in saves the mark, and unticking it removes it; each save is one undo step', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev('openDlg(state.S.events[0])'); expect(lockSw(a).checked).toBe(false); expect(lockSw(a).closest('#fFit.ev-only')).not.toBeNull();
+    lockSw(a).checked = true; save(a); expect(events(a)[0].locked).toBe(true); expect(a.q('.ev').classList.contains('locked')).toBe(true);
+    a.ev('openDlg(state.S.events[0])'); expect(lockSw(a).checked).toBe(true); lockSw(a).checked = false; save(a); expect('locked' in events(a)[0]).toBe(false);
+    a.toolbar('undo').click(); expect(events(a)[0].locked).toBe(true); a.toolbar('undo').click(); expect('locked' in events(a)[0]).toBe(false);
+  });
+  it('a new event starts unlocked', () => {
+    const a = fresh(blank({ events: [ev1({ locked: true })] })); a.toolbar('add').click(); expect(lockSw(a).checked).toBe(false);
+  });
+  it('clicks go through a locked event: dragging over it creates a new event and leaves it where it was', async () => {
+    const a = fresh(blank({ events: [ev1({ locked: true })] })); await createDrag(a, { col: 0, min: 615 }, { col: 0, min: 690 });
+    expect(a.q('#dlg').open).toBe(true); expect(a.q('#fT').value).toBe(''); expect(events(a)[0].slots[0]).toMatchObject({ day: 0, start: 600, end: 660 });
+  });
+  it('a copy is not locked: it is made to be placed', () => {
+    const a = fresh(blank({ events: [ev1({ locked: true })] })); a.ev('openCopy(state.S.events[0])'); a.click('Copy');
+    expect(events(a)).toHaveLength(2); expect(events(a)[0].locked).toBe(true); expect('locked' in events(a)[1]).toBe(false);
+  });
+  it('the hover card tells its own lock (unlocked with a right-click) from a schedule\'s', async () => {
+    const a = fresh(blank({ events: [ev1({ title: 'Mine', locked: true })] })); a.qa('.day')[0].onpointermove({ pointerType: 'mouse', buttons: 0, clientX: a.x(0), clientY: a.y(630) }); await sleep(420);
+    expect(a.q('#peek').textContent).toContain("Locked: can't be moved or edited. Right-click it (or long-press it) to unlock it.");
+  });
+  it('the switch and its tooltip are translated into Spanish', () => {
+    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); a.ev('openDlg(state.S.events[0])'); const l = lockSw(a).closest('label');
+    expect(l.textContent).toBe('Bloqueado'); expect(l.title).toMatch(/^Bloquea este evento en la cuadrícula/);
   });
 });

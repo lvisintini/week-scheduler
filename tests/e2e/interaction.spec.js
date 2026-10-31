@@ -107,11 +107,34 @@ test.describe('R-SEL-02 Dragging where events overlap, with a real mouse', () =>
   });
 });
 
-test.describe('R-SEL-03 Right-click copy menu, with a real mouse', () => {
-  test('right-clicking an event opens the copy list, and no browser menu replaces it', async ({ page }) => {
+test.describe('R-SEL-03 The right-click menu, with a real mouse', () => {
+  test('right-clicking an event opens the menu (the place, Copy…, the lock, + New event here), and no browser menu replaces it', async ({ page }) => {
     await seed(page, blank({ schedules: [sched(), sched({ id: 's2', name: 'Other' })], events: [ev()] })); const p = await pt(page, 0, 630);
-    await page.mouse.click(p.x, p.y, { button: 'right' }); await expect(page.locator('.omenu .oh')).toHaveText('Copy event…');
-    await page.locator('.omenu .oi').first().click(); await expect(page.locator('#xDlg')).toBeVisible(); await expect(page.locator('#xDlg h3')).toContainText('Copy event');
+    await page.mouse.click(p.x, p.y, { button: 'right' }); await expect(page.locator('.omenu .oh')).toHaveText('Monday 10:30');
+    await expect(page.locator('.ctxm .cxr b')).toHaveText(['Event']); await expect(page.locator('.ctxm .cxn')).toHaveText('+ New event here (10:30)');
+    const m = await boxOf(page.locator('.ctxm')), v = page.viewportSize(); expect(m.x + m.width).toBeLessThanOrEqual(v.width); expect(m.y + m.height).toBeLessThanOrEqual(v.height);
+    await page.locator('.ctxm .cxc').click(); await expect(page.locator('#xDlg')).toBeVisible(); await expect(page.locator('#xDlg h3')).toContainText('Copy event');
+  });
+  test('R-EVT-26 the lock button locks the event, so a real drag over it creates a new one; the same menu unlocks it', async ({ page }) => {
+    await seed(page, blank({ events: [ev()] })); const p = await pt(page, 0, 630);
+    await page.mouse.click(p.x, p.y, { button: 'right' }); await page.locator('.ctxm .cxk').click(); await expect(page.locator('.ev')).toHaveClass(/locked/);
+    await drag(page, { col: 0, min: 615 }, { col: 0, min: 690 }); await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue('');
+    await page.locator('#fCancel').click(); expect((await slots(page))[0]).toMatchObject({ day: 0, start: 600, end: 660 });
+    await page.mouse.click(p.x, p.y, { button: 'right' }); await expect(page.locator('.ctxm .cxk')).toHaveAttribute('aria-pressed', 'true'); await page.locator('.ctxm .cxk').click();
+    await expect(page.locator('.ev')).not.toHaveClass(/locked/); await page.mouse.click(p.x, p.y); await expect(page.locator('#fT')).toHaveValue('Event');
+  });
+});
+
+test.describe('R-SEL-04 Creating over an event with a real mouse', () => {
+  test('Alt+drag over an event draws a new event\'s range and leaves the event where it was', async ({ page }) => {
+    await seed(page, blank({ events: [ev()] })); await page.keyboard.down('Alt'); await drag(page, { col: 0, min: 615 }, { col: 0, min: 705 }); await page.keyboard.up('Alt');
+    await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue('');
+    const mon = page.locator('#fDays .dr:not(.dx)').first(); await expect(mon.locator('select').first()).toHaveValue('615'); await expect(mon.locator('select').nth(1)).toHaveValue('705');
+    expect((await slots(page))[0]).toMatchObject({ day: 0, start: 600, end: 660 });
+  });
+  test('"+ New event here" in the right-click menu over an event opens a new event at that time', async ({ page }) => {
+    await seed(page, blank({ events: [ev()] })); const p = await pt(page, 0, 640); await page.mouse.click(p.x, p.y, { button: 'right' }); await page.locator('.ctxm .cxn').click();
+    await expect(page.locator('#dlg')).toBeVisible(); await expect(page.locator('#fT')).toHaveValue(''); await expect(page.locator('#fDays .dr:not(.dx)').first().locator('select').first()).toHaveValue('630');
   });
 });
 

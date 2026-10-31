@@ -226,7 +226,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('nothing event-level pretends to set the days: no general times, no By list, no Timing switch', () => {
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
-    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBox', 'fBg', 'fAw']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24)
+    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBox', 'fBg', 'fAw', 'fLock']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24), Locked (R-EVT-26)
   });
   it('the day table has a header row: Days, (Week, shown only with different times per week), Start, End, Performed by, With, Colour, Timing', () => {
     const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Week', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);

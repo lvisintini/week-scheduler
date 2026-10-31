@@ -60,7 +60,8 @@ export const act=()=>state.editMode==='phases'?state.S.phases:state.S.events;
 const lum=c=>{const v=[1,3,5].map(i=>{const x=parseInt(c.slice(i,i+2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
 export const ink=c=>{const n=normHex(c)||'#000000',L=lum(n);return (L+.05)/.05>1.05/(L+.05)?'#000':'#fff'};   // black or white, whichever contrasts more: always at least 4.58:1 (WCAG contrast (relative luminance)
 export const visible=e=>e.schedules.some(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.visible});
-export const isLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.locked});
+export const schLocked=e=>e.schedules.length>0&&e.schedules.every(id=>{const s=state.S.schedules.find(x=>x.id===id);return s&&s.locked});   // all its schedules are locked (R-SCH-02)
+export const isLocked=e=>e.locked===true||schLocked(e);   // locked itself (R-EVT-26) or by its schedules
 export const evOp=e=>Math.max(...e.schedules.map(id=>state.S.schedules.find(x=>x.id===id)).filter(s=>s&&s.visible).map(s=>s.opacity??1),0.1);
 const W=10080;
 export const piecesOf=s=>{const p=[{p:0,day:s.day,a:s.start,b:Math.min(s.end,1440)}];if(s.end>1440)p.push({p:1,day:(s.day+1)%7,a:0,b:s.end-1440});return p};
