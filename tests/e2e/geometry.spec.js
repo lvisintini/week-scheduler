@@ -662,6 +662,14 @@ test.describe('R-REP-02 The day table on a computer: ⧉ beside the day, + Add a
     await ad.nth(3).locator('.addt').click(); await expect(thu.locator('.rx')).toBeVisible();
     expect(await page.locator('#paneQ').evaluate(p => p.scrollWidth <= p.clientWidth + 1)).toBe(true);
   });
+  test('the margins line of a flexible start/end starts under the Start list, also with the Week column', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page);
+    for (const data of [blank({ events: [ev({ slots: [{ ...slot(1, 600, 660), fs: 15, fe: 15 }] })] }), blank({ cycle: 2, events: [ev({ slots: [{ ...slot(1, 600, 660), wk: 2, fs: 15, fe: 15 }] })] })]) {
+      await seed(page, data); await page.evaluate(() => openDlg(state.S.events[0])); const tue = page.locator('#fDays .dr').nth(1);
+      const sub = await boxOf(tue.locator('.dsub')), st = await boxOf(tue.locator('select').first()); expect(Math.abs(sub.x - st.x)).toBeLessThan(1);
+      await page.locator('#fCancel').click();
+    }
+  });
 });
 
 test.describe('R-CYC-17 The week colour as drawn by a real browser', () => {

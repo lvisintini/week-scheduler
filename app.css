@@ -166,7 +166,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .cmenu{position:fixed}.cmenu .oi i{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid var(--line)}.cmenu .oi.on::after{content:'✓';margin-left:auto;color:var(--acc);font-weight:700}
 #dlg.ph #paneQ{--dc:auto auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px}#dlg.ph #paneQ.pw{--dc:auto auto auto minmax(68px,1fr) minmax(68px,1.35fr) auto 18px}
 .wbtn{font-size:12px;padding:5px 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.wbtn.def{color:var(--mut);font-style:italic}.cpy{padding:3px 7px;font-size:14px;line-height:1}.dr.off .wbtn,.dr.off .cpy{opacity:.4}
-.dsub{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mut);margin:-2px 0 4px}.dsub select{width:auto;font-size:12px;padding:4px 3px}
+.pw .dsub{grid-column:4/-1}.dsub{grid-column:3/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mut);margin:-2px 0 4px}.dsub select{width:auto;font-size:12px;padding:4px 3px}
 .wpop{width:auto;min-width:220px;max-width:320px}.wpop .wdef{display:flex;gap:6px;align-items:center;margin:4px 2px 8px;font-size:13px;color:var(--fg)}.wpop .chips{margin:0}
 .dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child{grid-column-start:1}.dhd>:first-child{grid-column-end:span 2}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
 .dr label{margin:0;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
