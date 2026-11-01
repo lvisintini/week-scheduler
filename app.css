@@ -148,7 +148,9 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{position:relative;display:inline-flex;align-items:center;gap:4px;margin:0;padding:3px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:13px;color:var(--fg);background:var(--bg)}
 .chips label .ic{margin:0}.chips input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}.chips label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--card))}
 .chips label:has(input:checked)::before{content:'✓';font-weight:700;color:var(--acc)}.chips label:has(input:focus-visible){outline:2px solid var(--acc);outline-offset:1px}.chips:not(:has(label)){font-size:13px;color:var(--mut)}
-#fFit{display:flex;flex-direction:column;gap:4px;align-items:flex-start}#fDraw{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px}#fDraw>span{color:var(--mut)}#fFit label:has(input:disabled){opacity:.5}#fFit label{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}
+/* How it fits in (R-UI-07): the label column of .fg; the On call row is two grid cells (display:contents) so it can be hidden as one; each option ends in its ⓘ */
+#fOcRow{display:contents}#fFit>span,#fOcRow>label{margin:0;font-size:13px;color:var(--mut)}#fDraw{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}.fopt{display:inline-flex;gap:5px;align-items:center;font-size:13px}
+.fopt label{display:inline-flex;gap:5px;align-items:center;margin:0;color:var(--fg);font-size:13px}#fFit .fopt:has(input:disabled){opacity:.5}
 
 #paneQ{display:grid;grid-template-columns:var(--dc);gap:0 6px;align-items:center;margin-top:8px}.dhd,#fDays{display:contents}.dhd>span{padding-bottom:4px}
 /* each line is a box on the table's columns (subgrid), so a day and its further times share a band, alternating, with a rule between days (R-UI-07) */
@@ -170,7 +172,7 @@ dialog input[type=text],dialog textarea,dialog select{width:100%;font:inherit;pa
 .wpop{width:auto;min-width:220px;max-width:320px}.wpop .wdef{display:flex;gap:6px;align-items:center;margin:4px 2px 8px;font-size:13px;color:var(--fg)}.wpop .chips{margin:0}
 .dhd span{font-size:11px;color:var(--mut);padding-left:3px}.dhd>:first-child,.dr>:first-child{grid-column-start:1}.dhd>:first-child{grid-column-end:span 2}.dhd span[title]{cursor:help}.dsep{grid-column:1/-1;border-top:1px dashed var(--line)}.dr .dl{font-size:13px;font-weight:600}#fAddBlock{grid-column:1/-1;justify-self:start}
 .dr label{margin:0;display:flex;gap:5px;align-items:center;color:var(--fg);font-size:13px}
-@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label{margin-top:6px;font-size:12px;color:var(--mut)}}
+@media (max-width:560px){.fg{grid-template-columns:minmax(0,1fr);gap:3px}.fg>label,#fFit>span,#fOcRow>label{margin-top:6px;font-size:12px;color:var(--mut)}}
 /* a phone (R-UI-07, R-UI-14): day chips tick the days; each ticked day is a card with labelled fields, its further times continue the card,
    unticked days take no room and the header row is not needed */
 @media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;width:100%;margin:12px 0 4px;padding:10px;font-weight:600}.dr.off,.dad{display:none}

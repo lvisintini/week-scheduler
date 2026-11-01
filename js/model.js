@@ -136,19 +136,17 @@ export const awayHits=(it,aws)=>aws.filter(a=>a.e!==it.e&&a.c0<a.c1&&it.c0<it.c1
 const awayPieces=(di,w=state.curWk)=>state.S.events.filter(e=>isAway(e)&&visible(e)).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q,w)&&slotVisible(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,c0,c1}})));
 export const awayOf=(e,s,q,w=state.curWk)=>{if(isBg(e,s))return [];const [c0,c1]=sqOf(e,s,q.p,w)?[q.a,q.b]:coreIn(s,q);return awayHits({e,s,c0,c1},awayPieces(q.day,w))};
 export const awayLine=a=>L('awHit',{n:awayPpl(a.e,a.s).map(pname).filter(Boolean).join(', '),t:a.e.title});
-/* nested activities (R-NST-01): an occurrence of an event marked "nest" whose core lies entirely within the windows of other activities of
-   its responsible person (responsible or involved, not on call; one or several back to back) is done during them: drawn inside, never a clash.
-   its = the pieces of one day {e,s,start,end,c0,c1} without background strips; returns Map nested piece -> host (the one covering the core's start).
-   Hosts are never nested events themselves (no chains). */
+/* nested activities (R-NST-01): an occurrence of an event marked "nest" whose core overlaps the window of any other activity of its responsible
+   person (responsible or involved, not on call) is done during it: drawn inside, never a clash, also where it runs past the activity's start or end.
+   its = the pieces of one day {e,s,start,end,c0,c1} without background strips; returns Map nested piece -> host (the one covering the core's start,
+   else the first it overlaps). Hosts are never nested events themselves (no chains). */
 export function nestPick(its){
   const out=new Map();
   its.forEach(x=>{
-    const [c0,c1]=x.s.flex?[x.start,x.end]:[x.c0,x.c1];   // "around these times" has no core: its whole window must be covered (R-EVT-12)
+    const [c0,c1]=x.s.flex?[x.start,x.end]:[x.c0,x.c1];   // "around these times" has no core: its whole window counts (R-EVT-12)
     if(!x.e.nest||!x.s.person||c1<=c0)return;
     const hs=its.filter(y=>!y.e.nest&&pplOf(y).includes(x.s.person)&&y.start<c1&&y.end>c0).sort((p,q)=>p.start-q.start);
-    let t=c0,host=null;
-    for(const y of hs){if(y.start>t)break;if(y.end>t){host=host||y;t=y.end}if(t>=c1)break}
-    if(host&&t>=c1)out.set(x,host);
+    if(hs.length)out.set(x,hs.find(y=>y.start<=c0)||hs[0]);
   });
   return out;
 }

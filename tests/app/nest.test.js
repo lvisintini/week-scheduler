@@ -24,9 +24,21 @@ describe('R-NST-01 An activity marked "can be done during other activities" nest
     const a = fresh(blank({ people, events: [run({ slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), ev1({ id: 'walk', title: 'Walk', slots: [{ day: 0, start: 500, end: 540, person: 'A' }] }), milk()] }));
     expect(nested(a)).toEqual(['milk@0']); expect(a.qa('.ov')).toHaveLength(0);
   });
-  it('only partly covered it is not nested and clashes as usual, so the overlap stands out', () => {
+  it('running past the end of its host it is still nested, with no stripes, and done during that host', () => {
     const a = fresh(blank({ people, events: [run({ slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), milk()] }));
-    expect(nested(a)).toEqual([]); expect(a.qa('.ov').length).toBeGreaterThan(0);
+    expect(nested(a)).toEqual(['milk@0']); expect(a.qa('.ov')).toHaveLength(0); expect(box(a, 'milk').getAttribute('aria-label')).toContain('During: School run');
+  });
+  it('starting before its host, or lasting longer than it, it is nested too', () => {
+    expect(nested(fresh(blank({ people, events: [run(), milk({ slots: [{ day: 0, start: 470, end: 490, person: 'A' }] })] })))).toEqual(['milk@0']);
+    const a = fresh(blank({ people, events: [run(), milk({ slots: [{ day: 0, start: 470, end: 520, person: 'A' }] })] }));
+    expect(nested(a)).toEqual(['milk@0']); expect(a.qa('.ov')).toHaveLength(0);
+  });
+  it('its host is the activity covering its start, else the first activity it overlaps', () => {
+    const walk = (start, end) => ev1({ id: 'walk', title: 'Walk', slots: [{ day: 0, start, end, person: 'A' }] });
+    const a = fresh(blank({ people, events: [walk(505, 540), run({ slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), milk()] }));
+    expect(nested(a)).toEqual(['milk@0']); expect(box(a, 'milk').getAttribute('aria-label')).toContain('During: School run');
+    const b = fresh(blank({ people, events: [walk(500, 540), run({ slots: [{ day: 0, start: 490, end: 500, person: 'A' }] }), milk({ slots: [{ day: 0, start: 470, end: 510, person: 'A' }] })] }));
+    expect(box(b, 'milk').getAttribute('aria-label')).toContain('During: School run');
   });
   it('alone (on Saturday, with no school run) it is an ordinary box', () => {
     const a = fresh(blank({ people, events: [run(), milk({ slots: [{ day: 0, start: 495, end: 510, person: 'A' }, { day: 5, start: 540, end: 555, person: 'A' }] })] }));
@@ -63,6 +75,11 @@ describe('R-NST-02 A nested activity is a small box inside its host, at its own 
   it('when the host has a lane of its own, the nested box stays within that lane', () => {
     const a = fresh(blank({ people, events: [run(), milk(), ev1({ id: 'bob', title: 'Gym', slots: [{ day: 0, start: 450, end: 540, person: 'B' }] })] }));
     expect(box(a, 'run').dataset.lane).toBe('0/2'); expect(box(a, 'milk').dataset.lane).toBe('0/2'); expect(box(a, 'milk').style.left).toMatch(/\* 0\) \+ 14px|\* 0 \+ 14px/);
+  });
+  it('the host keeps its lanes while what is nested in it runs past its end, so the nested box never covers another box', () => {
+    const a = fresh(blank({ people, events: [run({ slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), milk({ slots: [{ day: 0, start: 490, end: 520, person: 'A' }] }), ev1({ id: 'bob', title: 'Gym', slots: [{ day: 0, start: 505, end: 540, person: 'B' }] })] }));
+    expect(nested(a)).toEqual(['milk@0']); expect(box(a, 'run').dataset.lane).toBe('0/2'); expect(box(a, 'milk').dataset.lane).toBe('0/2'); expect(box(a, 'bob').dataset.lane).toBe('1/2');
+    expect(a.qa('.ov')).toHaveLength(0);
   });
   it('the pointer over the nested box finds only it; beside it, the host', () => {
     const a = fresh(blank({ people, events: [run(), milk()] }));
@@ -102,6 +119,10 @@ describe('R-NST-03 Moving an activity carries what is done during it', () => {
     const b = fresh(week()); await dragFrom(b, box(b, 'run'), { col: 0, min: 485 }, { col: 0, min: 515 }); toastBtn(b, 'Only this day').click();
     expect(slots(b, 'milk')).toEqual([{ day: 0, start: 525, end: 540 }, { day: 2, start: 495, end: 510 }, { day: 5, start: 540, end: 555 }]);
   });
+  it('an activity nested only partly in its host is carried with it too', async () => {
+    const a = fresh(blank({ people, events: [run({ slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), milk()] })); await dragFrom(a, box(a, 'run'), { col: 0, min: 485 }, { col: 0, min: 515 });
+    expect(slots(a, 'run')).toEqual([{ day: 0, start: 510, end: 530 }]); expect(slots(a, 'milk')).toEqual([{ day: 0, start: 525, end: 540 }]);
+  });
   it('resizing the host carries nothing, and dragging the nested activity moves only it', async () => {
     const a = fresh(blank({ people, events: [run(), milk()] })), r = box(a, 'run');
     await dragFrom(a, r, { col: 0, min: 509 }, { col: 0, min: 540 }, { target: r._rz }); expect(slots(a, 'milk')).toEqual([{ day: 0, start: 495, end: 510 }]);
@@ -115,22 +136,28 @@ describe('R-NST-04 Statistics give the shared time to the nested activity', () =
     const s = stats(fresh(blank({ people, types, events: [run({ type: 'tw' }), milk({ type: 'tc' })] })));
     expect(s.by).toEqual({ tw: 15, tc: 15 }); expect(s.planned).toBe(30); expect(s.overlap).toBe(0);
   });
+  it('nested only partly, it takes the shared minutes and keeps its own; nothing is overlapping', () => {
+    const s = stats(fresh(blank({ people, types, events: [run({ type: 'tw', slots: [{ day: 0, start: 480, end: 500, person: 'A' }] }), milk({ type: 'tc' })] })));
+    expect(s.by).toEqual({ tw: 15, tc: 15 }); expect(s.planned).toBe(30); expect(s.overlap).toBe(0);
+  });
   it('without the mark the same time is split evenly and reported as overlapping', () => {
     const s = stats(fresh(blank({ people, types, events: [run({ type: 'tw' }), milk({ type: 'tc', nest: undefined })] })));
     expect(s.by).toEqual({ tw: 22.5, tc: 7.5 }); expect(s.overlap).toBe(15);
   });
 });
 
-describe('R-NST-05 The event dialog has the "can be done during" checkbox', () => {
+describe('R-NST-05 The event dialog has the Nested checkbox ("can be done during the person\'s other activities")', () => {
   const open = a => a.ev('openDlg(state.S.events.find(e=>e.id==="milk"))');
-  it('a labelled checkbox under Timing; ticking saves nest:true and unticking removes it', () => {
+  it('a row named Nested with its clarification and an ⓘ; ticking saves nest:true and unticking removes it', () => {
     const a = fresh(blank({ people, events: [milk({ nest: undefined })] })); open(a); const cb = a.q('#fNest');
-    expect(cb.closest('label').textContent).toBe("Can be done during the person's other activities"); expect(cb.closest('label').title).toMatch(/^For small tasks done along the way/);
+    expect(a.q('label[for=fNest]').textContent).toBe('Nested'); expect(cb.closest('label').textContent).toBe("Can be done during the person's other activities");
+    expect(cb.closest('.fopt').querySelector('.tip').title).toMatch(/^For small tasks done along the way.*When it overlaps other activities.*runs past their start or end/); expect(a.q('label[for=fNest]').title).toBe(cb.closest('.fopt').querySelector('.tip').title);
     expect(cb.checked).toBe(false); cb.checked = true; a.q('#fOk').click(); expect(a.ev('state.S.events[0].nest')).toBe(true);
     open(a); expect(a.q('#fNest').checked).toBe(true); a.q('#fNest').checked = false; a.q('#fOk').click(); expect(a.ev('"nest" in state.S.events[0]')).toBe(false);
   });
   it('the checkbox and its explanation are translated', () => {
     const a = fresh(blank({ people, events: [milk()] })); a.ev("setLang('es')"); open(a);
-    expect(a.q('#fNest').closest('label').textContent).toBe('Se puede hacer durante otras actividades de la persona'); expect(a.q('#fNest').closest('label').title).toMatch(/^Para tareas pequeñas/);
+    expect(a.q('label[for=fNest]').textContent).toBe('Anidado'); expect(a.q('#fNest').closest('label').textContent).toBe('Se puede hacer durante otras actividades de la persona');
+    expect(a.q('#fNest').closest('.fopt').querySelector('.tip').title).toMatch(/^Para tareas pequeñas.*Si coincide con otras actividades/); expect(a.q('#fNest').closest('.fopt').querySelector('.tip').getAttribute('aria-label')).toBe(a.q('#fNest').closest('.fopt').querySelector('.tip').title);
   });
 });

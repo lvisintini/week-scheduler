@@ -226,7 +226,16 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('nothing event-level pretends to set the days: no general times, no By list, no Timing switch', () => {
     const a = dialog(); ['#fS', '#fE', '#fP', '#fTim', '#fEdge', '.dall', '.fxt'].forEach(sel => expect(a.q(sel), sel).toBeNull());
-    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fOnCall', 'fNest', 'fBox', 'fBg', 'fAw', 'fLock']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24), Locked (R-EVT-26)
+    expect([...a.qa('#fFit input')].map(i => i.id)).toEqual(['fBox', 'fBg', 'fAw', 'fOnCall', 'fNest', 'fLock']);   // How it fits in: the event-wide switches together, Drawn as: Box / In the background / Away (R-EVT-24) first, On call, Nested, Locked (R-EVT-26)
+  });
+  it('How it fits in uses the label column: Drawn as, On call, Nested, Locked, and every option ends in an ⓘ with its explanation', () => {
+    const a = dialog(), fit = a.q('#fFit');
+    expect(fit.classList.contains('fg')).toBe(true); expect([...fit.querySelectorAll('#fFit>span,#fFit>label,#fOcRow>label')].map(x => x.textContent)).toEqual(['Drawn as', 'On call', 'Nested', 'Locked']);
+    const tips = [...fit.querySelectorAll('.fopt')].map(o => [o.querySelector('input').id, o.querySelector('.tip')]);
+    expect(tips.map(([id]) => id)).toEqual(['fBox', 'fBg', 'fAw', 'fOnCall', 'fNest', 'fLock']);
+    tips.forEach(([id, t]) => { expect(t, id).not.toBeNull(); expect(t.textContent).toBe('ⓘ'); expect(t.title.length, id).toBeGreaterThan(40); expect(t.getAttribute('aria-label'), id).toBe(t.title); expect(t.closest('label'), id).toBeNull(); });
+    a.ev("setLang('es')"); expect(a.q('#fNest').closest('.fopt').querySelector('.tip').getAttribute('aria-label')).toMatch(/^Para tareas pequeñas/);
+    expect([...fit.querySelectorAll('#fFit>span,#fFit>label,#fOcRow>label')].map(x => x.textContent)).toEqual(['Dibujado como', 'De guardia', 'Anidado', 'Bloqueado']);
   });
   it('the day table has a header row: Days, (Week, shown only with different times per week), Start, End, Performed by, With, Colour, Timing', () => {
     const a = dialog(); expect(a.qa('#paneQ .dhd span').map(x => x.textContent).filter(Boolean)).toEqual(['Days', 'Week', 'Start', 'End', 'Performed by', 'With', 'Colour', 'Timing']);

@@ -98,7 +98,9 @@ export function render(){
     const aws=bgs.filter(it=>isAway(it.e)),awc=new Map();if(aws.length)evs.forEach(it=>{const h=awayHits(it,aws);if(h.length)awc.set(it,h)});   // Away clashes (R-EVT-24)
     // lanes look at whole windows, margins included (R-EVT-15): another person's occurrence goes beside a margin, never over it; occurrences that
     // clash share a lane, where a core covers the margins and stripes only mark core on core
-    const lay=(state.prefs.lanesFix?fixedLayout:laneLayout)(flat.map(it=>({...it,start:Math.max(it.start,a*60),src:it}))),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
+    // a host keeps its lanes over the whole window of what is nested in it, like a margin, so a nested box that runs past it never covers another box (R-NST-02)
+    const ext=new Map();nst.forEach((h,x)=>{const o=ext.get(h)||[h.start,h.end];ext.set(h,[Math.min(o[0],x.start),Math.max(o[1],x.end)])});
+    const lay=(state.prefs.lanesFix?fixedLayout:laneLayout)(flat.map(it=>{const [s0,s1]=ext.get(it)||[it.start,it.end];return {...it,start:Math.max(s0,a*60),end:s1,src:it}})),lv=new Map([...lay].map(([k,v])=>[k.src,v]));
     const px=m=>(Math.min(m,Z)-a*60)/60*state.HH,mgEls=[];   // cut at the last hour shown like the first (R-GRID-02); margins are inserted below every core box once the column is drawn (later-starting on top)
     [...flat,...nst.keys()].forEach(it=>{   // nested boxes last, so they lie above their host
       const hst=nst.get(it),v0=lv.get(hst||it),sg=v0.segs;

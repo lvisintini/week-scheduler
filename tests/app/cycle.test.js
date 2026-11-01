@@ -63,11 +63,11 @@ describe('R-CYC-07 Each week of the cycle shows, lays out and finds only its own
     const a = fresh(blank({ cycle: 2, events: [ev1({ slots: [sl(0, 600, 720, { wk: 1 }), sl(0, 600, 720, { wk: 2 }), sl(2, 600, 720, { wk: 1 }), sl(2, 630, 690, { wk: 1 })] })] }));
     expect(ovl(a).sort()).toEqual([2, 3]); expect(a.q('.day[data-d="0"] .ev').innerHTML).not.toContain('#ffd23f'); expect(a.q('.day[data-d="2"] .ev').innerHTML).toContain('#ffd23f');
   });
-  it('a nested activity needs a host in the same week: in another week it stands alone or clashes as usual', () => {
+  it('a nested activity needs a host in the same week: without one there it stands alone, and a host of that week nests it', () => {
     const a = fresh(blank({ cycle: 3, people, events: [ev1({ id: 'host', weeks: [1], slots: [sl(0, 480, 540, { person: 'A' })] }), ev1({ id: 'milk', nest: true, slots: [sl(0, 510, 525, { person: 'A' })] }), ev1({ id: 'part', weeks: [3], slots: [sl(0, 515, 600, { person: 'A' })] })] }));
     expect(a.qa('.ev.nest').map(b => b._it.e.id)).toEqual(['milk']);
     week(a, 2); expect(a.qa('.ev.nest')).toHaveLength(0); expect(boxes(a, 0)).toEqual(['milk']); expect(a.qa('.ov')).toHaveLength(0);
-    week(a, 3); expect(a.qa('.ev.nest')).toHaveLength(0); expect(a.qa('.ov').length).toBeGreaterThan(0);
+    week(a, 3); expect(a.qa('.ev.nest').map(b => b._it.e.id)).toEqual(['milk']); expect(a.qa('.ov')).toHaveLength(0);
   });
   it('background strips appear only in the weeks of their event', () => {
     const a = fresh(blank({ cycle: 2, events: [ev1({ bg: true, weeks: [2] })] })); expect(a.qa('.bgs')).toHaveLength(0); week(a, 2); expect(a.qa('.bgs')).toHaveLength(1);

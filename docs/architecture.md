@@ -86,7 +86,7 @@ Implementation names that the requirement files describe in words (functions, va
 - R-GRID-11: `.foc`, `focusD`, `.dh.fo`, `.prv`, `.nxt`, `stepFocus`, `.wk`, `printDay`, `days = [focusD]`
 - R-GRID-12: `.lvrow`, `lvin`, `LV_SLACK`, `LV_PEEK`, `lvTime`, `lvOpen`, `lvDraw`, `.lvstem`, `liveTick`, `liveBusy`, `liveTop`, `LV_BACK`, `lvRet`, `liveBack`
 - R-NST-01: `nestPick`, `pplOf`
-- R-NST-02: `insetPos`, `NI`, `nestFirst`
+- R-NST-02: `insetPos`, `NI`, `nestFirst`, `ext` in `render()` (a host's window widened over what is nested in it, for the lane layout)
 - R-NST-03: `nestCarry`, `carryMove`
 - R-PHS-08: `defaultRhythm()`
 - R-PRN-04: `agendaHTML` (`one`, `phs`, `blocks`, `outs`), `.aph`, `.apg`, `.ae`

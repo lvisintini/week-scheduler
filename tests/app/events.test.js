@@ -1054,7 +1054,7 @@ describe('R-EVT-16 Involved people only on call: available, not busy', () => {
   const bobWithAnn = (o = {}) => ev1({ id: 'b', title: 'Repairs', color: '#2fa66a', involved: ['A'], slots: [{ day: 0, start: 630, end: 690, person: 'B' }], ...o });
   it('the dialog has a labelled checkbox under the involved people; ticking it saves oncall:true, unticking removes it', () => {
     const a = fresh(blank({ people, events: [bobWithAnn()] })); open(a); const cb = a.q('#fOnCall');
-    expect(cb.checked).toBe(false); expect(cb.closest('label').textContent).toBe('Involved people are only on call'); expect(cb.closest('label').title).toMatch(/^They are only available/);
+    expect(cb.checked).toBe(false); expect(a.q('label[for=fOnCall]').textContent).toBe('On call'); expect(cb.closest('label').textContent).toBe('Involved people are only available, not busy'); expect(cb.closest('.fopt').querySelector('.tip').title).toMatch(/^They are only available/);
     cb.checked = true; save(a); expect(events(a)[0].oncall).toBe(true);
     open(a); expect(a.q('#fOnCall').checked).toBe(true); a.q('#fOnCall').checked = false; save(a); expect(events(a)[0]).not.toHaveProperty('oncall');
   });
@@ -1080,7 +1080,7 @@ describe('R-EVT-16 Involved people only on call: available, not busy', () => {
     expect(d.events.map(e => e.oncall)).toEqual([true, undefined]);
   });
   it('the checkbox is translated', () => {
-    const a = fresh(blank({ people, events: [bobWithAnn()] })); a.ev("setLang('es')"); open(a); expect(a.q('#fOnCall').closest('label').textContent).toBe('Las personas implicadas solo están de guardia');
+    const a = fresh(blank({ people, events: [bobWithAnn()] })); a.ev("setLang('es')"); open(a); expect(a.q('label[for=fOnCall]').textContent).toBe('De guardia'); expect(a.q('#fOnCall').closest('label').textContent).toBe('Las personas implicadas solo están disponibles, no ocupadas');
   });
 });
 
@@ -1222,7 +1222,7 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
   });
   it('the dialog checkbox saves and loads the mark, and turns the nesting option off while ticked', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev('openDlg(state.S.events[0])'); const cb = a.q('#fBg');
-    expect(cb.closest('label').textContent).toBe("In the background (doesn't keep us busy)"); expect(cb.closest('label').title).toMatch(/^For things that happen in the background.*the cleaner/);
+    expect(cb.closest('label').textContent).toBe("In the background (doesn't keep us busy)"); expect(cb.closest('.fopt').querySelector('.tip').title).toMatch(/^For things that happen in the background.*the cleaner.*so Nested is off/);
     expect(a.q('#fNest').disabled).toBe(false); cb.checked = true; cb.onchange(); expect(a.q('#fNest').disabled).toBe(true);
     a.q('#fOk').click(); expect(a.ev('state.S.events[0].bg')).toBe(true); expect(a.qa('.bgs')).toHaveLength(1);
     a.ev('openDlg(state.S.events[0])'); expect(a.q('#fBg').checked).toBe(true); expect(a.q('#fNest').disabled).toBe(true);
@@ -1230,7 +1230,7 @@ describe('R-EVT-19 Events marked "In the background" are background strips', () 
   });
   it('the checkbox and its explanation are translated', () => {
     const a = fresh(blank({ people: kids, events: [homework()] })); a.ev("setLang('es')"); a.ev('openDlg(state.S.events[0])');
-    expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no nos ocupa)'); expect(a.q('#fBg').closest('label').title).toMatch(/^Para lo que ocurre en segundo plano.*tira/);
+    expect(a.q('#fBg').closest('label').textContent).toBe('En segundo plano (no nos ocupa)'); expect(a.q('#fBg').closest('.fopt').querySelector('.tip').title).toMatch(/^Para lo que ocurre en segundo plano.*tira.*Anidado queda desactivado/);
   });
   it('import accepts the mark only when it is exactly true', () => {
     const d = fresh().ev('parseData({schedules:[],events:[{id:"x",schedules:[],bg:true,slots:[{day:0,start:0,end:60}]},{id:"y",schedules:[],bg:1,slots:[{day:0,start:0,end:60}]}]})');
@@ -1328,7 +1328,7 @@ describe('R-EVT-26 A single event can be locked: in its dialog, and unlocked fro
     expect(a.q('#peek').textContent).toContain("Locked: can't be moved or edited. Right-click it (or long-press it) to unlock it.");
   });
   it('the switch and its tooltip are translated into Spanish', () => {
-    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); a.ev('openDlg(state.S.events[0])'); const l = lockSw(a).closest('label');
-    expect(l.textContent).toBe('Bloqueado'); expect(l.title).toMatch(/^Bloquea este evento en la cuadrícula/);
+    const a = fresh(blank({ events: [ev1()] })); a.ev("setLang('es')"); a.ev('openDlg(state.S.events[0])'); const l = a.q('label[for=fLock]');
+    expect(l.textContent).toBe('Bloqueado'); expect(l.title).toMatch(/^Bloquea este evento en la cuadrícula/); expect(lockSw(a).closest('label').textContent).toBe('No se puede mover, cambiar de tamaño ni abrir en la cuadrícula'); expect(lockSw(a).closest('.fopt').querySelector('.tip').title).toBe(l.title);
   });
 });

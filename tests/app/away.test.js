@@ -109,7 +109,7 @@ describe('R-EVT-24 The dialog: Drawn as Box / In the background / Away', () => {
   });
   it('the choices and the error are translated into Spanish', () => {
     const a = openApp({ languages: ['es-ES'] }); setData(a, blank({ people, events: [ev1()] })); a.ev('openDlg(state.S.events[0])');
-    expect(a.q('#fDrawL').textContent).toBe('Dibujado como'); expect(a.q('#fAw').parentElement.textContent).toBe('Ausente'); expect(a.q('#fBox').parentElement.textContent).toBe('Caja'); expect(a.q('#fAw').parentElement.title).toMatch(/^Para personas que están fuera durante un tiempo/);
+    expect(a.q('#fDrawL').textContent).toBe('Dibujado como'); expect(a.q('#fAw').parentElement.textContent).toBe('Ausente'); expect(a.q('#fBox').parentElement.textContent).toBe('Caja'); expect(a.q('#fAw').closest('.fopt').querySelector('.tip').title).toMatch(/^Para personas que están fuera durante un tiempo/); expect(a.q('#fAw').closest('.fopt').querySelector('.tip').getAttribute('aria-label')).toBe(a.q('#fAw').closest('.fopt').querySelector('.tip').title);
     pick(a, 'fAw'); save(a); expect(a.q('#err').textContent).toContain('Ausente necesita al menos una persona');
   });
 });
