@@ -299,7 +299,7 @@ function showPeek(items,x,y){
   p.style.left=Math.max(8,Math.min(x+14,innerWidth-p.offsetWidth-8))+'px';p.style.top=Math.max(8,Math.min(y+16,innerHeight-p.offsetHeight-8))+'px';
 }
 function peekMove(ev,di,col){
-  if(ev.pointerType!=='mouse'||ev.buttons||state.editMode!=='events')return hidePeek();
+  if(ev.pointerType!=='mouse'||ev.buttons||state.editMode!=='events'||document.querySelector('.omenu'))return hidePeek();   // no card while a menu or chooser is open (R-EVT-05)
   const its=piecesAt(di,minAt(col,ev.clientY),true,fxAt(col,ev.clientX)),key=its.map(i=>i.e.id+':'+i.i).join();
   if(key===peekKey)return;
   hidePeek();peekKey=key;if(!its.length)return;
@@ -402,7 +402,7 @@ function startDrag(ev,it,mode){
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 }
 function omenu(title,cls=''){   // a small menu at the pointer, closed by a pick, Esc or a click outside; show(x,y) places it once filled
-  document.querySelectorAll('.omenu').forEach(m=>m.remove());
+  hidePeek();document.querySelectorAll('.omenu').forEach(m=>m.remove());   // the hover card, shown or about to be, gives way to the menu (R-EVT-05)
   const m=el('div','omenu'+(cls?' '+cls:''),document.body);el('div','oh',m).textContent=title;
   const close=()=>{m.remove();document.removeEventListener('pointerdown',out,true);document.removeEventListener('keydown',key,true)};
   const out=e=>{if(!m.contains(e.target))close()},key=e=>{if(e.key==='Escape')close()};

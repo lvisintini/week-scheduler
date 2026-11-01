@@ -183,6 +183,26 @@ describe('R-EVT-05 Hover card and clipped boxes', () => {
     const a = fresh(blank({ events: ['a', 'b', 'c', 'd'].map(id => ev1({ id, title: 'Event ' + id })) })); a.qa('.day')[0].onpointermove({ pointerType: 'mouse', buttons: 0, clientX: 95, clientY: a.y(630) }); await sleep(420);
     const titles = a.qa('#peek .pt1').map(t => t.textContent); expect(titles).toEqual(['Event d', 'Event c', 'Event b']);
   });
+  const rclick = (a, col, min) => a.qa('.day')[col].oncontextmenu({ clientX: a.x(col), clientY: a.y(min), preventDefault() {} });
+  const shown = a => a.q('#peek').style.display === 'block';
+  const apart = () => fresh(blank({ events: [ev1({ id: 'a', title: 'A' }), ev1({ id: 'b', title: 'B', slots: [{ day: 1, start: 600, end: 660, person: '' }] })] }));   // Monday and Tuesday 10:00–11:00
+  it('a card on screen is hidden as soon as the right-click menu opens', async () => {
+    const a = apart(); hover(a, 0, 630); await sleep(420); expect(shown(a)).toBe(true); rclick(a, 0, 630); expect(a.q('.ctxm')).not.toBeNull(); expect(shown(a)).toBe(false);
+  });
+  it('a card about to appear when the right-click menu opens never appears', async () => {
+    const a = apart(); hover(a, 0, 630); await sleep(100); rclick(a, 0, 630); await sleep(420); expect(shown(a)).toBe(false);
+  });
+  it('while a menu is open, hovering other events shows no card; once it closes, the next move brings the card back', async () => {
+    const a = apart(); rclick(a, 0, 630); await sleep(0); hover(a, 1, 630); await sleep(420); expect(shown(a)).toBe(false);
+    a.d.dispatchEvent(new a.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); expect(a.q('.omenu')).toBeNull(); hover(a, 1, 630); await sleep(420); expect(shown(a)).toBe(true);
+  });
+  it('a chooser (a click where events overlap) hides the card too, and keeps it away while open', async () => {
+    const a = fresh(blank({ events: [ev1({ id: 'a', title: 'A', slots: [{ day: 0, start: 600, end: 720, person: '' }] }), ev1({ id: 'b', title: 'B', slots: [{ day: 0, start: 660, end: 750, person: '' }] })] }));
+    hover(a, 0, 690); await sleep(420); expect(shown(a)).toBe(true); const box = a.qa('.day')[0].querySelector('.ev');
+    box.onpointerdown({ clientX: a.x(0), clientY: a.y(690), button: 0, target: box, pointerType: 'mouse', stopPropagation() {}, preventDefault() {} });
+    const up = new a.w.MouseEvent('pointerup', { clientX: a.x(0), clientY: a.y(690), bubbles: true }); Object.defineProperty(up, 'pointerType', { value: 'mouse' }); a.d.dispatchEvent(up);
+    expect(a.q('.omenu .oh').textContent).toBe('Several events here — pick one'); expect(shown(a)).toBe(false); hover(a, 0, 700); await sleep(420); expect(shown(a)).toBe(false);
+  });
   const stubBox = (H, r2top, r3, titleOverflow = false) => {
     const a = fresh(blank({ events: [] })); const d = a.d.createElement('div'); d.className = 'ev';
     const r1 = a.d.createElement('div'); r1.className = 'r1'; const t = a.d.createElement('span'); t.className = 't'; r1.append(t); const r2 = a.d.createElement('div'); r2.className = 'r2'; d.append(r1, r2);

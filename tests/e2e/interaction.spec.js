@@ -152,6 +152,13 @@ test.describe('R-EVT-05 Hover card with a real mouse', () => {
   test('no card appears while dragging', async ({ page }) => {
     await seed(page, rich()); await drag(page, { col: 0, min: 650 }, { col: 0, min: 700 }, { release: false }); await page.waitForTimeout(500); await expect(page.locator('#peek')).toBeHidden(); await page.mouse.up();
   });
+  test('a right-click hides the card, none appears over other events while the menu is open, and it comes back after Esc', async ({ page }) => {
+    await seed(page, blank({ events: [ev({ title: 'A' }), ev({ id: 'e2', title: 'B', slots: [slot(2, 600, 660)] })] })); const a = await pt(page, 0, 630), b = await pt(page, 2, 630);
+    await page.mouse.move(a.x, a.y); await expect(page.locator('#peek')).toBeVisible(); await page.mouse.click(a.x, a.y, { button: 'right' });
+    await expect(page.locator('.ctxm')).toBeVisible(); await expect(page.locator('#peek')).toBeHidden();
+    await page.mouse.move(b.x, b.y, { steps: 4 }); await page.waitForTimeout(600); await expect(page.locator('#peek')).toBeHidden();
+    await page.keyboard.press('Escape'); await expect(page.locator('.ctxm')).toHaveCount(0); await page.mouse.move(b.x, b.y + 4); await expect(page.locator('#peek')).toContainText('B');
+  });
 });
 
 test.describe('R-PHS-06 Editing phases with a real mouse', () => {
