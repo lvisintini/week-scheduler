@@ -150,7 +150,7 @@ describe('R-GRID-04 View settings: AM/PM clock in Settings, now line (a Tools sw
     expect(a.qa('.now')).toHaveLength(1);
   });
   it('the now line can be switched off and on again from Tools, and this browser remembers the switch', () => {
-    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); const sw = () => [...a.qa('.tsec label.zck')].find(l => l.textContent === 'Show the "now" line').querySelector('input');
+    const a = fresh(); freezeClock(a, 2026, 9, 14, 10, 30); a.ev('drawNow()'); const sw = () => [...a.qa('.tsec label.zck')].find(l => l.textContent === 'Show the "now" line').querySelector('input');
     expect(sw().checked).toBe(true); expect(a.qa('.now')).toHaveLength(1); sw().checked = false; sw().onchange(); expect(a.qa('.now')).toHaveLength(0);
     const b = openApp({ storage: a.storage() }); freezeClock(b, 2026, 9, 14, 10, 30); b.ev('drawNow()'); expect(b.ev('state.prefs.nowLine')).toBe(false); expect(b.qa('.now')).toHaveLength(0);
     a.ev('state.prefs.nowLine=true;drawNow()'); expect(a.qa('.now')).toHaveLength(1);
