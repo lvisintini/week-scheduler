@@ -790,3 +790,35 @@ test.describe('R-UI-17 How to use in a real browser', () => {
     const g = await geo(page); expect(g.w).toBe(390); expect(Math.round(g.h)).toBe(844); expect(g.nav).toBeNull(); expect(g.sideways).toBe(false); expect(g.closeIn).toBe(true);
   });
 });
+
+test.describe('R-UI-18 Settings → Layout forces the phone view or the computer layout, as drawn by a real browser', () => {
+  const look = page => page.evaluate(() => {
+    const sb = document.getElementById('sb'), d = document.getElementById('dlg'), x = document.getElementById('xDlg');
+    return { phv: document.documentElement.classList.contains('phv'), sb: getComputedStyle(sb).position, tabs: getComputedStyle(d.querySelector('.dtabs')).display,
+      dlg: d.open ? Math.round(d.getBoundingClientRect().width) : null, xdlg: x.open ? Math.round(x.getBoundingClientRect().width) : null, vw: innerWidth, shown: getComputedStyle(document.body).visibility };
+  });
+  const openEvent = page => page.evaluate(() => openDlg(state.S.events[0]));
+  test('in a 1280 px window Phone gives the phone view: floating buttons, today\'s day view, and an event dialog in tabs filling the screen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { layout: 'phone' } }); await seed(page, blank({ events: [ev()] }));
+    let g = await look(page); expect(g.phv).toBe(true); expect(g.sb).toBe('fixed'); expect(g.shown).toBe('visible');
+    expect(await page.evaluate(() => state.focusD === today())).toBe(true); await expect(page.locator('#sb .sbtop .help')).toBeVisible(); await expect(page.locator('#sb .gear')).toBeHidden();
+    await openEvent(page); g = await look(page); expect(g.tabs).toBe('flex'); expect(g.dlg).toBe(1280);
+  });
+  test('in a 390 px window Computer gives the computer layout: the sidebar beside the grid and a floating event dialog with every section', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page, { prefs: { layout: 'desk', collapsed: false } }); await seed(page, blank({ events: [ev()] }));
+    let g = await look(page); expect(g.phv).toBe(false); expect(g.sb).not.toBe('fixed'); await expect(page.locator('#sb .gear')).toBeVisible();
+    await openEvent(page); g = await look(page); expect(g.tabs).toBe('none'); expect(g.dlg).toBeLessThan(390);
+  });
+  test('choosing Phone in Settings switches at once: the Settings dialog itself fills the screen and the drawer closes', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await openApp(page, { prefs: { collapsed: false } });
+    await page.locator('#sb .sbtop .gear').click(); let g = await look(page); expect(g.phv).toBe(false); expect(g.xdlg).toBeLessThan(1280);
+    await page.locator('#xDlg .seg.layout button', { hasText: /^Phone$/ }).click(); g = await look(page); expect(g.phv).toBe(true); expect(g.xdlg).toBe(1280);
+    await expect(page.locator('#sb')).toHaveClass(/collapsed/);
+    await page.locator('#xDlg .seg.layout button', { hasText: /^Automatic$/ }).click(); expect((await look(page)).phv).toBe(false);
+  });
+  test('in Automatic the view follows the window across 600 px, both ways, and the page is shown once drawn', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await openApp(page); expect(await look(page)).toMatchObject({ phv: true, sb: 'fixed', shown: 'visible' });
+    await page.setViewportSize({ width: 1000, height: 800 }); await expect.poll(async () => (await look(page)).phv).toBe(false); expect((await look(page)).sb).not.toBe('fixed');
+    await page.setViewportSize({ width: 390, height: 844 }); await expect.poll(async () => (await look(page)).phv).toBe(true);
+  });
+});

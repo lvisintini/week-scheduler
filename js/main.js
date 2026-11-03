@@ -4,13 +4,13 @@ import {DAYN,DAYS,L,applyStatic} from './i18n.js';
 import {$,el} from './basics.js';
 import {FMT,errKey,initDefault,isSealed,loadStore,openImport,parseWorkspace,readStore,redo,undo,verOf} from './data.js';
 import {askPassword,askUnlock,handleShareLink,hasCrypto,sealedOk,unb64u} from './share.js';
-import {FH,FWK,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,phone,phoneFit,savePrefs,setFocus,setLive,today,todayWk} from './model.js';
+import {FH,FWK,applyLayout,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,phone,phoneFit,savePrefs,setFocus,setLive,syncLayout,today,todayWk} from './model.js';
 import {agDay,agFn,agWk,doPrint,printDay} from './stats.js';
 import {goView,oneWeek,renderSide} from './sidebar.js';
 import {render,zoomRender} from './grid.js';
 import {initDialog,rowTexts,rows} from './dialog.js';
 /* ---------- wiring & startup ---------- */
-loadPrefs();initLive();initDialog();   // the code that runs once at startup lives here, not at the top level of the other files (docs/architecture.md)
+loadPrefs();applyLayout();initLive();initDialog();   // the code that runs once at startup lives here, not at the top level of the other files (docs/architecture.md)
 $('hid').onclick=()=>goView(!$('hid')._hrs);   // View's Hours shown, or its Days shown when only days hide something (R-GRID-09)
 $('agClose').onclick=()=>$('agDlg').close();
 $('agPrint').onclick=()=>{const d=el('div','agenda');d.innerHTML=agFn();doPrint(d,false)};
@@ -65,3 +65,6 @@ function afterStore(){   // once the workspaces are there: today's week, Live Vi
 {const st=readStore();   // protected browser memory first asks for its passphrase, over an empty grid (R-DATA-11); a newer one is refused (R-DATA-09)
   if(isSealed(st)&&verOf(st)<=FMT){initDefault();setLang(state.lang);askUnlock(p=>{loadStore(p);afterStore()})}
   else{loadStore(st);afterStore()}}
+// Automatic layout (R-UI-18): a window crossing 600 px switches the view; the page is shown once the first view is drawn (app.css, html.ld)
+if(window.matchMedia){const mq=matchMedia('(max-width:600px)');if(mq.addEventListener)mq.addEventListener('change',()=>syncLayout(false))}
+document.documentElement.classList.add('ld');

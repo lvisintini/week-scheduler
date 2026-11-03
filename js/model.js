@@ -7,10 +7,12 @@ import {FMT,PKEY,wkLabel} from './data.js';
 import {clearMem,lockNow,openPassphrase,restart} from './share.js';
 import {minAt,peekRows,render} from './grid.js';
 import {fillSel} from './dialog.js';
+import {renderSide} from './sidebar.js';
 import {openExamples} from './examples.js';
 import {setLang} from './main.js';
 export function loadPrefs(){
   try{Object.assign(state.prefs,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+  if(state.prefs.layout!=='phone'&&state.prefs.layout!=='desk')delete state.prefs.layout;   // Settings → Layout (R-UI-18): absent = Automatic
   state.prefs.rowH=Math.min(120,Math.max(24,+state.prefs.rowH||48));state.prefs.colW=Math.min(1000,Math.max(70,+state.prefs.colW||110));state.prefs.fitW=state.prefs.fitW!==false;state.prefs.fitH=state.prefs.fitH!==false;state.prefs.colWP=Math.min(1000,Math.max(70,+state.prefs.colWP||110));state.prefs.fitWP=state.prefs.fitWP!==false;state.prefs.rowHP=Math.min(120,Math.max(24,+state.prefs.rowHP||100));state.prefs.fitHP=state.prefs.fitHP===true;state.prefs.txt=Math.min(160,Math.max(80,Math.round((+state.prefs.txt||100)/10)*10));   // fillW and fit are retired keys: no longer read (R-GRID-07)
   {const o=state.prefs.lvAnchor,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&/^\d{4}-\d{2}-\d{2}$/.test(o[k]))m[k]=o[k]});state.prefs.lvAnchor=m}   // Live View's week per workspace (R-CYC-05); no prototype, so any workspace id is a plain key
   {const o=state.prefs.icsLast,m=Object.create(null),ok=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&v&&ok(v.from)&&(v.until==null||ok(v.until)))m[k]=v.until?{from:v.from,until:v.until}:{from:v.from}});state.prefs.icsLast=m}   // the last calendar export per workspace (R-SHARE-09), like lvAnchor
@@ -27,7 +29,17 @@ export const WK=()=>phone()?'colWP':'colW',FWK=()=>phone()?'fitWP':'fitW';
 export const phoneFit=()=>{if(phone()&&state.prefs.fitWP!==(state.focusD!=null)){state.prefs.fitWP=state.focusD!=null;savePrefs()}};
 export const savePrefs=()=>{try{localStorage.setItem(PKEY,JSON.stringify(state.prefs))}catch(e){}};
 export function applyTheme(){const h=document.documentElement;if(state.prefs.theme==='light'||state.prefs.theme==='dark')h.dataset.theme=state.prefs.theme;else delete h.dataset.theme}
-export const phone=()=>!!(window.matchMedia&&matchMedia('(max-width:600px)').matches);   // a phone-sized window (R-UI-13)
+// the phone view (R-UI-13): a window 600 px wide or less, unless Settings → Layout forces one layout (R-UI-18)
+export const phone=()=>state.prefs.layout==='phone'||(state.prefs.layout!=='desk'&&!!(window.matchMedia&&matchMedia('(max-width:600px)').matches));
+// the phone view's CSS keys off html.phv (app.css), so the class must follow phone(); returns whether the view changed
+export function applyLayout(){const h=document.documentElement,was=h.classList.contains('phv'),now=phone();h.classList.toggle('phv',now);return was!==now}
+// a change of view while the app runs: a window crossing 600 px in Automatic redraws; choosing a layout in Settings (full) also does what a
+// start in that view does: into the phone view the drawer closes and today's day view opens (R-UI-13), out of it the day view ends
+export function syncLayout(full){
+  if(!applyLayout())return;
+  if(full&&phone()){state.prefs.collapsed=true;if(!state.live)state.focusD=today()}else if(full&&!state.live)state.focusD=null;
+  phoneFit();savePrefs();applyPrefs();render();renderSide();
+}
 export function applyPrefs(){$('sb').style.setProperty('--sbw',state.prefs.w+'px');$('sb').classList.toggle('collapsed',!!state.prefs.collapsed)}
 export function toast(m,acts){const t=$('toast');t.textContent=m;t.classList.toggle('act',!!acts);
   (acts||[]).forEach(x=>{const b=el('button','',t);b.textContent=x.label;b.onclick=()=>{t.classList.remove('on');x.fn()}});
@@ -423,6 +435,11 @@ export function openSettings(){
    const sg=el('div','seg theme',tw);sg.setAttribute('role','group');sg.setAttribute('aria-label',L('setTheme'));
    [['auto','themeAuto'],['light','themeLight'],['dark','themeDark']].forEach(([m,k])=>{const b=el('button',(state.prefs.theme||'auto')===m?'on':'',sg);b.type='button';b.textContent=L(k);b.setAttribute('aria-pressed',String((state.prefs.theme||'auto')===m));
      b.onclick=()=>{state.prefs.theme=m;savePrefs();applyTheme();[...sg.children].forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b))})}})}
+  // Layout (R-UI-18): the phone view by window size, or always one of the two
+  {const tw=el('div','sopt col',ui),tb=el('span','',tw);tb.innerHTML=`<b>${esc(L('setLayout'))}</b><small>${esc(L('layoutTip'))}</small>`;
+   const sg=el('div','seg layout',tw),cur=state.prefs.layout||'auto';sg.setAttribute('role','group');sg.setAttribute('aria-label',L('setLayout'));
+   [['auto','layAuto'],['phone','layPhone'],['desk','layDesk']].forEach(([m,k])=>{const b=el('button',cur===m?'on':'',sg);b.type='button';b.textContent=L(k);b.setAttribute('aria-pressed',String(cur===m));
+     b.onclick=()=>{if(m==='auto')delete state.prefs.layout;else state.prefs.layout=m;savePrefs();syncLayout(true);[...sg.children].forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b))})}})}
   {const lw=el('div','sopt col',ui),lt=el('span','',lw);lt.innerHTML=`<b>${esc(L('lang'))}</b><small>${esc(L('langTip'))}</small>`;
    const ls=el('select','',lw);
    [['en','English'],['es','Español']].forEach(([c,n])=>{const o=el('option','',ls);o.value=c;o.textContent=n});

@@ -169,5 +169,8 @@ export function fillDialog(app, f = {}) {
   if (f.start !== undefined) tick().forEach(r => fire(r.querySelectorAll('select')[0], f.start));
   if (f.end !== undefined) tick().forEach(r => fire(r.querySelectorAll('select')[1], f.end));
 }
+/** The phone view's style rules (R-UI-13, R-UI-18: `:where(.phv) …` in app.css), with that prefix taken off each selector, as {selectorText, style}. */
+export const phoneRules = app => [...app.d.styleSheets[0].cssRules].filter(r => r.selectorText && r.selectorText.startsWith(':where(.phv) '))
+  .map(r => ({ selectorText: r.selectorText.split(/,\s*(?=:where\(\.phv\) )/).map(x => x.replace(/^:where\(\.phv\) /, '')).join(','), style: r.style }));
 export const dlgOpen = app => app.d.getElementById('dlg').open;
 export const addBtn = (app, day) => app.qa('#fDays .dad')[day].querySelector('.addt');   // a day's "+ Add another time on …", under its times (R-REP-02)

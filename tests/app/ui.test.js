@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY, ROOT, addBtn } from '../helpers/app.js';
+import { openApp, setData, blank, ev1, person, pointer, dragFrom, PREFS_KEY, ROOT, addBtn, phoneRules } from '../helpers/app.js';
 
 const fresh = (data, o = {}) => { const a = openApp(o); if (data) setData(a, data); return a; };
 const sections = a => a.qa('#sbin .sec');
@@ -58,9 +58,9 @@ describe('R-UI-03 Settings dialog', () => {
   it('Settings no longer holds the now line or the days shown: they are in Tools and View', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); expect(a.dlgText()).not.toMatch(/"now" line|Saturday/); expect(a.q('.tsec').textContent).toContain('Show the "now" line'); expect(a.q('.zsec').textContent).toContain('Days shown');
   });
-  it('the UI tab holds the AM/PM clock, then the theme and the language (all three about how the app reads)', () => {
+  it('the UI tab holds the AM/PM clock, then the theme, the layout and the language (all about how the app reads)', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); const ui = shown(a)[0]; expect(ui.textContent).toContain('Theme'); expect(ui.querySelector('select')).not.toBeNull();
-    expect(ui.querySelectorAll('.seg.theme button')).toHaveLength(3); expect([...ui.querySelectorAll('.sopt b')].map(b => b.textContent)).toEqual(['Use AM/PM clock', 'Theme', 'Language']);
+    expect(ui.querySelectorAll('.seg.theme button')).toHaveLength(3); expect(ui.querySelectorAll('.seg.layout button')).toHaveLength(3); expect([...ui.querySelectorAll('.sopt b')].map(b => b.textContent)).toEqual(['Use AM/PM clock', 'Theme', 'Layout', 'Language']);
   });
   it('clicking a tab shows only that section, and the last tab is shown again when Settings is reopened', () => {
     const a = fresh(); a.q('.sbtop .gear').click(); tabs(a)[1].click();
@@ -264,7 +264,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
   });
   it('on narrow screens the label column folds away (labels above their fields); on a phone each ticked day is a card with labelled fields', () => {
     const css = dialog().d.querySelector('style').textContent; expect(css).toMatch(/@media \(max-width:560px\)\{\.fg\{grid-template-columns:minmax\(0,1fr\)/);
-    expect(css).toContain('@media (max-width:600px){#paneQ{display:block}.dhd{display:none}#fAddT{display:block;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
+    expect(css).toContain(':where(.phv) #paneQ{display:block}:where(.phv) .dhd{display:none}:where(.phv) #fAddT{display:block;'); expect(css).toContain('grid-template-areas:"d d n c x" "ls le le le le" "s e e e e" "lp lw lw lw lw" "p w w w w" "lt lk lk lk lk" "t k k k k" "m m m m m"');
   });
   it('R-CYC-08 with different times per week the week has a column and a header of its own; on a phone card it reads Week [1] – Monday', () => {
     const a = openApp(); setData(a, blank({ cycle: 2, events: [ev1({ slots: [{ day: 0, start: 600, end: 660, person: '', wk: 2 }] })] })); a.ev('openDlg(state.S.events[0])');
@@ -280,7 +280,7 @@ describe('R-UI-07 Event dialog layout: a label column and sections (Who, When, H
 });
 
 describe('R-UI-13 R-UI-01 A phone gets floating buttons; its drawer has the computer\'s top row', () => {
-  const rules = a => [...a.d.styleSheets[0].cssRules].filter(r => r.media && /max-width: ?600px/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
+  const rules = a => phoneRules(a);
   const rule = (a, sel) => rules(a).find(r => r.selectorText === sel);
   it('the top row reads favicon, title, help, settings and the chevron, in that order, on every screen', () => {
     const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow']);
@@ -467,7 +467,7 @@ describe('R-UI-13 On a phone the sidebar is a drawer over the grid', () => {
   });
   it('the phone stylesheet lays the open sidebar over the grid, above a backdrop, and hides the resize edge', () => {
     const css = openApp().q('style').textContent;
-    expect(css).toContain('@media (max-width:600px){aside:not(.collapsed){position:fixed;'); expect(css).toContain('aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;'); expect(css).toContain('aside .rs{display:none}');
+    expect(css).toContain(':where(.phv) aside:not(.collapsed){position:fixed;'); expect(css).toContain('aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;'); expect(css).toContain('aside .rs{display:none}');
   });
 });
 
@@ -488,9 +488,9 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
   it('on a desktop the tab row is hidden and every pane is shown; on a phone only the active pane is', () => {
     const a = open(), css = [...a.d.styleSheets[0].cssRules];
     expect(css.find(r => r.selectorText === '.dtabs').style.display).toBe('none');
-    const ph = css.filter(r => r.media && /max-width: ?600px/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
+    const ph = phoneRules(a);
     expect(ph.find(r => r.selectorText === '#dlg .dpane.off').style.display).toBe('none'); expect(ph.find(r => r.selectorText === '#dlg .dtabs').style.display).toBe('flex');
-    expect(css.some(r => !r.media && r.selectorText && /\.dpane\.off/.test(r.selectorText))).toBe(false);
+    expect(css.some(r => !r.media && r.selectorText && !r.selectorText.startsWith(':where(.phv) ') && /\.dpane\.off/.test(r.selectorText))).toBe(false);   // only the phone view hides panes
   });
   it('every open starts on Event; clicking a tab or the arrow keys switch, with aria-selected and a roving tab stop', () => {
     const a = open({ phone: true }); expect(shown(a)).toEqual(['ev']); expect(sel(a)).toEqual(['true', 'false', 'false']);
@@ -537,8 +537,39 @@ describe('R-UI-14 Large dialogs on a phone: full screen, and the event dialog in
     a.ev('openCopy(state.S.events[0])'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
     a.ev('openCycle()'); expect(a.q('#xDlg').classList.contains('full')).toBe(true); a.click('Cancel');
     a.ev('askLiveWeek(()=>{})'); expect(a.q('#xDlg').classList.contains('full')).toBe(false);
-    const ph = [...a.d.styleSheets[0].cssRules].filter(r => r.media).flatMap(r => [...r.cssRules]).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');
+    const ph = phoneRules(a).find(r => r.selectorText === '#dlg,#agDlg,#xDlg.full');
     expect(ph.style.width).toBe('100vw'); expect(ph.style.height).toBe('100dvh');
+  });
+});
+
+describe('R-UI-18 Settings → Layout: the phone view by window size, or always the phone view or the computer layout', () => {
+  const pref = layout => ({ storage: { [PREFS_KEY]: JSON.stringify({ layout }) } });
+  const isPhone = a => [a.ev('phone()'), a.d.documentElement.classList.contains('phv')];
+  const btns = a => { a.q('.sbtop .gear').click(); return [...a.qa('#xDlg .seg.layout button')]; };
+  it('Automatic follows the window: the phone view (html.phv) at 600 px or less, the computer layout above', () => {
+    expect(isPhone(openApp({ phone: true }))).toEqual([true, true]); expect(isPhone(openApp())).toEqual([false, false]);
+  });
+  it('Phone forces the phone view in a wide window, Computer the computer layout in a narrow one; any other stored value means Automatic', () => {
+    expect(isPhone(openApp(pref('phone')))).toEqual([true, true]); expect(isPhone(openApp({ phone: true, ...pref('desk') }))).toEqual([false, false]);
+    const a = openApp({ phone: true, ...pref('tablet') }); expect(a.ev('state.prefs.layout')).toBeUndefined(); expect(isPhone(a)).toEqual([true, true]);
+  });
+  it('a wide window started with Phone opens as a phone does: the drawer closed and today\'s day view', () => {
+    const a = openApp(pref('phone')); expect(a.ev('state.prefs.collapsed')).toBe(true); expect(a.ev('state.focusD')).toBe(a.ev('today()'));
+  });
+  it('the three buttons show the choice with aria-pressed and switch at once, kept in this browser; Phone closes the drawer and opens today, Computer ends the day view', () => {
+    const a = openApp(), b = btns(a); expect(b.map(x => x.textContent)).toEqual(['Automatic', 'Phone', 'Computer']); expect(b.map(x => x.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    b[1].click(); expect(isPhone(a)).toEqual([true, true]); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY)).layout).toBe('phone'); expect(b.map(x => x.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false']);
+    expect(a.ev('state.prefs.collapsed')).toBe(true); expect(a.ev('state.focusD')).toBe(a.ev('today()'));
+    b[2].click(); expect(isPhone(a)).toEqual([false, false]); expect(a.ev('state.focusD')).toBeNull();
+    b[0].click(); expect(JSON.parse(a.w.localStorage.getItem(PREFS_KEY))).not.toHaveProperty('layout'); expect(isPhone(a)).toEqual([false, false]);
+  });
+  it('the layout choice and its explanation are in Spanish', () => {
+    const a = openApp(); a.ev("setLang('es')"); const b = btns(a);
+    expect(b.map(x => x.textContent)).toEqual(['Automático', 'Móvil', 'Ordenador']); expect(a.q('#xDlg .seg.layout').getAttribute('aria-label')).toBe('Diseño'); expect(a.q('#xDlg').textContent).toContain('Automático usa la vista de móvil');
+  });
+  it('the page stays hidden until the layout is chosen and the first view drawn', () => {
+    const a = openApp(); expect(a.d.documentElement.classList.contains('ld')).toBe(true);
+    expect([...a.d.styleSheets[0].cssRules].find(r => r.selectorText === 'html:not(.ld) body').style.visibility).toBe('hidden');
   });
 });
 
