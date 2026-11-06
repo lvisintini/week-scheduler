@@ -12,6 +12,13 @@ This file holds only what applies to every task. The full specification is in `d
 - Tooltips carry the long explanations and explain workarounds (e.g. a rota = an owner who set it + the people in it as involved); labels stay short.
 - **When finishing a task:** re-read the conversation's decisions and update the matching entry in the requirement file for that area (table below), editing it in place. Parked ideas go to `docs/parked.md`, known bugs and limits to `docs/known-issues.md`, code-map changes to `docs/architecture.md`. The user reviews these files and expects them to capture *every* requirement and accepted decision.
 
+## Kiosk deployment
+The app also runs on a wall or kitchen kiosk: a Raspberry Pi 3B (1 GB RAM) with the 7″ Touch Display 2 (portrait, 720 × 1280), Chromium full-screen under cage, touch only, no keyboard, a motion sensor that dims the screen. The setup guide is `docs/kiosk/README.md`. Every file it installs is in `docs/kiosk/files/`, and the Pi downloads them from `main`, so a change there reaches the next install or update; keep the guide's tables in step. Every change to the app must respect **[U]**:
+- **720 × 1280 portrait works well**, in the phone view (Settings → Layout → *Phone*, R-UI-18) and in Live View. With Chromium's toolbar and bookmarks bar the page is shorter (the bars take roughly 150 px); in the guide's rotating kiosk mode it is the whole 720 × 1280.
+- **Touch only:** nothing everyday depends on hover or right-click (hover cards and context menus are extras with a touch route); tap targets are finger-sized (at least 44 × 44 px, as R-UI-01 and R-UI-14); everyday use (opening the app, Live View, changing the day or week, reading an event) needs no typing, since there is no on-screen keyboard.
+- **Light for a Pi 3B:** no heavy or full-screen animations and no big libraries (none at all, see above); memory is 1 GB, shared with Chromium.
+- **Browser storage may not survive a reboot:** with the kiosk's read-only overlay filesystem switched on (guide → *Optional extras*), `localStorage` is wiped at every reboot, taking the saved workspaces and prefs (Layout → *Phone* included) with it.
+
 ## The specification (`docs/requirements/`)
 - The files describe what the app must do **now**: edit entries in place; never append revision notes or history.
 - Tags: **[U]** asked for by the user, **[C✓]** proposed by Claude and accepted, **[P]** parked (see `docs/parked.md`).
