@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Home</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { display:flex; flex-direction:column; padding:3vh 3vw; gap:2.5vh; }
+  header { display:flex; justify-content:space-between; align-items:baseline; }
+  #time { font-size:clamp(28px,7vh,64px); font-weight:600; }
+  #status { color:var(--muted); font-size:clamp(14px,2.6vh,22px); }
+  #status.paused { color:var(--warn); }
+  h2 { margin:0; font-size:clamp(13px,2.4vh,20px); color:var(--muted);
+       text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1.6vh; }
+  button { font:inherit; color:var(--text); background:var(--card); border:none;
+           border-radius:14px; padding:2.6vh 1.2vw; font-size:clamp(15px,2.6vh,26px);
+           text-align:left; cursor:pointer; }
+  button:active { background:var(--card-hi); }
+  .row { display:flex; flex-wrap:wrap; gap:1.6vh; margin-top:auto; }
+  .row button { flex:1 1 160px; text-align:center; font-weight:600; }
+  #toggle { background:var(--accent); }
+  .hidden { display:none !important; }
+</style></head>
+<body>
+  <header><div id="time"></div><div id="status"></div></header>
+  <h2>Screens</h2><div class="grid" id="screens"></div>
+  <h2>Recipes</h2><div class="grid" id="recipes"></div>
+  <div class="row">
+    <button id="back" class="hidden">Back to recipe</button>
+    <button id="close" class="hidden">Close recipe</button>
+    <button id="toggle">Resume rotation</button>
+  </div>
+<script src="config.js"></script>
+<script src="launcher.js"></script>
+</body></html>

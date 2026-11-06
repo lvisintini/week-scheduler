@@ -1,0 +1,11 @@
+[Unit]
+Description=Dim the kiosk screen when nobody is around
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/bin/screen-dimmer.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Weather</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { display:flex; flex-direction:column; padding:5vh 5vw; gap:4vh; }
+  #place { font-size:4.5vh; color:var(--muted); }
+  #now { display:flex; align-items:baseline; gap:3vw; }
+  #temp { font-size:min(22vh,28vw); font-weight:300; line-height:1; }
+  #desc { font-size:6vh; } #wind { font-size:3.5vh; color:var(--muted); margin-top:1vh; }
+  #days { display:grid; grid-template-columns:repeat(5,1fr); gap:1.5vw; margin-top:auto; }
+  .day { background:var(--card); border-radius:14px; padding:2.5vh 1vw; text-align:center; }
+  .day b { display:block; font-size:3.2vh; margin-bottom:1vh; }
+  .day span { display:block; font-size:2.6vh; color:var(--muted); }
+  .day .t { color:var(--text); font-size:3.4vh; margin-top:1vh; }
+  #updated { font-size:2.2vh; color:var(--muted); }
+  /* Portrait screens: forecast as a list instead of a row */
+  @media (orientation: portrait) {
+    #days { grid-template-columns:1fr; gap:1.2vh; }
+    .day { display:grid; grid-template-columns:1fr 2fr 1.4fr; align-items:center;
+           text-align:left; padding:2vh 4vw; }
+    .day b { margin:0; font-size:2.6vh; }
+    .day span { font-size:2.3vh; }
+    .day .t { margin:0; text-align:right; font-size:2.6vh; }
+  }
+</style></head>
+<body>
+  <div id="place"></div>
+  <div id="now"><div id="temp">--°</div><div><div id="desc">Loading…</div><div id="wind"></div></div></div>
+  <div id="days"></div>
+  <div id="updated"></div>
+<script src="config.js"></script>
+<script src="weather.js"></script>
+<script src="overlay.js"></script>
+</body></html>

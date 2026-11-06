@@ -1,0 +1,22 @@
+{
+  "BookmarkBarEnabled": true,
+  "ManagedBookmarks": [
+    { "toplevel_name": "Recipes" },
+    { "name": "Recipe one", "url": "https://example.com/recipe-one" },
+    { "name": "Recipe two", "url": "https://example.com/recipe-two" }
+  ],
+  "ShowHomeButton": true,
+  "HomepageIsNewTabPage": false,
+  "HomepageLocation": "https://lvisintini.github.io/week-scheduler/",
+  "RestoreOnStartup": 4,
+  "RestoreOnStartupURLs": ["https://lvisintini.github.io/week-scheduler/"],
+  "TranslateEnabled": false,
+  "PasswordManagerEnabled": false,
+  "AutofillAddressEnabled": false,
+  "AutofillCreditCardEnabled": false,
+  "BrowserSignin": 0,
+  "SyncDisabled": true,
+  "DefaultBrowserSettingEnabled": false,
+  "MetricsReportingEnabled": false,
+  "PromotionsEnabled": false
+}

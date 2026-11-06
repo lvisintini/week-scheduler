@@ -1,1 +1,2 @@
 tests/fixtures/v*/** -text
+docs/kiosk/files/** text eol=lf

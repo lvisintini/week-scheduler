@@ -1,0 +1,6 @@
+:root { --bg:#12161d; --card:#1d232d; --card-hi:#283040; --text:#eef1f5;
+        --muted:#9aa4b2; --accent:#4f9dff; --warn:#f0a43a; }
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+             font-family:system-ui, "DejaVu Sans", sans-serif; user-select:none;
+             -webkit-user-select:none; touch-action:manipulation; overflow:hidden; }

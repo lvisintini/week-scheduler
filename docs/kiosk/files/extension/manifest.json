@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Kiosk Rotator",
+  "version": "1.0",
+  "description": "Rotates kiosk pages, with a launcher for pausing and opening recipes.",
+  "background": { "service_worker": "background.js" },
+  "permissions": ["tabs", "alarms", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["config.js", "overlay.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
