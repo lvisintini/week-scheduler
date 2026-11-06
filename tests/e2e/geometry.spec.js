@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seed, blank, ev, slot, slots, pt, boxOf, person, toolbar } from './helpers.js';
+import { openApp, seed, blank, ev, slot, slots, pt, boxOf, person, toolbar, drag } from './helpers.js';
 
 const rhythmData = (extra = {}) => blank({
   events: [ev({ id: 'a', title: 'Morning', slots: [slot(0, 600, 720)] })],
@@ -570,6 +570,33 @@ test.describe('R-UI-11 The Tools highlight in a real browser', () => {
     await openApp(page, { prefs: { hlNoType: true } }); await seed(page, data());
     expect((await look(page)).sort()).toEqual([['loose', 'solid', 'noty'], ['typed', 'none', 'none']]);
     await page.emulateMedia({ reducedMotion: 'reduce' }); expect((await look(page)).sort()).toEqual([['loose', 'solid', 'none'], ['typed', 'none', 'none']]);
+  });
+});
+
+test.describe('R-UI-19 Open time in a real browser: pulsing dashed outlines over the open stretches', () => {
+  const data = () => blank({ people: [person({ id: 'A' })], events: [ev({ id: 'a', title: 'Lesson', slots: [slot(0, 600, 720, 'A')] })] });
+  const outlines = page => page.evaluate(() => [...document.querySelectorAll('.day[data-d="0"] .opn')].map(o => { const r = o.getBoundingClientRect(), c = getComputedStyle(o), l = o.querySelector('span');
+    return { open: o.dataset.open, top: r.top, bottom: r.bottom, bt: c.borderTopStyle, bb: c.borderBottomStyle, bl: c.borderLeftStyle, anim: c.animationName, pe: c.pointerEvents, label: l ? l.textContent : '', inside: l ? l.getBoundingClientRect().top >= r.top && l.getBoundingClientRect().bottom <= r.bottom : true }; }));
+  test('each open stretch is outlined over exactly its hours, cut ends open, with its length inside, pulsing unless motion is reduced', async ({ page }) => {
+    await openApp(page, { prefs: { hlOpen: true } }); await seed(page, data());
+    const [before, after] = await outlines(page), ten = await pt(page, 0, 600), noon = await pt(page, 0, 720), five = await pt(page, 0, 300);
+    expect(before).toMatchObject({ open: '0-600', bt: 'none', bb: 'dashed', bl: 'dashed', anim: 'opn', pe: 'none', label: '166 h', inside: true });   // one stretch from Monday 12:00 round the week back to 10:00
+    expect(before.top).toBeCloseTo(five.y, 0); expect(before.bottom).toBeCloseTo(ten.y, 0); expect(after.top).toBeCloseTo(noon.y, 0);
+    expect(after).toMatchObject({ open: '720-1440', bt: 'dashed', bb: 'none', label: '166 h' });
+    await page.emulateMedia({ reducedMotion: 'reduce' }); expect((await outlines(page)).map(o => o.anim)).toEqual(['none', 'none']);
+    await page.emulateMedia({ media: 'print' }); expect(await page.evaluate(() => getComputedStyle(document.querySelector('.opn')).display)).toBe('none');
+  });
+  test('the outline lets the pointer through: dragging inside it creates an event there', async ({ page }) => {
+    await openApp(page, { prefs: { hlOpen: true } }); await seed(page, data());
+    const p = await pt(page, 0, 810); expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y).classList.contains('day'), p)).toBe(true);
+    await drag(page, { col: 0, min: 780 }, { col: 0, min: 840 }); await expect(page.locator('#dlg')).toBeVisible();
+  });
+  test('the length sits in the bottom-right corner, and resting the mouse in an open stretch shows its card', async ({ page }) => {
+    await openApp(page, { prefs: { hlOpen: true } }); await seed(page, data());
+    const [o, l] = await page.evaluate(() => { const o = document.querySelector('.day[data-d="0"] .opn:last-of-type'); return [o.getBoundingClientRect().toJSON(), o.querySelector('span').getBoundingClientRect().toJSON()]; });
+    expect(o.bottom - l.bottom).toBeLessThan(6); expect(o.right - l.right).toBeLessThan(8); expect(l.left - o.left).toBeGreaterThan(20);
+    const p = await pt(page, 0, 900); await page.mouse.move(p.x, p.y); await page.mouse.move(p.x + 2, p.y + 2);
+    await expect(page.locator('#peek')).toBeVisible(); await expect(page.locator('#peek .opk')).toContainText('Open time · 166 h');
   });
 });
 

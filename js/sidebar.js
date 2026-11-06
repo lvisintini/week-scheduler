@@ -4,7 +4,7 @@ import {DAY2,DAYS,L} from './i18n.js';
 import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_RESET,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
 import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
 import {loadMem} from './share.js';
-import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,descOn,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
+import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,descOn,fmtLen,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
 import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
 import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
@@ -186,6 +186,13 @@ export function renderSide(){
       c.onchange=()=>{set(c.checked);savePrefs();render()};return c};
     tck('nowLine','nowLineTip',()=>state.prefs.nowLine,v=>{state.prefs.nowLine=v});   // R-GRID-04
     tck('hlNoTy','hlNoTyTip',()=>state.prefs.hlNoType,v=>{state.prefs.hlNoType=v});
+    tck('hlOpen','hlOpenTip',()=>state.prefs.hlOpen,v=>{state.prefs.hlOpen=v});   // open time (R-UI-19): while on, its level under it
+    if(state.prefs.hlOpen){const sg=el('div','seg oplv',s6);sg.setAttribute('role','group');sg.setAttribute('aria-label',L('opLv'));
+      [[1,'opLv1','opLv1Tip'],[2,'opLv2','opLv2Tip'],[3,'opLv3','opLv3Tip']].forEach(([v,k,tp])=>{const b=el('button',state.prefs.openLv===v?'on':'',sg);b.type='button';b.textContent=L(k);b.title=L(tp);b.setAttribute('aria-pressed',String(state.prefs.openLv===v));
+        b.onclick=()=>{state.prefs.openLv=v;savePrefs();render()}});
+      const mr=el('div','opmin',s6),ml=el('span','',mr),ms=el('div','seg opmn',mr);ml.textContent=L('opMin');mr.title=L('opMinTip');ms.setAttribute('role','group');ms.setAttribute('aria-label',L('opMinA'));   // the shortest stretch shown
+      [0,30,60,120].forEach(v=>{const b=el('button',state.prefs.openMin===v?'on':'',ms);b.type='button';b.textContent=v?fmtLen(v):L('opMin0');b.setAttribute('aria-pressed',String(state.prefs.openMin===v));
+        b.onclick=()=>{state.prefs.openMin=v;savePrefs();render()}})}
     tck('colByT','colByTTip',()=>state.prefs.colBy==='t',v=>{state.prefs.colBy=v?'t':''});   // the two colour modes exclude each other
     tck('colByP','colByPTip',()=>state.prefs.colBy==='p',v=>{state.prefs.colBy=v?'p':''});
     tck('lanesFix','lanesFixTip',()=>state.prefs.lanesFix,v=>{state.prefs.lanesFix=v});   // R-EVT-23

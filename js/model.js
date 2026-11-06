@@ -20,7 +20,7 @@ export function loadPrefs(){
   {const o=state.prefs.days,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{const v=o[k];if(k.length<=64&&Array.isArray(v)&&Number.isInteger(v[0])&&Number.isInteger(v[1])&&v[0]>=0&&v[0]<=v[1]&&v[1]<=6)m[k]=[v[0],v[1]]});state.prefs.days=m}   // the days shown per workspace (R-GRID-13), like hours; hideWeekend is retired
   {const o=state.prefs.desc,m=Object.create(null);if(o&&typeof o==='object')Object.keys(o).slice(0,200).forEach(k=>{if(k.length<=64&&o[k]===true)m[k]=true});state.prefs.desc=m}   // Show descriptions, per workspace (R-EVT-25)
   state.prefs.wsOrder=Array.isArray(state.prefs.wsOrder)?state.prefs.wsOrder.filter(x=>typeof x==='string'&&x.length<=64).slice(0,200):[];   // the order of the workspace menu (R-DATA-10)
-  state.prefs.nowLine=state.prefs.nowLine!==false;state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
+  state.prefs.nowLine=state.prefs.nowLine!==false;state.prefs.hlNoType=state.prefs.hlNoType===true;state.prefs.hlOpen=state.prefs.hlOpen===true;if(![1,2,3].includes(state.prefs.openLv))state.prefs.openLv=1;if(![0,30,60,120].includes(state.prefs.openMin))state.prefs.openMin=0;state.prefs.lanesFix=state.prefs.lanesFix===true;if(state.prefs.colBy!=='t'&&state.prefs.colBy!=='p')state.prefs.colBy='';   // Tools (R-UI-11)
 }
 // a phone-sized window has its own row height (R-GRID-07): 100 px per hour and Fit height off by default, about 7 hours on the screen
 export const RH=()=>phone()?'rowHP':'rowH',FH=()=>phone()?'fitHP':'fitH';
@@ -166,6 +166,45 @@ export const nkey=(e,s,p)=>e.id+'|'+e.slots.indexOf(s)+'|'+p;
 // the pieces of a day for nestPick: visible schedules; vis = also the people filter (as drawn)
 export const dayPieces=(di,vis,w=state.curWk)=>state.S.events.filter(visible).flatMap(e=>e.slots.flatMap(s=>piecesOf(s).filter(q=>q.day===di&&inWk(e,s,q,w)&&(!vis||slotVisible(e,s))&&!isBg(e,s)).map(q=>{const [c0,c1]=coreIn(s,q);return {e,s,piece:q.p,start:q.a,end:q.b,c0,c1}})));
 export const nestOfDay=(di,vis,w=state.curWk)=>new Map([...nestPick(dayPieces(di,vis,w))].map(([x,h])=>[nkey(x.e,x.s,x.piece),{x,h}]));
+/* open time (R-UI-19): when the people pids (all of them at once) have nothing planned, counting every schedule whether shown or not, every
+   activity type and every person (the grid's filters play no part). Busy for a person: what they perform, what they are involved in (not on call,
+   R-EVT-16), anything with no responsible person (it concerns everyone, R-EVT-10) and their Away time (R-EVT-24); In the background takes nobody's
+   time (R-EVT-19). Levels: 1 = unplanned time only; 2 = also flexible margins and "around these times" (only cores are busy); 3 = also events whose
+   activity type counts as free time (type.soft). min: the shortest stretch kept (at least 15 minutes). Worked out on the timeline of the whole
+   cycle, so a stretch past midnight (Sunday into the next week's Monday, R-CYC-06) is one stretch. Returns null without people, else
+   {day(w, di) → the day's open pieces {a, b, len, ct, cb, st} (minutes of the day, the length of the whole stretch, whether it goes on before (ct)
+   or after (cb) the day, st its stretch), at(w, di, m) → the stretch open at that minute, or null}. A stretch {x, y, len, items}: its start and end
+   on the timeline (y may pass the end of the cycle), and what was counted as open in it, {e, s, why: 'fx' | 'fs' | 'fe' | 'ty'} (level 2 and up). */
+export function openTime(pids,lv,min=0){
+  if(!pids.length)return null;
+  const n=cyc(),Wn=W*n,busy=[],soft=[];
+  state.S.events.forEach(e=>{
+    if(e.bg)return;
+    const t=tyOf(e),ft=lv>=3&&!e.away&&t&&t.soft;
+    e.slots.forEach(s=>{
+      const who=e.away?awayPpl(e,s):s.person?[s.person,...(e.oncall?[]:invOf(e,s))]:null;
+      if(who&&!who.some(p=>pids.includes(p)))return;
+      for(let k=1;k<=n;k++)piecesOf(s).forEach(q=>{if(!inWk(e,s,q,k))return;const o=((k-1)*7+q.day)*1440,add=(x,y,why)=>{if(y>x)(why?soft:busy).push(why?{x:o+x,y:o+y,e,s,why}:[o+x,o+y])};
+        if(ft){add(q.a,q.b,'ty');return}
+        if(lv<2){add(q.a,q.b);return}
+        if(s.flex){add(q.a,q.b,'fx');return}
+        const [c0,c1]=coreIn(s,q);if(c1<=c0){add(q.a,q.b,s.fs&&q.p===0?'fs':'fe');return}   // a piece that is all margin
+        add(c0,c1);add(q.a,c0,'fs');add(c1,q.b,'fe')});
+    });
+  });
+  busy.sort((x,y)=>x[0]-y[0]);
+  const st=[];let t=0;busy.forEach(([x,y])=>{if(x>t)st.push({x:t,y:x});if(y>t)t=y});if(t<Wn)st.push({x:t,y:Wn});
+  const segs=st.map(o=>({...o,st:o}));st.forEach(o=>{o.len=o.y-o.x});
+  if(st.length>1&&st[0].x===0&&st[st.length-1].y===Wn){const f=segs[0],l=segs[segs.length-1],m={x:l.x,y:Wn+f.y,len:f.y-f.x+l.y-l.x};f.st=l.st=m;f.wb=l.wa=true}   // one stretch across the end of the cycle
+  if(st.length===1&&st[0].y-st[0].x===Wn){segs[0].st={x:0,y:Wn,len:Wn,all:true};segs[0].wb=segs[0].wa=true}   // nothing planned at all
+  const lo=Math.max(SNAP,min||0),ok=segs.filter(o=>o.st.len>=lo);
+  new Set(ok.map(o=>o.st)).forEach(S=>{const seen=new Set();S.items=soft.filter(z=>[0,Wn].some(d=>z.x+d<S.y&&z.y+d>S.x)).filter(z=>{const k=z.e.id+'|'+z.e.slots.indexOf(z.s)+'|'+z.why;return !seen.has(k)&&seen.add(k)})});
+  const pcs=(w,di)=>{const d0=((w-1)*7+di)*1440,d1=d0+1440;
+    return ok.filter(o=>o.x<d1&&o.y>d0).map(o=>({a:Math.max(o.x,d0)-d0,b:Math.min(o.y,d1)-d0,len:o.st.len,ct:o.x<d0||(o.x===d0&&!!o.wb),cb:o.y>d1||(o.y===d1&&!!o.wa),st:o.st}))};
+  return {day:pcs,at:(w,di,m)=>{const o=pcs(w,di).find(o=>o.a<=m&&m<o.b);return o?o.st:null}};
+}
+// a length as hours and minutes: 45 min, 1 h, 1 h 45, 12 h (open time, R-UI-19)
+export const fmtLen=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?h+' h'+(r?' '+String(r).padStart(2,'0'):''):r+' min'};
 /* "around these times" (R-EVT-12) is all margin, so what overlaps it does not clash with it, until no minute is left: an occurrence whose
    every piece is covered by the cores of occurrences it clashes with (R-EVT-10) and by Away strips of its people (R-EVT-24) is squeezed out
    and counts as a core again (stripes, ⚠). its = the pieces of one day {e,s,piece,start,end,c0,c1}, aws = its Away pieces; returns
@@ -454,7 +493,7 @@ export function openSettings(){
 // How to use (R-UI-17): every tip, in titled sections, most with a picture of the Examples (img/help/<language>/<name>.png, taken by
 // `npm run shots`: [name, alt text, width, height] as shown); the way into the Examples (R-DATA-12) at the top; a list of the sections to jump to
 export const HELP=[['hsEdit',[1,2,9,7],['edit','hiEdit',666,410]],['hsRep',[3,10,11],['rep','hiRep',900,401]],['hsOv',[6,4],['ov','hiOv',940,298]],['hsPpl',[24,15],['ppl','hiPpl',900,541]],
-  ['hsFlex',[25],['flex','hiFlex',666,191]],['hsTy',[13,14],['ty','hiTy',1022,788]],['hsBg',[18,20,17],['bg','hiBg',666,144]],['hsLook',[16,5,19],['look','hiLook',260,467]],
+  ['hsFlex',[25],['flex','hiFlex',666,191]],['hsTy',[13,14],['ty','hiTy',1022,788]],['hsBg',[18,20,17],['bg','hiBg',666,144]],['hsLook',[16,5,19,26],['look','hiLook',260,467]],
   ['hsRh',[12],['rh','hiRh',778,396]],['hsCyc',[8,23]],['hsSave',[21,22],['save','hiSave',460,284]]];
 export function openHelp(){
   const body=el('div','howto'),top=el('div','hintro',body);el('p','',top).textContent=L('helpIntro');

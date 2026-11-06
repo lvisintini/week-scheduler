@@ -3,7 +3,7 @@ import {state} from './state.js';
 import {DAY2,DAYS,L} from './i18n.js';
 import {$,ICON_AGENDA,ICON_CL,ICON_CR,ICON_FOCUS,ICON_LOCK,ICON_REPEAT,ICON_UNLOCK,ICON_WARN,ICON_WEEK,SNAP,el,esc,normHex,pIc,pTag,sTag,shiftColor,tIcon,tyOf,tyTag} from './basics.js';
 import {absD,hist,isAdv,pushUndo,sameDay,shiftDay,undo,wkCol,wkDesc,wkI,wkMenu,wkNote,wkNoteH,wkShortL,wkTip} from './data.js';
-import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,descOn,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,schLocked,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
+import {FH,FWK,NI,RH,WK,act,awayHits,awayLine,awayOf,awayPpl,colOf,coreEdge,coreIn,cyc,cycSl,dayPieces,descOn,drawNow,eLock,eVis,edgeNote,evOp,fitMg,fixIds,fixedLayout,fmt,fmtEnd,fmtLen,fxAt,gk,gutMap,hiddenInfo,hourLabel,hrA,hrB,inLane,inWk,ink,invOf,isAway,isBg,isExt,isLocked,itemsAt,schLocked,laneLayout,laneMap,liveBusy,liveScroll,lvDraw,lvOpen,lvRects,nestFirst,nestMap,nestPick,newMaps,nkey,openTime,ourPeople,overlapSet,phVis,phone,piecesAt,piecesOf,pname,qa,sVis,setFocus,setMg,slotVisible,sqLine,sqMap,sqOf,stepFocus,stgSl,toast,todayWk,updLive,visible,vrhythm,weekDays} from './model.js';
 import {openAgenda,withWk} from './stats.js';
 import {renderSide} from './sidebar.js';
 import {openCopy,openDlg} from './dialog.js';
@@ -54,6 +54,8 @@ export function render(){
   const insetPos=(x,v)=>{const l1=v.l1??v.l,w='(100% - 6px - var(--gut,0px))';if(v.n>1)x.dataset.lane=(l1>v.l?v.l+'-'+l1:v.l)+'/'+v.n;x.style.left=`calc(3px + ${w} * ${v.l/v.n} + ${NI}px)`;x.style.right='auto';x.style.width=`calc(${w} * ${(l1-v.l+1)/v.n} - ${(l1<v.n-1?2:0)+NI}px)`};
   const lipK=new Map();   // the lip of each group of identical phases, for its bands (R-PHS-10)
   const phByCol=cols.map(({w,d:di})=>vsel?state.S.phases.filter(phVis).flatMap(p=>p.slots.map((s,i)=>({p,s,i,key:p.id+'|'+s.start+'|'+s.end})).filter(x=>x.s.day===di&&inWk(p,x.s,{p:0,day:di},w))):[]);   // the column's week's phases (R-CYC-16)
+  // open time (R-UI-19): the stretches when the people whose eye is open all have nothing planned, over every schedule; not in Live View, Phases mode or print
+  const opn=opnNow=state.prefs.hlOpen&&!lvOn&&!state.printMode&&state.editMode!=='phases'?openTime(ourPeople().filter(p=>p.visible).map(p=>p.id),state.prefs.openLv,state.prefs.openMin):null;
   try{cols.forEach(({w,d:di},k)=>{
     state.curWk=w;   // everything drawn in this column belongs to its week (R-CYC-19)
     const dw=el('div','dw'+(wks(k)?' wks':''),g);dw.dataset.d=di;if(state.allWk)dw.dataset.w=w;
@@ -191,6 +193,10 @@ export function render(){
         o.style.opacity=.85*Math.max(...cov.map(c=>c.op));
       });
     });
+    // open time (R-UI-19): a pulsing dashed outline over everything, its stretch's whole length in the bottom-right corner; a cut end (midnight, hours shown) stays open
+    if(opn)opn.day(w,di).forEach(o=>{if(o.b<=a*60||o.a>=Z)return;const t0=Math.max(o.a,a*60),t1=Math.min(o.b,Z),h=(t1-t0)/60*state.HH;
+      const d=el('div','opn'+(o.ct||t0>o.a?' ct':'')+(o.cb||t1<o.b?' cb':''),col);d.dataset.open=o.a+'-'+o.b;d.setAttribute('aria-hidden','true');
+      d.style.top=(t0-a*60)/60*state.HH+'px';d.style.height=h+'px';if(h>=18)el('span','',d).textContent=fmtLen(o.len)});
   })}finally{state.curWk=w0}
   fitAll(fitList);fitLips(g);
   drawNow();
@@ -271,7 +277,20 @@ function fitLips(g){
   g.querySelectorAll('.lbg').forEach(b=>{if(b._lip)b.dataset.fs=['s0','s1','s2'].filter(c=>b._lip.classList.contains(c)).join(' ')});   // a printed day view draws its lip from the band
 }
 /* hover peek card (mouse only) */
-let peekT=null,peekKey='';
+let peekT=null,peekKey='',opnNow=null;   // opnNow: the open time of the last drawn grid (R-UI-19), for the card
+// the card of an open stretch (R-UI-19): its times and length, whom it is open for, the level, and what was counted as open in it
+const opPos=x=>{const W=10080*cyc(),v=((x%W)+W)%W;return {w:Math.floor(v/10080)+1,d:Math.floor(v%10080/1440),m:v%1440}};
+function openRows(S){
+  const a=opPos(S.x),b=opPos(S.y),one=Math.floor(S.x/1440)===Math.floor((S.y-1)/1440),day=p=>(cyc()>1?L('wkShort',{n:p.w})+' ':'')+DAYS[p.d].slice(0,3)+' ';   // one: within a single day
+  const time=S.all?L('opAll'):one?fmt(a.m)+'–'+fmtEnd(a.m+S.y-S.x):day(a)+fmt(a.m)+' – '+day(b)+fmtEnd(b.m);
+  const who=ourPeople().filter(p=>p.visible).map(p=>pTag(p.id)).filter(Boolean);
+  const rows=[`<div class="pt1"><i class="opsw"></i>${esc(L('opCard'))} · ${esc(fmtLen(S.len))}</div>`,`<div>${esc(time)}</div>`,`<div>${esc(L('opFor'))} ${who.join(', ')}</div>`,
+    `<div class="mut">${esc(L('opLv'))}: ${esc(L(['opLv1','opLv2','opLv3'][state.prefs.openLv-1]))}</div>`];
+  const why={fx:()=>L('tmAround'),fs:()=>L('tmFsA'),fe:()=>L('tmFeA')};
+  if(S.items&&S.items.length){rows.push(`<div style="margin-top:4px">${esc(L('opIn'))}</div>`);
+    S.items.forEach(({e,s,why:k})=>{const t=tyOf(e);rows.push(`<div class="opit"><i style="background:${esc(colOf(e,s))}"></i>${s.person?pIc(s.person):''}${esc(e.title)} <span class="mut">${esc((one?'':DAYS[s.day].slice(0,3)+' ')+fmt(s.start)+'–'+fmtEnd(s.end))}</span> · ${k==='ty'&&t?tyTag(t):esc(why[k]())}</div>`)})}
+  return rows.join('');
+}
 function hidePeek(){clearTimeout(peekT);peekKey='';const p=$('peek');if(p)p.style.display='none'}
 export function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a live card (R-GRID-12): no schedules, warnings or how-to lines
     const time=piece?L('contFrom',{d:DAYS[s.day].slice(0,3),t:fmt(s.start)})+' · '+L('contUntil',{t:fmt(s.end)}):fmt(s.start)+'–'+fmtEnd(s.end);
@@ -293,19 +312,19 @@ export function peekRows({e,s,piece},lv){   // the hover card's lines; lv = a li
     if(e.slots.length>1)rows.push(`<div class="how">${esc(L('repTip'))}</div>`);
     return rows.join('');
 }
-function peekHTML(items){
-  return items.slice(-3).reverse().map(it=>`<div class="pk">${peekRows(it)}</div>`).join('<hr>');
+function peekHTML(items,op){
+  return [...items.slice(-3).reverse().map(it=>`<div class="pk">${peekRows(it)}</div>`),...(op?[`<div class="pk opk">${openRows(op)}</div>`]:[])].join('<hr>');
 }
-function showPeek(items,x,y){
-  const p=$('peek');p.innerHTML=peekHTML(items);p.style.display='block';
+function showPeek(items,x,y,op){
+  const p=$('peek');p.innerHTML=peekHTML(items,op);p.style.display='block';
   p.style.left=Math.max(8,Math.min(x+14,innerWidth-p.offsetWidth-8))+'px';p.style.top=Math.max(8,Math.min(y+16,innerHeight-p.offsetHeight-8))+'px';
 }
 function peekMove(ev,di,col){
   if(ev.pointerType!=='mouse'||ev.buttons||state.editMode!=='events'||document.querySelector('.omenu'))return hidePeek();   // no card while a menu or chooser is open (R-EVT-05)
-  const its=piecesAt(di,minAt(col,ev.clientY),true,fxAt(col,ev.clientX)),key=its.map(i=>i.e.id+':'+i.i).join();
+  const m=minAt(col,ev.clientY),its=piecesAt(di,m,true,fxAt(col,ev.clientX)),op=opnNow&&opnNow.at(state.curWk,di,m),key=its.map(i=>i.e.id+':'+i.i).join()+(op?'|o'+op.x:'');   // an open stretch adds its card (R-UI-19)
   if(key===peekKey)return;
-  hidePeek();peekKey=key;if(!its.length)return;
-  const x=ev.clientX,y=ev.clientY;peekT=setTimeout(()=>showPeek(its,x,y),350);
+  hidePeek();peekKey=key;if(!its.length&&!op)return;
+  const x=ev.clientX,y=ev.clientY;peekT=setTimeout(()=>showPeek(its,x,y,op),350);
 }
 /* zoom: grid scale and grid text size (R-GRID-07) */
 // the size a Fit box produced: the drawn row height, or the drawn width of a week's day column (without the lip lane); clamped to its slider

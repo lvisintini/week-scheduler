@@ -42,9 +42,9 @@ describe('R-UI-02 Sidebar layout, top to bottom', () => {
   it('the toolbar tooltips mention the keyboard shortcuts for undo and redo', () => {
     const a = fresh(); expect(a.toolbar('undo').title).toContain('Ctrl+Z'); expect(a.toolbar('redo').title).toContain('Ctrl+Y');
   });
-  it('the Help button opens a "How to use" dialog with twenty-five tips, among them focusing on a day, nested activities, background events, live view, Away (R-EVT-24), the passphrase (R-DATA-11) and staged weeks (R-CYC-21)', () => {
-    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); const tips = a.qa('#xDlg li').map(l => l.textContent); expect(tips).toHaveLength(25);
-    [/^Staged weeks: in Weeks in the cycle…/, /Save… → Calendar file \(export only\)/, /Passphrase… protects what this browser saves/, /Drawn as: Away/, /focus icon/, /Small tasks done along the way/, /In the background/, /Live View/].forEach(re => expect(tips.some(t => re.test(t)), String(re)).toBe(true));
+  it('the Help button opens a "How to use" dialog with twenty-six tips, among them focusing on a day, open time (R-UI-19), nested activities, background events, live view, Away (R-EVT-24), the passphrase (R-DATA-11) and staged weeks (R-CYC-21)', () => {
+    const a = fresh(); a.q('.sbtop .help').click(); expect(a.dlgTitle()).toBe('How to use'); const tips = a.qa('#xDlg li').map(l => l.textContent); expect(tips).toHaveLength(26);
+    [/^Staged weeks: in Weeks in the cycle…/, /Save… → Calendar file \(export only\)/, /Passphrase… protects what this browser saves/, /Drawn as: Away/, /focus icon/, /Small tasks done along the way/, /In the background/, /Live View/, /Show open time/].forEach(re => expect(tips.some(t => re.test(t)), String(re)).toBe(true));
   });
 });
 
@@ -369,7 +369,7 @@ describe('R-UI-10 The event/phase dialog can be dragged aside to see the grid be
 
 describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring the week by type or by person', () => {
   it('the View and Tools switches are real checkboxes announced as switches and drawn as sliding toggles', () => {
-    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(8);
+    const a = fresh(); const sw = a.qa('#sbin .zck input'); expect(sw.length).toBe(9);
     expect(sw.every(c => c.type === 'checkbox' && c.getAttribute('role') === 'switch')).toBe(true);
     const css = a.q('style').textContent; expect(css).toContain('.zck input{appearance:none;'); expect(css).toContain('.zck input:checked::before{transform:translateX(12px)}');
     expect(css).toContain('.zck input:focus-visible{outline:'); expect(css).toContain('@media(prefers-reduced-motion:reduce){.zck input,.zck input::before{transition:none}}');
@@ -384,9 +384,9 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   const box = (a, label) => [...tools(a).querySelectorAll('label.zck')].find(l => l.textContent === label).querySelector('input');
   const tick = (a, label, v = true) => { const c = box(a, label); c.checked = v; c.onchange(); };
   const col = (a, d) => a.q(`.day[data-d="${d}"] .ev, .day[data-d="${d}"] .bgs`).style.getPropertyValue('--c');
-  it('the section holds the Live View row and five switches, each with an explanatory tooltip: the now line on, the others off at first', () => {
+  it('the section holds the Live View row and six switches, each with an explanatory tooltip: the now line on, the others off at first', () => {
     const a = fresh(week()), t = tools(a); expect(t.querySelector('.lvrow #lvB')).not.toBeNull(); expect(a.q('.sbbody > .lvrow')).toBeNull();
-    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Show the "now" line', true], ['Highlight events without an activity type', false], ['Colour by activity type', false], ['Colour by person', false], ['Fixed lanes, one per person', false]]);
+    expect([...t.querySelectorAll('label.zck')].map(l => [l.textContent, l.querySelector('input').checked])).toEqual([['Show the "now" line', true], ['Highlight events without an activity type', false], ['Show open time', false], ['Colour by activity type', false], ['Colour by person', false], ['Fixed lanes, one per person', false]]);
     expect([...t.querySelectorAll('label.zck')].every(l => l.title.length > 40)).toBe(true); expect(t.querySelector('.tip').title).toContain('Live View');
   });
   it('Live View still starts and stops from its new place', () => {
@@ -423,7 +423,7 @@ describe('R-UI-11 Tools: Live View, highlighting untyped events and colouring th
   });
   it('the section and its switches are translated', () => {
     const a = fresh(week(), { languages: ['es'] });
-    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Mostrar la línea de "ahora"', 'Resaltar los eventos sin tipo de actividad', 'Colorear por tipo de actividad', 'Colorear por persona', 'Carriles fijos, uno por persona']);
+    const t = sections(a).find(s => s.querySelector('.shbtn span').textContent === 'Herramientas'); expect([...t.querySelectorAll('label.zck')].map(l => l.textContent)).toEqual(['Mostrar la línea de "ahora"', 'Resaltar los eventos sin tipo de actividad', 'Mostrar el tiempo disponible', 'Colorear por tipo de actividad', 'Colorear por persona', 'Carriles fijos, uno por persona']);
   });
 });
 
@@ -583,9 +583,9 @@ describe('R-UI-17 How to use: every tip in titled sections, a list of topics, an
     expect(a.qa('#xDlg .htoc button').map(b => b.textContent)).toEqual(heads(a)); expect(a.q('#xDlg .htoc').getAttribute('aria-label')).toBe('Topics');
     a.qa('#xDlg .hsec').forEach(s => expect(s.getAttribute('aria-labelledby')).toBe(s.querySelector('h4').id));
   });
-  it('every tip, help1 to help25, appears exactly once', () => {
-    const a = help(); const tips = a.qa('#xDlg .hsec li').map(l => l.textContent); expect(tips).toHaveLength(25);
-    for (let i = 1; i <= 25; i++) expect(tips.filter(t => t === a.ev(`L('help${i}')`)), `help${i}`).toHaveLength(1);
+  it('every tip, help1 to help26, appears exactly once', () => {
+    const a = help(); const tips = a.qa('#xDlg .hsec li').map(l => l.textContent); expect(tips).toHaveLength(26);
+    for (let i = 1; i <= 26; i++) expect(tips.filter(t => t === a.ev(`L('help${i}')`)), `help${i}`).toHaveLength(1);
   });
   it('the new tips explain owners and stand-ins, a day\'s own With, and the three kinds of timing', () => {
     const a = help(); expect(a.ev("L('help24')")).toMatch(/owner.*standing in.*With/s); expect(a.ev("L('help25')")).toMatch(/Around these times.*Flexible start\/end.*solid parts/s);

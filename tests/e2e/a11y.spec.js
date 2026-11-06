@@ -57,6 +57,12 @@ test.describe('R-UI-03 Automated accessibility scan (ratchet against the known i
       ratchet(await scan(page), {});
     });
   }
+  for (const theme of ['light', 'dark']) {
+    test(`R-UI-19 open time, its outlines and the level under its switch add no serious accessibility violation (${theme} theme)`, async ({ page }) => {
+      await openApp(page, { prefs: { hlOpen: true, openLv: 2, theme } }); await seed(page, blank({ people: [person()], events: [ev({ title: 'Standup', slots: [{ day: 0, start: 600, end: 660, person: 'p1' }] })] }));
+      await expect(page.locator('.opn').first()).toBeAttached(); await expect(page.locator('.seg.oplv')).toBeVisible(); ratchet(await scan(page), {});
+    });
+  }
   test('the View section of the sidebar adds no unlabeled controls (sliders and Fit switches have names)', async ({ page }) => {
     await openApp(page); await seed(page, blank());
     const r = await new AxeBuilder({ page }).include('.zsec').withTags(['wcag2a', 'wcag2aa']).analyze(); expect(r.violations.map(v => v.id)).toEqual([]);

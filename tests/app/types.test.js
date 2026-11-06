@@ -37,13 +37,13 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
     btns.find(b => b.title === 'Coffee' || b.title === 'Cup').click(); expect(data(a).types[1].icon).toBe('coffee'); expect(a.q('.omenu')).toBeNull();
     a.toolbar('undo').click(); expect(data(a).types[1].icon).toBe('meal');
   });
-  it('the row menu offers the colour, the icon, the soft look and delete', () => {
-    const a = fresh(blank({ types: types() })); expect(menu(a, 0)).toEqual(['Colour…', 'Icon…', 'Soft look', 'Delete']);
+  it('the row menu offers the colour, the icon, counts as free time and delete', () => {
+    const a = fresh(blank({ types: types() })); expect(menu(a, 0)).toEqual(['Colour…', 'Icon…', 'Counts as free time', 'Delete']);
   });
   it('the soft-look item is ticked for soft types and toggles the look of their events', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm' })] })); menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).toBeNull();
-    expect(a.qa('.omenu .oi')[2].title).toContain('light tint'); menuClick(a, 'Soft look'); expect(data(a).types[1].soft).toBe(true); expect(a.q('.ev').classList.contains('soft')).toBe(true);
-    menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).not.toBeNull(); menuClick(a, 'Soft look'); expect('soft' in data(a).types[1]).toBe(false);
+    expect(a.qa('.omenu .oi')[2].title).toContain('light tint'); menuClick(a, 'Counts as free time'); expect(data(a).types[1].soft).toBe(true); expect(a.q('.ev').classList.contains('soft')).toBe(true);
+    menu(a, 1); expect(a.qa('.omenu .oi')[2].querySelector('svg')).not.toBeNull(); menuClick(a, 'Counts as free time'); expect('soft' in data(a).types[1]).toBe(false);
   });
   it('by default the type colour is not used on the grid: changing it does not change the event colour', () => {
     const a = fresh(blank({ types: types(), events: [ev1({ type: 'tm', color: '#3b6df0' })] })); a.ev('state.S.types[1].color="#000000";render()');
@@ -67,7 +67,7 @@ describe('R-TYP-01 Activity types are managed in their own sidebar section', () 
   it('the section, its tooltip and its menu are translated', () => {
     const a = fresh(blank({ types: types() }), { languages: ['es'] });
     expect(tySec(a).querySelector('.shbtn span').textContent).toBe('Tipos de actividad'); expect(tySec(a).querySelector('.tip').title).toContain('estadísticas');
-    expect(menu(a, 0)).toEqual(['Color…', 'Icono…', 'Aspecto suave', 'Eliminar']);
+    expect(menu(a, 0)).toEqual(['Color…', 'Icono…', 'Cuenta como tiempo libre', 'Eliminar']);
   });
 });
 
