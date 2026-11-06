@@ -23,6 +23,14 @@ if [ "$ROTATE" != "normal" ]; then
   done
 fi
 
+# Your workspace from a private GitHub repository (step 10): fetch the newest copy,
+# or keep the last one when offline. The address is kept in ~/kiosk/start-url.
+URLFILE="$HOME/kiosk/start-url"
+if [ -x "$HOME/kiosk/kiosk-data.sh" ]; then
+  timeout 60 "$HOME/kiosk/kiosk-data.sh" > /dev/null 2>&1
+  rm -f "$URLFILE.changed"   # starting now anyway: no restart needed
+fi
+
 # After a power cut, stop Chromium thinking it crashed (no "Restore pages?" bar).
 if [ -f "$PREFS" ]; then
   sed -i 's/"exited_cleanly":false/"exited_cleanly":true/; s/"exit_type":"[^"]*"/"exit_type":"Normal"/' "$PREFS"
@@ -48,12 +56,21 @@ if [ "$MODE" = "kiosk" ]; then
     --load-extension="$HOME/kiosk/extension"
   )
   START=(about:blank)
+  # The rotating extension opens the planner page at this address (step 10).
+  if [ -s "$URLFILE" ]; then
+    printf 'self.KIOSK_START_URL = "%s";\n' "$(cat "$URLFILE")" > "$HOME/kiosk/extension/start-url.js"
+  else
+    rm -f "$HOME/kiosk/extension/start-url.js"
+  fi
 else
   FLAGS+=(
     --top-chrome-touch-ui=enabled
     --disable-features=Translate
   )
   START=()   # start page comes from the Chromium settings file (step 5)
+  if [ -s "$URLFILE" ]; then
+    START=("$(cat "$URLFILE")")   # your workspace from the private repository (step 10)
+  fi
 fi
 
 exec /usr/lib/chromium/chromium "${FLAGS[@]}" "${START[@]}"

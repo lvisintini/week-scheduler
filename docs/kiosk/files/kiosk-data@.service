@@ -1,0 +1,16 @@
+# Fetches the kiosk's workspace from a private GitHub repository (step 10 of
+# docs/kiosk/README.md) and restarts the kiosk only when it has changed.
+# Enabled as kiosk-data@<your user name>.timer; %i is that user name.
+[Unit]
+Description=Fetch the kiosk's workspace from a private GitHub repository (%i)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=%i
+ExecStart=/home/%i/kiosk/kiosk-data.sh
+# 3 = nothing changed
+SuccessExitStatus=3
+# runs as root (+): restart the kiosk when kiosk-data.sh left the "changed" mark
+ExecStartPost=+/bin/sh -c 'f=/home/%i/kiosk/start-url.changed; if [ -e "$f" ]; then rm -f "$f"; systemctl restart getty@tty1; fi'

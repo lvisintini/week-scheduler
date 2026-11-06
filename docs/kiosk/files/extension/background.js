@@ -1,4 +1,6 @@
 importScripts("config.js");
+// Written by start.sh when the planner opens your workspace from a private repository (step 10).
+try { importScripts("start-url.js"); } catch (e) {}
 const CFG = self.KIOSK_CONFIG;
 const ALARM = "rotate";
 const LAUNCHER_URL = chrome.runtime.getURL("launcher.html");
@@ -6,6 +8,8 @@ const DEFAULTS = { tabs: {}, launcherTab: null, recipeTab: null,
                    paused: false, index: 0, lastActivity: 0, started: false };
 
 const fullUrl = (u) => (/^[a-z]+:/i.test(u) ? u : chrome.runtime.getURL(u));
+// The planner page opens at the address that carries your workspace, when there is one.
+const pageUrl = (u) => (self.KIOSK_START_URL && self.KIOSK_START_URL.split("#")[0] === u ? self.KIOSK_START_URL : fullUrl(u));
 const getState = () => chrome.storage.session.get(DEFAULTS);
 const setState = (patch) => chrome.storage.session.set(patch);
 
@@ -26,7 +30,7 @@ async function doEnsure(closeExtras) {
   const keep = new Set();
   for (const page of CFG.rotation) {
     if (!(await alive(tabs[page.id]))) {
-      tabs[page.id] = (await chrome.tabs.create({ url: fullUrl(page.url), active: false })).id;
+      tabs[page.id] = (await chrome.tabs.create({ url: pageUrl(page.url), active: false })).id;
     }
     keep.add(tabs[page.id]);
   }

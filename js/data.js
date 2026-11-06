@@ -407,6 +407,14 @@ const flagLbl=(w,t)=>{const f=[];if(t.id===state.curId)f.push(L('flagActive'));i
 export function adoptWs(w,source){   // first-time visitor with an untouched default workspace: the imported workspace takes its place
   const r=newWs(w.name,w.data,source==='file');if(w.id)r.id=w.id;state.WS=[r];state.curId=r.id;state.S=r.data;state.undoSt=r.undo;state.redoSt=r.redo;state.selK=null;render();
 }
+// R-SHARE-10, a kiosk address: the workspace with the same id is replaced without asking when nothing in it is unsaved, and a first-time
+// visitor adopts it; false = nothing done (the caller asks as for a link)
+export function takeWs(w){
+  const t=w.id&&state.WS.find(x=>x.id===w.id);
+  if(t){if(wsDirty(t))return false;syncWs();pushUndoWs(t);t.name=w.name;if(t.id===state.curId){state.S=w.data;t.data=w.data;state.selK=null;render();renderSide()}else{t.data=w.data;switchWs(t.id)}return true}
+  if(!memGet()&&state.WS.length===1&&!isDirty()){adoptWs(w,'link');return true}
+  return false;
+}
 function applyImport(w,target,source){   // target = existing workspace to replace, or null = import as a new workspace
   syncWs();let rec;
   if(target){pushUndoWs(target);if(target.id===state.curId)state.S=w.data;else target.data=w.data;if(source==='file')target.lf=keyOf(w.data);rec=target;toast(L('impReplaced',{n:target.name}))}

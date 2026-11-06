@@ -1,0 +1,12 @@
+# Checks for a new copy of the kiosk's workspace (step 10 of docs/kiosk/README.md).
+# Enabled as kiosk-data@<your user name>.timer.
+[Unit]
+Description=Check for a new kiosk workspace (%i)
+
+[Timer]
+OnBootSec=2min
+# How often to check. The kiosk restarts (about 30 seconds) only when the file has changed.
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

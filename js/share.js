@@ -2,8 +2,8 @@
 import {state} from './state.js';
 import {L} from './i18n.js';
 import {$,el,esc,uid} from './basics.js';
-import {FMT,WKEY,adoptWs,anyDirty,buildFile,cw,errKey,hist,initDefault,isDirty,isSealed,keyOf,loadStore,memGet,migrate,openImport,parseData,parseWorkspace,readStore,verOf,withStore,writeStore} from './data.js';
-import {fileDay,savePrefs,toast,xdlg} from './model.js';
+import {FMT,WKEY,adoptWs,anyDirty,buildFile,cw,errKey,hist,initDefault,isDirty,isSealed,keyOf,loadStore,memGet,migrate,openImport,parseData,parseWorkspace,readStore,saveMem,takeWs,verOf,withStore,writeStore} from './data.js';
+import {fileDay,savePrefs,syncLayout,toast,xdlg} from './model.js';
 import {renderSide} from './sidebar.js';
 import {render} from './grid.js';
 /* ---------- shareable link: data lives in the URL fragment (#data=...), compressed when the browser supports it ---------- */
@@ -143,20 +143,33 @@ async function openShare(pw,anon,inc){
   xdlg({title:L('shareTitle'),body,buttons:[{label:L('shareCopy'),cls:'p',fn:()=>{copy(link,0);return false}},{label:L('shareCopyPw'),fn:()=>{copy(pw,1);return false}},{label:L('closeB'),dismiss:true}]});
   setTimeout(()=>ta.select(),0);
 }
+// a link: #data=e1.<blob>. A kiosk address (R-SHARE-10) adds &pw=<its password> and optionally &layout=phone|desk; only the kiosk's own
+// script builds one (docs/kiosk), nothing in the app makes or offers one
 export async function handleShareLink(){
   if(!location.hash.startsWith('#data='))return;
-  const raw=location.hash.slice(6),clean=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
+  const parts=location.hash.slice(6).split('&'),raw=parts[0],opt=Object.create(null),clean=()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
+  parts.slice(1).forEach(p=>{const i=p.indexOf('=');if(i>0)try{opt[p.slice(0,i)]=decodeURIComponent(p.slice(i+1))}catch(e){}});
+  if((opt.layout==='phone'||opt.layout==='desk')&&state.prefs.layout!==opt.layout){state.prefs.layout=opt.layout;savePrefs();syncLayout(true)}
   const m=/^e(\d+)\./.exec(raw);
   if(m&&+m[1]>1){clean();toast(L('newer'));return}   // a link format of a later version
   if(!m||m[1]!=='1'||!hasCrypto()){clean();toast(L(hasCrypto()?'linkBad':'noCrypto'));return}
   let blob;try{blob=unb64u(raw.slice(3))}catch(e){clean();toast(L('linkBad'));return}
   if(blob[0]>1){clean();toast(L('newer'));return}
   if(!sealedOk(blob)){clean();toast(L('linkBad'));return}   // empty or truncated: no point asking for a password
+  if('pw' in opt){openKiosk(blob,opt.pw,clean);return}
   askPassword(blob,obj=>{
     clean();let w;try{w=parseWorkspace(obj,L('wsShared'))}catch(e){toast(L(errKey(e,'linkBad')));return}
     if(!memGet()&&state.WS.length===1&&!isDirty()){adoptWs(w,'link');toast(L('linkLoaded'));return}
     openImport(w,'link');
   },clean);
+}
+// R-SHARE-10: the kiosk has no keyboard, so nothing is asked: its own workspace is replaced and saved to browser memory (so Home and a
+// reload keep showing it); a wrong password only says so and keeps what is shown; unsaved changes there get the usual import dialog
+async function openKiosk(blob,pw,clean){
+  let obj;try{obj=await unseal(blob,pw.trim())}catch(e){clean();toast(L(e&&e.message==='password'?'kioskBad':e&&e.message==='big'?'tooBig':errKey(e,'linkBad')));return}
+  clean();let w;try{w=parseWorkspace(obj,L('wsShared'))}catch(e){toast(L(errKey(e,'linkBad')));return}
+  if(!takeWs(w)){openImport(w,'link');return}
+  saveMem('current');
 }
 async function saveFile(pw,anon,inc){   // pw null = unencrypted (readable) file, chosen explicitly by the user; inc: only part of it (R-SHARE-08)
   let text;try{const f=shareOf(inc,anon);text=pw==null?JSON.stringify(f,null,1):JSON.stringify({format:'weekly-schedules-encrypted',version:1,data:b64u(await seal(f,pw))})}catch(e){toast(L('shareFail'));return}

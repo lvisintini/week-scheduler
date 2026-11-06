@@ -176,6 +176,68 @@ describe('R-SHARE-05 Shareable links (the data lives in the URL fragment)', () =
   });
 });
 
+describe('R-SHARE-10 A kiosk address (#data=e1.<blob>&pw=<password>) opens without asking, replaces its own workspace and saves it to browser memory', () => {
+  const kiosk = (link, pw = PASSWORD, extra = '') => 'https://app.test/#data=e1.' + dataOf(link) + '&pw=' + encodeURIComponent(pw) + extra;
+  const stored = b => JSON.parse(b.storage()[WS_KEY] || 'null');
+  const mine = (id, extra = {}) => ({ [WS_KEY]: JSON.stringify({ version: FMT, current: id, workspaces: [{ id, name: 'Old copy', ...blank({ events: [ev1({ id: 'old', title: 'Old event' })] }), ...extra }] }) });
+  it('a first-time visitor gets the workspace at once, with no password dialog, and it is saved to browser memory', async () => {
+    const a = fresh(); const b = openApp({ url: kiosk(await makeLink(a)) });
+    await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.dlgOpen()).toBe(false);
+    expect(b.ev('state.S.events[0].title')).toBe('Doctor visit'); expect(b.ev('cw().name')).toBe('Granny care');
+    expect(stored(b).workspaces[0].events[0].title).toBe('Doctor visit');
+  });
+  it('the workspace with the same id is replaced silently, takes the new name, and stays undoable', async () => {
+    const a = fresh(); const id = a.ev('cw().id'); const b = openApp({ url: kiosk(await makeLink(a)), storage: mine(id) });
+    await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.dlgOpen()).toBe(false);
+    expect(b.ev('state.WS.length')).toBe(1); expect(b.ev('cw().id')).toBe(id); expect(b.ev('cw().name')).toBe('Granny care');
+    expect(b.ev('state.S.events.map(e=>e.title).join()')).toBe('Doctor visit'); expect(stored(b).workspaces[0].events[0].title).toBe('Doctor visit');
+    b.ev('undo()'); expect(b.ev('state.S.events[0].title')).toBe('Old event');
+  });
+  it('a workspace with the same id that is not the current one is replaced and switched to', async () => {
+    const a = fresh(); const id = a.ev('cw().id');
+    const st = { version: FMT, current: 'other', workspaces: [{ id: 'other', name: 'Other', ...blank() }, { id, name: 'Old copy', ...blank() }] };
+    const b = openApp({ url: kiosk(await makeLink(a)), storage: { [WS_KEY]: JSON.stringify(st) } });
+    await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.ev('state.curId')).toBe(id); expect(b.ev('state.S.events[0].title')).toBe('Doctor visit'); expect(b.ev('state.WS.length')).toBe(2);
+  });
+  it('unsaved changes in that workspace are never overwritten: the usual import dialog opens instead', async () => {
+    const a = fresh(); const id = a.ev('cw().id'); const link = await makeLink(a); const b = openApp({ storage: mine(id) });
+    b.ev('state.S.desc="edited here"'); b.w.location.hash = kiosk(link).split('#')[1];
+    await waitFor(() => b.dlgTitle() === 'Import'); expect(b.ev('state.S.events[0].title')).toBe('Old event');
+  });
+  it('a browser with other saved workspaces (no matching id) gets the import dialog, not a silent change', async () => {
+    const a = fresh(); const b = openApp({ url: kiosk(await makeLink(a)), storage: mine('someone-else') });
+    await waitFor(() => b.dlgTitle() === 'Import'); expect(b.ev('cw().name')).toBe('Old copy');
+  });
+  it('a wrong password shows the kiosk message, opens no dialog, keeps what is shown and cleans the address', async () => {
+    const a = fresh(); const id = a.ev('cw().id'); const b = openApp({ url: kiosk(await makeLink(a), PASSWORD + 'x'), storage: mine(id) });
+    await waitFor(() => /kiosk’s password does not open/.test(b.toast())); expect(b.dlgOpen()).toBe(false);
+    expect(b.ev('state.S.events[0].title')).toBe('Old event'); expect(b.w.location.hash).toBe(''); expect(stored(b).workspaces[0].events[0].title).toBe('Old event');
+  });
+  it('the data and the password are removed from the address bar once it is open', async () => {
+    const a = fresh(); const b = openApp({ url: kiosk(await makeLink(a)) }); await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.w.location.hash).toBe(''); expect(b.w.location.href).not.toMatch(/pw=/);
+  });
+  it('a password with spaces, & and % works when it is URI-encoded in the address', async () => {
+    const pw = 'kitchen wall & 100% sure, ok'; const a = fresh(); const b = openApp({ url: kiosk(await makeLink(a, { pw }), pw) });
+    await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.ev('state.S.events[0].title')).toBe('Doctor visit');
+  });
+  it('&layout=phone switches this browser to the phone view (as Settings → Layout → Phone), and &layout=desk to the computer layout', async () => {
+    const a = fresh(); const link = await makeLink(a);
+    const b = openApp({ url: kiosk(link, PASSWORD, '&layout=phone') }); await waitFor(() => b.toast() === 'Saved to browser memory');
+    expect(b.ev('state.prefs.layout')).toBe('phone'); expect(b.ev('document.documentElement.classList.contains("phv")')).toBe(true);
+    const c = openApp({ url: kiosk(link, PASSWORD, '&layout=desk'), phone: true }); await waitFor(() => c.toast() === 'Saved to browser memory');
+    expect(c.ev('state.prefs.layout')).toBe('desk'); expect(c.ev('document.documentElement.classList.contains("phv")')).toBe(false);
+  });
+  it('an unknown layout value is ignored and the layout stays Automatic', async () => {
+    const a = fresh(); const b = openApp({ url: kiosk(await makeLink(a), PASSWORD, '&layout=tv') }); await waitFor(() => b.toast() === 'Saved to browser memory'); expect(b.ev('state.prefs.layout')).toBe(undefined);
+  });
+  it('a link without &pw still asks for the password (only the kiosk address skips it)', async () => {
+    const a = fresh(); const b = openApp({ url: 'https://app.test/#data=e1.' + dataOf(await makeLink(a)) + '&layout=phone' }); await b.sleep(10); expect(b.dlgTitle()).toBe('Password needed');
+  });
+  it('the Share dialog never offers an address with the password in it', async () => {
+    const a = fresh(); const link = await makeLink(a); expect(link).not.toMatch(/[&?]pw=/); expect(a.dlgText()).not.toMatch(/pw=/);
+  });
+});
+
 describe('R-SHARE-06 Encrypted JSON files', () => {
   it('the file is named weekly-schedules-<date>-encrypted.json', async () => {
     const a = fresh(); await makeFile(a); expect(a.w.__download).toMatch(/^weekly-schedules-\d{4}-\d{2}-\d{2}-encrypted\.json$/);

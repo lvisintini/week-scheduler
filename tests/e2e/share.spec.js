@@ -96,6 +96,20 @@ test.describe('R-SHARE-05 Shareable links, opened in a second browser profile', 
   });
 });
 
+test.describe('R-SHARE-10 The kiosk address: an encrypted file\'s data plus its password, opened in a real browser with no typing', () => {
+  test('a saved encrypted file becomes an address that opens with no dialog, switches to the phone view, is stored, and survives a plain reload (the Home button)', async ({ page, browser }) => {
+    await openApp(page); await seed(page, rich());
+    const blob = JSON.parse(fs.readFileSync(await (await saveFile(page)).path(), 'utf8')).data;
+    const { ctx, page: kiosk } = await visitor(browser); const refused = []; kiosk.on('console', m => { if (/Refused to/.test(m.text())) refused.push(m.text()); });
+    await kiosk.goto(BASE + '/#data=e1.' + blob + '&pw=' + encodeURIComponent(PASSWORD) + '&layout=phone');
+    await expect(kiosk.locator('#toast')).toHaveText('Saved to browser memory'); await expect(kiosk.locator('#xDlg')).not.toBeVisible();
+    expect(kiosk.url()).toBe(BASE + '/'); expect(await kiosk.evaluate(() => document.documentElement.classList.contains('phv'))).toBe(true);
+    expect((await data(kiosk)).events[0].title).toBe('Doctor visit');
+    await kiosk.goto(BASE + '/'); expect((await data(kiosk)).events[0].title).toBe('Doctor visit');
+    expect(refused).toEqual([]); await ctx.close();
+  });
+});
+
 test.describe('R-DATA-03 Browser memory across real page reloads', () => {
   test('saved work is still there after a reload, and unsaved work is not', async ({ page }) => {
     await openApp(page); await seed(page, rich()); await toolbar(page, 'save').click(); await dialogButton(page, 'Browser memory').click(); await expect(page.locator('#toast')).toHaveText('Saved to browser memory');

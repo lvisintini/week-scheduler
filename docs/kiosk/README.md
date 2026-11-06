@@ -11,6 +11,8 @@ A clean, from-scratch guide to turning a **Raspberry Pi 3B** and the official **
 
 **Step 9** adds a **motion sensor**. The screen dims when nobody is around, then switches off, and wakes as soon as someone walks up or touches it.
 
+**Step 10** shows **your own workspace**, kept as an encrypted file in a **private GitHub repository**. The Pi fetches it, and fetches it again when you push a new copy, with no typing on the touchscreen.
+
 **Optional add-on:** a [rotating kiosk mode](#optional-rotating-kiosk-mode) with no browser bars. It cycles between the planner, a weather page and a clock, and has a launcher screen for pausing and opening recipes.
 
 It runs on **Raspberry Pi OS Lite (Trixie)** with **cage** (a minimal kiosk compositor) and **Chromium**. There's no desktop, X server or Openbox, so all of the Pi's 1GB is left for the browser.
@@ -32,12 +34,13 @@ It runs on **Raspberry Pi OS Lite (Trixie)** with **cage** (a minimal kiosk comp
 9. [Step 7 – Start on boot](#step-7--start-on-boot)
 10. [Step 8 – Check the screen and touch](#step-8--check-the-screen-and-touch)
 11. [Step 9 – Dim the screen when nobody is around](#step-9--dim-the-screen-when-nobody-is-around)
-12. [Using it](#using-it)
-13. [Adding and changing recipes](#adding-and-changing-recipes)
-14. [Optional: rotating kiosk mode](#optional-rotating-kiosk-mode)
-15. [Optional: a 3D-printed case](#optional-a-3d-printed-case)
-16. [Optional extras](#optional-extras)
-17. [Troubleshooting](#troubleshooting)
+12. [Step 10 – Show your workspace from a private GitHub repository](#step-10--show-your-workspace-from-a-private-github-repository)
+13. [Using it](#using-it)
+14. [Adding and changing recipes](#adding-and-changing-recipes)
+15. [Optional: rotating kiosk mode](#optional-rotating-kiosk-mode)
+16. [Optional: a 3D-printed case](#optional-a-3d-printed-case)
+17. [Optional extras](#optional-extras)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -71,6 +74,8 @@ Power on
 ```
 
 A separate background service, screen-dimmer, watches the motion sensor and touchscreen and sets the display's brightness.
+
+With step 10, `start.sh` first fetches your workspace from your private repository, and Chromium opens the planner with it. A timer checks for a new copy every 15 minutes.
 
 If Chromium quits or crashes, cage exits, the Pi logs in again, and everything restarts on its own.
 
@@ -149,7 +154,7 @@ rm -rf ~/kiosk-files && mkdir ~/kiosk-files && curl -fsSL https://github.com/lvi
 ls ~/kiosk-files
 ```
 
-You should see `autostart.sh`, `extension`, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
+You should see `autostart.sh`, `extension`, the four `kiosk-data` files, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
 
 | File | Goes to | Step |
 |---|---|---|
@@ -158,6 +163,9 @@ You should see `autostart.sh`, `extension`, `kiosk.json`, `screen-dimmer.py`, `s
 | [`autostart.sh`](files/autostart.sh) | `~/kiosk/autostart.sh` | 7 |
 | [`screen-dimmer.py`](files/screen-dimmer.py) | `/usr/local/bin/screen-dimmer.py` | 9 |
 | [`screen-dimmer.service`](files/screen-dimmer.service) | `/etc/systemd/system/screen-dimmer.service` | 9 |
+| [`kiosk-data.sh`](files/kiosk-data.sh) | `~/kiosk/kiosk-data.sh` | 10 |
+| [`kiosk-data.conf`](files/kiosk-data.conf) | `~/kiosk/kiosk-data.conf` | 10 |
+| [`kiosk-data@.service`](files/kiosk-data@.service), [`kiosk-data@.timer`](files/kiosk-data@.timer) | `/etc/systemd/system/` | 10 |
 | [`extension/`](files/extension/) | `~/kiosk/extension/` | [optional rotating kiosk mode](#optional-rotating-kiosk-mode) |
 
 ---
@@ -337,6 +345,94 @@ sudo systemctl restart screen-dimmer
 
 > **Tapping a dark screen:** if the screen is fully off and you tap it, that first tap also reaches whatever is on screen. Usually the sensor wakes the screen before your finger gets there, but tap an empty area to be safe.
 
+## Step 10 – Show your workspace from a private GitHub repository
+
+Without this step the kiosk shows whatever is saved in its own browser memory, which you'd have to set up by touch. And if you turn on the [read-only SD card](#read-only-sd-card-protects-against-power-cuts), that memory is wiped at every reboot. With this step:
+
+- you keep your workspace as an **encrypted file** in a **private** GitHub repository;
+- the Pi fetches it with a **read-only key** that works for that one repository only;
+- the planner opens it straight away, with no password to type and no questions;
+- when you push a new copy, the kiosk picks it up within 15 minutes and restarts (about 30 seconds).
+
+The planner itself still makes no network requests. The Pi downloads the file and gives it to the planner in the address, after the `#`, which is never sent to any server.
+
+### 10.1 Choose the kiosk password
+
+Pick one password for the kiosk's file, at least 20 characters, and keep it in your password manager. **Use the same password every time** you save the file for the kiosk. The planner's Save dialog suggests a new random password each time, so replace that suggestion with the kiosk password.
+
+If you save it once with a different password, the kiosk can't open the new copy. It says so and keeps showing the last copy it had.
+
+### 10.2 Put the file in a private repository
+
+1. On GitHub, create a **private** repository, for example `kitchen-schedule`.
+2. In the planner on your computer: **Save… → JSON file**, leave **Encrypted** on, replace the suggested password with the kiosk password, then **Save file**.
+3. Rename the downloaded file to `weekly-schedules.json`, then add it to the repository, commit and push. You can do this on github.com with **Add file → Upload files**.
+
+### 10.3 Give the Pi a read-only key
+
+On the Pi:
+
+```bash
+sudo apt install -y git
+ssh-keygen -t ed25519 -N "" -C kiosk -f ~/.ssh/kiosk_data
+cat ~/.ssh/kiosk_data.pub
+```
+
+Copy the line it prints. On GitHub, open the private repository → **Settings → Deploy keys → Add deploy key**, give it a title (`kiosk`), paste the line, leave **Allow write access** unticked, then **Add key**.
+
+### 10.4 Store the password on the Pi
+
+This asks for the kiosk password without showing it, and stores it in a file only your user can read:
+
+```bash
+( umask 077; read -rsp "Kiosk password: " p; echo; printf '%s\n' "$p" > ~/kiosk/data-password )
+```
+
+### 10.5 Install the files
+
+```bash
+install -m 755 ~/kiosk-files/kiosk-data.sh ~/kiosk/kiosk-data.sh
+install -m 644 ~/kiosk-files/kiosk-data.conf ~/kiosk/kiosk-data.conf
+nano ~/kiosk/kiosk-data.conf
+```
+
+In `kiosk-data.conf` ([see the file](files/kiosk-data.conf)), set:
+
+| Setting | Meaning |
+|---|---|
+| `REPO` | Your private repository's SSH address, from **Code → SSH** on GitHub, e.g. `git@github.com:yourname/kitchen-schedule.git` |
+| `BRANCH` | Usually `main` |
+| `FILE` | The file's path in the repository, e.g. `weekly-schedules.json` |
+| `LAYOUT` | `phone` opens the planner's touch view (recommended on this screen); `desk` the computer layout; `""` leaves it as set in the planner's Settings |
+
+Try it. The first time, ssh may note that it added GitHub to its known hosts; the last line should be `0`:
+
+```bash
+~/kiosk/kiosk-data.sh; echo $?
+```
+
+`0` means it fetched a new copy; running it again gives `3` (nothing changed). Anything else prints what went wrong (see [Troubleshooting](#troubleshooting)).
+
+Then install the timer that checks for new copies ([service](files/kiosk-data@.service), [timer](files/kiosk-data@.timer)), and restart the kiosk:
+
+```bash
+sudo install -m 644 ~/kiosk-files/kiosk-data@.service ~/kiosk-files/kiosk-data@.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now "kiosk-data@$USER.timer"
+sudo systemctl restart getty@tty1
+```
+
+The planner opens with your workspace. The address bar shows only the planner's plain address, because the planner removes the data and password from it once it has opened the file.
+
+### 10.6 Updating your workspace
+
+Change it in the planner on your computer, save it again as in 10.2 (same name, **same kiosk password**), and push. The kiosk shows the new copy within 15 minutes, or straight away after `sudo systemctl restart getty@tty1`.
+
+- **Changes made on the kiosk itself** are replaced by the next new copy from the repository. Make your changes on your computer.
+- **Check less or more often:** change `OnUnitActiveSec=15min` in `/etc/systemd/system/kiosk-data@.timer`, then `sudo systemctl daemon-reload`.
+- **Don't protect the kiosk's browser memory with a passphrase** (Settings → Data). The kiosk would ask for it at every start, and it has no keyboard.
+- **Big workspaces:** the address can be at most about 120,000 characters. If `kiosk-data.sh` says the file is too big, save only the schedules the kiosk needs (**What to include → Choose…**).
+
 ---
 
 ## Using it
@@ -484,13 +580,14 @@ sudo raspi-config
 Be aware:
 
 - **Changes don't stick.** Anything written while it's on, including recipe edits, updates and newly downloaded kiosk files, disappears at the next reboot. Turn the overlay off, make your changes, reboot, then turn it back on.
-- **Saved browser data is wiped at every reboot.** If your planner keeps anything in browser storage (local settings or edits), that's lost too. Only enable this if your pages get all their data from the web.
+- **Saved browser data is wiped at every reboot.** If your planner keeps anything in browser storage (local settings or edits), that's lost too. With [step 10](#step-10--show-your-workspace-from-a-private-github-repository) the planner gets your workspace (and the touch layout) back at every start. Without it, only enable this if your pages get all their data from the web.
+- **Set up step 10 before turning the overlay on**, so the key, the password and the settings are saved on the card.
 
 ### Getting newer versions of the files
 
 The files in [`docs/kiosk/files/`](files/) are improved from time to time. Download them again with the command from [step 3](#download-the-kiosk-files), then copy across the ones that changed, using the same command as the step that installed them.
 
-Four files hold **your own settings**, so copying a new version over them throws your changes away:
+Five files hold **your own settings**, so copying a new version over them throws your changes away:
 
 | File | Your settings in it |
 |---|---|
@@ -498,6 +595,7 @@ Four files hold **your own settings**, so copying a new version over them throws
 | `~/kiosk/start.sh` | `MODE` |
 | `/usr/local/bin/screen-dimmer.py` | Timings and brightness |
 | `~/kiosk/extension/config.js` | Everything in it |
+| `~/kiosk/kiosk-data.conf` | Your repository and file (step 10) |
 
 See what changed before copying one of these, then either copy the new file and make your changes again, or make the new changes by hand in your copy:
 
@@ -506,7 +604,10 @@ diff ~/kiosk/start.sh ~/kiosk-files/start.sh
 diff /usr/local/bin/screen-dimmer.py ~/kiosk-files/screen-dimmer.py
 diff /etc/chromium/policies/managed/kiosk.json ~/kiosk-files/kiosk.json
 diff -r ~/kiosk/extension ~/kiosk-files/extension
+diff ~/kiosk/kiosk-data.conf ~/kiosk-files/kiosk-data.conf
 ```
+
+`diff -r` on the extension also lists `start-url.js` if you use step 10 with the rotating mode. `start.sh` writes that file, so leave it out when copying.
 
 No output means nothing changed. Restart the kiosk afterwards (`sudo systemctl restart getty@tty1`), and the dimmer if you updated it (`sudo systemctl daemon-reload && sudo systemctl restart screen-dimmer`).
 
@@ -553,6 +654,10 @@ free -h
 | A mouse pointer is visible | A mouse is plugged in. cage only shows the pointer when a mouse is connected. |
 | "Restore pages?" bar after a power cut | `start.sh` handles this. If it still appears, delete `~/kiosk/profile` and restart the kiosk. |
 | Slow, or tabs reload when you switch | Memory is tight. Close tabs you're done with, and use recipe "print" pages. |
+| Step 10: the planner shows an old copy or the starting workspace | Run `~/kiosk/kiosk-data.sh; echo $?` and read the message, and see `~/kiosk/kiosk-data.log`. `Permission denied (publickey)`: the deploy key isn't on that repository, or `REPO` is wrong. `is not in the repository`: check `FILE` and `BRANCH`. `not an encrypted file`: save it with **Encrypted** on. |
+| Step 10: the planner says the kiosk's password does not open the new file | The file was saved with a different password. Save it again with the kiosk password and push, or store the new password as in 10.4. |
+| Step 10: the planner asks *Import* questions | The kiosk's copy has unsaved changes made on the touchscreen, so it won't be overwritten silently. Tap **Import** and replace it, or clear browser memory in Settings → Data. |
+| Step 10: the timer isn't running | `systemctl list-timers 'kiosk-data*'` should list it; `systemctl status "kiosk-data@$USER"` shows the last check. |
 | Need a text console on the Pi | Plug in a USB keyboard and press **Ctrl+Alt+F2**. **Ctrl+Alt+F1** returns to the kiosk. |
 
 ### Seeing inside Chromium (advanced)
