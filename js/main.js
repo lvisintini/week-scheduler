@@ -4,7 +4,7 @@ import {DAYN,DAYS,L,applyStatic} from './i18n.js';
 import {$,el} from './basics.js';
 import {FMT,errKey,initDefault,isSealed,loadStore,openImport,parseWorkspace,readStore,redo,undo,verOf} from './data.js';
 import {askPassword,askUnlock,handleShareLink,hasCrypto,sealedOk,unb64u} from './share.js';
-import {FH,FWK,applyLayout,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,phone,phoneFit,savePrefs,setFocus,setLive,syncLayout,today,todayWk} from './model.js';
+import {FH,FWK,applyLayout,applyPrefs,applyTheme,askLiveWeek,initLive,loadPrefs,lvPplFit,phone,phoneFit,savePrefs,setFocus,setLive,syncLayout,today,todayWk} from './model.js';
 import {agDay,agFn,agWk,doPrint,printDay} from './stats.js';
 import {goView,oneWeek,renderSide} from './sidebar.js';
 import {render,zoomRender} from './grid.js';
@@ -32,7 +32,7 @@ $('file').onchange=async e=>{
 };
 $('rs').onpointerdown=ev=>{
   ev.preventDefault();const x0=ev.clientX,w0=$('sb').offsetWidth;
-  const mv=p=>{state.prefs.w=Math.max(230,Math.min(560,w0+p.clientX-x0));applyPrefs()};
+  const mv=p=>{state.prefs.w=Math.max(230,Math.min(560,w0+p.clientX-x0));applyPrefs();lvPplFit()};
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);savePrefs()};
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
 };

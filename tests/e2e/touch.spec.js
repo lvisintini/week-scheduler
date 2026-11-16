@@ -232,6 +232,41 @@ test.describe('R-GRID-12 Live View controls on a phone', () => {
   });
 });
 
+test.describe('R-GRID-14 Live View people on the 720 × 1280 kiosk screen', () => {
+  test.use({ viewport: { width: 720, height: 1280 } });
+  const names = ['Olivia', 'Bob', 'Grandma Rose', 'Sam', 'Alexandra', 'Tom', 'Priya', 'Noah'];
+  const people = n => names.slice(0, n).map((name, i) => ({ id: 'p' + i, name, color: '#3b6df0', visible: true }));
+  const hit = (p, q) => p.x < q.x + q.width - 0.5 && q.x < p.x + p.width - 0.5 && p.y < q.y + q.height - 0.5 && q.y < p.y + p.height - 0.5;
+  const start = async (page, n) => {
+    const d = await page.evaluate(() => { state.prefs.layout = 'phone'; savePrefs(); syncLayout(true); return today(); });   // Settings → Layout → Phone (R-UI-18), as on the kiosk
+    await seed(page, blank({ people: people(n), events: [ev({ id: 'a', title: 'Gym', slots: [slot(d, 300, 1380, 'p0')] }), ev({ id: 'b', title: 'Piano', color: '#2fa66a', slots: [slot(d, 300, 1380, 'p1')] })] }));
+    await page.locator('#lvR').tap(); await expect(page.locator('#lvPpl')).toBeVisible();
+  };
+  test('every chip is finger-sized, on screen and clear of the pill and the floating stop and Now buttons', async ({ page }) => {
+    await start(page, 4); await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); });
+    await expect(page.locator('#lvF')).toBeVisible(); const chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
+    const others = await Promise.all(['#lvPill', '#lvR', '#lvF'].map(s => page.locator(s).boundingBox()));
+    expect(chips).toHaveLength(4);
+    for (const c of chips) { expect(c.width).toBeGreaterThanOrEqual(44); expect(c.height).toBeGreaterThanOrEqual(44); expect(c.x).toBeGreaterThanOrEqual(0); expect(c.x + c.width).toBeLessThanOrEqual(720); expect(c.y + c.height).toBeLessThanOrEqual(1280); for (const o of others) expect(hit(c, o)).toBe(false); }
+  });
+  test('with eight people the chips wrap onto rows above, still clear of the floating buttons, the last row beside the pill', async ({ page }) => {
+    await start(page, 8); const chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON())), pill = await page.locator('#lvPill').boundingBox(), stop = await page.locator('#lvR').boundingBox();
+    const rows = [...new Set(chips.map(c => Math.round(c.y)))]; expect(rows.length).toBeGreaterThan(1);
+    expect(pill.height).toBeLessThan(60); expect(await page.locator('#lvPill').evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);   // the pill keeps its one line: the chips give way, not it
+    expect(Math.max(...chips.map(c => c.y + c.height))).toBeCloseTo(pill.y + pill.height, 0);   // the bottom row sits on the pill's line, the others above it
+    expect(Math.round(chips[0].y)).toBe(Math.max(...rows)); expect(Math.round(chips.at(-1).y)).toBe(Math.min(...rows));   // the first people stay by the pill; the rows that do not fit go above
+    for (const c of chips) { expect(c.x).toBeGreaterThanOrEqual(stop.x + stop.width); expect(hit(c, pill)).toBe(false); }
+    const box = await page.locator('#pills').boundingBox(); expect(box.x).toBeGreaterThanOrEqual(stop.x + stop.width);   // however long the names, the row never reaches the stop button
+  });
+  test('a finger tap on a chip hides that person and keeps the open speech bubble of someone else', async ({ page }) => {
+    await start(page, 2); const vh = page.viewportSize().height, g = await page.locator('.ev', { hasText: 'Gym' }).boundingBox();
+    await page.touchscreen.tap(g.x + g.width / 2, vh * 0.5); await expect(page.locator('.lvb')).toHaveCount(1);
+    await page.locator('#lvPpl .lvp', { hasText: 'Bob' }).tap(); await expect(page.locator('.ev', { hasText: 'Piano' })).toHaveCount(0);
+    await expect(page.locator('.lvb')).toHaveCount(1); await expect(page.locator('#lvPpl .lvp', { hasText: 'Bob' })).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#lvPpl .lvp.all').tap(); await expect(page.locator('.ev', { hasText: 'Piano' })).toHaveCount(1);
+  });
+});
+
 test.describe('R-GRID-13 The days shown on a phone', () => {
   test('in the drawer both knobs of Days shown can be dragged with a finger, and the week then shows only those days', async ({ page }) => {
     await page.locator('.sbtop .xpand').tap(); await page.evaluate(() => { state.prefs.secZoom = false; setFocus(null); });

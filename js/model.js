@@ -2,7 +2,7 @@
 // this browser's view settings, read once at startup (main.js); every value is checked, as anything stored can be edited
 import {state} from './state.js';
 import {L} from './i18n.js';
-import {$,ICON_CAM,ICON_STOP,SNAP,el,esc,normHex,tyOf} from './basics.js';
+import {$,ICON_CAM,ICON_STOP,SNAP,el,esc,normHex,pIcon,tyOf} from './basics.js';
 import {FMT,PKEY,wkLabel} from './data.js';
 import {clearMem,lockNow,openPassphrase,restart} from './share.js';
 import {minAt,peekRows,render} from './grid.js';
@@ -377,13 +377,25 @@ export function liveBack(){clearTimeout(lvRet);if(!state.live)return;state.liveP
 export function liveTick(){if(!state.live||liveBusy())return;if(todayWk()==null){askLiveWeek(()=>{state.curWk=liveWk();render()},()=>setLive(false));return}   // another workspace or a new cycle: which week is it?
   if(state.focusD!==today()||state.curWk!==liveWk()){lvCloseAll(true);state.focusD=today();state.curWk=liveWk();render();return}if(!state.livePaused)liveScroll()}   // midnight: on to the next day (after Sunday, the next week of a cycle, R-CYC-05)
 export function updLive(){
-  const pl=$('lvPill');pl.style.display=state.live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
+  lvPeople();const pl=$('lvPill');pl.style.display=state.live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
   {const s=$('sb');if(s){s.classList.toggle('lv',state.live);s.classList.toggle('paused',state.live&&state.livePaused)}const f=$('lvF');if(f){f.title=L('lvNowTip');f.setAttribute('aria-label',L('lvNow'))}}
   {const r=$('lvR');if(r){r.innerHTML=state.live?ICON_STOP:ICON_CAM;r.title=L(state.live?'lvStopTip':'lvStartTip');r.setAttribute('aria-label',L(state.live?'lvStop':'lvStart'));r.classList.toggle('on',state.live);r.setAttribute('aria-pressed',String(state.live))}}
   const b=$('lvB'),c=$('lvC');if(!b)return;
   b.innerHTML=(state.live?ICON_STOP:ICON_CAM)+'<span></span>';b.querySelector('span').textContent=L(state.live?'lvStop':'lvStart');b.title=L(state.live?'lvStopTip':'lvStartTip');b.__t=b.title;
   b.classList.toggle('on',state.live);b.setAttribute('aria-pressed',String(state.live));c.style.display=state.live&&state.livePaused?'':'none';
 }
+/* the people of Live View (R-GRID-14): a chip per person of ours at the bottom, beside the pill; a tap flips that person's eye (the sidebar's,
+   view state: no undo, not an unsaved change) and Everyone, shown while one of them is hidden, opens every eye of ours again */
+function lvPeople(){
+  const b=$('lvPpl');if(!b)return;b.textContent='';const ps=ourPeople(),on=state.live&&ps.length>0;b.style.display=on?'':'none';lvPplFit();if(!on)return;
+  b.setAttribute('aria-label',L('lvPplL'));
+  const chip=(cls,tip,go)=>{const c=el('button','lvp'+cls,b);c.type='button';c.title=tip;c.__t=tip;c.onclick=()=>{go();render()};return c};
+  ps.forEach(q=>{const c=chip(q.visible?'':' off',L(q.visible?'lvPplTip':'lvPplOffTip',{n:q.name}),()=>{q.visible=!q.visible});
+    c.setAttribute('aria-pressed',String(!!q.visible));c.innerHTML=pIcon(q)+'<span></span>';c.lastChild.textContent=q.name});
+  if(ps.some(q=>!q.visible))chip(' all',L('lvAllTip'),()=>ps.forEach(q=>{q.visible=true})).textContent=L('lvAll');
+}
+// the row may not reach under the phone's floating stop and Now buttons (bottom left) or, on a computer, over the sidebar
+export function lvPplFit(){const p=$('pills'),w=$('wrap');if(!p||!w)return;p.style.maxWidth=state.live?`calc(100vw - ${phone()?72:Math.round(w.getBoundingClientRect().left)+24}px)`:''}
 /* live bubbles (R-GRID-12): tapping a box (or a place where boxes overlap) fades in a speech bubble whose arrow points at the tap, one section
    per occurrence there. Several may be open; each fades out after a minute, or at a tap on it or on empty space. They survive redraws.
    Placement: above or below the tap, never over another bubble if possible, covering as little of the boxes' text as possible. */
@@ -394,7 +406,7 @@ function lvTime(o){clearTimeout(o.timer);const t=setTimeout(()=>{if(o.timer===t)
 export function lvCloseAll(now){lvOpen.slice().forEach(o=>lvClose(o,now))}
 export function lvDraw(o,fresh){
   const col=document.querySelector(`#grid .day[data-d="${state.focusD}"]`);if(!col)return;
-  const its=o.keys.map(k=>{const [id,i,p]=k.split('|'),e=state.S.events.find(x=>x.id===id),s=e&&e.slots[+i];return s&&{e,s,piece:+p}}).filter(Boolean).sort((x,y)=>x.s.start-y.s.start);
+  const its=o.keys.map(k=>{const [id,i,p]=k.split('|'),e=state.S.events.find(x=>x.id===id),s=e&&e.slots[+i];return s&&visible(e)&&slotVisible(e,s)&&{e,s,piece:+p}}).filter(Boolean).sort((x,y)=>x.s.start-y.s.start);
   if(!its.length){lvClose(o,true);return}
   const L0=col.querySelector('.lvl')||el('div','lvl',col);L0.setAttribute('aria-live','polite');L0.setAttribute('aria-label',L('lvCards'));
   const cr=col.getBoundingClientRect(),W=cr.width,H=col.offsetHeight||parseFloat(col.style.height)||0,ax=o.fx*W,y=(o.m-hrA()*60)/60*state.HH,bw=Math.max(120,Math.min(300,W-8));

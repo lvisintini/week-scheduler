@@ -580,6 +580,65 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   });
 });
 
+describe('R-GRID-14 Live View people: a chip per person at the bottom hides or shows them in one tap', () => {
+  const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
+  const start = a => a.q('#lvB').click();
+  const ppl = [{ id: 'O', name: 'Olivia', color: '#d6409f', visible: true }, { id: 'B', name: 'Bob', color: '#2fa66a', visible: true }, { id: 'X', name: 'Gardener', color: '#888888', visible: true, external: true }];
+  const day = () => blank({ people: ppl, events: [
+    ev1({ id: 'sc', title: 'School', slots: [{ day: 2, start: 540, end: 900, person: 'O' }] }),
+    ev1({ id: 'gy', title: 'Gym', slots: [{ day: 2, start: 660, end: 720, person: 'B' }] }),
+    ev1({ id: 'pk', title: 'Park', slots: [{ day: 2, start: 600, end: 720, person: 'B', inv: ['O'] }] }),
+    ev1({ id: 'ga', title: 'Hedges', slots: [{ day: 2, start: 600, end: 660, person: 'X' }] }),
+  ] });
+  const row = a => a.q('#lvPpl'), chips = a => a.qa('#lvPpl .lvp'), chip = (a, n) => chips(a).find(c => c.textContent === n);
+  const names = a => chips(a).map(c => c.textContent), boxes = a => a.qa('.day .ev').map(b => b._it.e.title).sort();
+  const sideEye = (a, n) => [...a.qa('#sbin .sec')[1].querySelectorAll('.sch')].find(r => [...r.querySelectorAll('input')].some(i => i.value === n)).querySelector('button.eye');
+  const tap = (a, target, x, min) => { const y = a.y(min); ['pointerdown', 'pointerup', 'click'].forEach(t => target.dispatchEvent(new a.w.MouseEvent(t, { clientX: x, clientY: y, bubbles: true, cancelable: true }))); };
+  it('the chips show only while live: one per person of ours in the People order, none for external people', () => {
+    const a = fresh(day()); at(a, 2, 10, 30); expect(row(a).style.display).toBe('none'); expect(chips(a)).toHaveLength(0);
+    start(a); expect(row(a).style.display).toBe(''); expect(names(a)).toEqual(['Olivia', 'Bob']); expect(row(a).getAttribute('role')).toBe('group'); expect(row(a).getAttribute('aria-label')).toBe('People shown');
+    expect(chip(a, 'Olivia').querySelector('.ic svg')).not.toBeNull(); expect(chip(a, 'Olivia').querySelector('.ic').style.color).toMatch(/#d6409f|rgb\(214, 64, 159\)/);
+    expect(row(a).parentElement.id).toBe('pills'); expect(row(a).nextElementSibling.id).toBe('lvPill');
+    a.q('#lvB').click(); expect(row(a).style.display).toBe('none'); expect(chips(a)).toHaveLength(0);
+    const b = fresh(blank({ people: [ppl[2]] })); at(b, 2, 10, 30); start(b); expect(row(b).style.display).toBe('none');   // nobody of ours: no row at all
+  });
+  it('a tap hides that person (faded, aria-pressed false) and a second tap shows them again, with no undo step and nothing unsaved', () => {
+    const a = fresh(day()); at(a, 2, 10, 30); start(a); expect(boxes(a)).toEqual(['Gym', 'Hedges', 'Park', 'School']);
+    const u0 = a.ev('state.undoSt.length'), k0 = a.ev('keyOf(state.S)');
+    chip(a, 'Bob').click(); expect(a.ev("state.S.people.find(q=>q.id==='B').visible")).toBe(false);
+    expect(chip(a, 'Bob').classList.contains('off')).toBe(true); expect(chip(a, 'Bob').getAttribute('aria-pressed')).toBe('false'); expect(chip(a, 'Bob').title).toMatch(/^Not shown/);
+    expect(boxes(a)).toEqual(['Hedges', 'Park', 'School']);   // Park stays: Olivia is in it and shown (R-PPL-01)
+    expect(a.ev('state.undoSt.length')).toBe(u0); expect(a.ev('keyOf(state.S)')).toBe(k0); expect(a.ev('state.live')).toBe(true);
+    chip(a, 'Bob').click(); expect(boxes(a)).toEqual(['Gym', 'Hedges', 'Park', 'School']); expect(chip(a, 'Bob').classList.contains('off')).toBe(false); expect(chip(a, 'Bob').getAttribute('aria-pressed')).toBe('true');
+  });
+  it('the chips and the sidebar eyes are the same switch, both ways, and what was hidden stays hidden after Live View', () => {
+    const a = fresh(day()); at(a, 2, 10, 30); start(a); chip(a, 'Olivia').click(); expect(sideEye(a, 'Olivia').classList.contains('off')).toBe(true);
+    sideEye(a, 'Bob').click(); expect(chip(a, 'Bob').classList.contains('off')).toBe(true); expect(boxes(a)).toEqual(['Hedges']);
+    a.q('#lvB').click(); expect(a.ev('state.S.people.filter(q=>!q.visible).map(q=>q.id)')).toEqual(['O', 'B']);
+  });
+  it('Everyone appears only while one of ours is hidden and shows them all, leaving the eyes of external people alone', () => {
+    const a = fresh(day()); at(a, 2, 10, 30); a.ev("state.S.people.find(q=>q.id==='X').visible=false"); start(a);
+    expect(a.q('#lvPpl .lvp.all')).toBeNull();   // only an external person is hidden
+    chip(a, 'Olivia').click(); chip(a, 'Bob').click(); const all = a.q('#lvPpl .lvp.all'); expect(all.textContent).toBe('Everyone'); expect(all.title).toBe('Show everyone again.');
+    expect(names(a).at(-1)).toBe('Everyone'); all.click();
+    expect(a.ev('state.S.people.map(q=>q.visible)')).toEqual([true, true, false]); expect(a.q('#lvPpl .lvp.all')).toBeNull();
+  });
+  it('an open speech bubble of someone just hidden closes; a bubble with a section still shown keeps it', () => {
+    const a = fresh(day()); at(a, 2, 11, 30); start(a); const bubbles = () => a.qa('.lvl .lvb:not(.out)').map(b => [...b.querySelectorAll('.lvs .pt1')].map(t => t.textContent));
+    a.ev("lvOpen.push({keys:['gy|0|0'],fx:.5,m:690});lvOpen.push({keys:['sc|0|0','gy|0|0'],fx:.2,m:700});render()");
+    expect(bubbles()).toEqual([['Gym'], ['School', 'Gym']]);
+    chip(a, 'Bob').click(); expect(bubbles()).toEqual([['School']]); expect(a.ev('lvOpen.length')).toBe(1);   // Gym's own bubble closes, the shared one keeps School
+    chip(a, 'Olivia').click(); expect(bubbles()).toEqual([]); expect(a.ev('lvOpen.length')).toBe(0);
+    const b = fresh(day()); at(b, 2, 11, 30); start(b); tap(b, b.qa('.day .ev').find(x => x._it.e.title === 'Gym'), 60, 690);
+    const before = b.ev('lvOpen.length'); chip(b, 'Olivia').click(); expect(b.ev('lvOpen.length')).toBe(before);   // a tap on a chip is not a tap on empty space
+  });
+  it('the chips speak Spanish: Personas visibles, Todos and the tooltips', () => {
+    const a = fresh(day()); at(a, 2, 10, 30); a.ev("setLang('es')"); start(a); chip(a, 'Bob').click();
+    expect(row(a).getAttribute('aria-label')).toBe('Personas visibles'); expect(a.q('#lvPpl .lvp.all').textContent).toBe('Todos');
+    expect(chip(a, 'Olivia').title).toMatch(/^Toca para ocultar lo que hace Olivia/); expect(chip(a, 'Bob').title).toMatch(/^No se muestra/);
+  });
+});
+
 describe('R-GRID-11 Focus on one day: only that day is shown, and the week comes back', () => {
   const two = () => blank({ events: [ev1({ id: 'a', title: 'Tue thing', slots: [{ day: 1, start: 600, end: 660, person: '' }] }), ev1({ id: 'b', title: 'Wed thing', slots: [{ day: 2, start: 600, end: 660, person: '' }] })] });
   const hdr = (a, d) => a.q(`.dh[data-d="${d}"]`);

@@ -354,6 +354,17 @@ test.describe('R-EVT-15 The edges of a flexible event\'s core can be dragged wit
   });
 });
 
+test.describe('R-GRID-14 Live View people on a computer', () => {
+  test('with the sidebar open the chips stay over the grid, wrapping above the pill instead of reaching over the sidebar', async ({ page }) => {
+    const ppl = [...Array(12).keys()].map(i => person({ id: 'p' + i, name: 'Person number ' + (i + 1) }));
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, blank({ people: ppl }));
+    await page.evaluate(() => { state.prefs.collapsed = false; applyPrefs(); setLive(true); });
+    const side = await boxOf(page.locator('#sb')), pill = await boxOf(page.locator('#lvPill')), chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
+    expect(chips).toHaveLength(12); expect(new Set(chips.map(c => Math.round(c.y))).size).toBeGreaterThan(1);
+    for (const c of chips) { expect(c.x).toBeGreaterThanOrEqual(side.x + side.width); expect(c.y + c.height).toBeLessThanOrEqual(pill.y + pill.height + 1); expect(c.x + c.width <= pill.x || c.y + c.height <= pill.y).toBe(true); }
+  });
+});
+
 test.describe('R-GRID-12 Live View in a real browser', () => {
   const busy = () => blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),

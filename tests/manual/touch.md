@@ -45,6 +45,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 32 | Open an event, tap **When**, tap **+ Add a time** and a day; tap another card; tap a card's ✕ | The new card opens with labelled fields; the other card opens and the first folds to its summary; ✕ removes that time (R-UI-07) | | |
 | 33 | Tap the floating camera, scroll the day, then tap the crosshair; tap the red stop button | In Live View only the red stop button floats (no ? or ›); after the scroll a crosshair appears above it and brings the now line back; stop goes back to the day view (R-GRID-12) | | |
 | 34 | Tap **Week**. Open *Work*, tap **When**, set Monday's Timing to *Flexible start/end* and its *Flexible start* to 30 min, save. Long-press the top edge of Work's solid part and drag down | The dashed part above grows and the solid part starts later; the outer times stay 09:00–17:00 (R-EVT-15) | | |
+| 35 | In Live View, with two or more people, tap a name at the bottom, then **Everyone** | The tapped name fades and that person's boxes go; **Everyone** brings them back. The names never sit under the red stop button or the pill (R-GRID-14) | | |
 
 ## Report back
 Note the phone, the OS version and the browser version. Copy the rows that did not do what the *Expected* column says

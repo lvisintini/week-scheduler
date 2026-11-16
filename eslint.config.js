@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 // Page-level names that the end-to-end tests and the pictures of How to use use inside page.evaluate(() => …), where they run in the app's own page.
-const appGlobals = Object.fromEntries(['state', 'cw', 'render', 'hist', 'parseData', 'parseWorkspace', 'buildFile', 'seal', 'unseal', 'hrA', 'hrB', 'renderSide', 'savePrefs', 'applyPrefs', 'applyTheme', 'saveMem', 'addWorkspace', 'printSchedule', 'openDlg', 'openCopy', 'openSettings', 'openStats', 'openAgenda', 'openRhythmAgenda', 'anyDirty', 'setLive', 'setFocus', 'today', 'lvOpen', 'DAYS', 'setWeek', 'openCycle', 'askLiveWeek', 'dayPage', 'setAllWk', 'newWs', 'defaultData', 'openPeopleCopy', 'setLang', 'openExamples'].map(n => [n, 'writable']));
+const appGlobals = Object.fromEntries(['state', 'cw', 'render', 'hist', 'parseData', 'parseWorkspace', 'buildFile', 'seal', 'unseal', 'hrA', 'hrB', 'renderSide', 'savePrefs', 'syncLayout', 'applyPrefs', 'applyTheme', 'saveMem', 'addWorkspace', 'printSchedule', 'openDlg', 'openCopy', 'openSettings', 'openStats', 'openAgenda', 'openRhythmAgenda', 'anyDirty', 'setLive', 'setFocus', 'today', 'lvOpen', 'DAYS', 'setWeek', 'openCycle', 'askLiveWeek', 'dayPage', 'setAllWk', 'newWs', 'defaultData', 'openPeopleCopy', 'setLang', 'openExamples'].map(n => [n, 'writable']));
 
 export default [
   { ignores: ['node_modules/', 'test-results/', 'playwright-report/', 'index.html'] },
