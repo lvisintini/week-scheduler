@@ -141,7 +141,7 @@ sudo apt install -y cage chromium curl
 
 | Package | What it does |
 |---|---|
-| **cage** | A tiny compositor that shows one app full-screen. It handles touch with no setup and hides the mouse pointer unless a mouse is plugged in. |
+| **cage** | A tiny compositor that shows one app full-screen. It handles touch with no setup, and it hides the mouse pointer when there's no mouse. On a Pi the HDMI-CEC input counts as a mouse until step 8 fixes it. |
 | **chromium** | The browser. Later steps launch `/usr/lib/chromium/chromium` directly. The `/usr/bin/chromium` wrapper opens a hidden "less than 1GB RAM" warning that leaves you with a black screen. |
 | **curl** | Downloads the kiosk files below (usually installed already). |
 
@@ -154,13 +154,14 @@ rm -rf ~/kiosk-files && mkdir ~/kiosk-files && curl -fsSL https://github.com/lvi
 ls ~/kiosk-files
 ```
 
-You should see `autostart.sh`, `extension`, the four `kiosk-data` files, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
+You should see `99-kiosk-no-pointer.rules`, `autostart.sh`, `extension`, the four `kiosk-data` files, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
 
 | File | Goes to | Step |
 |---|---|---|
 | [`kiosk.json`](files/kiosk.json) | `/etc/chromium/policies/managed/kiosk.json` | 5 |
 | [`start.sh`](files/start.sh) | `~/kiosk/start.sh` | 6 |
 | [`autostart.sh`](files/autostart.sh) | `~/kiosk/autostart.sh` | 7 |
+| [`99-kiosk-no-pointer.rules`](files/99-kiosk-no-pointer.rules) | `/etc/udev/rules.d/99-kiosk-no-pointer.rules` | 8 |
 | [`screen-dimmer.py`](files/screen-dimmer.py) | `/usr/local/bin/screen-dimmer.py` | 9 |
 | [`screen-dimmer.service`](files/screen-dimmer.service) | `/etc/systemd/system/screen-dimmer.service` | 9 |
 | [`kiosk-data.sh`](files/kiosk-data.sh) | `~/kiosk/kiosk-data.sh` | 10 |
@@ -259,6 +260,24 @@ After the reboot in step 7 you should see:
 - **touch working:** tap **Recipes** on the bookmarks bar, then the **Home** button
 
 There are no screen or touch settings to change; the Pi detects the Touch Display 2 automatically. If the screen stays black, see [Troubleshooting](#troubleshooting).
+
+### No mouse pointer
+
+A **mouse pointer in the middle of the screen**, with no mouse plugged in, comes from the Pi itself. Its HDMI-CEC input (the HDMI port's remote-control link) tells the system it's a mouse, even with the screen on the ribbon cable, and cage draws a pointer whenever a mouse exists. This lists the input devices the system counts as a mouse; with no mouse plugged in you'll see one named `vc4…`:
+
+```bash
+udevadm info --export-db | awk -v RS= '/ID_INPUT_MOUSE=1/' | grep '^E: NAME='
+```
+
+This rule takes the mouse tag off that device only. Touch keeps working, and a real mouse still shows its pointer if you plug one in:
+
+```bash
+sudo install -m 644 ~/kiosk-files/99-kiosk-no-pointer.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger --subsystem-match=input
+sudo systemctl restart getty@tty1
+```
+
+The kiosk restarts without the pointer. Run the first command again: the `vc4…` device is no longer listed.
 
 ---
 
@@ -653,7 +672,7 @@ free -h
 | Screen-dimmer says "No backlight found" | The display isn't detected; check the ribbon cable and power lead. |
 | No Recipes folder or Home button | The settings file has a mistake. Run `python3 -m json.tool /etc/chromium/policies/managed/kiosk.json` and fix the line it reports. |
 | Rotating kiosk mode shows pages but no round Home button and no rotation | The extension didn't load. Check all 11 files exist in `~/kiosk/extension` and `manifest.json` is valid (`python3 -m json.tool ~/kiosk/extension/manifest.json`). |
-| A mouse pointer is visible | A mouse is plugged in. cage only shows the pointer when a mouse is connected. |
+| A mouse pointer is visible | With no mouse plugged in, install the rule in [step 8](#no-mouse-pointer). If the pointer is still there, run that step's first command to see which device still counts as a mouse, and put its name (without the quotes) in place of `vc4*` in `/etc/udev/rules.d/99-kiosk-no-pointer.rules`, then run the step's last two commands again. A plugged-in mouse always shows a pointer. |
 | "Restore pages?" bar after a power cut | `start.sh` handles this. If it still appears, delete `~/kiosk/profile` and restart the kiosk. |
 | Slow, or tabs reload when you switch | Memory is tight. Close tabs you're done with, and use recipe "print" pages. |
 | Step 10: the planner shows an old copy or the starting workspace | Run `~/kiosk/kiosk-data.sh; echo $?` and read the message, and see `~/kiosk/kiosk-data.log`. `Permission denied (publickey)`: the deploy key isn't on that repository, or `REPO` is wrong. `is not in the repository`: check `FILE` and `BRANCH`. `not an encrypted file`: save it with **Encrypted** on. |

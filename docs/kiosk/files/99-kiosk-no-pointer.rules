@@ -1,0 +1,6 @@
+# Installed to /etc/udev/rules.d/ by step 8 of the kiosk guide (docs/kiosk/README.md).
+# The Pi's HDMI-CEC input (named vc4-hdmi..., or vc4 on some models) says it is a mouse, even with
+# the screen on the DSI ribbon, so cage draws a mouse pointer in the middle of the screen.
+# This takes the mouse tag off that device only: touch is untouched, and a real mouse still works
+# and still shows its pointer.
+ACTION!="remove", SUBSYSTEM=="input", ATTRS{name}=="vc4*", ENV{ID_INPUT_MOUSE}="", ENV{ID_INPUT_POINTINGSTICK}=""
