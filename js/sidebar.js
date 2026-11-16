@@ -4,7 +4,7 @@ import {DAY2,DAYS,L} from './i18n.js';
 import {$,FAV,ICON_AGENDA,ICON_CAL,ICON_CD,ICON_CHECK,ICON_CL,ICON_CR,ICON_EXT,ICON_EYE,ICON_EYE_OFF,ICON_FOLDER,ICON_GEAR,ICON_GRIP,ICON_HELP,ICON_LOCK,ICON_MORE,ICON_NOW,ICON_OPAC,ICON_PLUS,ICON_RESET,ICON_PRINT,ICON_REDO,ICON_RHYTHM,ICON_SAVE,ICON_STATS,ICON_UNDO,ICON_UNLOCK,ICON_USER,ICON_WS,PAL,TICONS,el,esc,iconName,iconPicker,pickColor,tIcon,uid} from './basics.js';
 import {anyDirty,cw,hist,isDirty,openPeopleCopy,openTransfer,redo,saveTo,undo,updUR,wkCol,wkLabel,wsMenu} from './data.js';
 import {loadMem} from './share.js';
-import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,descOn,fmtLen,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,updLive,vrhythm,xdlg} from './model.js';
+import {DAYS0,FH,FWK,HRS0,RH,WK,applyPrefs,cyc,daysOf,descOn,fmtLen,hourLabel,hrsOf,liveBack,openHelp,openSettings,ourPeople,phone,savePrefs,setLive,toggleFull,updLive,vrhythm,xdlg} from './model.js';
 import {dayPage,doPrint,metaLine,openRhythmAgenda,openStats,printDay} from './stats.js';
 import {fitted,render,updZoomUI,withPrintScale,zoomRender} from './grid.js';
 import {openDlg} from './dialog.js';
@@ -100,7 +100,8 @@ export function renderSide(){
   const cl=el('button','eye xpand',top);cl.innerHTML=state.prefs.collapsed?ICON_CR:ICON_CL;cl.title=L(state.prefs.collapsed?'expandTip':'collapseTip');
   cl.onclick=()=>{state.prefs.collapsed=!state.prefs.collapsed;savePrefs();applyPrefs();renderSide()};
   {const lb=el('button','eye lvr',top);lb.id='lvR';lb.type='button';lb.onclick=()=>setLive(!state.live);
-   const nb=el('button','eye lvnow',top);nb.id='lvF';nb.type='button';nb.innerHTML=ICON_NOW;nb.onclick=liveBack;updLive()}   // a phone: Live View and its Now float (R-GRID-12)   // Live View one tap away on the collapsed rail (R-GRID-12)
+   const nb=el('button','eye lvnow',top);nb.id='lvF';nb.type='button';nb.innerHTML=ICON_NOW;nb.onclick=liveBack;
+   const fb=el('button','eye lvfs',top);fb.id='lvFS';fb.type='button';fb.onclick=toggleFull;updLive()}   // full screen, above the stop button (R-GRID-15)   // a phone: Live View and its Now float (R-GRID-12)   // Live View one tap away on the collapsed rail (R-GRID-12)
   const body=el('div','sbbody',sb);
   const wb=el('button','wsbtn',body);wb.innerHTML=`<span class="ic">${ICON_WS}</span><span class="wsn"></span><span class="chev">${ICON_CD}</span>`;
   wb.querySelector('.wsn').textContent=cw().name+(isDirty()?' •':'');wb.title=L('wsMenuTip')+(state.S.desc?'\n'+state.S.desc:'');wb.onclick=()=>wsMenu(wb);
@@ -181,7 +182,8 @@ export function renderSide(){
   secHead(s6,'toolsH',null,'toolsTip','secTools');
   if(!state.prefs.secTools){
     {const r=el('div','lvrow',s6),b=el('button','',r),c=el('button','',r);b.id='lvB';b.type='button';b.onclick=()=>setLive(!state.live);   // live view (R-GRID-12)
-     c.id='lvC';c.type='button';c.innerHTML=ICON_NOW+'<span></span>';c.querySelector('span').textContent=L('lvNow');c.title=L('lvNowTip');c.onclick=liveBack;updLive()}
+     c.id='lvC';c.type='button';c.innerHTML=ICON_NOW+'<span></span>';c.querySelector('span').textContent=L('lvNow');c.title=L('lvNowTip');c.onclick=liveBack;
+     const f=el('button','',r);f.id='lvFC';f.type='button';f.onclick=toggleFull;updLive()}   // full screen, after Stop and Now (R-GRID-15)
     const tck=(label,tip,get,set)=>{const l=el('label','zck',s6),c=el('input','',l);c.type='checkbox';c.setAttribute('role','switch');c.checked=get();el('span','',l).textContent=L(label);l.title=L(tip);
       c.onchange=()=>{set(c.checked);savePrefs();render()};return c};
     tck('nowLine','nowLineTip',()=>state.prefs.nowLine,v=>{state.prefs.nowLine=v});   // R-GRID-04

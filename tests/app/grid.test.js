@@ -462,7 +462,7 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     const a = fresh(), st = sel => cssRule(a, sel).style;
     expect(st('aside.collapsed .sbtop .xpand').getPropertyValue('order')).toBe('1');
     expect(st('aside.collapsed .gear').getPropertyValue('order')).toBe('3'); expect(st('aside.collapsed .gear').getPropertyValue('margin-top')).toBe('auto');
-    expect(st('aside .sbtop .lvr,aside .sbtop .lvnow').getPropertyValue('display')).toBe('none'); expect(cssRule(a, 'aside.collapsed .lvr')).toBeUndefined();   // shown only by the phone rules
+    expect(st('aside .sbtop .lvr,aside .sbtop .lvnow,aside .sbtop .lvfs').getPropertyValue('display')).toBe('none'); expect(cssRule(a, 'aside.collapsed .lvr')).toBeUndefined();   // shown only by the phone rules
   });
   it('the sidebar has a Live View button with a camera icon at the top of the Tools section; the Now button is hidden', () => {
     const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.querySelector('.shbtn span').textContent).toBe('Tools');
@@ -636,6 +636,49 @@ describe('R-GRID-14 Live View people: a chip per person at the bottom hides or s
     const a = fresh(day()); at(a, 2, 10, 30); a.ev("setLang('es')"); start(a); chip(a, 'Bob').click();
     expect(row(a).getAttribute('aria-label')).toBe('Personas visibles'); expect(a.q('#lvPpl .lvp.all').textContent).toBe('Todos');
     expect(chip(a, 'Olivia').title).toMatch(/^Toca para ocultar lo que hace Olivia/); expect(chip(a, 'Bob').title).toMatch(/^No se muestra/);
+  });
+});
+
+describe('R-GRID-15 Live View full screen: a button beside Stop hides the browser bars, and leaving Live View leaves full screen', () => {
+  const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
+  // jsdom has no Fullscreen API: a stand-in that records the calls and, like a browser, fires fullscreenchange
+  const fsApi = (a, enabled = true) => a.ev(`(()=>{window.__fs=[];let el=null;
+    Object.defineProperty(document,'fullscreenEnabled',{configurable:true,get:()=>${enabled}});
+    Object.defineProperty(document,'fullscreenElement',{configurable:true,get:()=>el});
+    document.documentElement.requestFullscreen=()=>{__fs.push('in');el=document.documentElement;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve()};
+    document.exitFullscreen=()=>{__fs.push('out');el=null;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve()}})()`);
+  const calls = a => a.ev('__fs'), fc = a => a.q('#lvFC'), fs = a => a.q('#lvFS');
+  const live = (a, o) => { at(a, 2, 10, 30); fsApi(a, o); a.ev('renderSide()'); a.q('#lvB').click(); };
+  it('the Tools row shows Stop, Now and then Full screen while live, and hides it otherwise', () => {
+    const a = fresh(); at(a, 2, 10, 30); fsApi(a); a.ev('renderSide()'); expect(fc(a).style.display).toBe('none');
+    a.q('#lvB').click(); expect(fc(a).style.display).toBe(''); expect([...fc(a).parentElement.children].map(b => b.id)).toEqual(['lvB', 'lvC', 'lvFC']);
+    expect(fc(a).getAttribute('aria-label')).toBe('Full screen'); expect(fc(a).title).toMatch(/^Full screen: hide the browser's bars/); expect(fc(a).getAttribute('aria-pressed')).toBe('false'); expect(fc(a).querySelector('svg')).not.toBeNull();
+    a.q('#lvB').click(); expect(fc(a).style.display).toBe('none');
+  });
+  it('where the browser offers no full screen (an iPhone) the button never shows', () => {
+    const a = fresh(); live(a, false); expect(a.ev('state.live')).toBe(true); expect(fc(a).style.display).toBe('none'); expect(fs(a).style.display).toBe('none');
+  });
+  it('a click goes full screen and switches the button to Leave full screen; a second click leaves it and Live View carries on', () => {
+    const a = fresh(); live(a); const icon0 = fc(a).innerHTML; fc(a).click(); expect(calls(a)).toEqual(['in']);
+    expect(fc(a).getAttribute('aria-label')).toBe('Leave full screen'); expect(fc(a).getAttribute('aria-pressed')).toBe('true'); expect(fc(a).classList.contains('on')).toBe(true); expect(fc(a).innerHTML).not.toBe(icon0);
+    expect(fs(a).getAttribute('aria-pressed')).toBe('true');   // the phone's floating button follows too
+    fc(a).click(); expect(calls(a)).toEqual(['in', 'out']); expect(fc(a).getAttribute('aria-label')).toBe('Full screen'); expect(a.ev('state.live')).toBe(true);
+  });
+  it('stopping Live View also leaves full screen, and starting it again does not go full screen by itself', () => {
+    const a = fresh(); live(a); fc(a).click(); a.q('#lvB').click(); expect(calls(a)).toEqual(['in', 'out']); expect(a.ev('document.fullscreenElement')).toBeNull();
+    a.q('#lvB').click(); expect(calls(a)).toEqual(['in', 'out']); expect(a.ev('state.prefs.full')).toBeUndefined();   // nothing remembered
+  });
+  it('Esc while full screen does not stop Live View (the browser leaves full screen with it); the next Esc does', () => {
+    const a = fresh(); live(a); fc(a).click(); a.key('Escape'); expect(a.ev('state.live')).toBe(true);
+    a.ev('document.exitFullscreen()'); a.key('Escape'); expect(a.ev('state.live')).toBe(false);
+  });
+  it('the phone floating button sits between Now and the stop button and speaks Spanish', () => {
+    const a = fresh(null, { phone: true }); at(a, 2, 10, 30); fsApi(a); a.ev("setLang('es')"); a.q('#lvR').click();
+    const top = fs(a).parentElement; expect([...top.children].map(b => b.id).filter(Boolean).slice(-3)).toEqual(['lvR', 'lvF', 'lvFS']);
+    expect(fs(a).style.display).toBe(''); expect(fs(a).getAttribute('aria-label')).toBe('Pantalla completa'); expect(fs(a).title).toMatch(/^Pantalla completa: oculta las barras/);
+    fs(a).click(); expect(fs(a).getAttribute('aria-label')).toBe('Salir de pantalla completa');
+    const r = sel => [...a.d.styleSheets[0].cssRules].find(x => x.selectorText === sel);
+    expect(r(':where(.phv) aside.collapsed.lv .lvfs').style.getPropertyValue('order')).toBe('1');   // same order as Now, after it in the page: Now · Full · Stop
   });
 });
 

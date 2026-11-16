@@ -25,8 +25,8 @@ describe('R-UI-01 Everything lives in a collapsible, resizable sidebar', () => {
 });
 
 describe('R-UI-02 Sidebar layout, top to bottom', () => {
-  it('top row: favicon, title, help, settings and collapse (plus Live View and its Now, which float on a closed phone sidebar only)', () => {
-    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.className.includes('lvr') ? ':lvr' : c.className.includes('lvnow') ? ':lvnow' : c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar', 'button:lvr', 'button:lvnow']);
+  it('top row: favicon, title, help, settings and collapse (plus Live View, its Now and Full screen, which float on a closed phone sidebar only)', () => {
+    const top = fresh().q('.sbtop'); expect([...top.children].map(c => c.tagName.toLowerCase() + (c.className.includes('lvr') ? ':lvr' : c.className.includes('lvnow') ? ':lvnow' : c.className.includes('lvfs') ? ':lvfs' : c.title ? ':' + c.title : ''))).toEqual(['img', 'span', 'button:Help', 'button:Settings', 'button:Collapse sidebar', 'button:lvr', 'button:lvnow', 'button:lvfs']);
     expect(top.querySelector('.ttl').textContent).toBe('Weekly Schedules');
   });
   it('a bullet appears after the title while anything is unsaved', () => {
@@ -283,7 +283,7 @@ describe('R-UI-13 R-UI-01 A phone gets floating buttons; its drawer has the comp
   const rules = a => phoneRules(a);
   const rule = (a, sel) => rules(a).find(r => r.selectorText === sel);
   it('the top row reads favicon, title, help, settings and the chevron, in that order, on every screen', () => {
-    const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow']);
+    const a = openApp(); expect([...a.q('.sbtop').children].map(c => c.className.split(' ').find(k => ['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow', 'lvfs'].includes(k)))).toEqual(['fav', 'ttl', 'help', 'gear', 'xpand', 'lvr', 'lvnow', 'lvfs']);
     const b = openApp({ phone: true }); expect(rules(b).some(r => /^aside:not\(\.collapsed\)/.test(r.selectorText || '') && r.selectorText !== 'aside:not(.collapsed)' && !r.selectorText.includes('#sbBack'))).toBe(false);   // a phone draws the same open row
   });
   it('closed on a phone, the sidebar floats at the bottom-left as ? · Live View · › (no gear), so the grid has the whole width', () => {
@@ -294,7 +294,7 @@ describe('R-UI-13 R-UI-01 A phone gets floating buttons; its drawer has the comp
   });
   it('open on a phone, the drawer is up to 360 px wide with the computer\'s top row and no Live View button; the Tools Live View row is hidden', () => {
     const a = openApp({ phone: true }); expect(rules(a).find(r => r.selectorText === 'aside:not(.collapsed)').style.width).toMatch(/^min\(90vw, ?360px\)$/);
-    expect([...a.d.styleSheets[0].cssRules].find(r => r.selectorText === 'aside .sbtop .lvr,aside .sbtop .lvnow').style.display).toBe('none'); expect(rule(a, '#sbin .lvrow').style.display).toBe('none');
+    expect([...a.d.styleSheets[0].cssRules].find(r => r.selectorText === 'aside .sbtop .lvr,aside .sbtop .lvnow,aside .sbtop .lvfs').style.display).toBe('none'); expect(rule(a, '#sbin .lvrow').style.display).toBe('none');
   });
   it('in Live View on a phone only the stop button floats, with Now above it after a manual scroll', () => {
     const a = openApp({ phone: true }); expect(rule(a, 'aside.collapsed.lv .sbtop .help,aside.collapsed.lv .sbtop .xpand').style.display).toBe('none');

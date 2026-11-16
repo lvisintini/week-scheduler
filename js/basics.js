@@ -18,7 +18,8 @@ export const ICON_EYE_OFF=I(EYEP+' stroke-dasharray="3 3.2"/>');
 export const ICON_UNDO=I('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>');
 export const ICON_REDO=I('<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>');
 export const ICON_CL=I('<path d="M15 5l-7 7 7 7"/>'),ICON_CR=I('<path d="M9 5l7 7-7 7"/>');
-export const ICON_CAM=I('<rect x="2.5" y="6.5" width="13" height="11" rx="2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/>'),ICON_STOP=I('<rect x="6" y="6" width="12" height="12" rx="1.5"/>'),ICON_NOW=I('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>');
+export const ICON_CAM=I('<rect x="2.5" y="6.5" width="13" height="11" rx="2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/>'),ICON_STOP=I('<rect x="6" y="6" width="12" height="12" rx="1.5"/>'),ICON_NOW=I('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
+  ICON_FULL=I('<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>'),ICON_FULLX=I('<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/>');   // full screen: corners out / in (R-GRID-15)
 export const ICON_FOCUS=I('<path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/><circle cx="12" cy="12" r="2.5"/>'),ICON_WEEK=I('<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M9 5v15M15 5v15"/>');
 export const ICON_AGENDA=I('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>');
 export const ICON_REPEAT=I('<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>');

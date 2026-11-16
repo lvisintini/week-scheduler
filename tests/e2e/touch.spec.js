@@ -267,6 +267,34 @@ test.describe('R-GRID-14 Live View people on the 720 × 1280 kiosk screen', () =
   });
 });
 
+test.describe('R-GRID-15 Live View full screen on the 720 × 1280 kiosk screen', () => {
+  test.use({ viewport: { width: 720, height: 1280 } });
+  const hit = (p, q) => p.x < q.x + q.width - 0.5 && q.x < p.x + p.width - 0.5 && p.y < q.y + q.height - 0.5 && q.y < p.y + p.height - 0.5;
+  const fsEl = page => page.evaluate(() => document.fullscreenElement && document.fullscreenElement.tagName);
+  test.beforeEach(async ({ page }) => {
+    const d = await page.evaluate(() => { state.prefs.layout = 'phone'; savePrefs(); syncLayout(true); return today(); });
+    await seed(page, blank({ people: [{ id: 'p0', name: 'Olivia', color: '#d6409f', visible: true }, { id: 'p1', name: 'Bob', color: '#2fa66a', visible: true }], events: [ev({ title: 'Gym', slots: [slot(d, 300, 1380, 'p0')] })] }));
+    await page.locator('#lvR').tap(); await expect(page.locator('#lvFS')).toBeVisible();
+  });
+  test('a tap goes full screen and a second tap leaves it; Live View carries on', async ({ page }) => {
+    await page.locator('#lvFS').tap(); await expect.poll(() => fsEl(page)).toBe('HTML'); await expect(page.locator('#lvFS')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#lvFS').tap(); await expect.poll(() => fsEl(page)).toBeNull(); await expect(page.locator('#lvFS')).toHaveAttribute('aria-pressed', 'false');
+    expect(await page.evaluate(() => state.live)).toBe(true);
+  });
+  test('the red stop button leaves full screen together with Live View', async ({ page }) => {
+    await page.locator('#lvFS').tap(); await expect.poll(() => fsEl(page)).toBe('HTML');
+    await page.locator('#lvR').tap(); await expect.poll(() => fsEl(page)).toBeNull(); expect(await page.evaluate(() => state.live)).toBe(false); await expect(page.locator('#lvFS')).toBeHidden();
+  });
+  test('the floating buttons stack Now, Full screen, Stop, finger-sized and clear of each other, the people chips and the pill', async ({ page }) => {
+    await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); }); await expect(page.locator('#lvF')).toBeVisible();
+    const [now, full, stop] = await Promise.all(['#lvF', '#lvFS', '#lvR'].map(s => page.locator(s).boundingBox()));
+    expect(now.y + now.height).toBeLessThanOrEqual(full.y + 1); expect(full.y + full.height).toBeLessThanOrEqual(stop.y + 1); expect(Math.abs(full.x - stop.x)).toBeLessThan(2);
+    for (const b of [now, full, stop]) { expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44); }
+    const others = await page.locator('#lvPpl .lvp, #lvPill').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
+    for (const b of [now, full, stop]) for (const o of others) expect(hit(b, o)).toBe(false);
+  });
+});
+
 test.describe('R-GRID-13 The days shown on a phone', () => {
   test('in the drawer both knobs of Days shown can be dragged with a finger, and the week then shows only those days', async ({ page }) => {
     await page.locator('.sbtop .xpand').tap(); await page.evaluate(() => { state.prefs.secZoom = false; setFocus(null); });

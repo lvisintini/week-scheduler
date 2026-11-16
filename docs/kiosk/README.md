@@ -441,6 +441,7 @@ Change it in the planner on your computer, save it again as in 10.2 (same name, 
 |---|---|
 | Go back to the planner | Tap the **Home** button (house icon) in the toolbar. |
 | Show only some people's activities | In Live View, tap the names at the bottom: a tap hides or shows that person, and **Everyone** brings them all back. It's the same as the person's eye in the sidebar. With Step 10, the kiosk goes back to the eyes saved in the file whenever it restarts. |
+| Use the whole screen for Live View | In Live View, tap the **full-screen** button just above the red stop button. Chromium's toolbar and bookmarks bar go away; tap it again, or stop Live View, to get them back for the recipes. In rotating kiosk mode the screen is already full, so it changes nothing you can see. |
 | Open a recipe | Tap **Recipes** on the bookmarks bar, then pick one. It opens in the current tab. To keep the planner open as well, tap **+** for a new tab first. |
 | Switch between planner and recipe | Tap the tabs at the top. |
 | Finish with a recipe | Tap the **×** on its tab. Closing tabs frees memory. |

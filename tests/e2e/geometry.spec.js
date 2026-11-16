@@ -365,6 +365,19 @@ test.describe('R-GRID-14 Live View people on a computer', () => {
   });
 });
 
+test.describe('R-GRID-15 Live View full screen on a computer', () => {
+  test('the Tools row reads Stop, Now, Full screen while live; Full screen fills the screen, an Esc while full screen keeps Live View, and the button follows the browser leaving it', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, blank());
+    await page.evaluate(() => { state.prefs.collapsed = false; state.prefs.secTools = false; applyPrefs(); renderSide(); }); await expect(page.locator('#lvFC')).toBeHidden();
+    await page.locator('#lvB').click(); await expect(page.locator('#lvFC')).toBeVisible();
+    const [b, f] = [await boxOf(page.locator('#lvB')), await boxOf(page.locator('#lvFC'))]; expect(f.x).toBeGreaterThan(b.x + b.width); expect(Math.abs(f.y - b.y)).toBeLessThan(2);
+    await page.locator('#lvFC').click(); await expect.poll(() => page.evaluate(() => document.fullscreenElement && document.fullscreenElement.tagName)).toBe('HTML');
+    await page.keyboard.press('Escape'); expect(await page.evaluate(() => state.live)).toBe(true);   // an Esc that reaches the page while full screen does not stop Live View too
+    await page.evaluate(() => document.fullscreenElement && document.exitFullscreen());   // the browser leaving full screen await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
+    expect(await page.evaluate(() => state.live)).toBe(true); await expect(page.locator('#lvFC')).toHaveAttribute('aria-pressed', 'false');   // left by the browser (Esc): the button follows, Live View stays
+  });
+});
+
 test.describe('R-GRID-12 Live View in a real browser', () => {
   const busy = () => blank({ people: [person({ id: 'O', name: 'Olivia' }), person({ id: 'B', name: 'Bob' })], events: [
     ev({ id: 'sc', title: 'School', desc: 'Room 4', slots: [slot(2, 540, 900, 'O')] }), ev({ id: 'gy', title: 'Gym', color: '#2fa66a', slots: [slot(2, 600, 720, 'B')] }),

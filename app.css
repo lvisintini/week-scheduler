@@ -16,7 +16,7 @@ aside.collapsed{width:46px}
 .rs{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:40}.rs:hover{background:var(--acc);opacity:.35}
 aside.collapsed .rs,aside.collapsed .sbbody,aside.collapsed .lang,aside.collapsed .ttl,aside.collapsed .fav{display:none}
 aside.collapsed #sbin{padding:12px 8px}aside.collapsed .sbtop{justify-content:flex-start;flex-direction:column;flex:1;margin-bottom:0}
-aside .sbtop .lvr,aside .sbtop .lvnow{display:none}aside.collapsed .sbtop .xpand{order:1}aside.collapsed .gear{order:3;margin-top:auto}   /* rail: open, and the gear far from the chevron; Live View is in Tools (R-UI-01) */
+aside .sbtop .lvr,aside .sbtop .lvnow,aside .sbtop .lvfs{display:none}aside.collapsed .sbtop .xpand{order:1}aside.collapsed .gear{order:3;margin-top:auto}   /* rail: open, and the gear far from the chevron; Live View is in Tools (R-UI-01) */
 .lvr.on{background:#e5342d;color:#fff;border-color:#e5342d}
 #sbBack{display:none}
 :where(.phv) aside:not(.collapsed){position:fixed;left:0;top:0;bottom:0;z-index:60;width:min(90vw,360px);box-shadow:0 0 24px #0006}:where(.phv) aside .rs{display:none}:where(.phv) aside:not(.collapsed)~#sbBack{display:block;position:fixed;inset:0;z-index:55;background:#0007}   /* phone: the open sidebar is a drawer over the grid (R-UI-13) */
@@ -26,7 +26,7 @@ aside .sbtop .lvr,aside .sbtop .lvnow{display:none}aside.collapsed .sbtop .xpand
 :where(.phv) aside.collapsed{position:fixed;left:4px;bottom:max(12px,env(safe-area-inset-bottom));width:auto;border:0;background:none;z-index:50}
 :where(.phv) aside.collapsed #sbin{padding:0;height:auto;overflow:visible}:where(.phv) aside.collapsed .sbtop{position:static;flex:none;gap:8px;margin:0;padding:0;background:none}
 :where(.phv) aside.collapsed .sbtop .help{display:inline-flex;order:1}:where(.phv) aside.collapsed .lvr{display:inline-flex;order:2}:where(.phv) aside.collapsed .sbtop .xpand{order:3}:where(.phv) aside.collapsed .gear{display:none}
-:where(.phv) aside.collapsed.lv .sbtop .help,:where(.phv) aside.collapsed.lv .sbtop .xpand{display:none}:where(.phv) aside.collapsed.lv.paused .lvnow{display:inline-flex;order:1}   /* Live View: the stop button, and Now above it after a manual scroll (R-GRID-12) */
+:where(.phv) aside.collapsed.lv .sbtop .help,:where(.phv) aside.collapsed.lv .sbtop .xpand{display:none}:where(.phv) aside.collapsed.lv.paused .lvnow{display:inline-flex;order:1}:where(.phv) aside.collapsed.lv .lvfs{display:inline-flex;order:1}   /* Live View: the stop button, and Now above it after a manual scroll (R-GRID-12) */
 :where(.phv) #sbin .lvrow{display:none}   /* Live View starts from the floating camera (R-UI-11) */
 :where(.phv) aside.collapsed .sbtop .eye{border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 88%,transparent);box-shadow:0 2px 10px #0004}:where(.phv) aside.collapsed .sbtop .lvr.on{background:#e5342d;border-color:#e5342d;color:#fff}   /* stop: red, as on the Tools button */
 .sbtop{display:flex;align-items:center;gap:8px;margin-bottom:12px;position:sticky;top:-12px;z-index:4;background:var(--card);padding-top:12px;margin-top:-12px}

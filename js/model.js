@@ -2,7 +2,7 @@
 // this browser's view settings, read once at startup (main.js); every value is checked, as anything stored can be edited
 import {state} from './state.js';
 import {L} from './i18n.js';
-import {$,ICON_CAM,ICON_STOP,SNAP,el,esc,normHex,pIcon,tyOf} from './basics.js';
+import {$,ICON_CAM,ICON_FULL,ICON_FULLX,ICON_STOP,SNAP,el,esc,normHex,pIcon,tyOf} from './basics.js';
 import {FMT,PKEY,wkLabel} from './data.js';
 import {clearMem,lockNow,openPassphrase,restart} from './share.js';
 import {minAt,peekRows,render} from './grid.js';
@@ -372,7 +372,7 @@ export function liveScroll(){
 }
 export function setLive(on){
   if(on&&todayWk()==null){askLiveWeek(()=>setLive(true));return}   // which week of the cycle is today in? (R-CYC-05)
-  clearTimeout(lvRet);lvCloseAll(true);state.live=on;state.livePaused=false;state.prefs.live=on;savePrefs();if(on){state.selK=null;state.focusD=today();state.curWk=liveWk()}else if(!phone())state.focusD=null;phoneFit();render()}   // a phone stays on the day it showed (R-GRID-12)
+  clearTimeout(lvRet);lvCloseAll(true);if(!on)leaveFull();state.live=on;state.livePaused=false;state.prefs.live=on;savePrefs();if(on){state.selK=null;state.focusD=today();state.curWk=liveWk()}else if(!phone())state.focusD=null;phoneFit();render()}   // a phone stays on the day it showed (R-GRID-12)
 export function liveBack(){clearTimeout(lvRet);if(!state.live)return;state.livePaused=false;liveScroll();updLive()}
 export function liveTick(){if(!state.live||liveBusy())return;if(todayWk()==null){askLiveWeek(()=>{state.curWk=liveWk();render()},()=>setLive(false));return}   // another workspace or a new cycle: which week is it?
   if(state.focusD!==today()||state.curWk!==liveWk()){lvCloseAll(true);state.focusD=today();state.curWk=liveWk();render();return}if(!state.livePaused)liveScroll()}   // midnight: on to the next day (after Sunday, the next week of a cycle, R-CYC-05)
@@ -380,10 +380,16 @@ export function updLive(){
   lvPeople();const pl=$('lvPill');pl.style.display=state.live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
   {const s=$('sb');if(s){s.classList.toggle('lv',state.live);s.classList.toggle('paused',state.live&&state.livePaused)}const f=$('lvF');if(f){f.title=L('lvNowTip');f.setAttribute('aria-label',L('lvNow'))}}
   {const r=$('lvR');if(r){r.innerHTML=state.live?ICON_STOP:ICON_CAM;r.title=L(state.live?'lvStopTip':'lvStartTip');r.setAttribute('aria-label',L(state.live?'lvStop':'lvStart'));r.classList.toggle('on',state.live);r.setAttribute('aria-pressed',String(state.live))}}
+  {const fs=!!document.fullscreenElement,show=state.live&&!!document.fullscreenEnabled;   // full screen (R-GRID-15): only while live, where the browser offers it
+   ['lvFS','lvFC'].forEach(id=>{const f=$(id);if(!f)return;f.style.display=show?'':'none';f.innerHTML=fs?ICON_FULLX:ICON_FULL;f.title=L(fs?'lvFullXTip':'lvFullTip');f.__t=f.title;
+     f.setAttribute('aria-label',L(fs?'lvFullX':'lvFull'));f.setAttribute('aria-pressed',String(fs));f.classList.toggle('on',fs)})}
   const b=$('lvB'),c=$('lvC');if(!b)return;
   b.innerHTML=(state.live?ICON_STOP:ICON_CAM)+'<span></span>';b.querySelector('span').textContent=L(state.live?'lvStop':'lvStart');b.title=L(state.live?'lvStopTip':'lvStartTip');b.__t=b.title;
   b.classList.toggle('on',state.live);b.setAttribute('aria-pressed',String(state.live));c.style.display=state.live&&state.livePaused?'':'none';
 }
+// the browser's full screen for Live View (R-GRID-15): only from a tap on its button (browsers allow nothing else), never remembered; leaving Live View leaves it
+export function toggleFull(){if(document.fullscreenElement)leaveFull();else{const r=document.documentElement.requestFullscreen;if(r)Promise.resolve(r.call(document.documentElement)).catch(()=>{})}}
+function leaveFull(){if(document.fullscreenElement&&document.exitFullscreen)Promise.resolve(document.exitFullscreen()).catch(()=>{})}
 /* the people of Live View (R-GRID-14): a chip per person of ours at the bottom, beside the pill; a tap flips that person's eye (the sidebar's,
    view state: no undo, not an unsaved change) and Everyone, shown while one of them is hidden, opens every eye of ours again */
 function lvPeople(){
@@ -446,6 +452,7 @@ export function initLive(){
  g.addEventListener('pointerup',ev=>{if(!stop(ev))return;const d=lvDown;lvDown=null;if(d&&Math.hypot(ev.clientX-d.x,ev.clientY-d.y)<=8)liveTap(ev.clientX,ev.clientY,d.tg)},true);
  ['pointermove','click','dblclick','contextmenu'].forEach(t=>g.addEventListener(t,ev=>{if(stop(ev)&&t!=='pointermove')ev.preventDefault()},true))}
  $('lvPill').onclick=()=>setLive(false);
+ document.addEventListener('fullscreenchange',()=>{updLive();if(state.live&&!state.livePaused&&!liveBusy())liveScroll()});   // the bars come and go: the now line stays a third of the way down (R-GRID-15)
  $('wrap').addEventListener('scroll',()=>{if(!state.live||Math.abs($('wrap').scrollTop-liveTop)<=2)return;if(!state.livePaused){state.livePaused=true;updLive()}clearTimeout(lvRet);lvRet=setTimeout(liveBack,LV_BACK)},{passive:true});
  document.addEventListener('pointerdown',()=>{ptrHeld=true},true);['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{ptrHeld=false},true));
 }

@@ -38,7 +38,7 @@ $('rs').onpointerdown=ev=>{
 };
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&state.selK&&!document.querySelector('dialog[open]')){state.selK=null;render();return}
-  if(e.key==='Escape'&&state.focusD!=null&&!document.querySelector('dialog[open],.omenu')){if(state.live)setLive(false);else setFocus(null);return}   // leaves Live View (a phone keeps its day, R-GRID-12) or focus mode (a selection is cleared first)
+  if(e.key==='Escape'&&state.focusD!=null&&!document.querySelector('dialog[open],.omenu')){if(state.live){if(!document.fullscreenElement)setLive(false)}else setFocus(null);return}   // leaves Live View (a phone keeps its day, R-GRID-12) or focus mode (a selection is cleared first)
   if(e.target.closest&&e.target.closest('input,textarea,select'))return;if(document.querySelector('dialog[open]'))return;
   const k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
