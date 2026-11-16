@@ -1,0 +1,9 @@
+[Desktop Entry]
+# Installed to ~/.config/autostart/ by step 7 of docs/kiosk/README.md, which puts your
+# home folder in place of @HOME@. The desktop runs it at login, and start.sh keeps
+# Chromium running.
+Type=Application
+Name=Kiosk
+Comment=Week planner in Chromium, maximised
+Exec=@HOME@/kiosk/start.sh
+Terminal=false

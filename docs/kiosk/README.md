@@ -7,15 +7,14 @@ A clean, from-scratch guide to turning a **Raspberry Pi 3B** and the official **
 - your **week planner** filling a portrait touchscreen
 - Chromium's **tabs, Back and Home buttons**, sized for fingers
 - a **Recipes** button on the bookmarks bar, holding your saved recipes
-- automatic start on power-up, and automatic restart if the browser ever crashes
+- an **on-screen keyboard** from the taskbar, for web addresses and searches
+- automatic start on power-up, and automatic restart if the browser ever closes or crashes
 
 **Step 9** adds a **motion sensor**. The screen dims when nobody is around, then switches off, and wakes as soon as someone walks up or touches it.
 
 **Step 10** shows **your own workspace**, kept as an encrypted file in a **private GitHub repository**. The Pi fetches it, and fetches it again when you push a new copy, with no typing on the touchscreen.
 
-**Optional add-on:** a [rotating kiosk mode](#optional-rotating-kiosk-mode) with no browser bars. It cycles between the planner, a weather page and a clock, and has a launcher screen for pausing and opening recipes.
-
-It runs on **Raspberry Pi OS Lite (Trixie)** with **cage** (a minimal kiosk compositor) and **Chromium**. There's no desktop, X server or Openbox, so all of the Pi's 1GB is left for the browser.
+It runs on **Raspberry Pi OS with desktop (Trixie)**: its Wayland desktop (labwc) with the taskbar, Raspberry Pi's on-screen keyboard (squeekboard) and **Chromium**, maximised so the taskbar stays in reach. The desktop takes a share of the Pi's 1GB, so keep to a few tabs (see [Using it](#using-it)).
 
 > **Reusing an SD card from the Zero 2 W?** Flash a fresh one. It's quicker than undoing the Waveshare, rotation and X/Openbox settings from earlier attempts.
 
@@ -25,22 +24,21 @@ It runs on **Raspberry Pi OS Lite (Trixie)** with **cage** (a minimal kiosk comp
 
 1. [What you need](#what-you-need)
 2. [How it fits together](#how-it-fits-together)
-3. [Step 1 – Flash Raspberry Pi OS Lite](#step-1--flash-raspberry-pi-os-lite)
+3. [Step 1 – Flash Raspberry Pi OS](#step-1--flash-raspberry-pi-os)
 4. [Step 2 – First boot and updates](#step-2--first-boot-and-updates)
 5. [Step 3 – Install the software](#step-3--install-the-software)
 6. [Step 4 – Log in automatically](#step-4--log-in-automatically)
 7. [Step 5 – Chromium settings and recipe bookmarks](#step-5--chromium-settings-and-recipe-bookmarks)
 8. [Step 6 – Create the start script](#step-6--create-the-start-script)
 9. [Step 7 – Start on boot](#step-7--start-on-boot)
-10. [Step 8 – Check the screen and touch](#step-8--check-the-screen-and-touch)
+10. [Step 8 – Check the screen, touch and keyboard](#step-8--check-the-screen-touch-and-keyboard)
 11. [Step 9 – Dim the screen when nobody is around](#step-9--dim-the-screen-when-nobody-is-around)
 12. [Step 10 – Show your workspace from a private GitHub repository](#step-10--show-your-workspace-from-a-private-github-repository)
 13. [Using it](#using-it)
 14. [Adding and changing recipes](#adding-and-changing-recipes)
-15. [Optional: rotating kiosk mode](#optional-rotating-kiosk-mode)
-16. [Optional: a 3D-printed case](#optional-a-3d-printed-case)
-17. [Optional extras](#optional-extras)
-18. [Troubleshooting](#troubleshooting)
+15. [Optional: a 3D-printed case](#optional-a-3d-printed-case)
+16. [Optional extras](#optional-extras)
+17. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -55,9 +53,8 @@ It runs on **Raspberry Pi OS Lite (Trixie)** with **cage** (a minimal kiosk comp
 | [Adafruit Mini PIR Motion Sensor](https://thepihut.com/products/breadboard-friendly-mini-pir-motion-sensor-with-3-pin-header) (The Pi Hut, about £3.50) | For step 9. |
 | 3 female-to-female jumper wires | To connect the sensor to the Pi. |
 | A computer with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) | For flashing the card and setting up Wi-Fi and SSH. |
-| *Optional:* a small USB keyboard | Only for typing a web address now and then. |
 
-Everything below is done **over SSH** from your computer.
+Everything below is done **over SSH** from your computer, apart from two settings in step 8 that you tap on the touchscreen.
 
 ---
 
@@ -65,27 +62,26 @@ Everything below is done **over SSH** from your computer.
 
 ```
 Power on
- └─ Pi logs in automatically on its own screen (tty1)
-     └─ ~/.profile starts cage         (one full-screen app, no desktop)
-         └─ cage runs ~/kiosk/start.sh
-             └─ starts Chromium
-                 ├─ settings and Recipes bookmarks from  /etc/chromium/policies/managed/kiosk.json
-                 └─ opens the week planner
+ └─ Pi logs in to the desktop automatically (taskbar, on-screen keyboard button)
+     └─ the desktop's autostart runs ~/kiosk/start.sh
+         └─ starts Chromium, maximised, and starts it again whenever it closes
+             ├─ settings and Recipes bookmarks from  /etc/chromium/policies/managed/kiosk.json
+             └─ opens the week planner
 ```
 
 A separate background service, screen-dimmer, watches the motion sensor and touchscreen and sets the display's brightness.
 
 With step 10, `start.sh` first fetches your workspace from your private repository, and Chromium opens the planner with it. A timer checks for a new copy every 15 minutes.
 
-If Chromium quits or crashes, cage exits, the Pi logs in again, and everything restarts on its own.
+If Chromium quits or crashes, `start.sh` opens it again a couple of seconds later.
 
 ---
 
-## Step 1 – Flash Raspberry Pi OS Lite
+## Step 1 – Flash Raspberry Pi OS
 
 1. Open **Raspberry Pi Imager**.
 2. **Device:** Raspberry Pi 3.
-3. **OS:** *Raspberry Pi OS (other)* → **Raspberry Pi OS Lite (64-bit)**.
+3. **OS:** **Raspberry Pi OS (64-bit)**, the version with the desktop (not *Lite*).
 4. **Storage:** your microSD card.
 5. When asked about **OS customisation**, choose **Edit settings**:
    - **Hostname:** `kiosk` (this guide uses `kiosk.local`)
@@ -104,7 +100,7 @@ With the Pi **unplugged**:
 3. **Mount the Pi** on the four stand-offs on the back of the display with the included M2.5 screws (optional, but neat).
 4. Plug the power supply into the Pi's micro-USB port.
 
-The display lights up and shows the boot text in **portrait**. The first boot takes a few minutes while the system expands and reboots.
+The display lights up in **portrait**. The first boot takes a few minutes while the system expands and reboots, then the desktop appears.
 
 ---
 
@@ -136,12 +132,13 @@ The `Swap:` line should show a non-zero total.
 ## Step 3 – Install the software
 
 ```bash
-sudo apt install -y cage chromium curl
+sudo apt install -y chromium curl
 ```
+
+Both usually come with the desktop already; this makes sure.
 
 | Package | What it does |
 |---|---|
-| **cage** | A tiny compositor that shows one app full-screen. It handles touch with no setup, and it hides the mouse pointer when there's no mouse. On a Pi the HDMI-CEC input counts as a mouse until step 8 fixes it. |
 | **chromium** | The browser. Later steps launch `/usr/lib/chromium/chromium` directly. The `/usr/bin/chromium` wrapper opens a hidden "less than 1GB RAM" warning that leaves you with a black screen. |
 | **curl** | Downloads the kiosk files below (usually installed already). |
 
@@ -154,30 +151,29 @@ rm -rf ~/kiosk-files && mkdir ~/kiosk-files && curl -fsSL https://github.com/lvi
 ls ~/kiosk-files
 ```
 
-You should see `99-kiosk-no-pointer.rules`, `autostart.sh`, `extension`, the four `kiosk-data` files, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
+You should see `99-kiosk-no-pointer.rules`, the four `kiosk-data` files, `kiosk.desktop`, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
 
 | File | Goes to | Step |
 |---|---|---|
 | [`kiosk.json`](files/kiosk.json) | `/etc/chromium/policies/managed/kiosk.json` | 5 |
 | [`start.sh`](files/start.sh) | `~/kiosk/start.sh` | 6 |
-| [`autostart.sh`](files/autostart.sh) | `~/kiosk/autostart.sh` | 7 |
+| [`kiosk.desktop`](files/kiosk.desktop) | `~/.config/autostart/kiosk.desktop` | 7 |
 | [`99-kiosk-no-pointer.rules`](files/99-kiosk-no-pointer.rules) | `/etc/udev/rules.d/99-kiosk-no-pointer.rules` | 8 |
 | [`screen-dimmer.py`](files/screen-dimmer.py) | `/usr/local/bin/screen-dimmer.py` | 9 |
 | [`screen-dimmer.service`](files/screen-dimmer.service) | `/etc/systemd/system/screen-dimmer.service` | 9 |
 | [`kiosk-data.sh`](files/kiosk-data.sh) | `~/kiosk/kiosk-data.sh` | 10 |
 | [`kiosk-data.conf`](files/kiosk-data.conf) | `~/kiosk/kiosk-data.conf` | 10 |
 | [`kiosk-data@.service`](files/kiosk-data@.service), [`kiosk-data@.timer`](files/kiosk-data@.timer) | `/etc/systemd/system/` | 10 |
-| [`extension/`](files/extension/) | `~/kiosk/extension/` | [optional rotating kiosk mode](#optional-rotating-kiosk-mode) |
 
 ---
 
 ## Step 4 – Log in automatically
 
 ```bash
-sudo raspi-config nonint do_boot_behaviour B2
+sudo raspi-config nonint do_boot_behaviour B4
 ```
 
-> Same as `sudo raspi-config` → **System Options** → **Boot / Auto Login** → **Console Autologin**.
+> Same as `sudo raspi-config` → **System Options** → **Boot / Auto Login** → **Desktop Autologin**.
 
 ---
 
@@ -213,18 +209,12 @@ The start script launches Chromium with the right settings ([see the file](files
 install -D -m 755 ~/kiosk-files/start.sh ~/kiosk/start.sh
 ```
 
-The settings at the top are all you'll normally change:
-
-| Setting | Meaning |
-|---|---|
-| `MODE="browser"` | Chromium with tabs and the Recipes bookmarks. Change to `"kiosk"` only if you set up the [optional rotating kiosk mode](#optional-rotating-kiosk-mode). |
-| `ROTATE="normal"` | Leave as `normal`. The Touch Display 2 is already portrait. |
-
-What the Chromium flags do:
+It has no settings to change. It starts Chromium and, whenever Chromium closes (a crash, someone closing it, or a new workspace from step 10), starts it again two seconds later. What the Chromium flags do:
 
 | Flag | Why |
 |---|---|
-| `--ozone-platform=wayland` | Draws through cage, with no X server needed |
+| `--ozone-platform=wayland` | Draws through the desktop's Wayland compositor |
+| `--start-maximized` | Fills the screen but leaves the taskbar visible, with its on-screen keyboard button (full screen would hide it) |
 | `--top-chrome-touch-ui=enabled` | Bigger tabs and buttons, easier to hit with a finger |
 | `--touch-events=enabled` | Pages receive proper touch events |
 | `--disable-pinch` | No accidental pinch-zoom |
@@ -235,35 +225,47 @@ What the Chromium flags do:
 
 ## Step 7 – Start on boot
 
-The launch command lives in `~/kiosk/autostart.sh` ([see the file](files/autostart.sh)), and `~/.profile` reads it at every login. It starts the kiosk only on the Pi's own screen, so SSH logins are unaffected:
+The desktop starts every program that has an entry in `~/.config/autostart` when it logs in. This entry ([see the file](files/kiosk.desktop)) runs the start script; the `sed` puts your home folder into it:
 
 ```bash
-install -m 644 ~/kiosk-files/autostart.sh ~/kiosk/autostart.sh
-grep -q kiosk/autostart.sh ~/.profile || echo '. "$HOME/kiosk/autostart.sh"' >> ~/.profile
+mkdir -p ~/.config/autostart
+sed "s|@HOME@|$HOME|" ~/kiosk-files/kiosk.desktop > ~/.config/autostart/kiosk.desktop
 sudo reboot
 ```
 
-After the boot text, Chromium takes about **20–40 seconds** to appear the first time. You should see the week planner with Chromium's toolbar and a **Recipes** folder on the bookmarks bar.
+After the desktop appears, Chromium takes about **20–40 seconds** to open the first time. You should see the week planner with Chromium's toolbar, a **Recipes** folder on the bookmarks bar, and the desktop's taskbar.
 
-> **Restart the kiosk without rebooting** (after changing settings):
+> **Restart the kiosk without rebooting** (after changing settings): close Chromium, and `start.sh` opens it again:
 > ```bash
-> sudo systemctl restart getty@tty1
+> pkill -f /usr/lib/chromium/chromium
 > ```
 
 ---
 
-## Step 8 – Check the screen and touch
+## Step 8 – Check the screen, touch and keyboard
 
 After the reboot in step 7 you should see:
 
-- **portrait picture** filling the screen, with the planner below Chromium's toolbar
+- **portrait picture** filling the screen, with the planner below Chromium's toolbar and the taskbar along the top
 - **touch working:** tap **Recipes** on the bookmarks bar, then the **Home** button
 
 There are no screen or touch settings to change; the Pi detects the Touch Display 2 automatically. If the screen stays black, see [Troubleshooting](#troubleshooting).
 
+### Keep the screen on
+
+The desktop can blank the screen after a few minutes on its own. Switch that off, since the motion sensor in step 9 does the dimming. On the touchscreen, open the **Raspberry Pi menu** (top-left of the taskbar) **→ Preferences → Control Centre** (called *Raspberry Pi Configuration* in older releases) **→ Display**, and turn **Screen Blanking** off.
+
+### The on-screen keyboard
+
+The taskbar has a **keyboard button** when a touchscreen is connected. Tap it to bring up the keyboard at the bottom of the screen (Chromium shrinks to make room), type, and tap it again to put the keyboard away. It types anywhere: the address bar, a recipe site's search box, the planner's fields.
+
+Chromium doesn't open the keyboard by itself when you tap a text field. It doesn't tell the desktop about text fields yet, so use the button.
+
+If there's no keyboard button, open the same **Display** settings and set **On-screen Keyboard** to **Enabled always**.
+
 ### No mouse pointer
 
-A **mouse pointer in the middle of the screen**, with no mouse plugged in, comes from the Pi itself. Its HDMI-CEC input (the HDMI port's remote-control link) tells the system it's a mouse, even with the screen on the ribbon cable, and cage draws a pointer whenever a mouse exists. This lists the input devices the system counts as a mouse; with no mouse plugged in you'll see one named `vc4…`:
+A **mouse pointer in the middle of the screen**, with no mouse plugged in, comes from the Pi itself. Its HDMI-CEC input (the HDMI port's remote-control link) tells the system it's a mouse, even with the screen on the ribbon cable, and the desktop draws a pointer whenever a mouse exists. This lists the input devices the system counts as a mouse; with no mouse plugged in you'll see one named `vc4…`:
 
 ```bash
 udevadm info --export-db | awk -v RS= '/ID_INPUT_MOUSE=1/' | grep '^E: NAME='
@@ -274,10 +276,10 @@ This rule takes the mouse tag off that device only. Touch keeps working, and a r
 ```bash
 sudo install -m 644 ~/kiosk-files/99-kiosk-no-pointer.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger --subsystem-match=input
-sudo systemctl restart getty@tty1
+sudo reboot
 ```
 
-The kiosk restarts without the pointer. Run the first command again: the `vc4…` device is no longer listed.
+The kiosk comes back without the pointer. Run the first command again: the `vc4…` device is no longer listed.
 
 ---
 
@@ -371,7 +373,7 @@ Without this step the kiosk shows whatever is saved in its own browser memory, w
 - you keep your workspace as an **encrypted file** in a **private** GitHub repository;
 - the Pi fetches it with a **read-only key** that works for that one repository only;
 - the planner opens it straight away, with no password to type and no questions;
-- when you push a new copy, the kiosk picks it up within 15 minutes and restarts (about 30 seconds).
+- when you push a new copy, the kiosk picks it up within 15 minutes and restarts Chromium (about 30 seconds).
 
 The planner itself still makes no network requests. The Pi downloads the file and gives it to the planner in the address, after the `#`, which is never sent to any server.
 
@@ -438,18 +440,18 @@ Then install the timer that checks for new copies ([service](files/kiosk-data@.s
 sudo install -m 644 ~/kiosk-files/kiosk-data@.service ~/kiosk-files/kiosk-data@.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now "kiosk-data@$USER.timer"
-sudo systemctl restart getty@tty1
+pkill -f /usr/lib/chromium/chromium
 ```
 
 The planner opens with your workspace. The address bar shows only the planner's plain address, because the planner removes the data and password from it once it has opened the file.
 
 ### 10.6 Updating your workspace
 
-Change it in the planner on your computer, save it again as in 10.2 (same name, **same kiosk password**), and push. The kiosk shows the new copy within 15 minutes, or straight away after `sudo systemctl restart getty@tty1`.
+Change it in the planner on your computer, save it again as in 10.2 (same name, **same kiosk password**), and push. The kiosk shows the new copy within 15 minutes, or straight away after `~/kiosk/kiosk-data.sh; pkill -f /usr/lib/chromium/chromium`.
 
 - **Changes made on the kiosk itself** are replaced by the next new copy from the repository. Make your changes on your computer.
 - **Check less or more often:** change `OnUnitActiveSec=15min` in `/etc/systemd/system/kiosk-data@.timer`, then `sudo systemctl daemon-reload`.
-- **Don't protect the kiosk's browser memory with a passphrase** (Settings → Data). The kiosk would ask for it at every start, and it has no keyboard.
+- **Don't protect the kiosk's browser memory with a passphrase** (Settings → Data). The kiosk would ask for it every time Chromium starts.
 - **Big workspaces:** the address can be at most about 120,000 characters. If `kiosk-data.sh` says the file is too big, save only the schedules the kiosk needs (**What to include → Choose…**).
 
 ---
@@ -460,12 +462,12 @@ Change it in the planner on your computer, save it again as in 10.2 (same name, 
 |---|---|
 | Go back to the planner | Tap the **Home** button (house icon) in the toolbar. |
 | Show only some people's activities | In Live View, tap the names at the bottom: a tap hides or shows that person, and **All** brings them all back. It's the same as the person's eye in the sidebar. With Step 10, the kiosk goes back to the eyes saved in the file whenever it restarts. |
-| Use the whole screen for Live View | In Live View, tap the **full-screen** button just above the red stop button. Chromium's toolbar and bookmarks bar go away; tap it again, or stop Live View, to get them back for the recipes. In rotating kiosk mode the screen is already full, so it changes nothing you can see. |
+| Use the whole screen for Live View | In Live View, tap the **full-screen** button just above the red stop button. Chromium's toolbar, the bookmarks bar and the taskbar go away; tap it again, or stop Live View, to get them back for the recipes and the keyboard. |
 | Open a recipe | Tap **Recipes** on the bookmarks bar, then pick one. It opens in the current tab. To keep the planner open as well, tap **+** for a new tab first. |
 | Switch between planner and recipe | Tap the tabs at the top. |
 | Finish with a recipe | Tap the **×** on its tab. Closing tabs frees memory. |
 | Go back a page | Tap the **Back** arrow. |
-| Type a web address | Plug a USB keyboard into the Pi. There's no on-screen keyboard in this setup. |
+| Type something (a web address, a search) | Tap the **keyboard button** on the taskbar, tap where you want to type, and type. Tap the button again to hide the keyboard. |
 
 Tips:
 
@@ -499,76 +501,10 @@ Watch the commas: every entry except the last in a list needs one. Then check an
 
 ```bash
 python3 -m json.tool /etc/chromium/policies/managed/kiosk.json > /dev/null && echo OK
-sudo systemctl restart getty@tty1
+pkill -f /usr/lib/chromium/chromium
 ```
 
 The planner address appears twice in the file, under `HomepageLocation` and `RestoreOnStartupURLs`. Change both if it ever moves.
-
----
-
-## Optional: rotating kiosk mode
-
-This replaces the browser bars with a full-screen display that **rotates** through the planner, a weather page and a clock. A small round **Home** button in the corner of every page opens a launcher, where you can:
-
-- **pause** the rotation and pick one screen to stay on
-- **open a recipe**, which stays up until you close it
-- **resume** rotation (it also restarts by itself 15 minutes after the last touch, unless a recipe is open)
-
-The weather comes from [Open-Meteo](https://open-meteo.com/), which is free and needs no account. All the built-in pages are laid out for the portrait 720×1280 screen. The screen-dimmer from step 9 works in this mode too.
-
-It's a small Chromium extension: 11 files you copy once. You can switch back to the main setup at any time by setting `MODE="browser"` in `start.sh`.
-
-### Copy the extension files
-
-```bash
-mkdir -p ~/kiosk/extension
-cp ~/kiosk-files/extension/* ~/kiosk/extension/
-ls ~/kiosk/extension
-```
-
-You should see 11 files ([see them](files/extension/)):
-
-| File | What it does |
-|---|---|
-| [`config.js`](files/extension/config.js) | **Your settings for this mode:** pages, timings, recipes, weather location. See [Changing its settings](#changing-its-settings). |
-| [`manifest.json`](files/extension/manifest.json) | Tells Chromium what the extension is and what it may do. |
-| [`background.js`](files/extension/background.js) | Rotation, pausing and recipes. |
-| [`overlay.js`](files/extension/overlay.js) | The round Home button on every page. |
-| [`style.css`](files/extension/style.css) | Colours and fonts shared by the built-in pages. |
-| [`launcher.html`](files/extension/launcher.html), [`launcher.js`](files/extension/launcher.js) | The launcher screen. |
-| [`clock.html`](files/extension/clock.html), [`clock.js`](files/extension/clock.js) | The clock page. |
-| [`weather.html`](files/extension/weather.html), [`weather.js`](files/extension/weather.js) | The weather page. |
-
-### Switch it on
-
-Edit `~/kiosk/start.sh`, change `MODE="browser"` to `MODE="kiosk"`, then restart:
-
-```bash
-sudo systemctl restart getty@tty1
-```
-
-### Using rotating kiosk mode
-
-| You want to… | Do this |
-|---|---|
-| Stop the rotation | Tap the round **Home** button. Rotation pauses and the launcher opens. |
-| Show one screen and stay on it | On the launcher, tap **Week planner**, **Weather** or **Clock**. |
-| Open a recipe | On the launcher, tap it. Rotation stays paused while the recipe is open. |
-| Go back to the recipe after checking something | Home → **Back to recipe**. |
-| Finish cooking | Home → **Close recipe & rotate**. |
-
-### Changing its settings
-
-```bash
-nano ~/kiosk/extension/config.js
-sudo systemctl restart getty@tty1
-```
-
-- **`rotateSeconds`** sets the time per screen (minimum 30).
-- **`rotation`** is the list of pages. Each `id` must be unique.
-- **`recipes`** is the recipe buttons on the launcher. This mode has its own list; it doesn't use the bookmarks file.
-- **`weather`** is the place name and coordinates. Right-click a spot in Google Maps to see its coordinates.
-- **`homeButtonCorner`** moves the round Home button if it covers something.
 
 ---
 
@@ -608,29 +544,23 @@ Be aware:
 
 The files in [`docs/kiosk/files/`](files/) are improved from time to time. Download them again with the command from [step 3](#download-the-kiosk-files), then copy across the ones that changed, using the same command as the step that installed them.
 
-Five files hold **your own settings**, so copying a new version over them throws your changes away:
+Three files hold **your own settings**, so copying a new version over them throws your changes away:
 
 | File | Your settings in it |
 |---|---|
 | `/etc/chromium/policies/managed/kiosk.json` | Recipes |
-| `~/kiosk/start.sh` | `MODE` |
 | `/usr/local/bin/screen-dimmer.py` | Timings and brightness |
-| `~/kiosk/extension/config.js` | Everything in it |
 | `~/kiosk/kiosk-data.conf` | Your repository and file (step 10) |
 
 See what changed before copying one of these, then either copy the new file and make your changes again, or make the new changes by hand in your copy:
 
 ```bash
-diff ~/kiosk/start.sh ~/kiosk-files/start.sh
 diff /usr/local/bin/screen-dimmer.py ~/kiosk-files/screen-dimmer.py
 diff /etc/chromium/policies/managed/kiosk.json ~/kiosk-files/kiosk.json
-diff -r ~/kiosk/extension ~/kiosk-files/extension
 diff ~/kiosk/kiosk-data.conf ~/kiosk-files/kiosk-data.conf
 ```
 
-`diff -r` on the extension also lists `start-url.js` if you use step 10 with the rotating mode. `start.sh` writes that file, so leave it out when copying.
-
-No output means nothing changed. Restart the kiosk afterwards (`sudo systemctl restart getty@tty1`), and the dimmer if you updated it (`sudo systemctl daemon-reload && sudo systemctl restart screen-dimmer`).
+No output means nothing changed. If you added a flag to `start.sh` yourself (for example `--disable-gpu` from Troubleshooting), add it again to the new copy. Restart Chromium afterwards (`pkill -f /usr/lib/chromium/chromium`); after a new `start.sh` or `kiosk.desktop`, reboot instead. Restart the dimmer if you updated it (`sudo systemctl daemon-reload && sudo systemctl restart screen-dimmer`).
 
 ### SSH keys instead of a password
 
@@ -665,25 +595,27 @@ free -h
 | Problem | Likely cause and fix |
 |---|---|
 | No picture at all, not even boot text | Power off and re-seat the ribbon cable at both ends; it must be in the **DISPLAY** connector, fully inserted, latch closed. Check the power lead is on pins 2 and 6. `grep display_auto_detect /boot/firmware/config.txt` should show `display_auto_detect=1`. |
-| Black screen after the boot text | Wait a full minute first. Then check `kiosk.log`. If Chromium isn't running, make sure `start.sh` uses `/usr/lib/chromium/chromium`; `/usr/bin/chromium` waits on a hidden low-memory warning. |
-| Black or flickering browser window, but Chromium is running | Add `--disable-gpu` as a new line inside the `FLAGS=( … )` list in `start.sh`, then restart the kiosk. |
+| The desktop appears but Chromium doesn't | Wait a full minute first. Then check `kiosk.log`, and that `~/.config/autostart/kiosk.desktop` exists and names your home folder (`cat` it; `@HOME@` means the `sed` in step 7 didn't run). If Chromium isn't running, make sure `start.sh` uses `/usr/lib/chromium/chromium`; `/usr/bin/chromium` waits on a hidden low-memory warning. |
+| Black or flickering browser window, but Chromium is running | Add `--disable-gpu` as a new line inside the `FLAGS=( … )` list in `start.sh`, then reboot. |
+| Chromium is in a small window | Someone un-maximised it. Close it with its **×**; `start.sh` opens it again maximised. |
+| No keyboard button on the taskbar | **Raspberry Pi menu → Preferences → Control Centre** (or *Raspberry Pi Configuration*) **→ Display → On-screen Keyboard → Enabled always**. In Live View's full screen the taskbar is hidden: leave full screen first. |
+| The screen goes black after a few minutes, with the dimmer off | The desktop's screen blanking is on. Switch it off as in [step 8](#keep-the-screen-on). |
 | Screen dims or switches off while someone is there | Lengthen `DIM_AFTER` in step 9.4, or check the sensor's aim. If it's out of the way of the room, it can't see people. |
 | Screen never dims | Something keeps triggering the sensor, often heat from a hob, radiator or sunny window. Watch it with the test command in step 9.2, then re-aim it. Check the service is running with `systemctl status screen-dimmer`. |
 | Screen-dimmer says "No backlight found" | The display isn't detected; check the ribbon cable and power lead. |
 | No Recipes folder or Home button | The settings file has a mistake. Run `python3 -m json.tool /etc/chromium/policies/managed/kiosk.json` and fix the line it reports. |
-| Rotating kiosk mode shows pages but no round Home button and no rotation | The extension didn't load. Check all 11 files exist in `~/kiosk/extension` and `manifest.json` is valid (`python3 -m json.tool ~/kiosk/extension/manifest.json`). |
-| A mouse pointer is visible | With no mouse plugged in, install the rule in [step 8](#no-mouse-pointer). If the pointer is still there, run that step's first command to see which device still counts as a mouse, and put its name (without the quotes) in place of `vc4*` in `/etc/udev/rules.d/99-kiosk-no-pointer.rules`, then run the step's last two commands again. A plugged-in mouse always shows a pointer. |
-| "Restore pages?" bar after a power cut | `start.sh` handles this. If it still appears, delete `~/kiosk/profile` and restart the kiosk. |
-| Slow, or tabs reload when you switch | Memory is tight. Close tabs you're done with, and use recipe "print" pages. |
+| A mouse pointer is visible | With no mouse plugged in, install the rule in [step 8](#no-mouse-pointer). If the pointer is still there, run that step's first command to see which device still counts as a mouse, and put its name (without the quotes) in place of `vc4*` in `/etc/udev/rules.d/99-kiosk-no-pointer.rules`, then reboot. A plugged-in mouse always shows a pointer. |
+| "Restore pages?" bar after a power cut | `start.sh` handles this. If it still appears, delete `~/kiosk/profile` and reboot. |
+| Slow, or tabs reload when you switch | Memory is tight, and the desktop uses some of it. Close tabs you're done with, and use recipe "print" pages. |
 | Step 10: the planner shows an old copy or the starting workspace | Run `~/kiosk/kiosk-data.sh; echo $?` and read the message, and see `~/kiosk/kiosk-data.log`. `Permission denied (publickey)`: the deploy key isn't on that repository, or `REPO` is wrong. `is not in the repository`: check `FILE` and `BRANCH`. `not an encrypted file`: save it with **Encrypted** on. |
 | Step 10: the planner says the kiosk's password does not open the new file | The file was saved with a different password. Save it again with the kiosk password and push, or store the new password as in 10.4. |
 | Step 10: the planner asks *Import* questions | The kiosk's copy has unsaved changes made on the touchscreen, so it won't be overwritten silently. Tap **Import** and replace it, or clear browser memory in Settings → Data. |
 | Step 10: the timer isn't running | `systemctl list-timers 'kiosk-data*'` should list it; `systemctl status "kiosk-data@$USER"` shows the last check. |
-| Need a text console on the Pi | Plug in a USB keyboard and press **Ctrl+Alt+F2**. **Ctrl+Alt+F1** returns to the kiosk. |
+| Need a terminal on the Pi | Use SSH from your computer (step 2). |
 
 ### Seeing inside Chromium (advanced)
 
-1. Add `--remote-debugging-port=9222` as a new line inside `FLAGS=( … )` in `start.sh`, then restart the kiosk.
+1. Add `--remote-debugging-port=9222` as a new line inside `FLAGS=( … )` in `start.sh`, then reboot.
 2. On your computer, run `ssh -L 9222:localhost:9222 yourname@kiosk.local` and leave it open.
 3. In Chrome on your computer, open `chrome://inspect`, click **Configure…** and add `localhost:9222`. The kiosk's tabs appear under *Remote Target*. Click **inspect** to see errors.
 4. Remove the flag when you're done.

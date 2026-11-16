@@ -59,6 +59,6 @@ if [ -f "$OUT" ] && [ "$(cat "$OUT")" = "$NEW" ]; then
 fi
 umask 077
 printf '%s' "$NEW" > "$OUT.tmp" && mv "$OUT.tmp" "$OUT" || fail "could not write $OUT"
-touch "$OUT.changed"   # tells the timer's service to restart the kiosk
+touch "$OUT.changed"   # tells the timer's service to restart Chromium
 log "new version from commit $(git -C "$CLONE" rev-parse --short HEAD)"
 exit 0

@@ -12,5 +12,6 @@ User=%i
 ExecStart=/home/%i/kiosk/kiosk-data.sh
 # 3 = nothing changed
 SuccessExitStatus=3
-# runs as root (+): restart the kiosk when kiosk-data.sh left the "changed" mark
-ExecStartPost=+/bin/sh -c 'f=/home/%i/kiosk/start-url.changed; if [ -e "$f" ]; then rm -f "$f"; systemctl restart getty@tty1; fi'
+# runs as root (+): when kiosk-data.sh left the "changed" mark, close Chromium;
+# start.sh opens it again at once with the new address
+ExecStartPost=+/bin/sh -c 'f=/home/%i/kiosk/start-url.changed; if [ -e "$f" ]; then rm -f "$f"; pkill -u %i -f /usr/lib/chromium/chromium; fi; exit 0'
