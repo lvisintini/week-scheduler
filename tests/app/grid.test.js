@@ -616,11 +616,11 @@ describe('R-GRID-14 Live View people: a chip per person at the bottom hides or s
     sideEye(a, 'Bob').click(); expect(chip(a, 'Bob').classList.contains('off')).toBe(true); expect(boxes(a)).toEqual(['Hedges']);
     a.q('#lvB').click(); expect(a.ev('state.S.people.filter(q=>!q.visible).map(q=>q.id)')).toEqual(['O', 'B']);
   });
-  it('Everyone appears only while one of ours is hidden and shows them all, leaving the eyes of external people alone', () => {
+  it('the All chip appears only while one of ours is hidden and shows them all, leaving the eyes of external people alone', () => {
     const a = fresh(day()); at(a, 2, 10, 30); a.ev("state.S.people.find(q=>q.id==='X').visible=false"); start(a);
     expect(a.q('#lvPpl .lvp.all')).toBeNull();   // only an external person is hidden
-    chip(a, 'Olivia').click(); chip(a, 'Bob').click(); const all = a.q('#lvPpl .lvp.all'); expect(all.textContent).toBe('Everyone'); expect(all.title).toBe('Show everyone again.');
-    expect(names(a).at(-1)).toBe('Everyone'); all.click();
+    chip(a, 'Olivia').click(); chip(a, 'Bob').click(); const all = a.q('#lvPpl .lvp.all'); expect(all.textContent).toBe('All'); expect(all.title).toBe('Show everyone again.');
+    expect(names(a).at(-1)).toBe('All'); all.click();
     expect(a.ev('state.S.people.map(q=>q.visible)')).toEqual([true, true, false]); expect(a.q('#lvPpl .lvp.all')).toBeNull();
   });
   it('an open speech bubble of someone just hidden closes; a bubble with a section still shown keeps it', () => {
