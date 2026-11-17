@@ -151,7 +151,7 @@ rm -rf ~/kiosk-files && mkdir ~/kiosk-files && curl -fsSL https://github.com/lvi
 ls ~/kiosk-files
 ```
 
-You should see `99-kiosk-no-pointer.rules`, the four `kiosk-data` files, `kiosk.desktop`, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
+You should see `99-kiosk-no-pointer.rules`, the four `kiosk-data` files, `kiosk-install.sh`, `kiosk.desktop`, `kiosk.json`, `screen-dimmer.py`, `screen-dimmer.service` and `start.sh`. The next steps copy each one into place. `~/kiosk-files` is only a download folder: run the same command again whenever you want the latest versions (see [Getting newer versions of the files](#getting-newer-versions-of-the-files)).
 
 | File | Goes to | Step |
 |---|---|---|
@@ -164,6 +164,7 @@ You should see `99-kiosk-no-pointer.rules`, the four `kiosk-data` files, `kiosk.
 | [`kiosk-data.sh`](files/kiosk-data.sh) | `~/kiosk/kiosk-data.sh` | 10 |
 | [`kiosk-data.conf`](files/kiosk-data.conf) | `~/kiosk/kiosk-data.conf` | 10 |
 | [`kiosk-data@.service`](files/kiosk-data@.service), [`kiosk-data@.timer`](files/kiosk-data@.timer) | `/etc/systemd/system/` | 10 |
+| [`kiosk-install.sh`](files/kiosk-install.sh) | Not installed: it installs the others from your private repository | [Optional extras](#keep-your-own-copies-in-the-private-repository) |
 
 ---
 
@@ -544,7 +545,7 @@ Be aware:
 
 The files in [`docs/kiosk/files/`](files/) are improved from time to time. Download them again with the command from [step 3](#download-the-kiosk-files), then copy across the ones that changed, using the same command as the step that installed them.
 
-Three files hold **your own settings**, so copying a new version over them throws your changes away:
+Three files hold **your own settings**, so copying a new version over them throws your changes away (unless you [keep your own copies in the private repository](#keep-your-own-copies-in-the-private-repository)):
 
 | File | Your settings in it |
 |---|---|
@@ -561,6 +562,42 @@ diff ~/kiosk/kiosk-data.conf ~/kiosk-files/kiosk-data.conf
 ```
 
 No output means nothing changed. If you added a flag to `start.sh` yourself (for example `--disable-gpu` from Troubleshooting), add it again to the new copy. Restart Chromium afterwards (`pkill -f /usr/lib/chromium/chromium`); after a new `start.sh` or `kiosk.desktop`, reboot instead. Restart the dimmer if you updated it (`sudo systemctl daemon-reload && sudo systemctl restart screen-dimmer`).
+
+To skip all this, keep your own copies in your private repository (next section): your settings then live there, and updates are merged into them for you.
+
+### Keep your own copies in the private repository
+
+With [step 10](#step-10--show-your-workspace-from-a-private-github-repository) you already have a private repository that the Pi fetches every 15 minutes. It can hold your finished kiosk files too: your recipes, your dimmer timings, your step 10 settings and any flag you added. The files here in `docs/kiosk/files/` then serve only as templates, and the Pi installs from its copy of your repository, so a new SD card or a wiped overlay gets your own settings back.
+
+The repository looks like this:
+
+| In your repository | What it is |
+|---|---|
+| `weekly-schedules.json` | Your workspace, saved **Encrypted** with the kiosk password (step 10.2) |
+| `kiosk/files/` | Your copies of the files in `docs/kiosk/files/`, with your settings in them |
+| `kiosk/sync.json` | Which version of the templates your copies are up to date with, and files you left out (e.g. the dimmer, with no motion sensor) |
+
+**On your computer.** If you use [Claude Code](https://claude.com/claude-code), run `/kiosk-sync` in a copy of this repository (the planner's). The first time, it asks where your private repository is, your step 10 settings, your bookmarks, the dimmer timings and how often to check, and fills in the files. After that, each run merges any newer templates into your copies (keeping your changes, and asking when the two clash), takes your newest encrypted workspace from your Downloads folder, checks everything and commits; it pushes when you say so. It never asks for the kiosk password: that stays on the Pi only. Without Claude Code, do the same by hand: copy `docs/kiosk/files/` into `kiosk/files/`, fill in your settings, and later compare each template with the version you started from.
+
+**On the Pi, the first time** (after steps 1–4, `sudo apt install -y git` and the deploy key of 10.3), make the kiosk folder, store the password as in 10.4, clone your repository and run the installer ([see the file](files/kiosk-install.sh)) instead of the copy commands of steps 5–10:
+
+```bash
+mkdir -p ~/kiosk
+( umask 077; read -rsp "Kiosk password: " p; echo; printf '%s\n' "$p" > ~/kiosk/data-password )
+GIT_SSH_COMMAND="ssh -i ~/.ssh/kiosk_data -o IdentitiesOnly=yes" git clone --depth 1 --branch main git@github.com:yourname/kitchen-schedule.git ~/kiosk/data-repo
+bash ~/kiosk/data-repo/kiosk/files/kiosk-install.sh
+sudo reboot
+```
+
+Use the same address as `REPO` in your `kiosk-data.conf`, exactly. The taps in step 8 still apply, and with a motion sensor so does `sudo apt install -y python3-gpiozero python3-evdev` (step 9.2).
+
+**On the Pi, after an update** of your files (not needed when only the workspace changed):
+
+```bash
+bash ~/kiosk/data-repo/kiosk/files/kiosk-install.sh
+```
+
+It fetches your repository first, shows what changed in each file, asks, then copies only the changed files into place and restarts only what needs it (the dimmer, the timer, Chromium). After a new `start.sh` or `kiosk.desktop` it asks you to reboot. Add `--dry-run` to only see what would change. It refuses while the [read-only SD card](#read-only-sd-card-protects-against-power-cuts) is on, since nothing would stick, and skips any file that still holds the template's examples.
 
 ### SSH keys instead of a password
 
