@@ -176,10 +176,10 @@ test.describe('R-GRID-07 R-GRID-12 A phone shows about 7 hours, and leaving Live
     const hours = await page.evaluate(() => document.getElementById('wrap').clientHeight / state.HH); expect(hours).toBeGreaterThan(5); expect(hours).toBeLessThan(10);
     await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); await expect(page.locator('#dlg')).toBeVisible();
   });
-  test('tapping the Live View Mode pill leaves Live View for the day view of the day it showed', async ({ page }) => {
-    await seed(page, blank()); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
-    const d = await page.evaluate(() => state.focusD); await page.locator('#lvPill').tap();
-    await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => state.focusD)).toBe(d);
+  test('tapping the red stop button leaves Live View for the day view of the day it showed', async ({ page }) => {
+    await seed(page, blank()); await page.locator('#lvR').tap(); await expect(page.locator('#grid.lv')).toHaveCount(1); await expect(page.locator('#lvPill')).toHaveCount(0);
+    const d = await page.evaluate(() => state.focusD); await page.locator('#lvR').tap();
+    await expect(page.locator('#grid.lv')).toHaveCount(0); await expect(page.locator('.day')).toHaveCount(1); expect(await page.evaluate(() => state.focusD)).toBe(d);
   });
 });
 
@@ -222,13 +222,13 @@ test.describe('R-UI-13 R-GRID-07 R-REP-02 The phone layout: floating buttons, th
 
 test.describe('R-GRID-12 Live View controls on a phone', () => {
   test('in Live View only the stop button floats; after a manual scroll Now floats above it and brings the now line back', async ({ page }) => {
-    await seed(page, blank({ events: [ev()] })); await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeVisible();
+    await seed(page, blank({ events: [ev()] })); await page.locator('#lvR').tap(); await expect(page.locator('#grid.lv')).toHaveCount(1);
     await expect(page.locator('.sbtop .help')).toBeHidden(); await expect(page.locator('.sbtop .xpand')).toBeHidden(); await expect(page.locator('#lvF')).toBeHidden(); await expect(page.locator('#lvR')).toBeVisible();
     expect(await page.locator('#lvR').evaluate(b => [getComputedStyle(b).backgroundColor, getComputedStyle(b).color])).toEqual(['rgb(229, 52, 45)', 'rgb(255, 255, 255)']);   // a red stop button
     await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); });
     await expect(page.locator('#lvF')).toBeVisible(); const n = await page.locator('#lvF').boundingBox(), s = await page.locator('#lvR').boundingBox(); expect(n.y + n.height).toBeLessThanOrEqual(s.y + 1);
     await page.locator('#lvF').tap(); await expect(page.locator('#lvF')).toBeHidden();
-    await page.locator('#lvR').tap(); await expect(page.locator('#lvPill')).toBeHidden(); await expect(page.locator('.sbtop .help')).toBeVisible(); await expect(page.locator('.sbtop .xpand')).toBeVisible();
+    await page.locator('#lvR').tap(); await expect(page.locator('#grid.lv')).toHaveCount(0); await expect(page.locator('.sbtop .help')).toBeVisible(); await expect(page.locator('.sbtop .xpand')).toBeVisible();
   });
 });
 
@@ -242,20 +242,19 @@ test.describe('R-GRID-14 Live View people on the 720 × 1280 kiosk screen', () =
     await seed(page, blank({ people: people(n), events: [ev({ id: 'a', title: 'Gym', slots: [slot(d, 300, 1380, 'p0')] }), ev({ id: 'b', title: 'Piano', color: '#2fa66a', slots: [slot(d, 300, 1380, 'p1')] })] }));
     await page.locator('#lvR').tap(); await expect(page.locator('#lvPpl')).toBeVisible();
   };
-  test('every chip is finger-sized, on screen and clear of the pill and the floating stop and Now buttons', async ({ page }) => {
+  test('every chip is finger-sized, on screen and clear of the floating stop and Now buttons', async ({ page }) => {
     await start(page, 4); await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); });
     await expect(page.locator('#lvF')).toBeVisible(); const chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
-    const others = await Promise.all(['#lvPill', '#lvR', '#lvF'].map(s => page.locator(s).boundingBox()));
+    const others = await Promise.all(['#lvR', '#lvF'].map(s => page.locator(s).boundingBox()));
     expect(chips).toHaveLength(4);
     for (const c of chips) { expect(c.width).toBeGreaterThanOrEqual(44); expect(c.height).toBeGreaterThanOrEqual(44); expect(c.x).toBeGreaterThanOrEqual(0); expect(c.x + c.width).toBeLessThanOrEqual(720); expect(c.y + c.height).toBeLessThanOrEqual(1280); for (const o of others) expect(hit(c, o)).toBe(false); }
   });
-  test('with eight people the chips wrap onto rows above, still clear of the floating buttons, the last row beside the pill', async ({ page }) => {
-    await start(page, 8); const chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON())), pill = await page.locator('#lvPill').boundingBox(), stop = await page.locator('#lvR').boundingBox();
+  test('with eight people the chips wrap onto rows above the bottom one, still clear of the floating buttons', async ({ page }) => {
+    await start(page, 8); const chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON())), stop = await page.locator('#lvR').boundingBox(), box0 = await page.locator('#pills').boundingBox();
     const rows = [...new Set(chips.map(c => Math.round(c.y)))]; expect(rows.length).toBeGreaterThan(1);
-    expect(pill.height).toBeLessThan(60); expect(await page.locator('#lvPill').evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true);   // the pill keeps its one line: the chips give way, not it
-    expect(Math.max(...chips.map(c => c.y + c.height))).toBeCloseTo(pill.y + pill.height, 0);   // the bottom row sits on the pill's line, the others above it
-    expect(Math.round(chips[0].y)).toBe(Math.max(...rows)); expect(Math.round(chips.at(-1).y)).toBe(Math.min(...rows));   // the first people stay by the pill; the rows that do not fit go above
-    for (const c of chips) { expect(c.x).toBeGreaterThanOrEqual(stop.x + stop.width); expect(hit(c, pill)).toBe(false); }
+    expect(Math.max(...chips.map(c => c.y + c.height))).toBeCloseTo(box0.y + box0.height, 0);   // the bottom row sits at the bottom, the others above it
+    expect(Math.round(chips[0].y)).toBe(Math.max(...rows)); expect(Math.round(chips.at(-1).y)).toBe(Math.min(...rows));   // the first people stay on the bottom row; the rows that do not fit go above
+    for (const c of chips) expect(c.x).toBeGreaterThanOrEqual(stop.x + stop.width);
     const box = await page.locator('#pills').boundingBox(); expect(box.x).toBeGreaterThanOrEqual(stop.x + stop.width);   // however long the names, the row never reaches the stop button
   });
   test('a finger tap on a chip hides that person and keeps the open speech bubble of someone else', async ({ page }) => {
@@ -285,12 +284,12 @@ test.describe('R-GRID-15 Live View full screen on the 720 × 1280 kiosk screen',
     await page.locator('#lvFS').tap(); await expect.poll(() => fsEl(page)).toBe('HTML');
     await page.locator('#lvR').tap(); await expect.poll(() => fsEl(page)).toBeNull(); expect(await page.evaluate(() => state.live)).toBe(false); await expect(page.locator('#lvFS')).toBeHidden();
   });
-  test('the floating buttons stack Now, Full screen, Stop, finger-sized and clear of each other, the people chips and the pill', async ({ page }) => {
+  test('the floating buttons stack Now, Full screen, Stop, finger-sized and clear of each other and the people chips', async ({ page }) => {
     await page.evaluate(() => { const w = document.getElementById('wrap'); w.scrollTop = w.scrollTop > 300 ? 0 : w.scrollTop + 400; w.dispatchEvent(new Event('scroll')); }); await expect(page.locator('#lvF')).toBeVisible();
     const [now, full, stop] = await Promise.all(['#lvF', '#lvFS', '#lvR'].map(s => page.locator(s).boundingBox()));
     expect(now.y + now.height).toBeLessThanOrEqual(full.y + 1); expect(full.y + full.height).toBeLessThanOrEqual(stop.y + 1); expect(Math.abs(full.x - stop.x)).toBeLessThan(2);
     for (const b of [now, full, stop]) { expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44); }
-    const others = await page.locator('#lvPpl .lvp, #lvPill').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
+    const others = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
     for (const b of [now, full, stop]) for (const o of others) expect(hit(b, o)).toBe(false);
   });
 });

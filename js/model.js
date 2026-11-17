@@ -345,7 +345,7 @@ export function drawNow(){
 setInterval(()=>{drawNow();liveTick()},30000);
 /* live view (R-GRID-12), for a public screen: today's day view, read-only, following the now line a third of the way down, with live
    cards of what the line is over. A manual scroll pauses it; it comes back after a minute or with the Now button. Remembered per browser;
-   left only with the Live View Mode pill, Stop Live View or Esc (back to the week). */
+   left only with Stop Live View (on a phone the floating stop button) or Esc (back to the week). */
 export let liveTop=-1,liveWant=0,ptrHeld=false,lvRet=null;   // liveTop: the scroll position live view last set; liveWant: the one it aimed for
 const LV_BACK=60000;   // a manual scroll pauses following for this long
 export const today=()=>(new Date().getDay()+6)%7;
@@ -377,7 +377,7 @@ export function liveBack(){clearTimeout(lvRet);if(!state.live)return;state.liveP
 export function liveTick(){if(!state.live||liveBusy())return;if(todayWk()==null){askLiveWeek(()=>{state.curWk=liveWk();render()},()=>setLive(false));return}   // another workspace or a new cycle: which week is it?
   if(state.focusD!==today()||state.curWk!==liveWk()){lvCloseAll(true);state.focusD=today();state.curWk=liveWk();render();return}if(!state.livePaused)liveScroll()}   // midnight: on to the next day (after Sunday, the next week of a cycle, R-CYC-05)
 export function updLive(){
-  lvPeople();const pl=$('lvPill');pl.style.display=state.live?'':'none';pl.querySelector('span').textContent=L('lvMode');pl.title=L('lvModeTip');pl.__t=pl.title;
+  lvPeople();
   {const s=$('sb');if(s){s.classList.toggle('lv',state.live);s.classList.toggle('paused',state.live&&state.livePaused)}const f=$('lvF');if(f){f.title=L('lvNowTip');f.setAttribute('aria-label',L('lvNow'))}}
   {const r=$('lvR');if(r){r.innerHTML=state.live?ICON_STOP:ICON_CAM;r.title=L(state.live?'lvStopTip':'lvStartTip');r.setAttribute('aria-label',L(state.live?'lvStop':'lvStart'));r.classList.toggle('on',state.live);r.setAttribute('aria-pressed',String(state.live))}}
   {const fs=!!document.fullscreenElement,show=state.live&&!!document.fullscreenEnabled;   // full screen (R-GRID-15): only while live, where the browser offers it
@@ -390,8 +390,8 @@ export function updLive(){
 // the browser's full screen for Live View (R-GRID-15): only from a tap on its button (browsers allow nothing else), never remembered; leaving Live View leaves it
 export function toggleFull(){if(document.fullscreenElement)leaveFull();else{const r=document.documentElement.requestFullscreen;if(r)Promise.resolve(r.call(document.documentElement)).catch(()=>{})}}
 function leaveFull(){if(document.fullscreenElement&&document.exitFullscreen)Promise.resolve(document.exitFullscreen()).catch(()=>{})}
-/* the people of Live View (R-GRID-14): a chip per person of ours at the bottom, beside the pill; a tap flips that person's eye (the sidebar's,
-   view state: no undo, not an unsaved change) and Everyone, shown while one of them is hidden, opens every eye of ours again */
+/* the people of Live View (R-GRID-14): a chip per person of ours at the bottom right; a tap flips that person's eye (the sidebar's,
+   view state: no undo, not an unsaved change) and All, shown while one of them is hidden, opens every eye of ours again */
 function lvPeople(){
   const b=$('lvPpl');if(!b)return;b.textContent='';const ps=ourPeople(),on=state.live&&ps.length>0;b.style.display=on?'':'none';lvPplFit();if(!on)return;
   b.setAttribute('aria-label',L('lvPplL'));
@@ -451,7 +451,6 @@ export function initLive(){
  g.addEventListener('pointerdown',ev=>{if(stop(ev))lvDown={x:ev.clientX,y:ev.clientY,tg:ev.target}},true);
  g.addEventListener('pointerup',ev=>{if(!stop(ev))return;const d=lvDown;lvDown=null;if(d&&Math.hypot(ev.clientX-d.x,ev.clientY-d.y)<=8)liveTap(ev.clientX,ev.clientY,d.tg)},true);
  ['pointermove','click','dblclick','contextmenu'].forEach(t=>g.addEventListener(t,ev=>{if(stop(ev)&&t!=='pointermove')ev.preventDefault()},true))}
- $('lvPill').onclick=()=>setLive(false);
  document.addEventListener('fullscreenchange',()=>{updLive();if(state.live&&!state.livePaused&&!liveBusy())liveScroll()});   // the bars come and go: the now line stays a third of the way down (R-GRID-15)
  $('wrap').addEventListener('scroll',()=>{if(!state.live||Math.abs($('wrap').scrollTop-liveTop)<=2)return;if(!state.livePaused){state.livePaused=true;updLive()}clearTimeout(lvRet);lvRet=setTimeout(liveBack,LV_BACK)},{passive:true});
  document.addEventListener('pointerdown',()=>{ptrHeld=true},true);['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{ptrHeld=false},true));

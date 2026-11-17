@@ -27,7 +27,7 @@ The automated touch tests (`tests/e2e/touch.spec.js`) run in Chromium's phone em
 | 14 | Open the sidebar's **Tools** section and tap **Live View** | Today's day is shown read-only, with the now line a third of the way down (R-GRID-12) | | |
 | 15 | In Live View, tap a box | A bubble appears at your tap, and it fades out after a minute. Tapping empty space closes it | | |
 | 16 | In Live View, swipe to scroll, then wait a minute | **Now** appears while you scroll. A minute after your last swipe, the view returns to the now line by itself | | |
-| 17 | Tap the red **Live View Mode** pill | Back to the day view of the day Live View showed, not the week (R-GRID-12) | | |
+| 17 | Tap the red **stop** button | Back to the day view of the day Live View showed, not the week (R-GRID-12) | | |
 | 18 | Rotate the phone | The grid refits, and nothing is lost | | |
 | 19 | Long-press an event and lift your finger **without moving**; tap *Copy…*. Then lock its schedule (⋯ → Lock) and do the same. Then unlock the schedule, long-press the event again and tap its lock button; long-press it once more and tap the lock button again; finally tap *+ New event here* | No browser menu appears. The app's menu opens (the day and time, the event with *Copy…* and a lock button, *+ New event here*), and *Copy…* opens its Copy dialog. A schedule-locked event is reached the same way, its lock button greyed out, and nothing new is created. The event's own lock locks and unlocks it; *+ New event here* opens a new event at that time (R-TOUCH-02, R-EVT-26, R-SEL-04) | | |
 | 20 | Reload the page | It opens on **today's day view** with the sidebar closed, even if you left it open (R-UI-13) | | |

@@ -355,13 +355,13 @@ test.describe('R-EVT-15 The edges of a flexible event\'s core can be dragged wit
 });
 
 test.describe('R-GRID-14 Live View people on a computer', () => {
-  test('with the sidebar open the chips stay over the grid, wrapping above the pill instead of reaching over the sidebar', async ({ page }) => {
+  test('with the sidebar open the chips stay over the grid, wrapping upwards from the bottom right instead of reaching over the sidebar', async ({ page }) => {
     const ppl = [...Array(12).keys()].map(i => person({ id: 'p' + i, name: 'Person number ' + (i + 1) }));
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, blank({ people: ppl }));
     await page.evaluate(() => { state.prefs.collapsed = false; applyPrefs(); setLive(true); });
-    const side = await boxOf(page.locator('#sb')), pill = await boxOf(page.locator('#lvPill')), chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
+    const side = await boxOf(page.locator('#sb')), vh = page.viewportSize().height, chips = await page.locator('#lvPpl .lvp').evaluateAll(cs => cs.map(c => c.getBoundingClientRect().toJSON()));
     expect(chips).toHaveLength(12); expect(new Set(chips.map(c => Math.round(c.y))).size).toBeGreaterThan(1);
-    for (const c of chips) { expect(c.x).toBeGreaterThanOrEqual(side.x + side.width); expect(c.y + c.height).toBeLessThanOrEqual(pill.y + pill.height + 1); expect(c.x + c.width <= pill.x || c.y + c.height <= pill.y).toBe(true); }
+    for (const c of chips) { expect(c.x).toBeGreaterThanOrEqual(side.x + side.width); expect(c.y + c.height).toBeLessThanOrEqual(vh); }
   });
 });
 
@@ -422,12 +422,21 @@ test.describe('R-GRID-12 Live View in a real browser', () => {
     await page.mouse.move(b.x + 20, b.y + 20); await page.mouse.down(); await page.mouse.move(b.x + 20, b.y + 120, { steps: 5 }); await page.mouse.up();
     expect((await slots(page, 0))[0].start).toBe(540); const h = await boxOf(page.locator('.dh').nth(1)); await page.mouse.click(h.x + h.width / 2, h.y + h.height / 2); await expect(page.locator('#agDlg')).toBeHidden();
   });
-  test('the Live View Mode pill pulses, the N hidden pill stays away, a reload stays live and the pill leaves it', async ({ page }) => {
+  test('no pill floats in Live View (the N hidden pill stays away too), a reload stays live and Stop Live View leaves it', async ({ page }) => {
     await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy()); await page.evaluate(() => { state.prefs.days[state.curId] = [0, 4]; savePrefs(); saveMem('all'); render(); }); await expect(page.locator('#hid')).toBeVisible();
-    await page.locator('#lvB').click(); await expect(page.locator('#lvPill')).toHaveText('Live View Mode'); await expect(page.locator('#hid')).toBeHidden();
-    expect(await page.locator('#lvPill i').evaluate(e => getComputedStyle(e).animationName)).toBe('lvp');
-    await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#lvPill')).toBeVisible();
-    await page.locator('#lvPill').click(); await expect(page.locator('.day')).toHaveCount(5); await expect(page.locator('#lvPill')).toBeHidden();
+    await page.locator('#lvB').click(); await expect(page.locator('#hid')).toBeHidden(); await expect(page.locator('#lvPill')).toHaveCount(0);
+    await page.reload(); await expect(page.locator('.day')).toHaveCount(1); await expect(page.locator('#grid.lv')).toHaveCount(1);
+    await page.locator('#lvB').click(); await expect(page.locator('.day')).toHaveCount(5); await expect(page.locator('#grid.lv')).toHaveCount(0);
+  });
+  test('the text in Live View has the sizes of the usual day view, all set by View\'s text size', async ({ page }) => {
+    await openApp(page, { clock: new Date(2026, 9, 14, 11, 0) }); await seed(page, busy());
+    const sizes = () => page.evaluate(() => ['.ev', '.ev .r2', '.times span', '.dh'].map(s => { const e = document.querySelector('#grid ' + s); return e && getComputedStyle(e).fontSize; }));
+    for (const txt of [100, 140]) {
+      await page.evaluate(t => { state.prefs.txt = t; setFocus(today()); }, txt); const day = await sizes(); expect(day.every(Boolean)).toBe(true);
+      await page.evaluate(() => setLive(true)); expect(await sizes()).toEqual(day); await page.evaluate(() => setLive(false));
+    }
+    await page.evaluate(() => { state.prefs.txt = 100; setFocus(today()); }); const small = await sizes(); await page.evaluate(() => { state.prefs.txt = 140; setLive(true); });
+    expect(parseFloat((await sizes())[0])).toBeCloseTo(parseFloat(small[0]) * 1.4, 0);
   });
 });
 

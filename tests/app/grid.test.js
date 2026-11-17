@@ -438,7 +438,7 @@ describe('R-GRID-10 Layer order inside a day column', () => {
 
 describe('R-GRID-12 Live View: a read-only screen of today that follows the current time', () => {
   const at = (a, d, h, m) => freezeClock(a, 2026, 9, 12 + d, h, m);   // 12 October 2026 is a Monday
-  const btn = a => a.q('#lvB'), now = a => a.q('#lvC'), pill = a => a.q('#lvPill');
+  const btn = a => a.q('#lvB'), now = a => a.q('#lvC');
   const start = a => btn(a).click();
   const fakeScroll = (a, height = 600) => a.ev(`(()=>{const w=document.getElementById('wrap');let t=0;Object.defineProperty(w,'scrollTop',{configurable:true,get:()=>t,set:v=>{t=Math.max(0,Math.round(v))}});Object.defineProperty(w,'clientHeight',{configurable:true,value:${height}});state.prefs.fitH=false})()`);   // a fixed 48 px/h, so the scroll positions are easy to check
   const scrollBy = (a, y) => a.ev(`(()=>{const w=document.getElementById('wrap');w.scrollTop=${y};w.dispatchEvent(new Event('scroll'))})()`);
@@ -466,23 +466,23 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
   });
   it('the sidebar has a Live View button with a camera icon at the top of the Tools section; the Now button is hidden', () => {
     const a = fresh(); expect(btn(a).textContent).toBe('Live View'); expect(btn(a).querySelector('svg')).not.toBeNull(); expect(btn(a).parentElement.previousElementSibling.querySelector('.shbtn span').textContent).toBe('Tools');
-    expect(now(a).style.display).toBe('none'); expect(pill(a).style.display).toBe('none');
+    expect(now(a).style.display).toBe('none'); expect(a.q('#lvPill')).toBeNull();
   });
   it('it jumps to today\'s day view from the week or another day; the button becomes "Stop Live View"', () => {
     const a = fresh(); at(a, 2, 10, 0); a.ev('setFocus(5)'); start(a); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['2']);
     expect(btn(a).textContent).toBe('Stop Live View'); expect(btn(a).getAttribute('aria-pressed')).toBe('true'); expect(a.q('#grid').classList.contains('lv')).toBe(true);
   });
-  it('the big "Live View Mode" pill with its red dot shows, and the "N hidden" pill never does', () => {
+  it('there is no "Live View Mode" pill, and the "N hidden" pill never shows while live', () => {
     const a = fresh(blank({ events: [ev1({ slots: [{ day: 2, start: 120, end: 180, person: '' }] })] })); at(a, 2, 10, 0); expect(a.q('#hid').style.display).toBe('');
-    start(a); expect(pill(a).style.display).toBe(''); expect(pill(a).textContent).toBe('Live View Mode'); expect(pill(a).querySelector('i')).not.toBeNull(); expect(a.q('#hid').style.display).toBe('none');
+    start(a); expect(a.q('#lvPill')).toBeNull(); expect(a.q('#pills').textContent).not.toMatch(/Live View/); expect(a.q('#hid').style.display).toBe('none');
   });
   it('the day header shows only the day name: no arrows, Week, agenda or focus buttons, and a click opens nothing', () => {
     const a = fresh(); at(a, 2, 10, 0); start(a); const h = a.q('.dh:not(.c):not(.lvh)');
     expect(h.textContent).toBe('Wednesday'); expect(h.querySelectorAll('button, .ic')).toHaveLength(0); h.click(); expect(a.q('#agDlg').open).toBeFalsy();
   });
-  it('the text of the compact view is larger while live, and only then', () => {
-    const a = fresh(); const r = sel => [...a.d.styleSheets[0].cssRules].find(x => x.selectorText === sel);
-    expect(r('#grid.lv .ev').style.getPropertyValue('font-size')).toBe('calc(15px * var(--ts,1))'); expect(r('#grid.lv .times span').style.getPropertyValue('font-size')).toBe('calc(13px * var(--ts,1))');
+  it('the text has the sizes of the usual view: no style rule of Live View changes a font size, so View\'s text size alone sets them', () => {
+    const a = fresh(); const lv = [...a.d.styleSheets[0].cssRules].filter(x => /#grid\.lv/.test(x.selectorText || ''));
+    expect(lv.length).toBeGreaterThan(0); expect(lv.filter(x => x.style.getPropertyValue('font-size'))).toEqual([]);
   });
   it('nothing pops up by itself: a tap on a box fades in a bubble whose arrow points at the tap', () => {
     const a = fresh(day()); at(a, 2, 11, 30); start(a); expect(a.qa('.lvb')).toHaveLength(0);
@@ -558,25 +558,24 @@ describe('R-GRID-12 Live View: a read-only screen of today that follows the curr
     const a = fresh(); at(a, 2, 23, 59); start(a); at(a, 3, 0, 0); a.ev('liveTick()'); expect(a.qa('.day').map(c => c.dataset.d)).toEqual(['3']);
     const b = fresh(); b.ev('state.prefs.days[state.curId]=[0,4];render()'); at(b, 4, 23, 59); start(b); at(b, 5, 0, 0); b.ev('liveTick()'); expect(b.qa('.day').map(c => c.dataset.d)).toEqual(['5']);
   });
-  it('on a phone the pill and Esc leave it for the day view of the day it showed, not the week, which is too wide', () => {
+  it('on a phone the stop button and Esc leave it for the day view of the day it showed, not the week, which is too wide', () => {
     const a = fresh(day(), { phone: true }); at(a, 2, 10, 0); a.q('#lvR').click(); expect(a.ev('[state.live,state.focusD]')).toEqual([true, 2]);
-    pill(a).click(); expect(a.ev('[state.live,state.focusD]')).toEqual([false, 2]); expect(a.qa('.day')).toHaveLength(1); expect(a.q('#grid').classList.contains('lv')).toBe(false);
+    a.q('#lvR').click(); expect(a.ev('[state.live,state.focusD]')).toEqual([false, 2]); expect(a.qa('.day')).toHaveLength(1); expect(a.q('#grid').classList.contains('lv')).toBe(false);
     a.q('#lvR').click(); a.key('Escape'); expect(a.ev('[state.live,state.focusD]')).toEqual([false, 2]); expect(a.q('.dh.fo')).not.toBeNull();
   });
-  it('the Live View Mode pill, Stop Live View and Esc each leave it for the week on a computer; Esc under a dialog does not', () => {
-    const a = fresh(); at(a, 2, 10, 0); start(a); pill(a).click(); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(btn(a).textContent).toBe('Live View');
-    start(a); btn(a).click(); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
+  it('Stop Live View and Esc each leave it for the week on a computer; Esc under a dialog does not', () => {
+    const a = fresh(); at(a, 2, 10, 0); start(a); btn(a).click(); expect(btn(a).textContent).toBe('Live View'); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7); expect(a.q('#grid').classList.contains('lv')).toBe(false);
     start(a); a.ev('openSettings()'); a.key('Escape'); expect(a.ev('state.live')).toBe(true); a.ev("document.getElementById('xDlg').close()"); a.key('Escape'); expect(a.ev('state.live')).toBe(false); expect(a.qa('.day')).toHaveLength(7);
   });
   it('this browser remembers it: a reload opens straight into today\'s Live View', () => {
     const a = fresh(); start(a); expect(JSON.parse(a.storage()[PREFS_KEY]).live).toBe(true);
-    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ live: true }) } }); expect(b.ev('state.live')).toBe(true); expect(b.ev('state.focusD')).toBe(b.ev('(new Date().getDay()+6)%7')); expect(b.qa('.day')).toHaveLength(1); expect(b.q('#lvPill').style.display).toBe('');
+    const b = openApp({ storage: { [PREFS_KEY]: JSON.stringify({ live: true }) } }); expect(b.ev('state.live')).toBe(true); expect(b.ev('state.focusD')).toBe(b.ev('(new Date().getDay()+6)%7')); expect(b.qa('.day')).toHaveLength(1); expect(b.q('#grid').classList.contains('lv')).toBe(true);
     b.q('#lvB').click(); expect(JSON.parse(b.storage()[PREFS_KEY]).live).toBe(false);
     expect(openApp().ev('state.live')).toBe(false);
   });
-  it('buttons, pill and tooltips are translated', () => {
+  it('buttons and tooltips are translated', () => {
     const a = fresh(); a.ev("setLang('es')"); expect(btn(a).textContent).toBe('Vista en directo'); expect(btn(a).title).toMatch(/^Para una pantalla/);
-    start(a); expect(btn(a).textContent).toBe('Detener vista en directo'); expect(pill(a).textContent).toBe('Modo vista en directo'); expect(now(a).textContent).toBe('Ahora');
+    start(a); expect(btn(a).textContent).toBe('Detener vista en directo'); expect(now(a).textContent).toBe('Ahora');
   });
 });
 
@@ -598,7 +597,7 @@ describe('R-GRID-14 Live View people: a chip per person at the bottom hides or s
     const a = fresh(day()); at(a, 2, 10, 30); expect(row(a).style.display).toBe('none'); expect(chips(a)).toHaveLength(0);
     start(a); expect(row(a).style.display).toBe(''); expect(names(a)).toEqual(['Olivia', 'Bob']); expect(row(a).getAttribute('role')).toBe('group'); expect(row(a).getAttribute('aria-label')).toBe('People shown');
     expect(chip(a, 'Olivia').querySelector('.ic svg')).not.toBeNull(); expect(chip(a, 'Olivia').querySelector('.ic').style.color).toMatch(/#d6409f|rgb\(214, 64, 159\)/);
-    expect(row(a).parentElement.id).toBe('pills'); expect(row(a).nextElementSibling.id).toBe('lvPill');
+    expect(row(a).parentElement.id).toBe('pills');
     a.q('#lvB').click(); expect(row(a).style.display).toBe('none'); expect(chips(a)).toHaveLength(0);
     const b = fresh(blank({ people: [ppl[2]] })); at(b, 2, 10, 30); start(b); expect(row(b).style.display).toBe('none');   // nobody of ours: no row at all
   });
